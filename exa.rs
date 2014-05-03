@@ -22,6 +22,10 @@ enum FileName {
     FileName,
 }
 
+struct FileSize {
+    useSIPrefixes: bool,
+}
+
 trait Column {
     fn display(&self, stat: &io::FileStat, filename: &str) -> ~str;
 }
@@ -50,6 +54,31 @@ impl Column for Permissions {
     }
 }
 
+impl Column for FileSize {
+    fn display(&self, stat: &io::FileStat, filename: &str) -> ~str {
+        let sizeStr = if self.useSIPrefixes {
+            formatBytes(stat.size, 1024, ~[ "B  ", "KiB", "MiB", "GiB", "TiB" ])
+        } else {
+            formatBytes(stat.size, 1000, ~[ "B ", "KB", "MB", "GB", "TB" ])
+        };
+
+        return if stat.kind == io::TypeDirectory {
+            Green.normal()
+        } else {
+            Green.bold()
+        }.paint(sizeStr);
+    }
+}
+
+fn formatBytes(mut amount: u64, kilo: u64, prefixes: ~[&str]) -> ~str {
+    let mut prefix = 0;
+    while amount > kilo {
+        amount /= kilo;
+        prefix += 1;
+    }
+    return format!("{:4}{}", amount, prefixes[prefix]);
+}
+
 fn list(path: Path) {
     let mut files = match fs::readdir(&path) {
         Ok(files) => files,
@@ -68,7 +97,12 @@ fn list(path: Path) {
             Err(e) => fail!("Couldn't stat {}: {}", filename, e),
         };
 
-        let columns = ~[~Permissions as ~Column, ~FileName as ~Column];
+        let columns = ~[
+            ~Permissions as ~Column,
+            ~FileSize { useSIPrefixes: false } as ~Column,
+            ~FileName as ~Column
+        ];
+
         let mut cells = columns.iter().map(|c| c.display(&stat, filename));
 
         let mut first = true;
