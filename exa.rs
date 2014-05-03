@@ -14,6 +14,42 @@ fn main() {
     }
 }
 
+enum Permissions {
+    Permissions,
+}
+
+enum FileName {
+    FileName,
+}
+
+trait Column {
+    fn display(&self, stat: &io::FileStat, filename: &str) -> ~str;
+}
+
+impl Column for FileName {
+    fn display(&self, stat: &io::FileStat, filename: &str) -> ~str {
+        file_colour(stat, filename).paint(filename.to_owned())
+    }
+}
+
+impl Column for Permissions {
+    fn display(&self, stat: &io::FileStat, filename: &str) -> ~str {
+        let bits = stat.perm;
+        return format!("{}{}{}{}{}{}{}{}{}{}",
+            type_char(stat.kind),
+            bit(bits, io::UserRead, ~"r", Yellow.bold()),
+            bit(bits, io::UserWrite, ~"w", Red.bold()),
+            bit(bits, io::UserExecute, ~"x", Green.bold().underline()),
+            bit(bits, io::GroupRead, ~"r", Yellow.normal()),
+            bit(bits, io::GroupWrite, ~"w", Red.normal()),
+            bit(bits, io::GroupExecute, ~"x", Green.normal()),
+            bit(bits, io::OtherRead, ~"r", Yellow.normal()),
+            bit(bits, io::OtherWrite, ~"w", Red.normal()),
+            bit(bits, io::OtherExecute, ~"x", Green.normal()),
+       );
+    }
+}
+
 fn list(path: Path) {
     let mut files = match fs::readdir(&path) {
         Ok(files) => files,
@@ -32,9 +68,19 @@ fn list(path: Path) {
             Err(e) => fail!("Couldn't stat {}: {}", filename, e),
         };
 
-        let colour = file_colour(&stat, filename);
+        let columns = ~[~Permissions as ~Column, ~FileName as ~Column];
+        let mut cells = columns.iter().map(|c| c.display(&stat, filename));
 
-        println!("{} {}", perm_str(&stat), colour.paint(filename.to_owned()));
+        let mut first = true;
+        for cell in cells {
+            if first {
+                first = false;
+            } else {
+                print!(" ");
+            }
+            print!("{}", cell);
+        }
+        print!("\n");
     }
 }
 
@@ -48,22 +94,6 @@ fn file_colour(stat: &io::FileStat, filename: &str) -> Style {
     } else {
         Plain
     }
-}
-
-fn perm_str(stat: &io::FileStat) -> ~str {
-    let bits = stat.perm;
-    return format!("{}{}{}{}{}{}{}{}{}{}",
-                   type_char(stat.kind),
-                   bit(bits, io::UserRead, ~"r", Yellow.bold()),
-                   bit(bits, io::UserWrite, ~"w", Red.bold()),
-                   bit(bits, io::UserExecute, ~"x", Green.bold().underline()),
-                   bit(bits, io::GroupRead, ~"r", Yellow.normal()),
-                   bit(bits, io::GroupWrite, ~"w", Red.normal()),
-                   bit(bits, io::GroupExecute, ~"x", Green.normal()),
-                   bit(bits, io::OtherRead, ~"r", Yellow.normal()),
-                   bit(bits, io::OtherWrite, ~"w", Red.normal()),
-                   bit(bits, io::OtherExecute, ~"x", Green.normal()),
-                   );
 }
 
 fn bit(bits: u32, bit: u32, other: ~str, style: Style) -> ~str {
