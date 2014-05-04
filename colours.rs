@@ -8,7 +8,7 @@ pub enum Style {
     Style(StyleStruct),
 }
 
-struct StyleStruct {
+pub struct StyleStruct {
     foreground: Colour,
     background: Option<Colour>,
     bold: bool,

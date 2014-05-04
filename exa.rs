@@ -1,10 +1,9 @@
 extern crate getopts;
 use std::os;
-use std::io;
 use std::io::fs;
 
 use file::File;
-use column::{Column, defaultColumns};
+use column::defaultColumns;
 
 pub mod colours;
 pub mod column;
@@ -24,10 +23,7 @@ fn main() {
 
     let matches = match getopts::getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(f) => {
-            fail!("Invalid options\n{}", f.to_err_msg());
-            return
-        }
+        Err(f) => fail!("Invalid options\n{}", f.to_err_msg()),
     };
 
     let opts = Options {
