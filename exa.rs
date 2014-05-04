@@ -79,23 +79,40 @@ fn formatBytes(mut amount: u64, kilo: u64, prefixes: ~[&str]) -> ~str {
     return format!("{:4}{}", amount, prefixes[prefix]);
 }
 
+// Each file is definitely going to get `stat`ted at least once, if
+// only to determine what kind of file it is, so carry the `stat`
+// result around with the file for safe keeping.
+struct File<'a> {
+    name: &'a str,
+    path: &'a Path,
+    stat: io::FileStat,
+}
+
+impl<'a> File<'a> {
+    fn from_path(path: &'a Path) -> File<'a> {
+        let filename: &str = path.filename_str().unwrap();
+
+        // We have to use lstat here instad of file.stat(), as it
+        // doesn't follow symbolic links. Otherwise, the stat() call
+        // will fail if it encounters a link that's target is
+        // non-existent.
+        let stat: io::FileStat = match fs::lstat(path) {
+            Ok(stat) => stat,
+            Err(e) => fail!("Couldn't stat {}: {}", filename, e),
+        };
+
+        return File { path: path, stat: stat, name: filename };
+    }
+}
+
 fn list(path: Path) {
     let mut files = match fs::readdir(&path) {
         Ok(files) => files,
         Err(e) => fail!("readdir: {}", e),
     };
     files.sort_by(|a, b| a.filename_str().cmp(&b.filename_str()));
-    for file in files.iter() {
-        let filename: &str = file.filename_str().unwrap();
-
-        // We have to use lstat here instad of file.stat(), as it
-        // doesn't follow symbolic links. Otherwise, the stat() call
-        // will fail if it encounters a link that's target is
-        // non-existent.
-        let stat: io::FileStat = match fs::lstat(file) {
-            Ok(stat) => stat,
-            Err(e) => fail!("Couldn't stat {}: {}", filename, e),
-        };
+    for subpath in files.iter() {
+        let file = File::from_path(subpath);
 
         let columns = ~[
             ~Permissions as ~Column,
@@ -103,7 +120,7 @@ fn list(path: Path) {
             ~FileName as ~Column
         ];
 
-        let mut cells = columns.iter().map(|c| c.display(&stat, filename));
+        let mut cells = columns.iter().map(|c| c.display(&file.stat, file.name));
 
         let mut first = true;
         for cell in cells {
