@@ -1,3 +1,4 @@
+extern crate getopts;
 use std::io::fs;
 use std::io;
 use std::os;
@@ -5,12 +6,33 @@ use std::os;
 use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
 mod colours;
 
+struct Options {
+    showInvisibles: bool,
+}
+
 fn main() {
-    match os::args().as_slice() {
-        [] => unreachable!(),
-        [_] => { list(Path::new(".")) },
-        [_, ref p] => { list(Path::new(p.as_slice())) },
-        _ => { fail!("args?") },
+    let args = os::args();
+    let program = args[0].as_slice();
+    let opts = ~[
+        getopts::optflag("a", "all", "show dot-files")
+    ];
+
+    let matches = match getopts::getopts(args.tail(), opts) {
+        Ok(m) => m,
+        Err(f) => {
+            fail!("Invalid options\n{}", f.to_err_msg());
+            return
+        }
+    };
+
+    let opts = Options {
+        showInvisibles: matches.opt_present("all")
+    };
+
+    let strs = if matches.free.is_empty() {vec!(~"./")} else {matches.free.clone()};
+
+    for dir in strs.move_iter() {
+        list(opts, Path::new(dir))
     }
 }
 
@@ -105,7 +127,7 @@ impl<'a> File<'a> {
     }
 }
 
-fn list(path: Path) {
+fn list(opts: Options, path: Path) {
     let mut files = match fs::readdir(&path) {
         Ok(files) => files,
         Err(e) => fail!("readdir: {}", e),
@@ -113,6 +135,10 @@ fn list(path: Path) {
     files.sort_by(|a, b| a.filename_str().cmp(&b.filename_str()));
     for subpath in files.iter() {
         let file = File::from_path(subpath);
+
+        if file.name.starts_with(".") && !opts.showInvisibles {
+            continue;
+        }
 
         let columns = ~[
             ~Permissions as ~Column,
