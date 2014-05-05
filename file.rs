@@ -2,8 +2,9 @@ use std::io::fs;
 use std::io;
 
 use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
-use column::{Column, Permissions, FileName, FileSize};
+use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{formatBinaryBytes, formatDecimalBytes};
+use unix::{get_user_name, get_group_name};
 
 // Each file is definitely going to get `stat`ted at least once, if
 // only to determine what kind of file it is, so carry the `stat`
@@ -39,6 +40,8 @@ impl<'a> File<'a> {
             Permissions => self.permissions(),
             FileName => self.file_colour().paint(self.name.to_owned()),
             FileSize(si) => self.file_size(si),
+            User => get_user_name(self.stat.unstable.uid as i32).expect("???"),
+            Group => get_group_name(self.stat.unstable.gid as u32).expect("???"),
         }
     }
 

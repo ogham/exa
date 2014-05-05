@@ -9,6 +9,7 @@ pub mod colours;
 pub mod column;
 pub mod format;
 pub mod file;
+pub mod unix;
 
 struct Options {
     showInvisibles: bool,
