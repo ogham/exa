@@ -30,7 +30,12 @@ fn main() {
         showInvisibles: matches.opt_present("all")
     };
 
-    let strs = if matches.free.is_empty() {vec!(~"./")} else {matches.free.clone()};
+    let strs = if matches.free.is_empty() {
+        vec!("./".to_owned())
+    }
+    else {
+        matches.free.clone()
+    };
 
     for dir in strs.move_iter() {
         list(opts, Path::new(dir))
@@ -46,7 +51,7 @@ fn list(opts: Options, path: Path) {
     for subpath in files.iter() {
         let file = File::from_path(subpath);
 
-        if file.name.starts_with(".") && !opts.showInvisibles {
+        if file.is_dotfile() && !opts.showInvisibles {
             continue;
         }
 

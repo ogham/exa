@@ -30,6 +30,10 @@ impl<'a> File<'a> {
         return File { path: path, stat: stat, name: filename };
     }
 
+    pub fn is_dotfile(&self) -> bool {
+        self.name.starts_with(".")
+    }
+
     pub fn display(&self, column: &Column) -> ~str {
         match *column {
             Permissions => self.permissions(),
@@ -54,12 +58,12 @@ impl<'a> File<'a> {
 
     fn type_char(&self) -> ~str {
         return match self.stat.kind {
-            io::TypeFile => ~".",
+            io::TypeFile => ".".to_owned(),
             io::TypeDirectory => Blue.paint("d"),
             io::TypeNamedPipe => Yellow.paint("|"),
             io::TypeBlockSpecial => Purple.paint("s"),
             io::TypeSymlink => Cyan.paint("l"),
-            _ => ~"?",
+            _ => "?".to_owned(),
         }
     }
 
@@ -80,23 +84,23 @@ impl<'a> File<'a> {
         let bits = self.stat.perm;
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
-            bit(bits, io::UserRead, ~"r", Yellow.bold()),
-            bit(bits, io::UserWrite, ~"w", Red.bold()),
-            bit(bits, io::UserExecute, ~"x", Green.bold().underline()),
-            bit(bits, io::GroupRead, ~"r", Yellow.normal()),
-            bit(bits, io::GroupWrite, ~"w", Red.normal()),
-            bit(bits, io::GroupExecute, ~"x", Green.normal()),
-            bit(bits, io::OtherRead, ~"r", Yellow.normal()),
-            bit(bits, io::OtherWrite, ~"w", Red.normal()),
-            bit(bits, io::OtherExecute, ~"x", Green.normal()),
+            bit(bits, io::UserRead, "r", Yellow.bold()),
+            bit(bits, io::UserWrite, "w", Red.bold()),
+            bit(bits, io::UserExecute, "x", Green.bold().underline()),
+            bit(bits, io::GroupRead, "r", Yellow.normal()),
+            bit(bits, io::GroupWrite, "w", Red.normal()),
+            bit(bits, io::GroupExecute, "x", Green.normal()),
+            bit(bits, io::OtherRead, "r", Yellow.normal()),
+            bit(bits, io::OtherWrite, "w", Red.normal()),
+            bit(bits, io::OtherExecute, "x", Green.normal()),
        );
     }
 }
 
-fn bit(bits: u32, bit: u32, other: ~str, style: Style) -> ~str {
+fn bit(bits: u32, bit: u32, other: &'static str, style: Style) -> ~str {
     if bits & bit == bit {
-        style.paint(other)
+        style.paint(other.to_owned())
     } else {
-        Black.bold().paint(~"-")
+        Black.bold().paint("-".to_owned())
     }
 }

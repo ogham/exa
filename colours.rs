@@ -24,10 +24,10 @@ impl Style {
                 StyleStruct { foreground, background, bold, underline } => {
                     let bg: ~str = match background {
                         Some(c) => format!("{};", c as int + 10),
-                        None => ~"",
+                        None => "".to_owned(),
                     };
-                    let bo: ~str = if bold { ~"1;" } else { ~"" };
-                    let un: ~str = if underline { ~"4;" } else { ~"" };
+                    let bo = if bold { "1;" } else { "" };
+                    let un = if underline { "4;" } else { "" };
                     format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input)
                 }
             }
