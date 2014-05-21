@@ -74,7 +74,7 @@ impl<'a> File<'a> {
     fn file_colour(&self) -> Style {
         if self.stat.kind == io::TypeDirectory {
             Blue.normal()
-        } else if self.stat.perm & io::UserExecute == io::UserExecute {
+        } else if self.stat.perm.contains(io::UserExecute) {
             Green.normal()
         } else if self.name.ends_with("~") {
             Black.bold()
@@ -100,8 +100,8 @@ impl<'a> File<'a> {
     }
 }
 
-fn bit(bits: u32, bit: u32, other: &'static str, style: Style) -> ~str {
-    if bits & bit == bit {
+fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> ~str {
+    if bits.contains(bit) {
         style.paint(other.to_owned())
     } else {
         Black.bold().paint("-".to_owned())

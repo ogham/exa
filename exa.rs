@@ -16,8 +16,10 @@ struct Options {
 }
 
 fn main() {
-    let args = os::args();
-    let program = args[0].as_slice();
+    let args: Vec<StrBuf> = os::args().iter()
+        .map(|x| x.to_strbuf())
+        .collect();
+
     let opts = ~[
         getopts::optflag("a", "all", "show dot-files")
     ];
@@ -32,7 +34,7 @@ fn main() {
     };
 
     let strs = if matches.free.is_empty() {
-        vec!("./".to_owned())
+        vec!("./".to_strbuf())
     }
     else {
         matches.free.clone()
