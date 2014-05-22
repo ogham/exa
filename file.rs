@@ -40,8 +40,8 @@ impl<'a> File<'a> {
             Permissions => self.permissions(),
             FileName => self.file_colour().paint(self.name.to_owned()),
             FileSize(si) => self.file_size(si),
-            User => get_user_name(self.stat.unstable.uid as i32).expect("???"),
-            Group => get_group_name(self.stat.unstable.gid as u32).expect("???"),
+            User => get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str()),
+            Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
 
