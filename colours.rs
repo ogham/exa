@@ -82,3 +82,8 @@ impl Colour {
         Style(StyleStruct { foreground: *self, background: Some(background), bold: false, underline: false })
     }
 }
+
+pub fn strip_formatting(input: &~str) -> ~str {
+    let re = regex!("\x1B\\[.+?m");
+    re.replace_all(*input, "").to_owned()
+}

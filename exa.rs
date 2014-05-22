@@ -1,3 +1,7 @@
+#![feature(phase)]
+extern crate regex;
+#[phase(syntax)] extern crate regex_macros;
+
 extern crate getopts;
 use std::os;
 use std::io::fs;
@@ -51,25 +55,31 @@ fn list(opts: Options, path: Path) {
         Err(e) => fail!("readdir: {}", e),
     };
     files.sort_by(|a, b| a.filename_str().cmp(&b.filename_str()));
-    for subpath in files.iter() {
-        let file = File::from_path(subpath);
 
-        if file.is_dotfile() && !opts.showInvisibles {
-            continue;
-        }
+    let columns = defaultColumns();
 
-        let columns = defaultColumns();
+    let table: Vec<Vec<~str>> = files.iter()
+        .map(|p| File::from_path(p))
+        .filter(|f| !f.is_dotfile() || opts.showInvisibles )
+        .map(|f| columns.iter().map(|c| f.display(c)).collect())
+        .collect();
 
-        let mut cells = columns.iter().map(|c| file.display(c));
+    let maxes: Vec<uint> = range(0, columns.len())
+        .map(|n| table.iter().map(|row| colours::strip_formatting(row.get(n)).len()).max().unwrap())
+        .collect();
 
+    for row in table.iter() {
         let mut first = true;
-        for cell in cells {
+        for (length, cell) in maxes.iter().zip(row.iter()) {
             if first {
                 first = false;
             } else {
                 print!(" ");
             }
             print!("{}", cell);
+            for _ in range(cell.len(), *length) {
+                print!(" ");
+            }
         }
         print!("\n");
     }
