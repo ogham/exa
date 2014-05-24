@@ -8,16 +8,14 @@ use std::io::fs;
 
 use file::File;
 use column::defaultColumns;
+use options::{Options, SortField, Name};
 
 pub mod colours;
 pub mod column;
 pub mod format;
 pub mod file;
 pub mod unix;
-
-struct Options {
-    showInvisibles: bool,
-}
+pub mod options;
 
 fn main() {
     let args: Vec<StrBuf> = os::args().iter()
@@ -25,7 +23,8 @@ fn main() {
         .collect();
 
     let opts = ~[
-        getopts::optflag("a", "all", "show dot-files")
+        getopts::optflag("a", "all", "show dot-files"),
+        getopts::optopt("s", "sort", "field to sort by", "WORD"),
     ];
 
     let matches = match getopts::getopts(args.tail(), opts) {
@@ -34,7 +33,8 @@ fn main() {
     };
 
     let opts = Options {
-        showInvisibles: matches.opt_present("all")
+        showInvisibles: matches.opt_present("all"),
+        sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
     };
 
     let strs = if matches.free.is_empty() {
@@ -49,18 +49,18 @@ fn main() {
     }
 }
 
-fn list(opts: Options, path: Path) {
-    let mut files = match fs::readdir(&path) {
-        Ok(files) => files,
+fn list(options: Options, path: Path) {
+    let paths = match fs::readdir(&path) {
+        Ok(paths) => paths,
         Err(e) => fail!("readdir: {}", e),
     };
-    files.sort_by(|a, b| a.filename_str().cmp(&b.filename_str()));
+
+    let mut files = paths.iter().map(|path| File::from_path(path)).collect();
+    options.sort(&mut files);
 
     let columns = defaultColumns();
-
     let table: Vec<Vec<StrBuf>> = files.iter()
-        .map(|p| File::from_path(p))
-        .filter(|f| !f.is_dotfile() || opts.showInvisibles )
+        .filter(|&f| options.show(f))
         .map(|f| columns.iter().map(|c| f.display(c)).collect())
         .collect();
 

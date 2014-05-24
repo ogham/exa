@@ -10,9 +10,9 @@ use unix::{get_user_name, get_group_name};
 // only to determine what kind of file it is, so carry the `stat`
 // result around with the file for safe keeping.
 pub struct File<'a> {
-    name: &'a str,
-    path: &'a Path,
-    stat: io::FileStat,
+    pub name: &'a str,
+    pub path: &'a Path,
+    pub stat: io::FileStat,
 }
 
 impl<'a> File<'a> {
