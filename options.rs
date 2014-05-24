@@ -8,6 +8,7 @@ pub enum SortField {
 pub struct Options {
     pub showInvisibles: bool,
     pub sortField: SortField,
+    pub reverse: bool,
 }
 
 impl SortField {

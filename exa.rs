@@ -24,6 +24,7 @@ fn main() {
 
     let opts = ~[
         getopts::optflag("a", "all", "show dot-files"),
+        getopts::optflag("r", "reverse", "reverse order of files"),
         getopts::optopt("s", "sort", "field to sort by", "WORD"),
     ];
 
@@ -34,6 +35,7 @@ fn main() {
 
     let opts = Options {
         showInvisibles: matches.opt_present("all"),
+        reverse: matches.opt_present("reverse"),
         sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
     };
 
@@ -57,6 +59,9 @@ fn list(options: Options, path: Path) {
 
     let mut files = paths.iter().map(|path| File::from_path(path)).collect();
     options.sort(&mut files);
+    if options.reverse {
+        files.reverse();
+    }
 
     let columns = defaultColumns();
     let table: Vec<Vec<StrBuf>> = files.iter()
