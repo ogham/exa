@@ -6,6 +6,15 @@ use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{formatBinaryBytes, formatDecimalBytes};
 use unix::{get_user_name, get_group_name};
 
+static MEDIA_TYPES: &'static [&'static str] = &[
+    "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
+    "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
+    "svg", "pdf", "stl", "eps", "dvi", "ps" ];
+
+static COMPRESSED_TYPES: &'static [&'static str] = &[
+    "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
+    "iso", "dmg", "tc", "rar", "par" ];
+
 // Each file is definitely going to get `stat`ted at least once, if
 // only to determine what kind of file it is, so carry the `stat`
 // result around with the file for safe keeping.
@@ -81,15 +90,26 @@ impl<'a> File<'a> {
         }
     }
 
-
     fn file_colour(&self) -> Style {
         if self.stat.kind == io::TypeDirectory {
             Blue.normal()
-        } else if self.stat.perm.contains(io::UserExecute) {
-            Green.normal()
-        } else if self.name.ends_with("~") {
+        }
+        else if self.stat.perm.contains(io::UserExecute) {
+            Green.bold()
+        }
+        else if self.name.ends_with("~") {
             Black.bold()
-        } else {
+        }
+        else if self.name.starts_with("README") {
+            Yellow.bold().underline()
+        }
+        else if self.ext.is_some() && MEDIA_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Purple.normal()
+        }
+        else if self.ext.is_some() && COMPRESSED_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Red.normal()
+        }
+        else {
             Plain
         }
     }
