@@ -58,7 +58,7 @@ fn list(opts: Options, path: Path) {
 
     let columns = defaultColumns();
 
-    let table: Vec<Vec<~str>> = files.iter()
+    let table: Vec<Vec<StrBuf>> = files.iter()
         .map(|p| File::from_path(p))
         .filter(|f| !f.is_dotfile() || opts.showInvisibles )
         .map(|f| columns.iter().map(|c| f.display(c)).collect())
@@ -76,7 +76,7 @@ fn list(opts: Options, path: Path) {
             } else {
                 print!(" ");
             }
-            print!("{}", cell);
+            print!("{}", cell.as_slice());
             for _ in range(cell.len(), *length) {
                 print!(" ");
             }

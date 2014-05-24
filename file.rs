@@ -35,17 +35,17 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
-    pub fn display(&self, column: &Column) -> ~str {
+    pub fn display(&self, column: &Column) -> StrBuf {
         match *column {
             Permissions => self.permissions(),
-            FileName => self.file_colour().paint(self.name.to_owned()),
+            FileName => self.file_colour().paint(self.name.as_slice()),
             FileSize(si) => self.file_size(si),
             User => get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str()),
             Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
 
-    fn file_size(&self, si: bool) -> ~str {
+    fn file_size(&self, si: bool) -> StrBuf {
         let sizeStr = if si {
             formatBinaryBytes(self.stat.size)
         } else {
@@ -56,12 +56,12 @@ impl<'a> File<'a> {
             Green.normal()
         } else {
             Green.bold()
-        }.paint(sizeStr);
+        }.paint(sizeStr.as_slice());
     }
 
-    fn type_char(&self) -> ~str {
+    fn type_char(&self) -> StrBuf {
         return match self.stat.kind {
-            io::TypeFile => ".".to_owned(),
+            io::TypeFile => ".".to_strbuf(),
             io::TypeDirectory => Blue.paint("d"),
             io::TypeNamedPipe => Yellow.paint("|"),
             io::TypeBlockSpecial => Purple.paint("s"),
@@ -83,7 +83,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn permissions(&self) -> ~str {
+    fn permissions(&self) -> StrBuf {
         let bits = self.stat.perm;
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
@@ -100,10 +100,10 @@ impl<'a> File<'a> {
     }
 }
 
-fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> ~str {
+fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> StrBuf {
     if bits.contains(bit) {
-        style.paint(other.to_owned())
+        style.paint(other.as_slice())
     } else {
-        Black.bold().paint("-".to_owned())
+        Black.bold().paint("-".as_slice())
     }
 }

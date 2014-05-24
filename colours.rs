@@ -16,19 +16,20 @@ pub struct StyleStruct {
 }
 
 impl Style {
-    pub fn paint(&self, input: ~str) -> ~str {
+    pub fn paint(&self, input: &str) -> StrBuf {
         match *self {
-            Plain => input,
+            Plain => input.to_strbuf(),
             Foreground(c) => c.paint(input),
             Style(s) => match s {
                 StyleStruct { foreground, background, bold, underline } => {
-                    let bg: ~str = match background {
+                    let bg = match background {
                         Some(c) => format!("{};", c as int + 10),
-                        None => "".to_owned(),
+                        None => "".to_strbuf()
                     };
                     let bo = if bold { "1;" } else { "" };
                     let un = if underline { "4;" } else { "" };
-                    format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input)
+                    let re = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_strbuf());
+                    return re.to_owned();
                 }
             }
         }
@@ -62,8 +63,9 @@ impl Style {
 }
 
 impl Colour {
-    pub fn paint(&self, input: &str) -> ~str {
-        format!("\x1B[{}m{}\x1B[0m", *self as int, input)
+    pub fn paint(&self, input: &str) -> StrBuf {
+        let re = format!("\x1B[{}m{}\x1B[0m", *self as int, input);
+        return re.to_owned();
     }
 
     pub fn underline(&self) -> Style {
@@ -83,7 +85,7 @@ impl Colour {
     }
 }
 
-pub fn strip_formatting(input: &~str) -> ~str {
+pub fn strip_formatting(input: &StrBuf) -> StrBuf {
     let re = regex!("\x1B\\[.+?m");
-    re.replace_all(*input, "").to_owned()
+    re.replace_all(input.as_slice(), "").to_owned()
 }

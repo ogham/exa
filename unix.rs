@@ -34,7 +34,7 @@ mod c {
     }
 }
 
-pub fn get_user_name(uid: i32) -> Option<~str> {
+pub fn get_user_name(uid: i32) -> Option<StrBuf> {
     let pw = unsafe { c::getpwuid(uid) };
     if pw.is_not_null() {
         return unsafe { Some(from_c_str(read(pw).pw_name)) };
@@ -44,7 +44,7 @@ pub fn get_user_name(uid: i32) -> Option<~str> {
     }
 }
 
-pub fn get_group_name(gid: u32) -> Option<~str> {
+pub fn get_group_name(gid: u32) -> Option<StrBuf> {
     let gr = unsafe { c::getgrgid(gid) };
     if gr.is_not_null() {
         return unsafe { Some(from_c_str(read(gr).gr_name)) };
