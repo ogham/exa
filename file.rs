@@ -31,6 +31,11 @@ impl<'a> File<'a> {
         return File { path: path, stat: stat, name: filename };
     }
 
+    pub fn ext(&self) -> Option<&'a str> {
+        let re = regex!(r"\.(.+)$");
+        re.captures(self.name).map(|caps| caps.at(1))
+    }
+
     pub fn is_dotfile(&self) -> bool {
         self.name.starts_with(".")
     }
