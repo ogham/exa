@@ -25,7 +25,7 @@ impl SortField {
             Name => files.sort_by(|a, b| a.name.cmp(&b.name)),
             Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             Extension => files.sort_by(|a, b| {
-                let exts = a.ext().cmp(&b.ext());
+                let exts = a.ext.cmp(&b.ext);
                 let names = a.name.cmp(&b.name);
                 lexical_ordering(exts, names)
             }),

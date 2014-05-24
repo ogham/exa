@@ -11,6 +11,7 @@ use unix::{get_user_name, get_group_name};
 // result around with the file for safe keeping.
 pub struct File<'a> {
     pub name: &'a str,
+    pub ext:  Option<&'a str>,
     pub path: &'a Path,
     pub stat: io::FileStat,
 }
@@ -28,12 +29,17 @@ impl<'a> File<'a> {
             Err(e) => fail!("Couldn't stat {}: {}", filename, e),
         };
 
-        return File { path: path, stat: stat, name: filename };
+        return File {
+            path: path,
+            stat: stat,
+            name: filename,
+            ext:  File::ext(filename),
+        };
     }
 
-    pub fn ext(&self) -> Option<&'a str> {
+    fn ext(name: &'a str) -> Option<&'a str> {
         let re = regex!(r"\.(.+)$");
-        re.captures(self.name).map(|caps| caps.at(1))
+        re.captures(name).map(|caps| caps.at(1))
     }
 
     pub fn is_dotfile(&self) -> bool {
