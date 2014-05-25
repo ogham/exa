@@ -1,3 +1,5 @@
+extern crate getopts;
+
 use file::File;
 use std::cmp::lexical_ordering;
 
@@ -9,6 +11,7 @@ pub struct Options {
     pub showInvisibles: bool,
     pub sortField: SortField,
     pub reverse: bool,
+    pub dirs: Vec<StrBuf>,
 }
 
 impl SortField {
@@ -35,6 +38,24 @@ impl SortField {
 }
 
 impl Options {
+    pub fn getopts(args: Vec<StrBuf>) -> Result<Options, getopts::Fail_> {
+        let opts = ~[
+            getopts::optflag("a", "all", "show dot-files"),
+            getopts::optflag("r", "reverse", "reverse order of files"),
+            getopts::optopt("s", "sort", "field to sort by", "WORD"),
+        ];
+
+        match getopts::getopts(args.tail(), opts) {
+            Err(f) => Err(f),
+            Ok(matches) => Ok(Options {
+                showInvisibles: matches.opt_present("all"),
+                reverse: matches.opt_present("reverse"),
+                sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
+                dirs: matches.free,
+            })
+        }
+    }
+
     pub fn sort(&self, files: &mut Vec<File>) {
         self.sortField.sort(files);
     }

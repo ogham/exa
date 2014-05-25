@@ -2,13 +2,12 @@
 extern crate regex;
 #[phase(syntax)] extern crate regex_macros;
 
-extern crate getopts;
 use std::os;
 use std::io::fs;
 
 use file::File;
 use column::defaultColumns;
-use options::{Options, SortField, Name};
+use options::Options;
 
 pub mod colours;
 pub mod column;
@@ -18,40 +17,28 @@ pub mod unix;
 pub mod options;
 
 fn main() {
-    let args: Vec<StrBuf> = os::args().iter()
+    let args = os::args().iter()
         .map(|x| x.to_strbuf())
         .collect();
-
-    let opts = ~[
-        getopts::optflag("a", "all", "show dot-files"),
-        getopts::optflag("r", "reverse", "reverse order of files"),
-        getopts::optopt("s", "sort", "field to sort by", "WORD"),
-    ];
-
-    let matches = match getopts::getopts(args.tail(), opts) {
-        Ok(m) => m,
-        Err(f) => fail!("Invalid options\n{}", f.to_err_msg()),
+    
+    match Options::getopts(args) {
+        Err(err) => println!("Invalid options:\n{}", err.to_err_msg()),
+        Ok(opts) => {
+            let strs = if opts.dirs.is_empty() {
+                vec!("./".to_strbuf())
+            }
+            else {
+                opts.dirs.clone()
+            };
+            
+            for dir in strs.move_iter() {
+                exa(&opts, Path::new(dir))
+            }
+        }
     };
-
-    let opts = Options {
-        showInvisibles: matches.opt_present("all"),
-        reverse: matches.opt_present("reverse"),
-        sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
-    };
-
-    let strs = if matches.free.is_empty() {
-        vec!("./".to_strbuf())
-    }
-    else {
-        matches.free.clone()
-    };
-
-    for dir in strs.move_iter() {
-        list(opts, Path::new(dir))
-    }
 }
 
-fn list(options: Options, path: Path) {
+fn exa(options: &Options, path: Path) {
     let paths = match fs::readdir(&path) {
         Ok(paths) => paths,
         Err(e) => fail!("readdir: {}", e),
@@ -64,7 +51,6 @@ fn list(options: Options, path: Path) {
     }
 
     let columns = defaultColumns();
-    let num_columns = columns.len();
 
     let table: Vec<Vec<StrBuf>> = files.iter()
         .filter(|&f| options.show(f))
@@ -75,7 +61,7 @@ fn list(options: Options, path: Path) {
         .map(|row| row.iter().map( |col| colours::strip_formatting(col).len() ).collect())
         .collect();
 
-    let maxes: Vec<uint> = range(0, num_columns)
+    let maxes: Vec<uint> = range(0, columns.len())
         .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
         .collect();
 
