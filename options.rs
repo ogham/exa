@@ -2,6 +2,7 @@ extern crate getopts;
 
 use file::File;
 use std::cmp::lexical_ordering;
+use column::{Column, Permissions, FileName, FileSize, User, Group};
 
 pub enum SortField {
     Name, Extension, Size
@@ -67,4 +68,15 @@ impl Options {
             !f.name.starts_with(".")
         }
     }
+
+    pub fn columns(&self) -> ~[Column] {
+        return ~[
+            Permissions,
+            FileSize(false),
+            User,
+            Group,
+            FileName,
+        ];
+    }
+
 }

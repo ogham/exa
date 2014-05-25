@@ -6,7 +6,6 @@ use std::os;
 use std::io::fs;
 
 use file::File;
-use column::defaultColumns;
 use options::Options;
 
 pub mod colours;
@@ -50,7 +49,7 @@ fn exa(options: &Options, path: Path) {
         files.reverse();
     }
 
-    let columns = defaultColumns();
+    let columns = options.columns();
 
     let table: Vec<Vec<StrBuf>> = files.iter()
         .filter(|&f| options.show(f))
@@ -58,7 +57,7 @@ fn exa(options: &Options, path: Path) {
         .collect();
 
     let lengths: Vec<Vec<uint>> = table.iter()
-        .map(|row| row.iter().map( |col| colours::strip_formatting(col).len() ).collect())
+        .map(|row| row.iter().map(|col| colours::strip_formatting(col).len() ).collect())
         .collect();
 
     let maxes: Vec<uint> = range(0, columns.len())

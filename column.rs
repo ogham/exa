@@ -5,13 +5,3 @@ pub enum Column {
     User,
     Group,
 }
-
-pub fn defaultColumns() -> ~[Column] {
-    return ~[
-        Permissions,
-        FileSize(false),
-        User,
-        Group,
-        FileName,
-    ];
-}
