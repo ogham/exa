@@ -82,7 +82,7 @@ fn list(options: Options, path: Path) {
                 print!(" ");
             }
             print!("{}", cell.as_slice());
-            for _ in range(cell.len(), *length) {
+            for _ in range(colours::strip_formatting(cell).len(), *length) {
                 print!(" ");
             }
         }

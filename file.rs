@@ -66,17 +66,19 @@ impl<'a> File<'a> {
     }
 
     fn file_size(&self, si: bool) -> StrBuf {
-        let sizeStr = if si {
-            formatBinaryBytes(self.stat.size)
+        // Don't report file sizes for directories. I've never looked
+        // at one of those numbers and gained any information from it.
+        if self.stat.kind == io::TypeDirectory {
+            Black.bold().paint("---")
         } else {
-            formatDecimalBytes(self.stat.size)
-        };
+            let sizeStr = if si {
+                formatBinaryBytes(self.stat.size)
+            } else {
+                formatDecimalBytes(self.stat.size)
+            };
 
-        return if self.stat.kind == io::TypeDirectory {
-            Green.normal()
-        } else {
-            Green.bold()
-        }.paint(sizeStr.as_slice());
+            return Green.bold().paint(sizeStr.as_slice());
+        }
     }
 
     fn type_char(&self) -> StrBuf {
