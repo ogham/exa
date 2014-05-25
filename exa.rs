@@ -64,25 +64,31 @@ fn list(options: Options, path: Path) {
     }
 
     let columns = defaultColumns();
+    let num_columns = columns.len();
+
     let table: Vec<Vec<StrBuf>> = files.iter()
         .filter(|&f| options.show(f))
         .map(|f| columns.iter().map(|c| f.display(c)).collect())
         .collect();
 
-    let maxes: Vec<uint> = range(0, columns.len())
-        .map(|n| table.iter().map(|row| colours::strip_formatting(row.get(n)).len()).max().unwrap())
+    let lengths: Vec<Vec<uint>> = table.iter()
+        .map(|row| row.iter().map( |col| colours::strip_formatting(col).len() ).collect())
         .collect();
 
-    for row in table.iter() {
+    let maxes: Vec<uint> = range(0, num_columns)
+        .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
+        .collect();
+
+    for (field_lengths, row) in lengths.iter().zip(table.iter()) {
         let mut first = true;
-        for (length, cell) in maxes.iter().zip(row.iter()) {
+        for ((column_length, cell), field_length) in maxes.iter().zip(row.iter()).zip(field_lengths.iter()) {
             if first {
                 first = false;
             } else {
                 print!(" ");
             }
             print!("{}", cell.as_slice());
-            for _ in range(colours::strip_formatting(cell).len(), *length) {
+            for _ in range(*field_length, *column_length) {
                 print!(" ");
             }
         }
