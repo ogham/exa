@@ -43,11 +43,11 @@ fn exa(options: &Options, path: Path) {
         Err(e) => fail!("readdir: {}", e),
     };
 
-    let files: Vec<File> = options.transform_files(paths.iter().map(|path| File::from_path(path)).collect());
+    let unordered_files: Vec<File> = paths.iter().map(|path| File::from_path(path)).collect();
+    let files: Vec<&File> = options.transform_files(&unordered_files);
     let columns = options.columns();
 
     let table: Vec<Vec<String>> = files.iter()
-        .filter(|&f| options.show(f))
         .map(|f| columns.iter().map(|c| f.display(c)).collect())
         .collect();
 

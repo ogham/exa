@@ -45,7 +45,7 @@ impl Options {
         }
     }
 
-    pub fn show(&self, f: &File) -> bool {
+    fn show(&self, f: &File) -> bool {
         if self.showInvisibles {
             true
         } else {
@@ -53,8 +53,10 @@ impl Options {
         }
     }
 
-    pub fn transform_files<'a>(&self, unordered_files: Vec<File<'a>>) -> Vec<File<'a>> {
-        let mut files = unordered_files.clone();
+    pub fn transform_files<'a>(&self, unordered_files: &'a Vec<File<'a>>) -> Vec<&'a File<'a>> {
+        let mut files: Vec<&'a File<'a>> = unordered_files.iter()
+            .filter(|&f| self.show(f))
+            .collect();
 
         match self.sortField {
             Name => files.sort_by(|a, b| a.name.cmp(&b.name)),
