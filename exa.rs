@@ -45,17 +45,16 @@ fn exa(options: &Options, path: Path) {
 
     let unordered_files: Vec<File> = paths.iter().map(|path| File::from_path(path)).collect();
     let files: Vec<&File> = options.transform_files(&unordered_files);
-    let columns = options.columns();
 
     let table: Vec<Vec<String>> = files.iter()
-        .map(|f| columns.iter().map(|c| f.display(c)).collect())
+        .map(|f| options.columns.iter().map(|c| f.display(c)).collect())
         .collect();
 
     let lengths: Vec<Vec<uint>> = table.iter()
         .map(|row| row.iter().map(|col| colours::strip_formatting(col).len()).collect())
         .collect();
 
-    let maxes: Vec<uint> = range(0, columns.len())
+    let maxes: Vec<uint> = range(0, options.columns.len())
         .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
         .collect();
 

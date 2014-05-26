@@ -13,6 +13,7 @@ pub struct Options {
     pub sortField: SortField,
     pub reverse: bool,
     pub dirs: Vec<String>,
+    pub columns: ~[Column],
 }
 
 impl SortField {
@@ -30,6 +31,7 @@ impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
         let opts = ~[
             getopts::optflag("a", "all", "show dot-files"),
+            getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
         ];
@@ -40,9 +42,20 @@ impl Options {
                 showInvisibles: matches.opt_present("all"),
                 reverse: matches.opt_present("reverse"),
                 sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
-                dirs: matches.free,
+                dirs: matches.free.clone(),
+                columns: Options::columns(matches),
             })
         }
+    }
+
+    fn columns(matches: getopts::Matches) -> ~[Column] {
+        return ~[
+            Permissions,
+            FileSize(matches.opt_present("binary")),
+            User,
+            Group,
+            FileName,
+        ];
     }
 
     fn show(&self, f: &File) -> bool {
@@ -74,15 +87,4 @@ impl Options {
 
         return files;
     }
-
-    pub fn columns(&self) -> ~[Column] {
-        return ~[
-            Permissions,
-            FileSize(false),
-            User,
-            Group,
-            FileName,
-        ];
-    }
-
 }
