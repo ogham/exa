@@ -55,7 +55,7 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
-    pub fn display(&self, column: &Column) -> StrBuf {
+    pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions(),
             FileName => self.file_colour().paint(self.name.as_slice()),
@@ -65,7 +65,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn file_size(&self, si: bool) -> StrBuf {
+    fn file_size(&self, si: bool) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
@@ -81,7 +81,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn type_char(&self) -> StrBuf {
+    fn type_char(&self) -> String {
         return match self.stat.kind {
             io::TypeFile => ".".to_strbuf(),
             io::TypeDirectory => Blue.paint("d"),
@@ -116,7 +116,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn permissions(&self) -> StrBuf {
+    fn permissions(&self) -> String {
         let bits = self.stat.perm;
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
@@ -133,7 +133,7 @@ impl<'a> File<'a> {
     }
 }
 
-fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> StrBuf {
+fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> String {
     if bits.contains(bit) {
         style.paint(other.as_slice())
     } else {

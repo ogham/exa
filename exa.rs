@@ -51,7 +51,7 @@ fn exa(options: &Options, path: Path) {
 
     let columns = options.columns();
 
-    let table: Vec<Vec<StrBuf>> = files.iter()
+    let table: Vec<Vec<String>> = files.iter()
         .filter(|&f| options.show(f))
         .map(|f| columns.iter().map(|c| f.display(c)).collect())
         .collect();

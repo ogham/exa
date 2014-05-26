@@ -16,7 +16,7 @@ pub struct StyleStruct {
 }
 
 impl Style {
-    pub fn paint(&self, input: &str) -> StrBuf {
+    pub fn paint(&self, input: &str) -> String {
         match *self {
             Plain => input.to_strbuf(),
             Foreground(c) => c.paint(input),
@@ -63,7 +63,7 @@ impl Style {
 }
 
 impl Colour {
-    pub fn paint(&self, input: &str) -> StrBuf {
+    pub fn paint(&self, input: &str) -> String {
         let re = format!("\x1B[{}m{}\x1B[0m", *self as int, input);
         return re.to_owned();
     }
@@ -85,7 +85,7 @@ impl Colour {
     }
 }
 
-pub fn strip_formatting(input: &StrBuf) -> StrBuf {
+pub fn strip_formatting(input: &String) -> String {
     let re = regex!("\x1B\\[.+?m");
     re.replace_all(input.as_slice(), "").to_owned()
 }

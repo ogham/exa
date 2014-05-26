@@ -12,11 +12,11 @@ pub struct Options {
     pub showInvisibles: bool,
     pub sortField: SortField,
     pub reverse: bool,
-    pub dirs: Vec<StrBuf>,
+    pub dirs: Vec<String>,
 }
 
 impl SortField {
-    pub fn from_word(word: StrBuf) -> SortField {
+    pub fn from_word(word: String) -> SortField {
         match word.as_slice() {
             "name" => Name,
             "size" => Size,
@@ -39,7 +39,7 @@ impl SortField {
 }
 
 impl Options {
-    pub fn getopts(args: Vec<StrBuf>) -> Result<Options, getopts::Fail_> {
+    pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
         let opts = ~[
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("r", "reverse", "reverse order of files"),

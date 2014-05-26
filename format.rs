@@ -6,7 +6,7 @@ static IEC_PREFIXES: &'static [&'static str] = &[
     "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"
 ];
 
-fn formatBytes(mut amount: u64, kilo: u64, prefixes: &[&str]) -> StrBuf {
+fn formatBytes(mut amount: u64, kilo: u64, prefixes: &[&str]) -> String {
     let mut prefix = 0;
     while amount > kilo {
         amount /= kilo;
@@ -15,10 +15,10 @@ fn formatBytes(mut amount: u64, kilo: u64, prefixes: &[&str]) -> StrBuf {
     format!("{}{}", amount, prefixes[prefix])
 }
 
-pub fn formatBinaryBytes(amount: u64) -> StrBuf {
+pub fn formatBinaryBytes(amount: u64) -> String {
     formatBytes(amount, 1024, IEC_PREFIXES)
 }
 
-pub fn formatDecimalBytes(amount: u64) -> StrBuf {
+pub fn formatDecimalBytes(amount: u64) -> String {
     formatBytes(amount, 1000, METRIC_PREFIXES)
 }
