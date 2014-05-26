@@ -21,8 +21,8 @@ impl SortField {
         match word.as_slice() {
             "name" => Name,
             "size" => Size,
-            "ext" => Extension,
-            _ => fail!("Invalid sorting order"),
+            "ext"  => Extension,
+            _      => fail!("Invalid sorting order"),
         }
     }
 }
@@ -65,7 +65,7 @@ impl Options {
         return columns;
     }
 
-    fn show(&self, f: &File) -> bool {
+    fn should_display(&self, f: &File) -> bool {
         if self.showInvisibles {
             true
         } else {
@@ -75,7 +75,7 @@ impl Options {
 
     pub fn transform_files<'a>(&self, unordered_files: &'a Vec<File<'a>>) -> Vec<&'a File<'a>> {
         let mut files: Vec<&'a File<'a>> = unordered_files.iter()
-            .filter(|&f| self.show(f))
+            .filter(|&f| self.should_display(f))
             .collect();
 
         match self.sortField {

@@ -1,12 +1,22 @@
 pub enum Colour {
+    // These are the standard numeric sequences.
+    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
     Black = 30, Red = 31, Green = 32, Yellow = 33, Blue = 34, Purple = 35, Cyan = 36, White = 37,
 }
+
+// There are only three different styles: plain (no formatting), only
+// a foreground colour, and a catch-all for anything more complicated
+// than that. It's technically possible to write other cases such as
+// "bold foreground", but probably isn't worth writing all the code.
 
 pub enum Style {
     Plain,
     Foreground(Colour),
     Style(StyleStruct),
 }
+
+// Having a struct inside an enum is currently unfinished in Rust, but
+// should be put in there when that feature is complete.
 
 pub struct StyleStruct {
     foreground: Colour,
@@ -28,8 +38,8 @@ impl Style {
                     };
                     let bo = if bold { "1;" } else { "" };
                     let un = if underline { "4;" } else { "" };
-                    let re = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_strbuf());
-                    return re.to_owned();
+                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_strbuf());
+                    return painted.to_owned();
                 }
             }
         }
@@ -39,30 +49,33 @@ impl Style {
 impl Style {
     pub fn bold(&self) -> Style {
       match *self {
-        Plain => Style(StyleStruct { foreground: White, background: None, bold: true, underline: false }),
-        Foreground(c) => Style(StyleStruct { foreground: c, background: None, bold: true, underline: false }),
-        Style(st) => Style(StyleStruct { foreground: st.foreground, background: st.background, bold: true, underline: false }),
+        Plain => Style(StyleStruct         { foreground: White,         background: None,          bold: true, underline: false }),
+        Foreground(c) => Style(StyleStruct { foreground: c,             background: None,          bold: true, underline: false }),
+        Style(st) => Style(StyleStruct     { foreground: st.foreground, background: st.background, bold: true, underline: false }),
       }
     }
 
     pub fn underline(&self) -> Style {
       match *self {
-        Plain => Style(StyleStruct { foreground: White, background: None, bold: false, underline: true }),
-        Foreground(c) => Style(StyleStruct { foreground: c, background: None, bold: false, underline: true }),
-        Style(st) => Style(StyleStruct { foreground: st.foreground, background: st.background, bold: false, underline: true }),
+        Plain => Style(StyleStruct         { foreground: White,         background: None,          bold: false, underline: true }),
+        Foreground(c) => Style(StyleStruct { foreground: c,             background: None,          bold: false, underline: true }),
+        Style(st) => Style(StyleStruct     { foreground: st.foreground, background: st.background, bold: false, underline: true }),
       }
     }
 
     pub fn on(&self, background: Colour) -> Style {
       match *self {
-        Plain => Style(StyleStruct { foreground: White, background: Some(background), bold: false, underline: false }),
-        Foreground(c) => Style(StyleStruct { foreground: c, background: Some(background), bold: false, underline: false }),
-        Style(st) => Style(StyleStruct { foreground: st.foreground, background: Some(background), bold: false, underline: false }),
+        Plain => Style(StyleStruct         { foreground: White,         background: Some(background), bold: false, underline: false }),
+        Foreground(c) => Style(StyleStruct { foreground: c,             background: Some(background), bold: false, underline: false }),
+        Style(st) => Style(StyleStruct     { foreground: st.foreground, background: Some(background), bold: false, underline: false }),
       }
     }
 }
 
 impl Colour {
+
+    // This is a short-cut so you don't have to use Blue.normal() just
+    // to turn Blue into a Style.
     pub fn paint(&self, input: &str) -> String {
         let re = format!("\x1B[{}m{}\x1B[0m", *self as int, input);
         return re.to_owned();

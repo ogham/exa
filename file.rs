@@ -3,7 +3,7 @@ use std::io;
 
 use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
 use column::{Column, Permissions, FileName, FileSize, User, Group};
-use format::{formatBinaryBytes, formatDecimalBytes};
+use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
 
 static MEDIA_TYPES: &'static [&'static str] = &[
@@ -15,9 +15,13 @@ static COMPRESSED_TYPES: &'static [&'static str] = &[
     "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
     "iso", "dmg", "tc", "rar", "par" ];
 
-// Each file is definitely going to get `stat`ted at least once, if
-// only to determine what kind of file it is, so carry the `stat`
-// result around with the file for safe keeping.
+// Instead of working with Rust's Paths, we have our own File object
+// that holds the Path and various cached information. Each file is
+// definitely going to have its filename used at least once, its stat
+// information queried at least once, and its file extension extracted
+// at least once, so we may as well carry around that information with
+// the actual path.
+
 pub struct File<'a> {
     pub name: &'a str,
     pub ext:  Option<&'a str>,
@@ -27,12 +31,13 @@ pub struct File<'a> {
 
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path) -> File<'a> {
+        // Getting the string from a filename fails whenever it's not
+        // UTF-8 representable - just assume it is for now.
         let filename: &str = path.filename_str().unwrap();
 
-        // We have to use lstat here instad of file.stat(), as it
-        // doesn't follow symbolic links. Otherwise, the stat() call
-        // will fail if it encounters a link that's target is
-        // non-existent.
+        // Use lstat here instead of file.stat(), as it doesn't follow
+        // symbolic links. Otherwise, the stat() call will fail if it
+        // encounters a link that's target is non-existent.
         let stat: io::FileStat = match fs::lstat(path) {
             Ok(stat) => stat,
             Err(e) => fail!("Couldn't stat {}: {}", filename, e),
@@ -47,7 +52,10 @@ impl<'a> File<'a> {
     }
 
     fn ext(name: &'a str) -> Option<&'a str> {
-        let re = regex!(r"\.(.+)$");
+        // The extension is the series of characters after a dot at
+        // the end of a filename. This deliberately also counts
+        // dotfiles - the ".git" folder has the extension "git".
+        let re = regex!(r"\.([^.]+)$");
         re.captures(name).map(|caps| caps.at(1))
     }
 
@@ -57,38 +65,41 @@ impl<'a> File<'a> {
 
     pub fn display(&self, column: &Column) -> String {
         match *column {
-            Permissions => self.permissions(),
+            Permissions => self.permissions_string(),
             FileName => self.file_colour().paint(self.name.as_slice()),
-            FileSize(si) => self.file_size(si),
+            FileSize(use_iec) => self.file_size(use_iec),
+
+            // Display the ID if the user/group doesn't exist, which
+            // usually means it was deleted but its files weren't.
             User => get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str()),
             Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
 
-    fn file_size(&self, si: bool) -> String {
+    fn file_size(&self, use_iec_prefixes: bool) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
             Black.bold().paint("---")
         } else {
-            let sizeStr = if si {
-                formatBinaryBytes(self.stat.size)
+            let size_str = if use_iec_prefixes {
+                format_IEC_bytes(self.stat.size)
             } else {
-                formatDecimalBytes(self.stat.size)
+                format_metric_bytes(self.stat.size)
             };
 
-            return Green.bold().paint(sizeStr.as_slice());
+            return Green.bold().paint(size_str.as_slice());
         }
     }
 
     fn type_char(&self) -> String {
         return match self.stat.kind {
-            io::TypeFile => ".".to_strbuf(),
-            io::TypeDirectory => Blue.paint("d"),
-            io::TypeNamedPipe => Yellow.paint("|"),
+            io::TypeFile         => ".".to_strbuf(),
+            io::TypeDirectory    => Blue.paint("d"),
+            io::TypeNamedPipe    => Yellow.paint("|"),
             io::TypeBlockSpecial => Purple.paint("s"),
-            io::TypeSymlink => Cyan.paint("l"),
-            _ => "?".to_owned(),
+            io::TypeSymlink      => Cyan.paint("l"),
+            _                    => "?".to_owned(),
         }
     }
 
@@ -116,38 +127,30 @@ impl<'a> File<'a> {
         }
     }
 
-    fn permissions(&self) -> String {
+    fn permissions_string(&self) -> String {
         let bits = self.stat.perm;
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
-            File::bit(bits, io::UserRead, "r", Yellow.bold()),
-            File::bit(bits, io::UserWrite, "w", Red.bold()),
-            File::bit(bits, io::UserExecute, "x", Green.bold().underline()),
-            File::bit(bits, io::GroupRead, "r", Yellow.normal()),
-            File::bit(bits, io::GroupWrite, "w", Red.normal()),
-            File::bit(bits, io::GroupExecute, "x", Green.normal()),
-            File::bit(bits, io::OtherRead, "r", Yellow.normal()),
-            File::bit(bits, io::OtherWrite, "w", Red.normal()),
-            File::bit(bits, io::OtherExecute, "x", Green.normal()),
+
+            // The first three are bold because they're the ones used
+            // most often.
+            File::permission_bit(bits, io::UserRead,     "r", Yellow.bold()),
+            File::permission_bit(bits, io::UserWrite,    "w", Red.bold()),
+            File::permission_bit(bits, io::UserExecute,  "x", Green.bold().underline()),
+            File::permission_bit(bits, io::GroupRead,    "r", Yellow.normal()),
+            File::permission_bit(bits, io::GroupWrite,   "w", Red.normal()),
+            File::permission_bit(bits, io::GroupExecute, "x", Green.normal()),
+            File::permission_bit(bits, io::OtherRead,    "r", Yellow.normal()),
+            File::permission_bit(bits, io::OtherWrite,   "w", Red.normal()),
+            File::permission_bit(bits, io::OtherExecute, "x", Green.normal()),
        );
     }
 
-    fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> String {
+    fn permission_bit(bits: io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> String {
         if bits.contains(bit) {
-            style.paint(other.as_slice())
+            style.paint(character.as_slice())
         } else {
             Black.bold().paint("-".as_slice())
         }
-    }
-}
-
-impl<'a> Clone for File<'a> {
-    fn clone(&self) -> File<'a> {
-        return File {
-            path: self.path,
-            stat: self.stat,
-            name: self.name.clone(),
-            ext:  self.ext.clone(),
-        };
     }
 }

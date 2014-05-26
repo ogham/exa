@@ -15,10 +15,10 @@ fn formatBytes(mut amount: u64, kilo: u64, prefixes: &[&str]) -> String {
     format!("{}{}", amount, prefixes[prefix])
 }
 
-pub fn formatBinaryBytes(amount: u64) -> String {
+pub fn format_IEC_bytes(amount: u64) -> String {
     formatBytes(amount, 1024, IEC_PREFIXES)
 }
 
-pub fn formatDecimalBytes(amount: u64) -> String {
+pub fn format_metric_bytes(amount: u64) -> String {
     formatBytes(amount, 1000, METRIC_PREFIXES)
 }
