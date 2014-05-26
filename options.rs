@@ -13,7 +13,7 @@ pub struct Options {
     pub sortField: SortField,
     pub reverse: bool,
     pub dirs: Vec<String>,
-    pub columns: ~[Column],
+    pub columns: Vec<Column>,
 }
 
 impl SortField {
@@ -32,6 +32,7 @@ impl Options {
         let opts = ~[
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
+            getopts::optflag("g", "group", "show group as well as user"),
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
         ];
@@ -48,14 +49,20 @@ impl Options {
         }
     }
 
-    fn columns(matches: getopts::Matches) -> ~[Column] {
-        return ~[
+    fn columns(matches: getopts::Matches) -> Vec<Column> {
+        let mut columns = vec![
             Permissions,
             FileSize(matches.opt_present("binary")),
             User,
-            Group,
-            FileName,
         ];
+
+        if matches.opt_present("group") {
+            columns.push(Group);
+        }
+
+        columns.push(FileName);
+
+        return columns;
     }
 
     fn show(&self, f: &File) -> bool {
