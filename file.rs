@@ -120,23 +120,34 @@ impl<'a> File<'a> {
         let bits = self.stat.perm;
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
-            bit(bits, io::UserRead, "r", Yellow.bold()),
-            bit(bits, io::UserWrite, "w", Red.bold()),
-            bit(bits, io::UserExecute, "x", Green.bold().underline()),
-            bit(bits, io::GroupRead, "r", Yellow.normal()),
-            bit(bits, io::GroupWrite, "w", Red.normal()),
-            bit(bits, io::GroupExecute, "x", Green.normal()),
-            bit(bits, io::OtherRead, "r", Yellow.normal()),
-            bit(bits, io::OtherWrite, "w", Red.normal()),
-            bit(bits, io::OtherExecute, "x", Green.normal()),
+            File::bit(bits, io::UserRead, "r", Yellow.bold()),
+            File::bit(bits, io::UserWrite, "w", Red.bold()),
+            File::bit(bits, io::UserExecute, "x", Green.bold().underline()),
+            File::bit(bits, io::GroupRead, "r", Yellow.normal()),
+            File::bit(bits, io::GroupWrite, "w", Red.normal()),
+            File::bit(bits, io::GroupExecute, "x", Green.normal()),
+            File::bit(bits, io::OtherRead, "r", Yellow.normal()),
+            File::bit(bits, io::OtherWrite, "w", Red.normal()),
+            File::bit(bits, io::OtherExecute, "x", Green.normal()),
        );
+    }
+
+    fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> String {
+        if bits.contains(bit) {
+            style.paint(other.as_slice())
+        } else {
+            Black.bold().paint("-".as_slice())
+        }
     }
 }
 
-fn bit(bits: io::FilePermission, bit: io::FilePermission, other: &'static str, style: Style) -> String {
-    if bits.contains(bit) {
-        style.paint(other.as_slice())
-    } else {
-        Black.bold().paint("-".as_slice())
+impl<'a> Clone for File<'a> {
+    fn clone(&self) -> File<'a> {
+        return File {
+            path: self.path,
+            stat: self.stat,
+            name: self.name.clone(),
+            ext:  self.ext.clone(),
+        };
     }
 }

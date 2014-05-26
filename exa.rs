@@ -43,12 +43,7 @@ fn exa(options: &Options, path: Path) {
         Err(e) => fail!("readdir: {}", e),
     };
 
-    let mut files = paths.iter().map(|path| File::from_path(path)).collect();
-    options.sort(&mut files);
-    if options.reverse {
-        files.reverse();
-    }
-
+    let files: Vec<File> = options.transform_files(paths.iter().map(|path| File::from_path(path)).collect());
     let columns = options.columns();
 
     let table: Vec<Vec<String>> = files.iter()
@@ -57,7 +52,7 @@ fn exa(options: &Options, path: Path) {
         .collect();
 
     let lengths: Vec<Vec<uint>> = table.iter()
-        .map(|row| row.iter().map(|col| colours::strip_formatting(col).len() ).collect())
+        .map(|row| row.iter().map(|col| colours::strip_formatting(col).len()).collect())
         .collect();
 
     let maxes: Vec<uint> = range(0, columns.len())
