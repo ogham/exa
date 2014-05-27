@@ -2,6 +2,6 @@ pub enum Column {
     Permissions,
     FileName,
     FileSize(bool),
-    User,
+    User(u64),
     Group,
 }

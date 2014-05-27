@@ -3,6 +3,7 @@ extern crate getopts;
 use file::File;
 use std::cmp::lexical_ordering;
 use column::{Column, Permissions, FileName, FileSize, User, Group};
+use unix::get_current_user_id;
 
 pub enum SortField {
     Name, Extension, Size
@@ -53,7 +54,7 @@ impl Options {
         let mut columns = vec![
             Permissions,
             FileSize(matches.opt_present("binary")),
-            User,
+            User(get_current_user_id()),
         ];
 
         if matches.opt_present("group") {

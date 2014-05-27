@@ -71,7 +71,11 @@ impl<'a> File<'a> {
 
             // Display the ID if the user/group doesn't exist, which
             // usually means it was deleted but its files weren't.
-            User => get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str()),
+            User(uid) => {
+                let style = if uid == self.stat.unstable.uid { Yellow.bold() } else { Plain };
+                let string = get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str());
+                return style.paint(string.as_slice());
+            },
             Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }

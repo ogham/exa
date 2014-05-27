@@ -31,6 +31,7 @@ mod c {
     extern {
         pub fn getpwuid(uid: c_int) -> *c_passwd;
         pub fn getgrgid(gid: uid_t) -> *c_group;
+        pub fn getuid() -> libc::c_int;
     }
 }
 
@@ -52,4 +53,8 @@ pub fn get_group_name(gid: u32) -> Option<String> {
     else {
         return None;
     }
+}
+
+pub fn get_current_user_id() -> u64 {
+    unsafe { c::getuid() as u64 }
 }
