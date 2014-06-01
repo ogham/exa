@@ -80,7 +80,7 @@ impl Options {
             .collect();
 
         match self.sortField {
-            Name => files.sort_by(|a, b| a.name.cmp(&b.name)),
+            Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
             Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             Extension => files.sort_by(|a, b| {
                 let exts = a.ext.cmp(&b.ext);

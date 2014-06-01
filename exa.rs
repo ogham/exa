@@ -14,6 +14,7 @@ pub mod format;
 pub mod file;
 pub mod unix;
 pub mod options;
+pub mod sort;
 
 fn main() {
     let args = os::args();

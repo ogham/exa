@@ -5,6 +5,7 @@ use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
 use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
+use sort::SortPart;
 
 static MEDIA_TYPES: &'static [&'static str] = &[
     "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
@@ -27,6 +28,7 @@ pub struct File<'a> {
     pub ext:  Option<&'a str>,
     pub path: &'a Path,
     pub stat: io::FileStat,
+    pub parts: Vec<SortPart<'a>>,
 }
 
 impl<'a> File<'a> {
@@ -44,10 +46,11 @@ impl<'a> File<'a> {
         };
 
         return File {
-            path: path,
-            stat: stat,
-            name: filename,
-            ext:  File::ext(filename),
+            path:  path,
+            stat:  stat,
+            name:  filename,
+            ext:   File::ext(filename),
+            parts: SortPart::split_into_parts(filename),
         };
     }
 
@@ -66,7 +69,7 @@ impl<'a> File<'a> {
     pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions_string(),
-            FileName => self.file_colour().paint(self.name.as_slice()),
+            FileName => self.file_colour().paint(self.name),
             FileSize(use_iec) => self.file_size(use_iec),
 
             // Display the ID if the user/group doesn't exist, which
