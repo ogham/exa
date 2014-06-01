@@ -1,3 +1,5 @@
+use std::ascii::StrAsciiExt;
+
 // This is an implementation of "natural sort order". See
 // http://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
 // for more information and examples. It tries to sort "9" before
@@ -9,16 +11,16 @@
 
 #[deriving(Eq, Ord, TotalEq, TotalOrd)]
 pub enum SortPart<'a> {
-    Stringular(&'a str),
-    Numeric(u32),
+    Numeric(u64),
+    Stringular(String),
 }
 
 impl<'a> SortPart<'a> {
     pub fn from_string(is_digit: bool, slice: &'a str) -> SortPart<'a> {
         if is_digit {
-            Numeric(from_str::<u32>(slice).unwrap())
+            Numeric(from_str::<u64>(slice).expect(slice.to_owned()))
         } else {
-            Stringular(slice)
+            Stringular(slice.to_ascii_lower())
         }
     }
 

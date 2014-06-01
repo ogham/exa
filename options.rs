@@ -4,6 +4,7 @@ use file::File;
 use std::cmp::lexical_ordering;
 use column::{Column, Permissions, FileName, FileSize, User, Group};
 use unix::get_current_user_id;
+use std::ascii::StrAsciiExt;
 
 pub enum SortField {
     Name, Extension, Size
@@ -83,8 +84,8 @@ impl Options {
             Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
             Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             Extension => files.sort_by(|a, b| {
-                let exts = a.ext.cmp(&b.ext);
-                let names = a.name.cmp(&b.name);
+                let exts = a.ext.map(|e| e.to_ascii_lower()).cmp(&b.ext.map(|e| e.to_ascii_lower()));
+                let names = a.name.to_ascii_lower().cmp(&b.name.to_ascii_lower());
                 lexical_ordering(exts, names)
             }),
         }
