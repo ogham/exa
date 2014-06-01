@@ -28,7 +28,7 @@ pub struct File<'a> {
     pub ext:  Option<&'a str>,
     pub path: &'a Path,
     pub stat: io::FileStat,
-    pub parts: Vec<SortPart<'a>>,
+    pub parts: Vec<SortPart>,
 }
 
 impl<'a> File<'a> {

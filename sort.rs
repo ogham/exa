@@ -10,13 +10,13 @@ use std::ascii::StrAsciiExt;
 // Vec<SortPart> will automatically have natural sorting.
 
 #[deriving(Eq, Ord, TotalEq, TotalOrd)]
-pub enum SortPart<'a> {
+pub enum SortPart {
     Numeric(u64),
     Stringular(String),
 }
 
-impl<'a> SortPart<'a> {
-    pub fn from_string(is_digit: bool, slice: &'a str) -> SortPart<'a> {
+impl SortPart {
+    pub fn from_string(is_digit: bool, slice: &str) -> SortPart {
         if is_digit {
             Numeric(from_str::<u64>(slice).expect(slice.to_owned()))
         } else {
@@ -27,7 +27,7 @@ impl<'a> SortPart<'a> {
     // The logic here is taken from my question at
     // http://stackoverflow.com/q/23969191/3484614
 
-    pub fn split_into_parts<'a>(input: &'a str) -> Vec<SortPart<'a>> {
+    pub fn split_into_parts(input: &str) -> Vec<SortPart> {
         let mut parts = vec![];
 
         if input.is_empty() {
