@@ -101,12 +101,12 @@ impl<'a> File<'a> {
 
     fn type_char(&self) -> String {
         return match self.stat.kind {
-            io::TypeFile         => ".".to_strbuf(),
+            io::TypeFile         => ".".to_string(),
             io::TypeDirectory    => Blue.paint("d"),
             io::TypeNamedPipe    => Yellow.paint("|"),
             io::TypeBlockSpecial => Purple.paint("s"),
             io::TypeSymlink      => Cyan.paint("l"),
-            _                    => "?".to_owned(),
+            _                    => "?".to_string(),
         }
     }
 

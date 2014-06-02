@@ -26,7 +26,7 @@ fn main() {
             // Default to listing the current directory when a target
             // isn't specified (mimic the behaviour of ls)
             let strs = if opts.dirs.is_empty() {
-                vec!(".".to_strbuf())
+                vec!(".".to_string())
             }
             else {
                 opts.dirs.clone()

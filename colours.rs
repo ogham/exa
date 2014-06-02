@@ -28,18 +28,18 @@ pub struct StyleStruct {
 impl Style {
     pub fn paint(&self, input: &str) -> String {
         match *self {
-            Plain => input.to_strbuf(),
+            Plain => input.to_string(),
             Foreground(c) => c.paint(input),
             Style(s) => match s {
                 StyleStruct { foreground, background, bold, underline } => {
                     let bg = match background {
                         Some(c) => format!("{};", c as int + 10),
-                        None => "".to_strbuf()
+                        None => "".to_string()
                     };
                     let bo = if bold { "1;" } else { "" };
                     let un = if underline { "4;" } else { "" };
-                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_strbuf());
-                    return painted.to_owned();
+                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_string());
+                    return painted.to_string();
                 }
             }
         }
@@ -78,7 +78,7 @@ impl Colour {
     // to turn Blue into a Style.
     pub fn paint(&self, input: &str) -> String {
         let re = format!("\x1B[{}m{}\x1B[0m", *self as int, input);
-        return re.to_owned();
+        return re.to_string();
     }
 
     pub fn underline(&self) -> Style {
@@ -100,5 +100,5 @@ impl Colour {
 
 pub fn strip_formatting(input: &String) -> String {
     let re = regex!("\x1B\\[.+?m");
-    re.replace_all(input.as_slice(), "").to_owned()
+    re.replace_all(input.as_slice(), "").to_string()
 }

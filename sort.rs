@@ -9,7 +9,7 @@ use std::ascii::StrAsciiExt;
 // comparing based on those parts. A SortPart derives TotalOrd, so a
 // Vec<SortPart> will automatically have natural sorting.
 
-#[deriving(Eq, Ord, TotalEq, TotalOrd)]
+#[deriving(Eq, Ord, PartialEq, PartialOrd)]
 pub enum SortPart {
     Numeric(u64),
     Stringular(String),
@@ -18,7 +18,7 @@ pub enum SortPart {
 impl SortPart {
     pub fn from_string(is_digit: bool, slice: &str) -> SortPart {
         if is_digit {
-            Numeric(from_str::<u64>(slice).expect(slice.to_owned()))
+            Numeric(from_str::<u64>(slice).expect(slice.to_string()))
         } else {
             Stringular(slice.to_ascii_lower())
         }
