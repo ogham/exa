@@ -89,13 +89,13 @@ impl<'a> File<'a> {
         if self.stat.kind == io::TypeDirectory {
             Black.bold().paint("-")
         } else {
-            let size_str = if use_iec_prefixes {
+            let (size, suffix) = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
             } else {
                 format_metric_bytes(self.stat.size)
             };
 
-            return Green.bold().paint(size_str.as_slice());
+            return format!("{}{}", Green.bold().paint(size.as_slice()), Green.paint(suffix.as_slice()));
         }
     }
 
