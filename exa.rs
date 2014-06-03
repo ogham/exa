@@ -74,16 +74,13 @@ fn exa(options: &Options, path: Path) {
 
     for (field_lengths, row) in lengths.iter().zip(table.iter()) {
         let mut first = true;
-        for ((column_length, cell), field_length) in column_widths.iter().zip(row.iter()).zip(field_lengths.iter()) {
+        for (((column_length, cell), field_length), column) in column_widths.iter().zip(row.iter()).zip(field_lengths.iter()).zip(options.columns.iter()) {  // this is getting messy
             if first {
                 first = false;
             } else {
                 print!(" ");
             }
-            print!("{}", cell.as_slice());
-            for _ in range(*field_length, *column_length) {
-                print!(" ");
-            }
+            print!("{}", column.alignment().pad_string(cell, *field_length, *column_length));
         }
         print!("\n");
     }

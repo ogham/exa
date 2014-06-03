@@ -87,7 +87,7 @@ impl<'a> File<'a> {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
-            Black.bold().paint("---")
+            Black.bold().paint("-")
         } else {
             let size_str = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
