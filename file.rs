@@ -1,7 +1,7 @@
 use std::io::fs;
 use std::io;
 
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
+use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
@@ -66,6 +66,10 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
+    fn is_tmpfile(&self) -> bool {
+        self.name.ends_with("~") || (self.name.starts_with("#") && self.name.ends_with("#"))
+    }
+
     pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions_string(),
@@ -112,13 +116,13 @@ impl<'a> File<'a> {
 
     fn file_colour(&self) -> Style {
         if self.stat.kind == io::TypeDirectory {
-            Blue.normal()
+            Blue.bold()
         }
         else if self.stat.perm.contains(io::UserExecute) {
             Green.bold()
         }
-        else if self.name.ends_with("~") {
-            Black.bold()
+        else if self.is_tmpfile() {
+            Fixed(244).normal()  // midway between white and black - should show up as grey on all terminals
         }
         else if self.name.starts_with("README") {
             Yellow.bold().underline()

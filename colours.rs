@@ -1,7 +1,49 @@
+// Provide standard values for the eight standard colours and custom
+// values for up to 256. There are terminals that can do the full RGB
+// spectrum, but for something as simple as discerning file types this
+// doesn't really seem worth it.
+
+// Bear in mind that the first eight (and their bold variants) are
+// user-definable and can look different on different terminals, but
+// the other 256 have their values fixed. Prefer using a fixed grey,
+// such as Fixed(244), to bold black, as bold black looks really weird
+// on some terminals.
+
 pub enum Colour {
-    // These are the standard numeric sequences.
-    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-    Black = 30, Red = 31, Green = 32, Yellow = 33, Blue = 34, Purple = 35, Cyan = 36, White = 37,
+    Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
+}
+
+// These are the standard numeric sequences.
+// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+
+impl Colour {
+    fn foreground_code(&self) -> String {
+        match *self {
+            Black => "30".to_string(),
+            Red => "31".to_string(),
+            Green => "32".to_string(),
+            Yellow => "33".to_string(),
+            Blue => "34".to_string(),
+            Purple => "35".to_string(),
+            Cyan => "36".to_string(),
+            White => "37".to_string(),
+            Fixed(num) => format!("38;5;{}", num),
+        }
+    }
+
+    fn background_code(&self) -> String {
+        match *self {
+            Black => "40".to_string(),
+            Red => "41".to_string(),
+            Green => "42".to_string(),
+            Yellow => "44".to_string(),
+            Blue => "44".to_string(),
+            Purple => "45".to_string(),
+            Cyan => "46".to_string(),
+            White => "47".to_string(),
+            Fixed(num) => format!("48;5;{}", num),
+        }
+    }        
 }
 
 // There are only three different styles: plain (no formatting), only
@@ -33,12 +75,12 @@ impl Style {
             Style(s) => match s {
                 StyleStruct { foreground, background, bold, underline } => {
                     let bg = match background {
-                        Some(c) => format!("{};", c as int + 10),
+                        Some(c) => format!("{};", c.background_code()),
                         None => "".to_string()
                     };
                     let bo = if bold { "1;" } else { "" };
                     let un = if underline { "4;" } else { "" };
-                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground as int, input.to_string());
+                    let painted = format!("\x1B[{}{}{}{}m{}\x1B[0m", bo, un, bg, foreground.foreground_code(), input.to_string());
                     return painted.to_string();
                 }
             }
@@ -73,11 +115,13 @@ impl Style {
 }
 
 impl Colour {
-
     // This is a short-cut so you don't have to use Blue.normal() just
-    // to turn Blue into a Style.
+    // to turn Blue into a Style. Annoyingly, this means that Blue and
+    // Blue.normal() aren't of the same type, but this hasn't been an
+    // issue so far.
+    
     pub fn paint(&self, input: &str) -> String {
-        let re = format!("\x1B[{}m{}\x1B[0m", *self as int, input);
+        let re = format!("\x1B[{}m{}\x1B[0m", self.foreground_code(), input);
         return re.to_string();
     }
 
