@@ -15,6 +15,7 @@ fn format_bytes(mut amount: u64, kilo: u64, prefixes: &[&str]) -> (String, Strin
     return (format!("{}", amount), prefixes[prefix].to_string());
 }
 
+#[allow(non_snake_case_functions)]
 pub fn format_IEC_bytes(amount: u64) -> (String, String) {
     format_bytes(amount, 1024, IEC_PREFIXES)
 }
