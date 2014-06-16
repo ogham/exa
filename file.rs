@@ -69,6 +69,21 @@ impl<'a> File<'a> {
     fn is_tmpfile(&self) -> bool {
         self.name.ends_with("~") || (self.name.starts_with("#") && self.name.ends_with("#"))
     }
+    
+    fn with_extension(&self, newext: &'static str) -> String {
+        format!("{}.{}", self.path.filestem_str().unwrap(), newext)
+    }
+    
+    fn get_source_files(&self) -> Vec<String> {
+        match self.ext {
+            Some("class") => vec![self.with_extension("java")],  // Java
+            Some("elc") => vec![self.name.chop()],  // Emacs Lisp
+            Some("hi") => vec![self.with_extension("hs")],  // Haskell
+            Some("o") => vec![self.with_extension("c"), self.with_extension("cpp")],  // C, C++
+            Some("pyc") => vec![self.name.chop()],  // Python
+            _ => vec![],
+        }
+    }
 
     pub fn display(&self, column: &Column) -> String {
         match *column {
@@ -134,7 +149,16 @@ impl<'a> File<'a> {
             Red.normal()
         }
         else {
-            Plain
+            let source_files = self.get_source_files();
+            if source_files.len() == 0 {
+                Plain
+            }
+            else if source_files.iter().any(|filename| Path::new(format!("{}/{}", self.path.dirname_str().unwrap(), filename)).exists()) {
+                Fixed(244).normal()
+            }
+            else {
+                Fixed(137).normal()
+            }
         }
     }
 
@@ -163,5 +187,15 @@ impl<'a> File<'a> {
         } else {
             Black.bold().paint("-".as_slice())
         }
+    }
+}
+
+trait Chop {
+    fn chop(&self) -> String;
+}
+
+impl<'a> Chop for &'a str {
+    fn chop(&self) -> String {
+        self.slice_to(self.len() - 1).to_string()
     }
 }
