@@ -7,14 +7,35 @@ use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
 use sort::SortPart;
 
-static MEDIA_TYPES: &'static [&'static str] = &[
+static IMAGE_TYPES: &'static [&'static str] = &[
     "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
     "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-    "svg", "pdf", "stl", "eps", "dvi", "ps" ];
+    "svg", "pdf", "stl", "eps", "dvi", "ps", "cbr",
+    "cbz", "xpm", "ico" ];
+
+static VIDEO_TYPES: &'static [&'static str] = &[
+    "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
+     "mpg", "ogm", "ogv", "vob", "wmv" ];
+
+static MUSIC_TYPES: &'static [&'static str] = &[
+    "aac", "m4a", "mp3", "ogg" ];
+
+static MUSIC_LOSSLESS: &'static [&'static str] = &[
+    "alac", "ape", "flac", "wav" ];
 
 static COMPRESSED_TYPES: &'static [&'static str] = &[
     "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
     "iso", "dmg", "tc", "rar", "par" ];
+
+static DOCUMENT_TYPES: &'static [&'static str] = &[
+    "djvu", "doc", "docx", "eml", "eps", "odp", "ods",
+    "odt", "pdf", "ppt", "pptx", "xls", "xlsx" ];
+
+static TEMP_TYPES: &'static [&'static str] = &[
+    "tmp", "swp", "swo", "swn", "bak" ];
+
+static CRYPTO_TYPES: &'static [&'static str] = &[
+    "asc", "gpg", "sig", "signature", "pgp" ];
 
 // Instead of working with Rust's Paths, we have our own File object
 // that holds the Path and various cached information. Each file is
@@ -74,6 +95,12 @@ impl<'a> File<'a> {
         format!("{}.{}", self.path.filestem_str().unwrap(), newext)
     }
     
+    // Highlight the compiled versions of files. Some of them, like .o,
+    // get special highlighting when they're alone because there's no
+    // point in existing without their source. Others can be perfectly
+    // content without their source files, such as how .js is valid
+    // without a .coffee.
+    
     fn get_source_files(&self) -> Vec<String> {
         match self.ext {
             Some("class") => vec![self.with_extension("java")],  // Java
@@ -84,7 +111,23 @@ impl<'a> File<'a> {
             _ => vec![],
         }
     }
+    
+    fn get_source_files_usual(&self) -> Vec<String> {
+        match self.ext {
+            Some("js") => vec![self.with_extension("coffee"), self.with_extension("ts")],  // CoffeeScript, TypeScript
+            Some("css") => vec![self.with_extension("sass"), self.with_extension("less")],  // SASS, Less
+            
+            Some("aux") => vec![self.with_extension("tex")],  // TeX: auxiliary file
+            Some("bbl") => vec![self.with_extension("tex")],  // BibTeX bibliography file
+            Some("blg") => vec![self.with_extension("tex")],  // BibTeX log file
+            Some("lof") => vec![self.with_extension("tex")],  // list of figures
+            Some("log") => vec![self.with_extension("tex")],  // TeX log file
+            Some("lot") => vec![self.with_extension("tex")],  // list of tables
+            Some("toc") => vec![self.with_extension("tex")],  // table of contents
 
+            _ => vec![],
+        }
+    }
     pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions_string(),
@@ -142,16 +185,40 @@ impl<'a> File<'a> {
         else if self.name.starts_with("README") {
             Yellow.bold().underline()
         }
-        else if self.ext.is_some() && MEDIA_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
-            Purple.normal()
+        else if self.ext.is_some() && IMAGE_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(133).normal()
+        }
+        else if self.ext.is_some() && VIDEO_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(135).normal()
+        }
+        else if self.ext.is_some() && MUSIC_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(92).normal()
+        }
+        else if self.ext.is_some() && MUSIC_LOSSLESS.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(93).normal()
+        }
+        else if self.ext.is_some() && CRYPTO_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(109).normal()
+        }
+        else if self.ext.is_some() && DOCUMENT_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(105).normal()
         }
         else if self.ext.is_some() && COMPRESSED_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
             Red.normal()
         }
+        else if self.ext.is_some() && TEMP_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
+            Fixed(244).normal()
+        }
         else {
             let source_files = self.get_source_files();
             if source_files.len() == 0 {
-                Plain
+                let source_files_usual = self.get_source_files_usual();
+                if source_files_usual.iter().any(|filename| Path::new(format!("{}/{}", self.path.dirname_str().unwrap(), filename)).exists()) {
+                    Fixed(244).normal()
+                }
+                else {
+                    Plain
+                }
             }
             else if source_files.iter().any(|filename| Path::new(format!("{}/{}", self.path.dirname_str().unwrap(), filename)).exists()) {
                 Fixed(244).normal()
