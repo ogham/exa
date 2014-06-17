@@ -7,7 +7,7 @@ use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
 use sort::SortPart;
 use dir::Dir;
-use filetype::FileType;
+use filetype::HasType;
 
 // Instead of working with Rust's Paths, we have our own File object
 // that holds the Path and various cached information. Each file is
@@ -143,7 +143,7 @@ impl<'a> File<'a> {
     }
 
     fn file_colour(&self) -> Style {
-        FileType::from_file(self).style()
+        self.get_type().style()
     }
 
     fn permissions_string(&self) -> String {

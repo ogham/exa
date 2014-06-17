@@ -55,16 +55,22 @@ impl FileType {
             Compiled => Fixed(137).normal(),
         }
     }
+}
 
-    pub fn from_file(file: &File) -> FileType {
-        if file.stat.kind == io::TypeDirectory {
+pub trait HasType {
+    fn get_type(&self) -> FileType;
+}
+
+impl<'a> HasType for File<'a> {
+    fn get_type(&self) -> FileType {
+        if self.stat.kind == io::TypeDirectory {
             return Directory;
         }
-        else if file.stat.perm.contains(io::UserExecute) {
+        else if self.stat.perm.contains(io::UserExecute) {
             return Executable;
         }
-        else if file.ext.is_some() {
-            let ext = file.ext.unwrap();
+        else if self.ext.is_some() {
+            let ext = self.ext.unwrap();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;
             }
@@ -86,26 +92,26 @@ impl FileType {
             else if COMPRESSED_TYPES.iter().any(|&s| s == ext) {
                 return Compressed;
             }
-            else if file.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == ext) {
+            else if self.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == ext) {
                 return Temp;
             }
         }
 
-        if file.name.starts_with("README") {
+        if self.name.starts_with("README") {
             return Immediate;
         }
 
-        let source_files = file.get_source_files();
+        let source_files = self.get_source_files();
         if source_files.len() == 0 {
-            let source_files_usual = file.get_source_files_usual();
-            if source_files_usual.iter().any(|path| file.dir.contains(path)) {
+            let source_files_usual = self.get_source_files_usual();
+            if source_files_usual.iter().any(|path| self.dir.contains(path)) {
                 Temp
             }
             else {
                 Normal
             }
         }
-        else if source_files.iter().any(|path| file.dir.contains(path)) {
+        else if source_files.iter().any(|path| self.dir.contains(path)) {
             Temp
         }
         else {
