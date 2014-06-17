@@ -13,6 +13,7 @@ pub mod column;
 pub mod dir;
 pub mod format;
 pub mod file;
+pub mod filetype;
 pub mod unix;
 pub mod options;
 pub mod sort;
