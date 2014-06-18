@@ -15,7 +15,7 @@ static IMAGE_TYPES: &'static [&'static str] = &[
 
 static VIDEO_TYPES: &'static [&'static str] = &[
     "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
-     "mpg", "ogm", "ogv", "vob", "wmv" ];
+    "mpg", "ogm", "ogv", "vob", "wmv" ];
 
 static MUSIC_TYPES: &'static [&'static str] = &[
     "aac", "m4a", "mp3", "ogg" ];
@@ -36,6 +36,9 @@ static TEMP_TYPES: &'static [&'static str] = &[
 
 static CRYPTO_TYPES: &'static [&'static str] = &[
     "asc", "gpg", "sig", "signature", "pgp" ];
+
+static COMPILED_TYPES: &'static [&'static str] = &[
+    "class", "elc", "hi", "o", "pyc" ];
 
 impl FileType {
     pub fn style(&self) -> Style {
@@ -69,6 +72,9 @@ impl<'a> HasType for File<'a> {
         else if self.stat.perm.contains(io::UserExecute) {
             return Executable;
         }
+        else if self.name.starts_with("README") {
+            return Immediate;
+        }
         else if self.ext.is_some() {
             let ext = self.ext.unwrap();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
@@ -95,28 +101,24 @@ impl<'a> HasType for File<'a> {
             else if self.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == ext) {
                 return Temp;
             }
-        }
-
-        if self.name.starts_with("README") {
-            return Immediate;
-        }
-
-        let source_files = self.get_source_files();
-        if source_files.len() == 0 {
-            let source_files_usual = self.get_source_files_usual();
-            if source_files_usual.iter().any(|path| self.dir.contains(path)) {
-                Temp
+            
+            let source_files = self.get_source_files();
+            if source_files.len() == 0 {
+                return Normal;
+            }
+            else if source_files.iter().any(|path| self.dir.contains(path)) {
+                return Temp;
             }
             else {
-                Normal
+                if COMPILED_TYPES.iter().any(|&s| s == ext) {
+                    return Compiled;
+                }
+                else {
+                    return Normal;
+                }
             }
         }
-        else if source_files.iter().any(|path| self.dir.contains(path)) {
-            Temp
-        }
-        else {
-            Compiled
-        }
+        return Normal;  // no filetype
     }
 }
 

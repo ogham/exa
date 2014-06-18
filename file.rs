@@ -78,12 +78,6 @@ impl<'a> File<'a> {
             Some("hi") => vec![self.path.with_extension("hs")],  // Haskell
             Some("o") => vec![self.path.with_extension("c"), self.path.with_extension("cpp")],  // C, C++
             Some("pyc") => vec![self.path.with_extension("py")],  // Python
-            _ => vec![],
-        }
-    }
-    
-    pub fn get_source_files_usual(&self) -> Vec<Path> {
-        match self.ext {
             Some("js") => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
             Some("css") => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
             
