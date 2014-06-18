@@ -18,7 +18,11 @@ pub enum SortPart {
 impl SortPart {
     pub fn from_string(is_digit: bool, slice: &str) -> SortPart {
         if is_digit {
-            Numeric(from_str::<u64>(slice).expect(slice))
+            // numbers too big for a u64 fall back into strings.
+            match from_str::<u64>(slice) {
+                Some(num) => Numeric(num),
+                None => Stringular(slice.to_string()),
+            }
         } else {
             Stringular(slice.to_ascii_lower())
         }
@@ -48,4 +52,47 @@ impl SortPart {
         parts.push(SortPart::from_string(is_digit, input.slice_from(start)));
         parts
     }
+}
+
+#[test]
+fn test_numeric() {
+    let bits = SortPart::split_into_parts("123456789".as_slice());
+    assert!(bits == vec![ Numeric(123456789) ]);
+}
+
+
+#[test]
+fn test_stringular() {
+    let bits = SortPart::split_into_parts("toothpaste".as_slice());
+    assert!(bits == vec![ Stringular("toothpaste".to_string()) ]);
+}
+
+#[test]
+fn test_empty() {
+    let bits = SortPart::split_into_parts("".as_slice());
+    assert!(bits == vec![]);
+}
+
+#[test]
+fn test_one() {
+    let bits = SortPart::split_into_parts("123abc123".as_slice());
+    assert!(bits == vec![ Numeric(123), Stringular("abc".to_string()), Numeric(123) ]);
+}
+
+#[test]
+fn test_two() {
+    let bits = SortPart::split_into_parts("final version 3.pdf".as_slice());
+    assert!(bits == vec![ Stringular("final version ".to_string()), Numeric(3), Stringular(".pdf".to_string()) ]);
+}
+
+#[test]
+fn test_huge_number() {
+    let bits = SortPart::split_into_parts("9999999999999999999999999999999999999999999999999999999".as_slice());
+    assert!(bits == vec![ Stringular("9999999999999999999999999999999999999999999999999999999".to_string()) ]);
+}
+
+#[test]
+fn test_case() {
+    let bits = SortPart::split_into_parts("123ABC123".as_slice());
+    assert!(bits == vec![ Numeric(123), Stringular("abc".to_string()), Numeric(123) ]);
 }
