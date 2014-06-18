@@ -18,7 +18,7 @@ pub enum SortPart {
 impl SortPart {
     pub fn from_string(is_digit: bool, slice: &str) -> SortPart {
         if is_digit {
-            Numeric(from_str::<u64>(slice).expect(slice.to_string()))
+            Numeric(from_str::<u64>(slice).expect(slice))
         } else {
             Stringular(slice.to_ascii_lower())
         }

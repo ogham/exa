@@ -31,7 +31,7 @@ impl SortField {
 
 impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
-        let opts = ~[
+        let opts = [
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("g", "group", "show group as well as user"),

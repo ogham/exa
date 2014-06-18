@@ -1,6 +1,6 @@
 #![feature(phase)]
 extern crate regex;
-#[phase(syntax)] extern crate regex_macros;
+#[phase(plugin)] extern crate regex_macros;
 
 use std::os;
 
@@ -22,7 +22,7 @@ fn main() {
     let args = os::args();
     
     match Options::getopts(args) {
-        Err(err) => println!("Invalid options:\n{}", err.to_err_msg()),
+        Err(err) => println!("Invalid options:\n{}", err),
         Ok(opts) => {
 
             // Default to listing the current directory when a target
