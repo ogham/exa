@@ -3,15 +3,17 @@ extern crate regex;
 #[phase(syntax)] extern crate regex_macros;
 
 use std::os;
-use std::io::fs;
 
 use file::File;
+use dir::Dir;
 use options::Options;
 
 pub mod colours;
 pub mod column;
+pub mod dir;
 pub mod format;
 pub mod file;
+pub mod filetype;
 pub mod unix;
 pub mod options;
 pub mod sort;
@@ -40,13 +42,9 @@ fn main() {
 }
 
 fn exa(options: &Options, path: Path) {
-    let paths = match fs::readdir(&path) {
-        Ok(paths) => paths,
-        Err(e) => fail!("readdir: {}", e),
-    };
-
-    let unordered_files: Vec<File> = paths.iter().map(|path| File::from_path(path)).collect();
-    let files: Vec<&File> = options.transform_files(&unordered_files);
+    let dir = Dir::readdir(path);
+    let unsorted_files = dir.files();
+    let files: Vec<&File> = options.transform_files(&unsorted_files);
 
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of

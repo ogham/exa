@@ -1,20 +1,13 @@
+use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use std::io::fs;
 use std::io;
 
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::{get_user_name, get_group_name};
 use sort::SortPart;
-
-static MEDIA_TYPES: &'static [&'static str] = &[
-    "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
-    "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-    "svg", "pdf", "stl", "eps", "dvi", "ps" ];
-
-static COMPRESSED_TYPES: &'static [&'static str] = &[
-    "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
-    "iso", "dmg", "tc", "rar", "par" ];
+use dir::Dir;
+use filetype::HasType;
 
 // Instead of working with Rust's Paths, we have our own File object
 // that holds the Path and various cached information. Each file is
@@ -25,6 +18,7 @@ static COMPRESSED_TYPES: &'static [&'static str] = &[
 
 pub struct File<'a> {
     pub name: &'a str,
+    pub dir:  &'a Dir<'a>,
     pub ext:  Option<&'a str>,
     pub path: &'a Path,
     pub stat: io::FileStat,
@@ -32,7 +26,7 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub fn from_path(path: &'a Path) -> File<'a> {
+    pub fn from_path(path: &'a Path, parent: &'a Dir) -> File<'a> {
         // Getting the string from a filename fails whenever it's not
         // UTF-8 representable - just assume it is for now.
         let filename: &str = path.filename_str().unwrap();
@@ -47,6 +41,7 @@ impl<'a> File<'a> {
 
         return File {
             path:  path,
+            dir:   parent,
             stat:  stat,
             name:  filename,
             ext:   File::ext(filename),
@@ -66,25 +61,37 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
-    fn is_tmpfile(&self) -> bool {
+    pub fn is_tmpfile(&self) -> bool {
         self.name.ends_with("~") || (self.name.starts_with("#") && self.name.ends_with("#"))
     }
+        
+    // Highlight the compiled versions of files. Some of them, like .o,
+    // get special highlighting when they're alone because there's no
+    // point in existing without their source. Others can be perfectly
+    // content without their source files, such as how .js is valid
+    // without a .coffee.
     
-    fn with_extension(&self, newext: &'static str) -> String {
-        format!("{}.{}", self.path.filestem_str().unwrap(), newext)
-    }
-    
-    fn get_source_files(&self) -> Vec<String> {
+    pub fn get_source_files(&self) -> Vec<Path> {
         match self.ext {
-            Some("class") => vec![self.with_extension("java")],  // Java
-            Some("elc") => vec![self.name.chop()],  // Emacs Lisp
-            Some("hi") => vec![self.with_extension("hs")],  // Haskell
-            Some("o") => vec![self.with_extension("c"), self.with_extension("cpp")],  // C, C++
-            Some("pyc") => vec![self.name.chop()],  // Python
+            Some("class") => vec![self.path.with_extension("java")],  // Java
+            Some("elc") => vec![self.path.with_extension("el")],  // Emacs Lisp
+            Some("hi") => vec![self.path.with_extension("hs")],  // Haskell
+            Some("o") => vec![self.path.with_extension("c"), self.path.with_extension("cpp")],  // C, C++
+            Some("pyc") => vec![self.path.with_extension("py")],  // Python
+            Some("js") => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
+            Some("css") => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
+            
+            Some("aux") => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
+            Some("bbl") => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
+            Some("blg") => vec![self.path.with_extension("tex")],  // BibTeX log file
+            Some("lof") => vec![self.path.with_extension("tex")],  // list of figures
+            Some("log") => vec![self.path.with_extension("tex")],  // TeX log file
+            Some("lot") => vec![self.path.with_extension("tex")],  // list of tables
+            Some("toc") => vec![self.path.with_extension("tex")],  // table of contents
+
             _ => vec![],
         }
     }
-
     pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions_string(),
@@ -130,36 +137,7 @@ impl<'a> File<'a> {
     }
 
     fn file_colour(&self) -> Style {
-        if self.stat.kind == io::TypeDirectory {
-            Blue.bold()
-        }
-        else if self.stat.perm.contains(io::UserExecute) {
-            Green.bold()
-        }
-        else if self.is_tmpfile() {
-            Fixed(244).normal()  // midway between white and black - should show up as grey on all terminals
-        }
-        else if self.name.starts_with("README") {
-            Yellow.bold().underline()
-        }
-        else if self.ext.is_some() && MEDIA_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
-            Purple.normal()
-        }
-        else if self.ext.is_some() && COMPRESSED_TYPES.iter().any(|&s| s == self.ext.unwrap()) {
-            Red.normal()
-        }
-        else {
-            let source_files = self.get_source_files();
-            if source_files.len() == 0 {
-                Plain
-            }
-            else if source_files.iter().any(|filename| Path::new(format!("{}/{}", self.path.dirname_str().unwrap(), filename)).exists()) {
-                Fixed(244).normal()
-            }
-            else {
-                Fixed(137).normal()
-            }
-        }
+        self.get_type().style()
     }
 
     fn permissions_string(&self) -> String {
@@ -187,15 +165,5 @@ impl<'a> File<'a> {
         } else {
             Black.bold().paint("-".as_slice())
         }
-    }
-}
-
-trait Chop {
-    fn chop(&self) -> String;
-}
-
-impl<'a> Chop for &'a str {
-    fn chop(&self) -> String {
-        self.slice_to(self.len() - 1).to_string()
     }
 }
