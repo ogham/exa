@@ -71,14 +71,17 @@ fn exa(options: &Options, path: Path) {
         .collect();
 
     for (field_lengths, row) in lengths.iter().zip(table.iter()) {
-        let mut first = true;
-        for (((column_length, cell), field_length), column) in column_widths.iter().zip(row.iter()).zip(field_lengths.iter()).zip(options.columns.iter()) {  // this is getting messy
-            if first {
-                first = false;
-            } else {
+        for (((column_length, cell), field_length), (num, column)) in column_widths.iter().zip(row.iter()).zip(field_lengths.iter()).zip(options.columns.iter().enumerate()) {  // this is getting messy
+            if num != 0 {
                 print!(" ");
             }
-            print!("{}", column.alignment().pad_string(cell, *field_length, *column_length));
+            
+            if num == options.columns.len() - 1 {
+                print!("{}", cell);
+            }
+            else {
+                print!("{}", column.alignment().pad_string(cell, *field_length, *column_length));
+            }
         }
         print!("\n");
     }
