@@ -1,4 +1,4 @@
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use colours::{Plain, Style, Red, Green, Yellow, Blue, Fixed};
 use file::File;
 use std::io;
 
