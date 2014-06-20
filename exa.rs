@@ -35,14 +35,23 @@ fn main() {
             };
             
             for dir in strs.move_iter() {
-                exa(&opts, Path::new(dir))
+                exa(&opts, dir)
             }
         }
     };
 }
 
-fn exa(options: &Options, path: Path) {
-    let dir = Dir::readdir(path);
+fn exa(options: &Options, string: String) {
+    let path = Path::new(string.clone());
+
+    let dir = match Dir::readdir(path) {
+        Ok(dir) => dir,
+        Err(e) => {
+            println!("{}: {}", string, e);
+            return;
+        }
+    };
+    
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 

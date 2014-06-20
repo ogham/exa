@@ -1,4 +1,4 @@
-use std::io::fs; 
+use std::io::{fs, IoResult};
 use file::File;
 
 // The purpose of a Dir is to provide a cached list of the file paths
@@ -12,17 +12,27 @@ pub struct Dir<'a> {
 }
 
 impl<'a> Dir<'a> {
-    pub fn readdir(path: Path) -> Dir<'a> {
-        match fs::readdir(&path) {
-            Ok(paths) => Dir {
-                contents: paths,
-            },
-            Err(e) => fail!("readdir: {}", e),
-        }
+    pub fn readdir(path: Path) -> IoResult<Dir<'a>> {
+        fs::readdir(&path).map(|paths| Dir {
+            contents: paths,
+        })
     }
 
     pub fn files(&'a self) -> Vec<File<'a>> {
-        self.contents.iter().map(|path| File::from_path(path, self)).collect()
+        let mut files = vec![];
+        
+        for path in self.contents.iter() {
+            match File::from_path(path, self) {
+                Ok(file) => {
+                    files.push(file);
+                }
+                Err(e) => {
+                    println!("{}: {}", path.filename_str().unwrap(), e);
+                }
+            }
+        }
+        
+        files
     }
 
     pub fn contains(&self, path: &Path) -> bool {

@@ -1,5 +1,5 @@
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
-use std::io::fs;
+use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
+use std::io::{fs, IoResult};
 use std::io;
 
 use column::{Column, Permissions, FileName, FileSize, User, Group};
@@ -26,7 +26,7 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub fn from_path(path: &'a Path, parent: &'a Dir) -> File<'a> {
+    pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         // Getting the string from a filename fails whenever it's not
         // UTF-8 representable - just assume it is for now.
         let filename: &str = path.filename_str().unwrap();
@@ -34,19 +34,15 @@ impl<'a> File<'a> {
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
-        let stat: io::FileStat = match fs::lstat(path) {
-            Ok(stat) => stat,
-            Err(e) => fail!("Couldn't stat {}: {}", filename, e),
-        };
-
-        return File {
+        
+        fs::lstat(path).map(|stat| File {
             path:  path,
             dir:   parent,
             stat:  stat,
             name:  filename,
             ext:   File::ext(filename),
             parts: SortPart::split_into_parts(filename),
-        };
+        })
     }
 
     fn ext(name: &'a str) -> Option<&'a str> {
