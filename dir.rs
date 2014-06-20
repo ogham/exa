@@ -27,7 +27,7 @@ impl<'a> Dir<'a> {
                     files.push(file);
                 }
                 Err(e) => {
-                    println!("{}: {}", path.filename_str().unwrap(), e);
+                    println!("{}: {}", path.display(), e);
                 }
             }
         }
