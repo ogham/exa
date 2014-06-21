@@ -4,7 +4,7 @@ use std::io;
 
 use column::{Column, Permissions, FileName, FileSize, User, Group};
 use format::{format_metric_bytes, format_IEC_bytes};
-use unix::{get_user_name, get_group_name};
+use unix::Unix;
 use sort::SortPart;
 use dir::Dir;
 use filetype::HasType;
@@ -89,7 +89,7 @@ impl<'a> File<'a> {
         }
     }
     
-    pub fn display(&self, column: &Column) -> String {
+    pub fn display(&self, column: &Column, unix: &mut Unix) -> String {
         match *column {
             Permissions => self.permissions_string(),
             FileName => self.file_name(),
@@ -99,10 +99,10 @@ impl<'a> File<'a> {
             // usually means it was deleted but its files weren't.
             User(uid) => {
                 let style = if uid == self.stat.unstable.uid { Yellow.bold() } else { Plain };
-                let string = get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str());
+                let string = unix.get_user_name(self.stat.unstable.uid as i32).unwrap_or(self.stat.unstable.uid.to_str());
                 return style.paint(string.as_slice());
             },
-            Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
+            Group => unix.get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
     

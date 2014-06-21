@@ -7,6 +7,7 @@ use std::os;
 use file::File;
 use dir::Dir;
 use options::Options;
+use unix::Unix;
 
 pub mod colours;
 pub mod column;
@@ -61,8 +62,10 @@ fn exa(options: &Options, string: String) {
     // width of each column based on the length of the results and
     // padding the fields during output.
 
+    let mut cache = Unix::empty_cache();
+
     let table: Vec<Vec<String>> = files.iter()
-        .map(|f| options.columns.iter().map(|c| f.display(c)).collect())
+        .map(|f| options.columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
 
     // Each column needs to have its invisible colour-formatting

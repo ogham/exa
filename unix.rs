@@ -1,5 +1,6 @@
 use std::str::raw::from_c_str;
 use std::ptr::read;
+use std::collections::hashmap::HashMap;
 
 mod c {
     #![allow(non_camel_case_types)]
@@ -34,24 +35,41 @@ mod c {
         pub fn getuid() -> libc::c_int;
     }
 }
-
-pub fn get_user_name(uid: i32) -> Option<String> {
-    let pw = unsafe { c::getpwuid(uid) };
-    if pw.is_not_null() {
-        return unsafe { Some(from_c_str(read(pw).pw_name)) };
-    }
-    else {
-        return None;
-    }
+pub struct Unix {
+    user_names:  HashMap<i32, Option<String>>,
+    group_names: HashMap<u32, Option<String>>,
 }
 
-pub fn get_group_name(gid: u32) -> Option<String> {
-    let gr = unsafe { c::getgrgid(gid) };
-    if gr.is_not_null() {
-        return unsafe { Some(from_c_str(read(gr).gr_name)) };
+impl Unix {
+    pub fn empty_cache() -> Unix {
+        Unix {
+            user_names:  HashMap::new(),
+            group_names: HashMap::new(),
+        }
     }
-    else {
-        return None;
+
+    pub fn get_user_name<'a> (&'a mut self, uid: i32) -> Option<String> {
+        self.user_names.find_or_insert_with(uid, |&u| {
+            let pw = unsafe { c::getpwuid(u) };
+            if pw.is_not_null() {
+                return unsafe { Some(from_c_str(read(pw).pw_name)) };
+            }
+            else {
+                return None;
+            }
+        }).clone()
+    }
+
+    pub fn get_group_name<'a>(&'a mut self, gid: u32) -> Option<String> {
+        self.group_names.find_or_insert_with(gid, |&gid| {
+            let gr = unsafe { c::getgrgid(gid) };
+            if gr.is_not_null() {
+                return unsafe { Some(from_c_str(read(gr).gr_name)) };
+            }
+            else {
+                return None;
+            }
+        }).clone()
     }
 }
 
