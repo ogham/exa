@@ -17,11 +17,11 @@ use filetype::HasType;
 // the actual path.
 
 pub struct File<'a> {
-    pub name: &'a str,
-    pub dir:  &'a Dir<'a>,
-    pub ext:  Option<&'a str>,
-    pub path: &'a Path,
-    pub stat: io::FileStat,
+    pub name:  &'a str,
+    pub dir:   &'a Dir<'a>,
+    pub ext:   Option<&'a str>,
+    pub path:  &'a Path,
+    pub stat:  io::FileStat,
     pub parts: Vec<SortPart>,
 }
 
@@ -88,10 +88,11 @@ impl<'a> File<'a> {
             _ => vec![],
         }
     }
+    
     pub fn display(&self, column: &Column) -> String {
         match *column {
             Permissions => self.permissions_string(),
-            FileName => self.file_colour().paint(self.name),
+            FileName => self.file_name(),
             FileSize(use_iec) => self.file_size(use_iec),
 
             // Display the ID if the user/group doesn't exist, which
@@ -104,7 +105,23 @@ impl<'a> File<'a> {
             Group => get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
-
+    
+    fn file_name(&self) -> String {
+        let displayed_name = self.file_colour().paint(self.name);
+        if self.stat.kind == io::TypeSymlink {
+            match fs::readlink(self.path) {
+                Ok(path) => format!("{} => {}", displayed_name, path.display()),
+                Err(e) => {
+                    println!("{}", e);
+                    displayed_name
+                },
+            }
+        }
+        else {
+            displayed_name
+        }
+    }
+        
     fn file_size(&self, use_iec_prefixes: bool) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
