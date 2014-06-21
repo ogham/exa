@@ -8,13 +8,15 @@ use file::File;
 // differently if a certain other file exists.
 
 pub struct Dir<'a> {
-    contents: Vec<Path>,
+    pub contents: Vec<Path>,
+    pub path: Path,
 }
 
 impl<'a> Dir<'a> {
     pub fn readdir(path: Path) -> IoResult<Dir<'a>> {
         fs::readdir(&path).map(|paths| Dir {
             contents: paths,
+            path: path.clone(),
         })
     }
 

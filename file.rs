@@ -34,7 +34,7 @@ impl<'a> File<'a> {
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
-        
+
         fs::lstat(path).map(|stat| File {
             path:  path,
             dir:   parent,
@@ -60,13 +60,13 @@ impl<'a> File<'a> {
     pub fn is_tmpfile(&self) -> bool {
         self.name.ends_with("~") || (self.name.starts_with("#") && self.name.ends_with("#"))
     }
-        
+
     // Highlight the compiled versions of files. Some of them, like .o,
     // get special highlighting when they're alone because there's no
     // point in existing without their source. Others can be perfectly
     // content without their source files, such as how .js is valid
     // without a .coffee.
-    
+
     pub fn get_source_files(&self) -> Vec<Path> {
         match self.ext {
             Some("class") => vec![self.path.with_extension("java")],  // Java
@@ -76,7 +76,7 @@ impl<'a> File<'a> {
             Some("pyc") => vec![self.path.with_extension("py")],  // Python
             Some("js") => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
             Some("css") => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
-            
+
             Some("aux") => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
             Some("bbl") => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
             Some("blg") => vec![self.path.with_extension("tex")],  // BibTeX log file
@@ -88,7 +88,7 @@ impl<'a> File<'a> {
             _ => vec![],
         }
     }
-    
+
     pub fn display(&self, column: &Column, unix: &mut Unix) -> String {
         match *column {
             Permissions => self.permissions_string(),
@@ -105,23 +105,46 @@ impl<'a> File<'a> {
             Group => unix.get_group_name(self.stat.unstable.gid as u32).unwrap_or(self.stat.unstable.gid.to_str()),
         }
     }
-    
+
     fn file_name(&self) -> String {
         let displayed_name = self.file_colour().paint(self.name);
         if self.stat.kind == io::TypeSymlink {
             match fs::readlink(self.path) {
-                Ok(path) => format!("{} {} {}", displayed_name, Fixed(244).paint("=>"), path.display()),
-                Err(e) => {
-                    println!("{}", e);
-                    displayed_name
-                },
+                Ok(path) => {
+                    let target_path = if path.is_absolute() { path } else { self.dir.path.join(path) };
+                    format!("{} {}", displayed_name, self.target_file_name_and_arrow(target_path))
+                }
+                Err(_) => displayed_name,
             }
         }
         else {
             displayed_name
         }
     }
-        
+
+    fn target_file_name_and_arrow(&self, target_path: Path) -> String {
+        let filename = target_path.as_str().unwrap();
+        let link_target = fs::stat(&target_path).map(|stat| File {
+            path:  &target_path,
+            dir:   self.dir,
+            stat:  stat,
+            name:  filename,
+            ext:   File::ext(filename),
+            parts: vec![],  // not needed
+        });
+
+        // Statting a path usually fails because the file at the other
+        // end doesn't exist. Show this by highlighting the target
+        // file in red instead of displaying an error, because the
+        // error would be shown out of context and it's almost always
+        // that reason anyway.
+
+        match link_target {
+            Ok(file) => format!("{} {}", Fixed(244).paint("=>"), file.file_colour().paint(filename)),
+            Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename)),
+        }
+    }
+
     fn file_size(&self, use_iec_prefixes: bool) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
