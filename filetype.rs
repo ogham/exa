@@ -1,9 +1,9 @@
-use colours::{Plain, Style, Red, Green, Yellow, Blue, Fixed};
+use colours::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
 use file::File;
 use std::io;
 
 pub enum FileType {
-    Normal, Directory, Executable, Immediate, Compiled,
+    Normal, Directory, Executable, Immediate, Compiled, Symlink,
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
 }
 
@@ -45,6 +45,7 @@ impl FileType {
         match *self {
             Normal => Plain,
             Directory => Blue.bold(),
+            Symlink => Cyan.normal(),
             Executable => Green.bold(),
             Image => Fixed(133).normal(),
             Video => Fixed(135).normal(),
@@ -68,6 +69,9 @@ impl<'a> HasType for File<'a> {
     fn get_type(&self) -> FileType {
         if self.stat.kind == io::TypeDirectory {
             return Directory;
+        }
+        else if self.stat.kind == io::TypeSymlink {
+            return Symlink;
         }
         else if self.stat.perm.contains(io::UserExecute) {
             return Executable;

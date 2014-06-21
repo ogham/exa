@@ -1,4 +1,4 @@
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan};
+use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use std::io::{fs, IoResult};
 use std::io;
 
@@ -110,7 +110,7 @@ impl<'a> File<'a> {
         let displayed_name = self.file_colour().paint(self.name);
         if self.stat.kind == io::TypeSymlink {
             match fs::readlink(self.path) {
-                Ok(path) => format!("{} => {}", displayed_name, path.display()),
+                Ok(path) => format!("{} {} {}", displayed_name, Fixed(244).paint("=>"), path.display()),
                 Err(e) => {
                     println!("{}", e);
                     displayed_name
