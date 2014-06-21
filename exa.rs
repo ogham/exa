@@ -21,28 +21,31 @@ pub mod sort;
 
 fn main() {
     let args = os::args();
-    
+
     match Options::getopts(args) {
         Err(err) => println!("Invalid options:\n{}", err),
         Ok(opts) => {
-
-            // Default to listing the current directory when a target
-            // isn't specified (mimic the behaviour of ls)
-            let strs = if opts.dirs.is_empty() {
-                vec!(".".to_string())
+            if opts.dirs.is_empty() {
+                exa(&opts, false, ".".to_string())
             }
             else {
-                opts.dirs.clone()
-            };
-            
-            for dir in strs.move_iter() {
-                exa(&opts, dir)
+                let mut first = true;
+                let print_header = opts.dirs.len() > 1;
+                for dir in opts.dirs.clone().move_iter() {
+                    if first {
+                        first = false;
+                    }
+                    else {
+                        print!("\n");
+                    }
+                    exa(&opts, print_header, dir)
+                }
             }
         }
     };
 }
 
-fn exa(options: &Options, string: String) {
+fn exa(options: &Options, print_header: bool, string: String) {
     let path = Path::new(string.clone());
 
     let dir = match Dir::readdir(path) {
@@ -52,7 +55,12 @@ fn exa(options: &Options, string: String) {
             return;
         }
     };
-    
+
+    // Print header *after* readdir must have succeeded
+    if print_header {
+        println!("{}:", string);
+    }
+
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 
@@ -87,7 +95,7 @@ fn exa(options: &Options, string: String) {
             if num != 0 {
                 print!(" ");
             }
-            
+
             if num == options.columns.len() - 1 {
                 print!("{}", cell);
             }
