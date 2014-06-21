@@ -145,7 +145,7 @@ impl<'a> File<'a> {
             io::TypeNamedPipe    => Yellow.paint("|"),
             io::TypeBlockSpecial => Purple.paint("s"),
             io::TypeSymlink      => Cyan.paint("l"),
-            _                    => "?".to_string(),
+            io::TypeUnknown      => "?".to_string(),
         }
     }
 

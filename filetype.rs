@@ -3,7 +3,7 @@ use file::File;
 use std::io;
 
 pub enum FileType {
-    Normal, Directory, Executable, Immediate, Compiled, Symlink,
+    Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
 }
 
@@ -46,6 +46,7 @@ impl FileType {
             Normal => Plain,
             Directory => Blue.bold(),
             Symlink => Cyan.normal(),
+            Special => Yellow.normal(),
             Executable => Green.bold(),
             Image => Fixed(133).normal(),
             Video => Fixed(135).normal(),
@@ -72,6 +73,9 @@ impl<'a> HasType for File<'a> {
         }
         else if self.stat.kind == io::TypeSymlink {
             return Symlink;
+        }
+        else if self.stat.kind == io::TypeBlockSpecial || self.stat.kind == io::TypeNamedPipe || self.stat.kind == io::TypeUnknown {
+            return Special;
         }
         else if self.stat.perm.contains(io::UserExecute) {
             return Executable;
