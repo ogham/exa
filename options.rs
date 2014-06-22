@@ -2,7 +2,7 @@ extern crate getopts;
 
 use file::File;
 use std::cmp::lexical_ordering;
-use column::{Column, Permissions, FileName, FileSize, User, Group};
+use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks};
 use unix::get_current_user_id;
 use std::ascii::StrAsciiExt;
 
@@ -35,6 +35,7 @@ impl Options {
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("g", "group", "show group as well as user"),
+            getopts::optflag("l", "links", "show number of hard links"),
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
         ];
@@ -52,11 +53,14 @@ impl Options {
     }
 
     fn columns(matches: getopts::Matches) -> Vec<Column> {
-        let mut columns = vec![
-            Permissions,
-            FileSize(matches.opt_present("binary")),
-            User(get_current_user_id()),
-        ];
+        let mut columns = vec![Permissions];
+
+        if matches.opt_present("links") {
+            columns.push(HardLinks);
+        }
+        
+        columns.push(FileSize(matches.opt_present("binary")));
+        columns.push(User(get_current_user_id()));
 
         if matches.opt_present("group") {
             columns.push(Group);
