@@ -2,7 +2,7 @@ extern crate getopts;
 
 use file::File;
 use std::cmp::lexical_ordering;
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode};
+use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use unix::get_current_user_id;
 use std::ascii::StrAsciiExt;
 
@@ -39,6 +39,7 @@ impl Options {
             getopts::optflag("l", "links", "show number of hard links"),
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
+            getopts::optflag("S", "blocks", "show number of file system blocks"),
         ];
 
         match getopts::getopts(args.tail(), opts) {
@@ -67,6 +68,11 @@ impl Options {
         }
         
         columns.push(FileSize(matches.opt_present("binary")));
+
+        if matches.opt_present("blocks") {
+            columns.push(Blocks);
+        }
+
         columns.push(User(get_current_user_id()));
 
         if matches.opt_present("group") {

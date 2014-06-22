@@ -2,6 +2,7 @@ pub enum Column {
     Permissions,
     FileName,
     FileSize(bool),
+    Blocks,
     User(u64),
     Group,
     HardLinks,
@@ -21,6 +22,7 @@ impl Column {
             FileSize(_) => Right,
             HardLinks   => Right,
             Inode       => Right,
+            Blocks      => Right,
             _           => Left,
         }
     }

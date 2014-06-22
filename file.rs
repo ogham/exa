@@ -2,7 +2,7 @@ use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed
 use std::io::{fs, IoResult};
 use std::io;
 
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode};
+use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::Unix;
 use sort::SortPart;
@@ -96,6 +96,14 @@ impl<'a> File<'a> {
             FileSize(use_iec) => self.file_size(use_iec),
             HardLinks => Red.paint(self.stat.unstable.nlink.to_str().as_slice()),
             Inode => Purple.paint(self.stat.unstable.inode.to_str().as_slice()),
+            Blocks => {
+                if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
+                    Cyan.paint(self.stat.unstable.blocks.to_str().as_slice())
+                }
+                else {
+                    Fixed(244).paint("-")
+                }
+            },
 
             // Display the ID if the user/group doesn't exist, which
             // usually means it was deleted but its files weren't.
@@ -151,7 +159,7 @@ impl<'a> File<'a> {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
-            Black.bold().paint("-")
+            Fixed(244).paint("-")
         } else {
             let (size, suffix) = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
