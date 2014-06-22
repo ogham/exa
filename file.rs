@@ -2,7 +2,7 @@ use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed
 use std::io::{fs, IoResult};
 use std::io;
 
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks};
+use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode};
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::Unix;
 use sort::SortPart;
@@ -95,6 +95,7 @@ impl<'a> File<'a> {
             FileName => self.file_name(),
             FileSize(use_iec) => self.file_size(use_iec),
             HardLinks => Red.paint(self.stat.unstable.nlink.to_str().as_slice()),
+            Inode => Purple.paint(self.stat.unstable.inode.to_str().as_slice()),
 
             // Display the ID if the user/group doesn't exist, which
             // usually means it was deleted but its files weren't.

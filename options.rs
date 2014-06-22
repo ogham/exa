@@ -2,7 +2,7 @@ extern crate getopts;
 
 use file::File;
 use std::cmp::lexical_ordering;
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks};
+use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode};
 use unix::get_current_user_id;
 use std::ascii::StrAsciiExt;
 
@@ -35,6 +35,7 @@ impl Options {
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("g", "group", "show group as well as user"),
+            getopts::optflag("i", "inode", "show each file's inode number"),
             getopts::optflag("l", "links", "show number of hard links"),
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
@@ -53,7 +54,13 @@ impl Options {
     }
 
     fn columns(matches: getopts::Matches) -> Vec<Column> {
-        let mut columns = vec![Permissions];
+        let mut columns = vec![];
+
+        if matches.opt_present("inode") {
+            columns.push(Inode);
+        }
+
+        columns.push(Permissions);
 
         if matches.opt_present("links") {
             columns.push(HardLinks);

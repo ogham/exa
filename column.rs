@@ -5,6 +5,7 @@ pub enum Column {
     User(u64),
     Group,
     HardLinks,
+    Inode,
 }
 
 // Each column can pick its own alignment. Usually, numbers are
@@ -19,6 +20,7 @@ impl Column {
         match *self {
             FileSize(_) => Right,
             HardLinks   => Right,
+            Inode       => Right,
             _           => Left,
         }
     }
