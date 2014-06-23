@@ -26,6 +26,19 @@ impl Column {
             _           => Left,
         }
     }
+
+    pub fn header(&self) -> &'static str {
+        match *self {
+            Permissions => "Permissions",
+            FileName => "Name",
+            FileSize(_) => "Size",
+            Blocks => "Blocks",
+            User(_) => "User",
+            Group => "Group",
+            HardLinks => "Links",
+            Inode => "inode",
+        }
+    }
 }
 
 // An Alignment is used to pad a string to a certain length, letting

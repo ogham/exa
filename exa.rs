@@ -8,6 +8,7 @@ use file::File;
 use dir::Dir;
 use options::Options;
 use unix::Unix;
+use colours::Plain;
 
 pub mod colours;
 pub mod column;
@@ -72,9 +73,13 @@ fn exa(options: &Options, print_header: bool, string: String) {
 
     let mut cache = Unix::empty_cache();
 
-    let table: Vec<Vec<String>> = files.iter()
+    let mut table: Vec<Vec<String>> = files.iter()
         .map(|f| options.columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
+
+    if options.header {
+        table.unshift(options.columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
+    }
 
     // Each column needs to have its invisible colour-formatting
     // characters stripped before it has its width calculated, or the

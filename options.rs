@@ -16,6 +16,7 @@ pub struct Options {
     pub reverse: bool,
     pub dirs: Vec<String>,
     pub columns: Vec<Column>,
+    pub header: bool,
 }
 
 impl SortField {
@@ -35,6 +36,7 @@ impl Options {
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("g", "group", "show group as well as user"),
+            getopts::optflag("h", "header", "show a header row at the top"),
             getopts::optflag("i", "inode", "show each file's inode number"),
             getopts::optflag("l", "links", "show number of hard links"),
             getopts::optflag("r", "reverse", "reverse order of files"),
@@ -47,6 +49,7 @@ impl Options {
             Ok(matches) => Ok(Options {
                 showInvisibles: matches.opt_present("all"),
                 reverse: matches.opt_present("reverse"),
+                header: matches.opt_present("header"),
                 sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
                 dirs: matches.free.clone(),
                 columns: Options::columns(matches),
