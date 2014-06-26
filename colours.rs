@@ -36,7 +36,7 @@ impl Colour {
             Black => "40".to_string(),
             Red => "41".to_string(),
             Green => "42".to_string(),
-            Yellow => "44".to_string(),
+            Yellow => "43".to_string(),
             Blue => "44".to_string(),
             Purple => "45".to_string(),
             Cyan => "46".to_string(),

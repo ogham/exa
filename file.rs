@@ -94,7 +94,15 @@ impl<'a> File<'a> {
             Permissions => self.permissions_string(),
             FileName => self.file_name(),
             FileSize(use_iec) => self.file_size(use_iec),
-            HardLinks => Red.paint(self.stat.unstable.nlink.to_str().as_slice()),
+
+            // A file with multiple links is interesting, but
+            // directories and suchlike can have multiple links all
+            // the time.
+            HardLinks => {
+                let style = if self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1 { Red.on(Yellow) } else { Red.normal() };
+                style.paint(self.stat.unstable.nlink.to_str().as_slice())
+            },
+
             Inode => Purple.paint(self.stat.unstable.inode.to_str().as_slice()),
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
