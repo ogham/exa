@@ -5,10 +5,11 @@ use std::collections::hashmap::HashMap;
 mod c {
     #![allow(non_camel_case_types)]
     extern crate libc;
-    use self::libc::{
+    pub use self::libc::{
         c_char,
         c_int,
         uid_t,
+        gid_t,
         time_t
     };
 
@@ -26,7 +27,10 @@ mod c {
     }
 
     pub struct c_group {
-        pub gr_name: *c_char      // group name
+        pub gr_name:   *c_char,   // group name
+        pub gr_passwd: *c_char,   // password
+        pub gr_gid:    gid_t,     // group id
+        pub gr_mem:    **c_char,  // names of users in the group
     }
 
     extern {
@@ -36,21 +40,46 @@ mod c {
     }
 }
 pub struct Unix {
-    user_names:  HashMap<i32, Option<String>>,
-    group_names: HashMap<u32, Option<String>>,
+    user_names:    HashMap<u32, Option<String>>,  // mapping of user IDs to user names
+    group_names:   HashMap<u32, Option<String>>,  // mapping of groups IDs to group names
+    groups:        HashMap<u32, bool>,            // mapping of group IDs to whether the current user is a member
+    pub uid:       u32,                           // current user's ID
+    pub username:  String,                        // current user's name
 }
 
 impl Unix {
     pub fn empty_cache() -> Unix {
+        let uid = unsafe { c::getuid() };
+        let info = unsafe { c::getpwuid(uid as i32).to_option().unwrap() };  // the user has to have a name
+
+        let username = unsafe { from_c_str(info.pw_name) };
+
+        let mut user_names = HashMap::new();
+        user_names.insert(uid as u32, Some(username.clone()));
+
+        // Unix groups work like this: every group has a list of
+        // users, referred to by their names. But, every user also has
+        // a primary group, which isn't in this list. So handle this
+        // case immediately after we look up the user's details.
+        let mut groups = HashMap::new();
+        groups.insert(info.pw_gid as u32, true);
+
         Unix {
-            user_names:  HashMap::new(),
+            user_names:  user_names,
             group_names: HashMap::new(),
+            uid:         uid as u32,
+            username:    username,
+            groups:      groups,
         }
     }
 
-    pub fn get_user_name<'a> (&'a mut self, uid: i32) -> Option<String> {
+    pub fn is_group_member(&self, gid: u32) -> bool {
+        *self.groups.get(&gid)
+    }
+
+    pub fn get_user_name(&mut self, uid: u32) -> Option<String> {
         self.user_names.find_or_insert_with(uid, |&u| {
-            let pw = unsafe { c::getpwuid(u) };
+            let pw = unsafe { c::getpwuid(u as i32) };
             if pw.is_not_null() {
                 return unsafe { Some(from_c_str(read(pw).pw_name)) };
             }
@@ -60,19 +89,56 @@ impl Unix {
         }).clone()
     }
 
-    pub fn get_group_name<'a>(&'a mut self, gid: u32) -> Option<String> {
-        self.group_names.find_or_insert_with(gid, |&gid| {
-            let gr = unsafe { c::getgrgid(gid) };
-            if gr.is_not_null() {
-                return unsafe { Some(from_c_str(read(gr).gr_name)) };
+    fn group_membership(group: **i8, uname: &String) -> bool {
+        let mut i = 0;
+
+        // The list of members is a pointer to a pointer of
+        // characters, terminated by a null pointer. So the first call
+        // to `to_option` will always succeed, as that memory is
+        // guaranteed to be there (unless we go past the end of RAM).
+        // The second call will return None if it's a null pointer.
+
+        loop {
+            match unsafe { group.offset(i).to_option().unwrap().to_option() } {
+                Some(username) => {
+                    if unsafe { from_c_str(username) } == *uname {
+                        return true;
+                    }
+                }
+                None => {
+                    return false;
+                }
             }
-            else {
-                return None;
+            i += 1;
+        }
+    }
+
+    pub fn get_group_name(&mut self, gid: u32) -> Option<String> {
+        match self.group_names.find_copy(&gid) {
+            Some(name) => name,
+            None => {
+                match unsafe { c::getgrgid(gid).to_option() } {
+                    None => {
+                        self.group_names.insert(gid, None);
+                        return None;
+                    },
+                    Some(r) => {
+                        let group_name = unsafe { Some(from_c_str(r.gr_name)) };
+                        self.group_names.insert(gid, group_name.clone());
+
+                        // Calculate whether we are a member of the
+                        // group. Now's as good a time as any as we've
+                        // just retrieved the group details.
+                        
+                        if !self.groups.contains_key(&gid) {
+                            self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
+                        }
+                        
+                        return group_name;
+                    }
+                }
             }
-        }).clone()
+        }
     }
 }
 
-pub fn get_current_user_id() -> u64 {
-    unsafe { c::getuid() as u64 }
-}
