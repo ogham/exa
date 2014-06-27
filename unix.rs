@@ -123,22 +123,13 @@ impl Unix {
     pub fn load_group(&mut self, gid: u32) {
         match unsafe { c::getgrgid(gid).to_option() } {
             None => {
-                self.group_names.insert(gid, None);
-                self.groups.insert(gid, false);
+                self.group_names.find_or_insert(gid, None);
+                self.groups.find_or_insert(gid, false);
             },
             Some(r) => {
                 let group_name = unsafe { Some(from_c_str(r.gr_name)) };
-                self.group_names.insert(gid, group_name.clone());
-
-                // Calculate whether we are a member of the
-                // group. Now's as good a time as any as we've
-                // just retrieved the group details.
-                
-                if !self.groups.contains_key(&gid) {
-                    self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
-                }
-
-                self.group_names.insert(gid, group_name);
+                self.groups.find_or_insert(gid, Unix::group_membership(r.gr_mem, &self.username));
+                self.group_names.find_or_insert(gid, group_name);
             }
         }
         
