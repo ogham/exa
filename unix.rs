@@ -73,20 +73,27 @@ impl Unix {
         }
     }
 
+    pub fn get_user_name(&self, uid: u32) -> Option<String> {
+        self.user_names.get(&uid).clone()
+    }
+
+    pub fn get_group_name(&self, gid: u32) -> Option<String> {
+        self.group_names.get(&gid).clone()
+    }
+
     pub fn is_group_member(&self, gid: u32) -> bool {
         *self.groups.get(&gid)
     }
 
-    pub fn get_user_name(&mut self, uid: u32) -> Option<String> {
-        self.user_names.find_or_insert_with(uid, |&u| {
-            let pw = unsafe { c::getpwuid(u as i32) };
-            if pw.is_not_null() {
-                return unsafe { Some(from_c_str(read(pw).pw_name)) };
-            }
-            else {
-                return None;
-            }
-        }).clone()
+    pub fn load_user(&mut self, uid: u32) {
+        let pw = unsafe { c::getpwuid(uid as i32) };
+        if pw.is_not_null() {
+            let username = unsafe { Some(from_c_str(read(pw).pw_name)) };
+            self.user_names.insert(uid, username);
+        }
+        else {
+            self.user_names.insert(uid, None);
+        }
     }
 
     fn group_membership(group: **i8, uname: &String) -> bool {
@@ -113,32 +120,28 @@ impl Unix {
         }
     }
 
-    pub fn get_group_name(&mut self, gid: u32) -> Option<String> {
-        match self.group_names.find_copy(&gid) {
-            Some(name) => name,
+    pub fn load_group(&mut self, gid: u32) {
+        match unsafe { c::getgrgid(gid).to_option() } {
             None => {
-                match unsafe { c::getgrgid(gid).to_option() } {
-                    None => {
-                        self.group_names.insert(gid, None);
-                        return None;
-                    },
-                    Some(r) => {
-                        let group_name = unsafe { Some(from_c_str(r.gr_name)) };
-                        self.group_names.insert(gid, group_name.clone());
+                self.group_names.insert(gid, None);
+                self.groups.insert(gid, false);
+            },
+            Some(r) => {
+                let group_name = unsafe { Some(from_c_str(r.gr_name)) };
+                self.group_names.insert(gid, group_name.clone());
 
-                        // Calculate whether we are a member of the
-                        // group. Now's as good a time as any as we've
-                        // just retrieved the group details.
-                        
-                        if !self.groups.contains_key(&gid) {
-                            self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
-                        }
-                        
-                        return group_name;
-                    }
+                // Calculate whether we are a member of the
+                // group. Now's as good a time as any as we've
+                // just retrieved the group details.
+                
+                if !self.groups.contains_key(&gid) {
+                    self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
                 }
+
+                self.group_names.insert(gid, group_name);
             }
         }
+        
     }
 }
 
