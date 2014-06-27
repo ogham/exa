@@ -73,8 +73,11 @@ impl Unix {
         }
     }
 
-    pub fn is_group_member(&self, gid: u32) -> bool {
-        *self.groups.get(&gid)
+    pub fn is_group_member(&mut self, gid: u32) -> bool {
+        // Groups that no longer exist have no members. If this method
+        // is called before a group with the given gid has been read,
+        // it doesn't exist, so insert false.
+        *self.groups.find_or_insert(gid, false)
     }
 
     pub fn get_user_name(&mut self, uid: u32) -> Option<String> {
