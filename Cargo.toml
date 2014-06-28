@@ -1,0 +1,9 @@
+[package]
+
+name = "exa"
+version = "0.1.0"
+authors = [ "ogham@bsago.me" ]
+
+[[bin]]
+
+name = "exa"

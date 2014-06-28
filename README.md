@@ -27,4 +27,4 @@ Options
 Installation
 ------------
 
-exa is written in [Rust](http://www.rust-lang.org). You should use the nightly, rather than the 0.10 release, which is rather out of date at this point. Once you have Rust set up, a simple `make` should compile exa.
+exa is written in [Rust](http://www.rust-lang.org). You should use the nightly, rather than the 0.10 release, which is rather out of date at this point. Once you have Rust set up, a simple `cargo build` will compile exa. Unless you don't have Cargo installed, in which case just `rustc src/exa.rs` will do.
