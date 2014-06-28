@@ -4,4 +4,4 @@ before_install:
 install:
   - sudo apt-get install rust-nightly
 script:
-  - cargo test
+  - rustc --test src/exa.rs -o exa-test && ./exa-test
