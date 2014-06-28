@@ -39,6 +39,11 @@ static CRYPTO_TYPES: &'static [&'static str] = &[
 
 static COMPILED_TYPES: &'static [&'static str] = &[
     "class", "elc", "hi", "o", "pyc" ];
+    
+static BUILD_TYPES: &'static [&'static str] = &[
+    "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
+    "build.gradle", "Rakefile", "Gruntfile.js",
+    "Gruntfile.coffee" ];
 
 impl FileType {
     pub fn style(&self) -> Style {
@@ -80,7 +85,7 @@ impl<'a> HasType for File<'a> {
         else if self.stat.perm.contains(io::UserExecute) {
             return Executable;
         }
-        else if self.name.starts_with("README") {
+        else if self.name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == self.name) {
             return Immediate;
         }
         else if self.ext.is_some() {
