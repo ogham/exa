@@ -42,23 +42,23 @@ impl Column {
 }
 
 // An Alignment is used to pad a string to a certain length, letting
-// it pick which end it puts the text on. The length of the string is
-// passed in specifically because it needs to be the *unformatted*
-// length, rather than just the number of characters.
+// it pick which end it puts the text on. It takes the amount of
+// padding to apply, rather than the width the text should end up,
+// because these strings are usually full of control characters.
 
 impl Alignment {
-    pub fn pad_string(&self, string: &String, string_length: uint, width: uint) -> String {
+    pub fn pad_string(&self, string: &String, padding: uint) -> String {
         let mut str = String::new();
         match *self {
             Left => {
                 str.push_str(string.as_slice());
-                for _ in range(string_length, width) {
+                for _ in range(0, padding) {
                     str.push_char(' ');
                 }
             }
 
             Right => {
-                for _ in range(string_length, width) {
+                for _ in range(0, padding) {
                     str.push_char(' ');
                 }
                 str.push_str(string.as_slice());

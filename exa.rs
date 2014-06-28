@@ -95,7 +95,7 @@ fn exa(options: &Options, print_header: bool, string: String) {
         .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
         .collect();
 
-    for (field_lengths, row) in lengths.iter().zip(table.iter()) {
+    for (field_widths, row) in lengths.iter().zip(table.iter()) {
         for (num, column) in options.columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");
@@ -105,7 +105,8 @@ fn exa(options: &Options, print_header: bool, string: String) {
                 print!("{}", row.get(num));
             }
             else {
-                print!("{}", column.alignment().pad_string(row.get(num), *field_lengths.get(num), *column_widths.get(num)));
+                let padding = *column_widths.get(num) - *field_widths.get(num);
+                print!("{}", column.alignment().pad_string(row.get(num), padding));
             }
         }
         print!("\n");
