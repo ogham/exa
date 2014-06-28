@@ -96,16 +96,16 @@ fn exa(options: &Options, print_header: bool, string: String) {
         .collect();
 
     for (field_lengths, row) in lengths.iter().zip(table.iter()) {
-        for (((column_length, cell), field_length), (num, column)) in column_widths.iter().zip(row.iter()).zip(field_lengths.iter()).zip(options.columns.iter().enumerate()) {  // this is getting messy
+        for (num, column) in options.columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");
             }
 
             if num == options.columns.len() - 1 {
-                print!("{}", cell);
+                print!("{}", row.get(num));
             }
             else {
-                print!("{}", column.alignment().pad_string(cell, *field_length, *column_length));
+                print!("{}", column.alignment().pad_string(row.get(num), *field_lengths.get(num), *column_widths.get(num)));
             }
         }
         print!("\n");
