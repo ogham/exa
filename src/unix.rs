@@ -14,28 +14,28 @@ mod c {
     };
 
     pub struct c_passwd {
-        pub pw_name:    *c_char,  // login name
-        pub pw_passwd:  *c_char,
+        pub pw_name:    *const c_char,  // login name
+        pub pw_passwd:  *const c_char,
         pub pw_uid:     c_int,    // user ID
         pub pw_gid:     c_int,    // group ID
         pub pw_change:  time_t,
-        pub pw_class:   *c_char,
-        pub pw_gecos:   *c_char,  // full name
-        pub pw_dir:     *c_char,  // login dir
-        pub pw_shell:   *c_char,  // login shell
+        pub pw_class:   *const c_char,
+        pub pw_gecos:   *const c_char,  // full name
+        pub pw_dir:     *const c_char,  // login dir
+        pub pw_shell:   *const c_char,  // login shell
         pub pw_expire:  time_t    // password expiry time
     }
 
     pub struct c_group {
-        pub gr_name:   *c_char,   // group name
-        pub gr_passwd: *c_char,   // password
+        pub gr_name:   *const c_char,   // group name
+        pub gr_passwd: *const c_char,   // password
         pub gr_gid:    gid_t,     // group id
-        pub gr_mem:    **c_char,  // names of users in the group
+        pub gr_mem:    *const *const c_char,  // names of users in the group
     }
 
     extern {
-        pub fn getpwuid(uid: c_int) -> *c_passwd;
-        pub fn getgrgid(gid: uid_t) -> *c_group;
+        pub fn getpwuid(uid: c_int) -> *const c_passwd;
+        pub fn getgrgid(gid: uid_t) -> *const c_group;
         pub fn getuid() -> libc::c_int;
     }
 }
@@ -96,7 +96,7 @@ impl Unix {
         }
     }
 
-    fn group_membership(group: **i8, uname: &String) -> bool {
+    fn group_membership(group: *const *const i8, uname: &String) -> bool {
         let mut i = 0;
 
         // The list of members is a pointer to a pointer of
