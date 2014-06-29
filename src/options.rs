@@ -90,7 +90,7 @@ impl Options {
         if self.showInvisibles {
             true
         } else {
-            !f.name.starts_with(".")
+            !f.name.as_slice().starts_with(".")
         }
     }
 
@@ -103,8 +103,8 @@ impl Options {
             Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
             Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             Extension => files.sort_by(|a, b| {
-                let exts = a.ext.map(|e| e.to_ascii_lower()).cmp(&b.ext.map(|e| e.to_ascii_lower()));
-                let names = a.name.to_ascii_lower().cmp(&b.name.to_ascii_lower());
+                let exts = a.ext.clone().map(|e| e.as_slice().to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.as_slice().to_ascii_lower()));
+                let names = a.name.as_slice().to_ascii_lower().cmp(&b.name.as_slice().to_ascii_lower());
                 lexical_ordering(exts, names)
             }),
         }

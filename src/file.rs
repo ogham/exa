@@ -1,6 +1,7 @@
 use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use std::io::{fs, IoResult};
 use std::io;
+use std::str::{from_utf8, from_utf8_lossy};
 
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use format::{format_metric_bytes, format_IEC_bytes};
@@ -17,9 +18,9 @@ use filetype::HasType;
 // the actual path.
 
 pub struct File<'a> {
-    pub name:  &'a str,
+    pub name:  String,
     pub dir:   &'a Dir<'a>,
-    pub ext:   Option<&'a str>,
+    pub ext:   Option<String>,
     pub path:  &'a Path,
     pub stat:  io::FileStat,
     pub parts: Vec<SortPart>,
@@ -27,10 +28,12 @@ pub struct File<'a> {
 
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
-        // Getting the string from a filename fails whenever it's not
-        // UTF-8 representable - just assume it is for now.
-        let filename: &str = path.filename_str().unwrap();
-
+        let v = path.filename().unwrap();  // fails if / or . or ..
+        let filename = match from_utf8(v) {
+            Some(name) => name.to_string(),
+            None => from_utf8_lossy(v).to_string(),
+        };
+        
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
@@ -39,26 +42,27 @@ impl<'a> File<'a> {
             path:  path,
             dir:   parent,
             stat:  stat,
-            name:  filename,
-            ext:   File::ext(filename),
-            parts: SortPart::split_into_parts(filename),
+            name:  filename.clone(),
+            ext:   File::ext(filename.clone()),
+            parts: SortPart::split_into_parts(filename.clone()),
         })
     }
 
-    fn ext(name: &'a str) -> Option<&'a str> {
+    fn ext(name: String) -> Option<String> {
         // The extension is the series of characters after a dot at
         // the end of a filename. This deliberately also counts
         // dotfiles - the ".git" folder has the extension "git".
         let re = regex!(r"\.([^.]+)$");
-        re.captures(name).map(|caps| caps.at(1))
+        re.captures(name.as_slice()).map(|caps| caps.at(1).to_string())
     }
 
     pub fn is_dotfile(&self) -> bool {
-        self.name.starts_with(".")
+        self.name.as_slice().starts_with(".")
     }
 
     pub fn is_tmpfile(&self) -> bool {
-        self.name.ends_with("~") || (self.name.starts_with("#") && self.name.ends_with("#"))
+        let name = self.name.as_slice();
+        name.ends_with("~") || (name.starts_with("#") && name.ends_with("#"))
     }
 
     // Highlight the compiled versions of files. Some of them, like .o,
@@ -68,22 +72,23 @@ impl<'a> File<'a> {
     // without a .coffee.
 
     pub fn get_source_files(&self) -> Vec<Path> {
-        match self.ext {
-            Some("class") => vec![self.path.with_extension("java")],  // Java
-            Some("elc") => vec![self.path.with_extension("el")],  // Emacs Lisp
-            Some("hi") => vec![self.path.with_extension("hs")],  // Haskell
-            Some("o") => vec![self.path.with_extension("c"), self.path.with_extension("cpp")],  // C, C++
-            Some("pyc") => vec![self.path.with_extension("py")],  // Python
-            Some("js") => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
-            Some("css") => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
+        let ext = self.ext.clone().unwrap();
+        match ext.as_slice() {
+            "class" => vec![self.path.with_extension("java")],  // Java
+            "elc" => vec![self.path.with_extension("el")],  // Emacs Lisp
+            "hi" => vec![self.path.with_extension("hs")],  // Haskell
+            "o" => vec![self.path.with_extension("c"), self.path.with_extension("cpp")],  // C, C++
+            "pyc" => vec![self.path.with_extension("py")],  // Python
+            "js" => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
+            "css" => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
 
-            Some("aux") => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
-            Some("bbl") => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
-            Some("blg") => vec![self.path.with_extension("tex")],  // BibTeX log file
-            Some("lof") => vec![self.path.with_extension("tex")],  // list of figures
-            Some("log") => vec![self.path.with_extension("tex")],  // TeX log file
-            Some("lot") => vec![self.path.with_extension("tex")],  // list of tables
-            Some("toc") => vec![self.path.with_extension("tex")],  // table of contents
+            "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
+            "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
+            "blg" => vec![self.path.with_extension("tex")],  // BibTeX log file
+            "lof" => vec![self.path.with_extension("tex")],  // list of figures
+            "log" => vec![self.path.with_extension("tex")],  // TeX log file
+            "lot" => vec![self.path.with_extension("tex")],  // list of tables
+            "toc" => vec![self.path.with_extension("tex")],  // table of contents
 
             _ => vec![],
         }
@@ -133,7 +138,8 @@ impl<'a> File<'a> {
     }
 
     fn file_name(&self) -> String {
-        let displayed_name = self.file_colour().paint(self.name);
+        let name = self.name.as_slice();
+        let displayed_name = self.file_colour().paint(name);
         if self.stat.kind == io::TypeSymlink {
             match fs::readlink(self.path) {
                 Ok(path) => {
@@ -149,13 +155,18 @@ impl<'a> File<'a> {
     }
 
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
-        let filename = target_path.as_str().unwrap();
+        let v = target_path.filename().unwrap();
+        let filename = match from_utf8(v) {
+            Some(name) => name.to_string(),
+            None => from_utf8_lossy(v).to_string(),
+        };
+        
         let link_target = fs::stat(&target_path).map(|stat| File {
             path:  &target_path,
             dir:   self.dir,
             stat:  stat,
-            name:  filename,
-            ext:   File::ext(filename),
+            name:  filename.clone(),
+            ext:   File::ext(filename.clone()),
             parts: vec![],  // not needed
         });
 
@@ -166,8 +177,8 @@ impl<'a> File<'a> {
         // that reason anyway.
 
         match link_target {
-            Ok(file) => format!("{} {}", Fixed(244).paint("=>"), file.file_colour().paint(filename)),
-            Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename)),
+            Ok(file) => format!("{} {}", Fixed(244).paint("=>"), file.file_colour().paint(filename.as_slice())),
+            Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename.as_slice())),
         }
     }
 

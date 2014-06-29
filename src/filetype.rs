@@ -73,6 +73,7 @@ pub trait HasType {
 
 impl<'a> HasType for File<'a> {
     fn get_type(&self) -> FileType {
+        let name = self.name.as_slice();
         if self.stat.kind == io::TypeDirectory {
             return Directory;
         }
@@ -85,11 +86,12 @@ impl<'a> HasType for File<'a> {
         else if self.stat.perm.contains(io::UserExecute) {
             return Executable;
         }
-        else if self.name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == self.name) {
+        else if name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == name) {
             return Immediate;
         }
         else if self.ext.is_some() {
-            let ext = self.ext.unwrap();
+            let e = self.ext.clone().unwrap();
+            let ext = e.as_slice();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;
             }
