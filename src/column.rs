@@ -48,23 +48,10 @@ impl Column {
 
 impl Alignment {
     pub fn pad_string(&self, string: &String, padding: uint) -> String {
-        let mut str = String::new();
         match *self {
-            Left => {
-                str.push_str(string.as_slice());
-                for _ in range(0, padding) {
-                    str.push_char(' ');
-                }
-            }
-
-            Right => {
-                for _ in range(0, padding) {
-                    str.push_char(' ');
-                }
-                str.push_str(string.as_slice());
-            },
+            Left => string.clone().append(" ".to_string().repeat(padding).as_slice()),
+            Right => " ".to_string().repeat(padding).append(string.as_slice()),
         }
-        return str;
     }
 }
 
