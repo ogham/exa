@@ -1,4 +1,4 @@
-use colours::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
+use colours::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Grey, Fixed};
 use file::File;
 use std::io;
 
@@ -60,7 +60,7 @@ impl FileType {
             Crypto => Fixed(109).normal(),
             Document => Fixed(105).normal(),
             Compressed => Red.normal(),
-            Temp => Fixed(244).normal(),
+            Temp => Grey.normal(),
             Immediate => Yellow.bold().underline(),
             Compiled => Fixed(137).normal(),
         }

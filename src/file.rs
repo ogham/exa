@@ -1,4 +1,4 @@
-use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use colours::{Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Grey};
 use std::io::{fs, IoResult};
 use std::io;
 use std::str::from_utf8_lossy;
@@ -115,7 +115,7 @@ impl<'a> File<'a> {
                     Cyan.paint(self.stat.unstable.blocks.to_str().as_slice())
                 }
                 else {
-                    Fixed(244).paint("-")
+                    Grey.paint("-")
                 }
             },
 
@@ -175,7 +175,7 @@ impl<'a> File<'a> {
         // that reason anyway.
 
         match link_target {
-            Ok(file) => format!("{} {}", Fixed(244).paint("=>"), file.file_colour().paint(filename.as_slice())),
+            Ok(file) => format!("{} {}", Grey.paint("=>"), file.file_colour().paint(filename.as_slice())),
             Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename.as_slice())),
         }
     }
@@ -184,7 +184,7 @@ impl<'a> File<'a> {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
-            Fixed(244).paint("-")
+            Grey.paint("-")
         } else {
             let (size, suffix) = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
@@ -234,7 +234,7 @@ impl<'a> File<'a> {
         if bits.contains(bit) {
             style.paint(character.as_slice())
         } else {
-            Black.bold().paint("-".as_slice())
+            Grey.paint("-".as_slice())
         }
     }
 }

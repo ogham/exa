@@ -46,6 +46,8 @@ impl Colour {
     }        
 }
 
+pub static Grey: Colour = Fixed(244);
+
 // There are only three different styles: plain (no formatting), only
 // a foreground colour, and a catch-all for anything more complicated
 // than that. It's technically possible to write other cases such as
