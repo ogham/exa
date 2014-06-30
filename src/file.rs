@@ -69,6 +69,10 @@ impl<'a> File<'a> {
     // without a .coffee.
 
     pub fn get_source_files(&self) -> Vec<Path> {
+        if self.ext.is_none() {
+            return vec![];
+        }
+        
         let ext = self.ext.clone().unwrap();
         match ext.as_slice() {
             "class" => vec![self.path.with_extension("java")],  // Java
