@@ -1,7 +1,7 @@
 use colours::{Plain, Style, Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use std::io::{fs, IoResult};
 use std::io;
-use std::str::{from_utf8, from_utf8_lossy};
+use std::str::from_utf8_lossy;
 
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use format::{format_metric_bytes, format_IEC_bytes};
@@ -29,10 +29,7 @@ pub struct File<'a> {
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = match from_utf8(v) {
-            Some(name) => name.to_string(),
-            None => from_utf8_lossy(v).to_string(),
-        };
+        let filename = from_utf8_lossy(v).to_string();
         
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
@@ -156,10 +153,7 @@ impl<'a> File<'a> {
 
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
         let v = target_path.filename().unwrap();
-        let filename = match from_utf8(v) {
-            Some(name) => name.to_string(),
-            None => from_utf8_lossy(v).to_string(),
-        };
+        let filename = from_utf8_lossy(v).to_string();
         
         let link_target = fs::stat(&target_path).map(|stat| File {
             path:  &target_path,
