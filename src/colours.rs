@@ -5,9 +5,7 @@
 
 // Bear in mind that the first eight (and their bold variants) are
 // user-definable and can look different on different terminals, but
-// the other 256 have their values fixed. Prefer using a fixed grey,
-// such as Fixed(244), to bold black, as bold black looks really weird
-// on some terminals.
+// the other 256 have their values fixed.
 
 pub enum Colour {
     Black, Red, Green, Yellow, Blue, Purple, Cyan, White, Fixed(u8),
@@ -45,6 +43,9 @@ impl Colour {
         }
     }        
 }
+
+// Prefer using a fixed grey, such as Fixed(244), to bold black, as
+// bold black looks really weird on some terminals.
 
 pub static Grey: Colour = Fixed(244);
 
