@@ -3,7 +3,7 @@ exa
 
 exa is a replacement for `ls` written in Rust.
 
-![Build status](https://travis-ci.org/ogham/exa.svg?branch=master)
+[![Build status](https://travis-ci.org/ogham/exa.svg)](https://travis-ci.org/ogham/exa)
 
 Screenshot
 ----------

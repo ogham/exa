@@ -6,5 +6,6 @@ install:
   - sudo apt-get install rust-nightly cargo
 script:
   - cargo build
-  - cargo test
+  - rustc --test src/exa -o exa-test
+  - ./exa-test
 
