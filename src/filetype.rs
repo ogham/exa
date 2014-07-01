@@ -1,6 +1,9 @@
-use colours::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Grey, Fixed};
 use file::File;
 use std::io;
+
+use ansi_term::{Colour, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
+
+static Grey: Colour = Fixed(244);
 
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
@@ -136,4 +139,3 @@ impl<'a> HasType for File<'a> {
         return Normal;  // no filetype
     }
 }
-

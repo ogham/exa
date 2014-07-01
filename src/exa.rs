@@ -1,6 +1,7 @@
 #![feature(phase)]
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
+extern crate ansi_term;
 
 use std::os;
 
@@ -8,9 +9,9 @@ use file::File;
 use dir::Dir;
 use options::Options;
 use unix::Unix;
-use colours::Plain;
 
-pub mod colours;
+use ansi_term::{Plain, strip_formatting};
+
 pub mod column;
 pub mod dir;
 pub mod format;
@@ -88,7 +89,7 @@ fn exa(options: &Options, print_header: bool, string: String) {
     // results are cached.
 
     let lengths: Vec<Vec<uint>> = table.iter()
-        .map(|row| row.iter().map(|col| colours::strip_formatting(col).len()).collect())
+        .map(|row| row.iter().map(|col| strip_formatting(col).len()).collect())
         .collect();
 
     let column_widths: Vec<uint> = range(0, options.columns.len())

@@ -7,3 +7,7 @@ authors = [ "ogham@bsago.me" ]
 [[bin]]
 
 name = "exa"
+
+[dependencies.ansi_term]
+
+git = "https://github.com/ogham/rust-ansi-term.git"

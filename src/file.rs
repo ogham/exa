@@ -1,7 +1,8 @@
-use colours::{Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Grey};
 use std::io::{fs, IoResult};
 use std::io;
 use std::str::from_utf8_lossy;
+
+use ansi_term::{Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use format::{format_metric_bytes, format_IEC_bytes};
@@ -9,6 +10,8 @@ use unix::Unix;
 use sort::SortPart;
 use dir::Dir;
 use filetype::HasType;
+
+static Grey: Colour = Fixed(244);
 
 // Instead of working with Rust's Paths, we have our own File object
 // that holds the Path and various cached information. Each file is
