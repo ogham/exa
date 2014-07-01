@@ -1,7 +1,10 @@
 before_install:
   - yes | sudo add-apt-repository ppa:hansjorg/rust
+  - yes | sudo add-apt-repository ppa:cmrx64/cargo
   - sudo apt-get update
 install:
-  - sudo apt-get install rust-nightly
+  - sudo apt-get install rust-nightly cargo
 script:
-  - rustc --test src/exa.rs -o exa-test && ./exa-test
+  - cargo build
+  - cargo test
+
