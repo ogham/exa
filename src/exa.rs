@@ -89,7 +89,7 @@ fn exa(options: &Options, print_header: bool, string: String) {
     // results are cached.
 
     let lengths: Vec<Vec<uint>> = table.iter()
-        .map(|row| row.iter().map(|col| strip_formatting(col).len()).collect())
+        .map(|row| row.iter().map(|col| strip_formatting(col.clone()).len()).collect())
         .collect();
 
     let column_widths: Vec<uint> = range(0, options.columns.len())
