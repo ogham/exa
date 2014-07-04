@@ -10,7 +10,7 @@ use dir::Dir;
 use options::Options;
 use unix::Unix;
 
-use ansi_term::{Plain, strip_formatting};
+use ansi_term::{Paint, Plain, strip_formatting};
 
 pub mod column;
 pub mod dir;

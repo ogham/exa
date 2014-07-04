@@ -1,7 +1,7 @@
 use file::File;
 use std::io;
 
-use ansi_term::{Colour, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
+use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
 
 static Grey: Colour = Fixed(244);
 
