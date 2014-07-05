@@ -2,7 +2,7 @@ use std::io::{fs, IoResult};
 use std::io;
 use std::str::from_utf8_lossy;
 
-use ansi_term::{Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use format::{format_metric_bytes, format_IEC_bytes};
