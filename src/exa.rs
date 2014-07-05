@@ -26,43 +26,39 @@ fn main() {
 
     match Options::getopts(args) {
         Err(err) => println!("Invalid options:\n{}", err),
-        Ok(opts) => {
-            if opts.dirs.is_empty() {
-                exa(&opts, false, ".".to_string())
-            }
-            else {
-                let mut first = true;
-                let print_dir_names = opts.dirs.len() > 1;
-                for dir in opts.dirs.clone().move_iter() {
-                    if first {
-                        first = false;
-                    }
-                    else {
-                        print!("\n");
-                    }
-                    exa(&opts, print_dir_names, dir)
-                }
-            }
-        }
+        Ok(opts) => exa(&opts),
     };
 }
 
-fn exa(options: &Options, print_dir_names: bool, string: String) {
-    let path = Path::new(string.clone());
-
-    let dir = match Dir::readdir(path) {
-        Ok(dir) => dir,
-        Err(e) => {
-            println!("{}: {}", string, e);
-            return;
+fn exa(opts: &Options) {
+    let mut first = true;
+    
+    // It's only worth printing out directory names if the user supplied
+    // more than one of them.
+    let print_dir_names = opts.dirs.len() > 1;
+    
+    for dir_name in opts.dirs.clone().move_iter() {
+        if first {
+            first = false;
         }
-    };
+        else {
+            print!("\n");
+        }
 
-    // Print header *after* readdir must have succeeded
-    if print_dir_names {
-        println!("{}:", string);
+        match Dir::readdir(Path::new(dir_name.clone())) {
+            Ok(dir) => {
+                if print_dir_names { println!("{}:", dir_name); }
+                lines_view(opts, dir);
+            }
+            Err(e) => {
+                println!("{}: {}", dir_name, e);
+                return;
+            }
+        };
     }
+}
 
+fn lines_view(options: &Options, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 

@@ -50,7 +50,7 @@ impl Options {
                 reverse: matches.opt_present("reverse"),
                 header: matches.opt_present("header"),
                 sortField: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
-                dirs: matches.free.clone(),
+                dirs: if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
                 columns: Options::columns(matches),
             })
         }
