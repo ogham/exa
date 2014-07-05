@@ -32,7 +32,7 @@ fn main() {
             }
             else {
                 let mut first = true;
-                let print_header = opts.dirs.len() > 1;
+                let print_dir_names = opts.dirs.len() > 1;
                 for dir in opts.dirs.clone().move_iter() {
                     if first {
                         first = false;
@@ -40,14 +40,14 @@ fn main() {
                     else {
                         print!("\n");
                     }
-                    exa(&opts, print_header, dir)
+                    exa(&opts, print_dir_names, dir)
                 }
             }
         }
     };
 }
 
-fn exa(options: &Options, print_header: bool, string: String) {
+fn exa(options: &Options, print_dir_names: bool, string: String) {
     let path = Path::new(string.clone());
 
     let dir = match Dir::readdir(path) {
@@ -59,7 +59,7 @@ fn exa(options: &Options, print_header: bool, string: String) {
     };
 
     // Print header *after* readdir must have succeeded
-    if print_header {
+    if print_dir_names {
         println!("{}:", string);
     }
 
