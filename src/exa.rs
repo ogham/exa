@@ -7,7 +7,8 @@ use std::os;
 
 use file::File;
 use dir::Dir;
-use options::Options;
+use column::{Column, Left};
+use options::{Options, Lines, Grid};
 use unix::Unix;
 
 use ansi_term::{Paint, Plain, strip_formatting};
@@ -48,7 +49,10 @@ fn exa(opts: &Options) {
         match Dir::readdir(Path::new(dir_name.clone())) {
             Ok(dir) => {
                 if print_dir_names { println!("{}:", dir_name); }
-                lines_view(opts, dir);
+                match opts.view {
+                    Lines(ref cols) => lines_view(opts, cols, dir),
+                    Grid => grid_view(opts, dir),
+                }
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
@@ -58,7 +62,24 @@ fn exa(opts: &Options) {
     }
 }
 
-fn lines_view(options: &Options, dir: Dir) {
+fn grid_view(options: &Options, dir: Dir) {
+    let unsorted_files = dir.files();
+    let files: Vec<&File> = options.transform_files(&unsorted_files);
+    
+    let max_column_length = files.iter().map(|f| f.name.len()).max().unwrap();
+    let console_width = 80;
+    let num_columns = console_width / max_column_length;
+    
+    for y in range(0, files.len() / num_columns) {
+        for x in range(0, num_columns) {
+            let file_name = files.get(y * num_columns + x).name.clone();
+            print!("{}", Left.pad_string(&file_name, max_column_length - strip_formatting(file_name.clone()).len() + 1));
+        }
+        print!("\n");
+    }
+}
+
+fn lines_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 
@@ -71,11 +92,11 @@ fn lines_view(options: &Options, dir: Dir) {
     let mut cache = Unix::empty_cache();
 
     let mut table: Vec<Vec<String>> = files.iter()
-        .map(|f| options.columns.iter().map(|c| f.display(c, &mut cache)).collect())
+        .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
 
     if options.header {
-        table.unshift(options.columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
+        table.unshift(columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
     }
 
     // Each column needs to have its invisible colour-formatting
@@ -88,17 +109,17 @@ fn lines_view(options: &Options, dir: Dir) {
         .map(|row| row.iter().map(|col| strip_formatting(col.clone()).len()).collect())
         .collect();
 
-    let column_widths: Vec<uint> = range(0, options.columns.len())
+    let column_widths: Vec<uint> = range(0, columns.len())
         .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
         .collect();
 
     for (field_widths, row) in lengths.iter().zip(table.iter()) {
-        for (num, column) in options.columns.iter().enumerate() {
+        for (num, column) in columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");
             }
 
-            if num == options.columns.len() - 1 {
+            if num == columns.len() - 1 {
                 print!("{}", row.get(num));
             }
             else {

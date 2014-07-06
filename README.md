@@ -17,8 +17,9 @@ Options
 - **-b**, **--binary**: use binary (power of two) file sizes
 - **-g**, **--group**: show group as well as user
 - **-h**, **--header**: show a header row
+- **-H**, **--links**: show number of hard links column
 - **-i**, **--inode**: show inode number column
-- **-l**, **--links**: show number of hard links column
+- **-l**, **--long**: display extended details and attributes
 - **-r**, **--reverse**: reverse sort order
 - **-s**, **--sort=(name, size, ext)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
