@@ -72,8 +72,10 @@ fn grid_view(options: &Options, dir: Dir) {
     
     for y in range(0, files.len() / num_columns) {
         for x in range(0, num_columns) {
-            let file_name = files.get(y * num_columns + x).name.clone();
-            print!("{}", Left.pad_string(&file_name, max_column_length - strip_formatting(file_name.clone()).len() + 1));
+            let file = files.get(y * num_columns + x);
+            let file_name = file.name.clone();
+            let styled_name = file.file_colour().paint(file_name.as_slice());
+            print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
         }
         print!("\n");
     }
