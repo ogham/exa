@@ -92,7 +92,12 @@ fn grid_view(options: &Options, across: bool, dir: Dir) {
             let file = files.get(num);
             let file_name = file.name.clone();
             let styled_name = file.file_colour().paint(file_name.as_slice());
-            print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
+            if x == num_columns - 1 {
+                print!("{}", styled_name);
+            }
+            else {
+                print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
+            }
         }
         print!("\n");
     }
