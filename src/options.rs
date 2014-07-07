@@ -22,7 +22,7 @@ impl SortField {
 
 pub enum View {
     Lines(Vec<Column>),
-    Grid,
+    Grid(bool),
 }
 
 pub struct Options {
@@ -48,6 +48,7 @@ impl Options {
             getopts::optflag("r", "reverse", "reverse order of files"),
             getopts::optopt("s", "sort", "field to sort by", "WORD"),
             getopts::optflag("S", "blocks", "show number of file system blocks"),
+            getopts::optflag("x", "across", "sort multi-column view entries across"),
         ];
 
         match getopts::getopts(args.tail(), opts) {
@@ -68,7 +69,7 @@ impl Options {
             Lines(Options::columns(matches))
         }
         else {
-            Grid
+            Grid(matches.opt_present("across"))
         }
     }
     

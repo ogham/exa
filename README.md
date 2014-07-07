@@ -23,7 +23,7 @@ Options
 - **-r**, **--reverse**: reverse sort order
 - **-s**, **--sort=(name, size, ext)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
-
+- **-x**, **--across**: sort multi-column view entries across
 
 Installation
 ------------

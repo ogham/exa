@@ -51,7 +51,7 @@ fn exa(opts: &Options) {
                 if print_dir_names { println!("{}:", dir_name); }
                 match opts.view {
                     Lines(ref cols) => lines_view(opts, cols, dir),
-                    Grid => grid_view(opts, dir),
+                    Grid(bool) => grid_view(opts, bool, dir),
                 }
             }
             Err(e) => {
@@ -62,26 +62,34 @@ fn exa(opts: &Options) {
     }
 }
 
-fn grid_view(options: &Options, dir: Dir) {
+fn grid_view(options: &Options, across: bool, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
     
     let max_column_length = files.iter().map(|f| f.name.len()).max().unwrap();
     let console_width = 80;
     let num_columns = (console_width + 1) / (max_column_length + 1);
+    let count = files.len();
 
-    let mut num_rows = files.len() / num_columns;
-    if files.len() % num_columns != 0 {
+    let mut num_rows = count / num_columns;
+    if count % num_columns != 0 {
         num_rows += 1;
     }
     
     for y in range(0, num_rows) {
         for x in range(0, num_columns) {
-            if y * num_columns + x >= files.len() {
+            let num = if across {
+                y * num_columns + x
+            }
+            else {
+                y + num_rows * x
+            };
+            
+            if num >= count {
                 continue;
             }
             
-            let file = files.get(y * num_columns + x);
+            let file = files.get(num);
             let file_name = file.name.clone();
             let styled_name = file.file_colour().paint(file_name.as_slice());
             print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
