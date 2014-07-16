@@ -109,13 +109,13 @@ impl<'a> File<'a> {
             // the time.
             HardLinks => {
                 let style = if self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1 { Red.on(Yellow) } else { Red.normal() };
-                style.paint(self.stat.unstable.nlink.to_str().as_slice())
+                style.paint(self.stat.unstable.nlink.to_string().as_slice())
             },
 
-            Inode => Purple.paint(self.stat.unstable.inode.to_str().as_slice()),
+            Inode => Purple.paint(self.stat.unstable.inode.to_string().as_slice()),
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
-                    Cyan.paint(self.stat.unstable.blocks.to_str().as_slice())
+                    Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
                 }
                 else {
                     Grey.paint("-")
@@ -128,13 +128,13 @@ impl<'a> File<'a> {
                 let uid = self.stat.unstable.uid as u32;
                 unix.load_user(uid);
                 let style = if unix.uid == uid { Yellow.bold() } else { Plain };
-                let string = unix.get_user_name(uid).unwrap_or(uid.to_str());
+                let string = unix.get_user_name(uid).unwrap_or(uid.to_string());
                 style.paint(string.as_slice())
             },
             Group => {
                 let gid = self.stat.unstable.gid as u32;
                 unix.load_group(gid);
-                let name = unix.get_group_name(gid).unwrap_or(gid.to_str());
+                let name = unix.get_group_name(gid).unwrap_or(gid.to_string());
                 let style = if unix.is_group_member(gid) { Yellow.normal() } else { Plain };
                 style.paint(name.as_slice())
             },
