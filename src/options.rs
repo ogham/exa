@@ -1,7 +1,6 @@
 extern crate getopts;
 
 use file::File;
-use std::cmp::lexical_ordering;
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use std::ascii::StrAsciiExt;
 
@@ -122,7 +121,7 @@ impl Options {
             Extension => files.sort_by(|a, b| {
                 let exts = a.ext.clone().map(|e| e.as_slice().to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.as_slice().to_ascii_lower()));
                 let names = a.name.as_slice().to_ascii_lower().cmp(&b.name.as_slice().to_ascii_lower());
-                lexical_ordering(exts, names)
+                exts.cmp(&names)
             }),
         }
 

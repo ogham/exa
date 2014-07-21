@@ -89,7 +89,7 @@ fn grid_view(options: &Options, across: bool, dir: Dir) {
                 continue;
             }
             
-            let file = files.get(num);
+            let file = files[num];
             let file_name = file.name.clone();
             let styled_name = file.file_colour().paint(file_name.as_slice());
             if x == num_columns - 1 {
@@ -134,7 +134,7 @@ fn lines_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
         .collect();
 
     let column_widths: Vec<uint> = range(0, columns.len())
-        .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
+        .map(|n| lengths.iter().map(|row| row[n]).max().unwrap())
         .collect();
 
     for (field_widths, row) in lengths.iter().zip(table.iter()) {
@@ -147,7 +147,7 @@ fn lines_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
                 print!("{}", row.get(num));
             }
             else {
-                let padding = *column_widths.get(num) - *field_widths.get(num);
+                let padding = column_widths[num] - field_widths[num];
                 print!("{}", column.alignment().pad_string(row.get(num), padding));
             }
         }
