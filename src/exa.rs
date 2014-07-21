@@ -3,6 +3,10 @@ extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 extern crate ansi_term;
 
+extern crate unicode;
+use std::char::UnicodeChar;
+use std::iter::AdditiveIterator;
+
 use std::os;
 
 use file::File;
@@ -62,11 +66,19 @@ fn exa(opts: &Options) {
     }
 }
 
+fn width(string: &str) -> uint {
+    string.as_slice().chars()
+        .map(|c| c.width(true))
+        .filter(|o| o.is_some())
+        .map(|o| o.unwrap())
+        .sum()
+}
+
 fn grid_view(options: &Options, across: bool, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
     
-    let max_column_length = files.iter().map(|f| f.name.len()).max().unwrap();
+    let max_column_length = files.iter().map(|f| width(f.name.as_slice())).max().unwrap();
     let console_width = 80;
     let num_columns = (console_width + 1) / (max_column_length + 1);
     let count = files.len();
