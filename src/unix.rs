@@ -39,6 +39,7 @@ mod c {
         pub fn getuid() -> libc::c_int;
     }
 }
+
 pub struct Unix {
     user_names:    HashMap<u32, Option<String>>,  // mapping of user IDs to user names
     group_names:   HashMap<u32, Option<String>>,  // mapping of groups IDs to group names
@@ -50,7 +51,8 @@ pub struct Unix {
 impl Unix {
     pub fn empty_cache() -> Unix {
         let uid = unsafe { c::getuid() };
-        let info = unsafe { c::getpwuid(uid as i32).to_option().unwrap() };  // the user has to have a name
+        let infoptr = unsafe { c::getpwuid(uid as i32) };
+        let info = unsafe { infoptr.to_option().unwrap() };  // the user has to have a name
 
         let username = unsafe { from_c_str(info.pw_name) };
 

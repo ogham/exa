@@ -1,6 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
-use std::str::from_utf8_lossy;
+use unicode::str::UnicodeStrSlice;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
@@ -32,7 +32,7 @@ pub struct File<'a> {
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8_lossy(v).to_string();
         
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
@@ -109,13 +109,13 @@ impl<'a> File<'a> {
             // the time.
             HardLinks => {
                 let style = if self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1 { Red.on(Yellow) } else { Red.normal() };
-                style.paint(self.stat.unstable.nlink.to_str().as_slice())
+                style.paint(self.stat.unstable.nlink.to_string().as_slice())
             },
 
-            Inode => Purple.paint(self.stat.unstable.inode.to_str().as_slice()),
+            Inode => Purple.paint(self.stat.unstable.inode.to_string().as_slice()),
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
-                    Cyan.paint(self.stat.unstable.blocks.to_str().as_slice())
+                    Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
                 }
                 else {
                     Grey.paint("-")
@@ -128,13 +128,13 @@ impl<'a> File<'a> {
                 let uid = self.stat.unstable.uid as u32;
                 unix.load_user(uid);
                 let style = if unix.uid == uid { Yellow.bold() } else { Plain };
-                let string = unix.get_user_name(uid).unwrap_or(uid.to_str());
+                let string = unix.get_user_name(uid).unwrap_or(uid.to_string());
                 style.paint(string.as_slice())
             },
             Group => {
                 let gid = self.stat.unstable.gid as u32;
                 unix.load_group(gid);
-                let name = unix.get_group_name(gid).unwrap_or(gid.to_str());
+                let name = unix.get_group_name(gid).unwrap_or(gid.to_string());
                 let style = if unix.is_group_member(gid) { Yellow.normal() } else { Plain };
                 style.paint(name.as_slice())
             },
@@ -158,9 +158,13 @@ impl<'a> File<'a> {
         }
     }
 
+    pub fn file_name_width(&self) -> uint {
+        self.name.as_slice().width(false)
+    }
+
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
         let v = target_path.filename().unwrap();
-        let filename = from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8_lossy(v).to_string();
         
         let link_target = fs::stat(&target_path).map(|stat| File {
             path:  &target_path,
@@ -210,7 +214,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn file_colour(&self) -> Style {
+    pub fn file_colour(&self) -> Style {
         self.get_type().style()
     }
 
