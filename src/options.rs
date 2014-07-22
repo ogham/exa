@@ -74,8 +74,10 @@ impl Options {
             Lines
         }
         else {
-            let (console_width, _) = term::dimensions().unwrap_or((80, 24));
-            Grid(matches.opt_present("across"), console_width)
+            match term::dimensions() {
+                None => Lines,
+                Some((width, _)) => Grid(matches.opt_present("across"), width),
+            }
         }
     }
     
