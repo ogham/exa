@@ -50,11 +50,17 @@ fn exa(opts: &Options) {
 
         match Dir::readdir(Path::new(dir_name.clone())) {
             Ok(dir) => {
-                if print_dir_names { println!("{}:", dir_name); }
+                let unsorted_files = dir.files();
+                let files: Vec<&File> = opts.transform_files(&unsorted_files);
+
+                if print_dir_names {
+                    println!("{}:", dir_name);
+                }
+
                 match opts.view {
-                    Details(ref cols) => details_view(opts, cols, dir),
-                    Lines => lines_view(opts, dir),
-                    Grid(across, width) => grid_view(opts, across, width, dir),
+                    Details(ref cols) => details_view(opts, cols, files),
+                    Lines => lines_view(files),
+                    Grid(across, width) => grid_view(across, width, files),
                 }
             }
             Err(e) => {
@@ -65,19 +71,13 @@ fn exa(opts: &Options) {
     }
 }
 
-fn lines_view(options: &Options, dir: Dir) {
-    let unsorted_files = dir.files();
-    let files: Vec<&File> = options.transform_files(&unsorted_files);
-    
+fn lines_view(files: Vec<&File>) {
     for file in files.iter() {
         println!("{}", file.file_name());
     }
 }
 
-fn grid_view(options: &Options, across: bool, console_width: uint, dir: Dir) {
-    let unsorted_files = dir.files();
-    let files: Vec<&File> = options.transform_files(&unsorted_files);
-    
+fn grid_view(across: bool, console_width: uint, files: Vec<&File>) {
     let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap();
     let num_columns = (console_width + 1) / (max_column_length + 1);
     let count = files.len();
@@ -114,10 +114,7 @@ fn grid_view(options: &Options, across: bool, console_width: uint, dir: Dir) {
     }
 }
 
-fn details_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
-    let unsorted_files = dir.files();
-    let files: Vec<&File> = options.transform_files(&unsorted_files);
-
+fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum
