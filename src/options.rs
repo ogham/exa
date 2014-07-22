@@ -3,6 +3,7 @@ extern crate getopts;
 use file::File;
 use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
 use std::ascii::StrAsciiExt;
+use term;
 
 pub enum SortField {
     Name, Extension, Size
@@ -20,8 +21,9 @@ impl SortField {
 }
 
 pub enum View {
-    Lines(Vec<Column>),
-    Grid(bool),
+    Details(Vec<Column>),
+    Lines,
+    Grid(bool, uint),
 }
 
 pub struct Options {
@@ -37,6 +39,7 @@ pub struct Options {
 impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
         let opts = [
+            getopts::optflag("1", "oneline", "display one entry per line"),
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
             getopts::optflag("g", "group", "show group as well as user"),
@@ -65,10 +68,14 @@ impl Options {
     
     fn view(matches: getopts::Matches) -> View {
         if matches.opt_present("long") {
-            Lines(Options::columns(matches))
+            Details(Options::columns(matches))
+        }
+        else if matches.opt_present("oneline") {
+            Lines
         }
         else {
-            Grid(matches.opt_present("across"))
+            let (console_width, _) = term::dimensions().unwrap_or((80, 24));
+            Grid(matches.opt_present("across"), console_width)
         }
     }
     

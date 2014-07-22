@@ -141,7 +141,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn file_name(&self) -> String {
+    pub fn file_name(&self) -> String {
         let name = self.name.as_slice();
         let displayed_name = self.file_colour().paint(name);
         if self.stat.kind == io::TypeSymlink {

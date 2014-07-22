@@ -9,7 +9,7 @@ use std::os;
 use file::File;
 use dir::Dir;
 use column::{Column, Left};
-use options::{Options, Lines, Grid};
+use options::{Options, Details, Lines, Grid};
 use unix::Unix;
 
 use ansi_term::{Paint, Plain, strip_formatting};
@@ -52,8 +52,9 @@ fn exa(opts: &Options) {
             Ok(dir) => {
                 if print_dir_names { println!("{}:", dir_name); }
                 match opts.view {
-                    Lines(ref cols) => lines_view(opts, cols, dir),
-                    Grid(bool) => grid_view(opts, bool, dir),
+                    Details(ref cols) => details_view(opts, cols, dir),
+                    Lines => lines_view(opts, dir),
+                    Grid(across, width) => grid_view(opts, across, width, dir),
                 }
             }
             Err(e) => {
@@ -64,12 +65,20 @@ fn exa(opts: &Options) {
     }
 }
 
-fn grid_view(options: &Options, across: bool, dir: Dir) {
+fn lines_view(options: &Options, dir: Dir) {
+    let unsorted_files = dir.files();
+    let files: Vec<&File> = options.transform_files(&unsorted_files);
+    
+    for file in files.iter() {
+        println!("{}", file.file_name());
+    }
+}
+
+fn grid_view(options: &Options, across: bool, console_width: uint, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
     
     let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap();
-    let (console_width, _) = term::dimensions().unwrap_or((80, 24));
     let num_columns = (console_width + 1) / (max_column_length + 1);
     let count = files.len();
 
@@ -105,7 +114,7 @@ fn grid_view(options: &Options, across: bool, dir: Dir) {
     }
 }
 
-fn lines_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
+fn details_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 

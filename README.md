@@ -13,6 +13,7 @@ Screenshot
 Options
 -------
 
+- **-1**, **--oneline**: display one entry per line
 - **-a**, **--all**: show dot files
 - **-b**, **--binary**: use binary (power of two) file sizes
 - **-g**, **--group**: show group as well as user
