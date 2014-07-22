@@ -39,6 +39,7 @@ mod c {
         pub fn getuid() -> libc::c_int;
     }
 }
+
 pub struct Unix {
     user_names:    HashMap<u32, Option<String>>,  // mapping of user IDs to user names
     group_names:   HashMap<u32, Option<String>>,  // mapping of groups IDs to group names

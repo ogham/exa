@@ -1,5 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
+use unicode::str::UnicodeStrSlice;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
@@ -155,6 +156,10 @@ impl<'a> File<'a> {
         else {
             displayed_name
         }
+    }
+
+    pub fn file_name_width(&self) -> uint {
+        self.name.as_slice().width(false)
     }
 
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
