@@ -2,12 +2,14 @@
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 extern crate ansi_term;
+extern crate unicode;
 
 use std::os;
 
 use file::File;
 use dir::Dir;
-use options::Options;
+use column::{Column, Left};
+use options::{Options, Lines, Grid};
 use unix::Unix;
 
 use ansi_term::{Paint, Plain, strip_formatting};
@@ -20,6 +22,7 @@ pub mod filetype;
 pub mod unix;
 pub mod options;
 pub mod sort;
+pub mod term;
 
 fn main() {
     let args = os::args();
@@ -48,7 +51,10 @@ fn exa(opts: &Options) {
         match Dir::readdir(Path::new(dir_name.clone())) {
             Ok(dir) => {
                 if print_dir_names { println!("{}:", dir_name); }
-                lines_view(opts, dir);
+                match opts.view {
+                    Lines(ref cols) => lines_view(opts, cols, dir),
+                    Grid(bool) => grid_view(opts, bool, dir),
+                }
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
@@ -58,7 +64,48 @@ fn exa(opts: &Options) {
     }
 }
 
-fn lines_view(options: &Options, dir: Dir) {
+fn grid_view(options: &Options, across: bool, dir: Dir) {
+    let unsorted_files = dir.files();
+    let files: Vec<&File> = options.transform_files(&unsorted_files);
+    
+    let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap();
+    let (console_width, _) = term::dimensions().unwrap_or((80, 24));
+    let num_columns = (console_width + 1) / (max_column_length + 1);
+    let count = files.len();
+
+    let mut num_rows = count / num_columns;
+    if count % num_columns != 0 {
+        num_rows += 1;
+    }
+    
+    for y in range(0, num_rows) {
+        for x in range(0, num_columns) {
+            let num = if across {
+                y * num_columns + x
+            }
+            else {
+                y + num_rows * x
+            };
+            
+            if num >= count {
+                continue;
+            }
+            
+            let file = files[num];
+            let file_name = file.name.clone();
+            let styled_name = file.file_colour().paint(file_name.as_slice());
+            if x == num_columns - 1 {
+                print!("{}", styled_name);
+            }
+            else {
+                print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
+            }
+        }
+        print!("\n");
+    }
+}
+
+fn lines_view(options: &Options, columns: &Vec<Column>, dir: Dir) {
     let unsorted_files = dir.files();
     let files: Vec<&File> = options.transform_files(&unsorted_files);
 
@@ -71,11 +118,11 @@ fn lines_view(options: &Options, dir: Dir) {
     let mut cache = Unix::empty_cache();
 
     let mut table: Vec<Vec<String>> = files.iter()
-        .map(|f| options.columns.iter().map(|c| f.display(c, &mut cache)).collect())
+        .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
 
     if options.header {
-        table.unshift(options.columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
+        table.unshift(columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
     }
 
     // Each column needs to have its invisible colour-formatting
@@ -88,21 +135,21 @@ fn lines_view(options: &Options, dir: Dir) {
         .map(|row| row.iter().map(|col| strip_formatting(col.clone()).len()).collect())
         .collect();
 
-    let column_widths: Vec<uint> = range(0, options.columns.len())
-        .map(|n| lengths.iter().map(|row| *row.get(n)).max().unwrap())
+    let column_widths: Vec<uint> = range(0, columns.len())
+        .map(|n| lengths.iter().map(|row| row[n]).max().unwrap())
         .collect();
 
     for (field_widths, row) in lengths.iter().zip(table.iter()) {
-        for (num, column) in options.columns.iter().enumerate() {
+        for (num, column) in columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");
             }
 
-            if num == options.columns.len() - 1 {
+            if num == columns.len() - 1 {
                 print!("{}", row.get(num));
             }
             else {
-                let padding = *column_widths.get(num) - *field_widths.get(num);
+                let padding = column_widths[num] - field_widths[num];
                 print!("{}", column.alignment().pad_string(row.get(num), padding));
             }
         }

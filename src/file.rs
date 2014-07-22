@@ -1,6 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
-use std::str::from_utf8_lossy;
+use unicode::str::UnicodeStrSlice;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
@@ -32,7 +32,7 @@ pub struct File<'a> {
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8_lossy(v).to_string();
         
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
@@ -158,9 +158,13 @@ impl<'a> File<'a> {
         }
     }
 
+    pub fn file_name_width(&self) -> uint {
+        self.name.as_slice().width(false)
+    }
+
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
         let v = target_path.filename().unwrap();
-        let filename = from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8_lossy(v).to_string();
         
         let link_target = fs::stat(&target_path).map(|stat| File {
             path:  &target_path,
@@ -210,7 +214,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn file_colour(&self) -> Style {
+    pub fn file_colour(&self) -> Style {
         self.get_type().style()
     }
 
