@@ -1,5 +1,6 @@
 use file::File;
 use std::io;
+use std::ascii::StrAsciiExt;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
 
@@ -93,7 +94,7 @@ impl<'a> HasType for File<'a> {
             return Immediate;
         }
         else if self.ext.is_some() {
-            let e = self.ext.clone().unwrap();
+            let e = self.ext.clone().unwrap().as_slice().to_ascii_lower();
             let ext = e.as_slice();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;
