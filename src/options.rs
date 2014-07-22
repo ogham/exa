@@ -6,16 +6,18 @@ use std::ascii::StrAsciiExt;
 use term;
 
 pub enum SortField {
-    Name, Extension, Size
+    Unsorted, Name, Extension, Size, FileInode
 }
 
 impl SortField {
     fn from_word(word: String) -> SortField {
         match word.as_slice() {
-            "name" => Name,
-            "size" => Size,
-            "ext"  => Extension,
-            _      => fail!("Invalid sorting order"),
+            "name"  => Name,
+            "size"  => Size,
+            "ext"   => Extension,
+            "none"  => Unsorted,
+            "inode" => FileInode,
+            _       => fail!("Invalid sorting order"),
         }
     }
 }
@@ -125,8 +127,10 @@ impl Options {
             .collect();
 
         match self.sort_field {
+            Unsorted => {},
             Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
             Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
+            FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             Extension => files.sort_by(|a, b| {
                 let exts = a.ext.clone().map(|e| e.as_slice().to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.as_slice().to_ascii_lower()));
                 let names = a.name.as_slice().to_ascii_lower().cmp(&b.name.as_slice().to_ascii_lower());

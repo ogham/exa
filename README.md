@@ -22,9 +22,11 @@ Options
 - **-i**, **--inode**: show inode number column
 - **-l**, **--long**: display extended details and attributes
 - **-r**, **--reverse**: reverse sort order
-- **-s**, **--sort=(name, size, ext)**: field to sort by
+- **-s**, **--sort=(field)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
 - **-x**, **--across**: sort multi-column view entries across
+
+You can sort by **name**, **size**, **ext**, **inode**, or **none**.
 
 Installation
 ------------
