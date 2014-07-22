@@ -89,10 +89,10 @@ impl<'a> File<'a> {
             "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
             "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
             "blg" => vec![self.path.with_extension("tex")],  // BibTeX log file
-            "lof" => vec![self.path.with_extension("tex")],  // list of figures
+            "lof" => vec![self.path.with_extension("tex")],  // TeX list of figures
             "log" => vec![self.path.with_extension("tex")],  // TeX log file
-            "lot" => vec![self.path.with_extension("tex")],  // list of tables
-            "toc" => vec![self.path.with_extension("tex")],  // table of contents
+            "lot" => vec![self.path.with_extension("tex")],  // TeX list of tables
+            "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
 
             _ => vec![],
         }
@@ -100,19 +100,30 @@ impl<'a> File<'a> {
 
     pub fn display(&self, column: &Column, unix: &mut Unix) -> String {
         match *column {
-            Permissions => self.permissions_string(),
-            FileName => self.file_name(),
-            FileSize(use_iec) => self.file_size(use_iec),
+            Permissions => {
+                self.permissions_string()
+            },
+            
+            FileName => {
+                self.file_name()
+            },
+            
+            FileSize(use_iec) => {
+                self.file_size(use_iec)
+            },
 
             // A file with multiple links is interesting, but
             // directories and suchlike can have multiple links all
             // the time.
             HardLinks => {
-                let style = if self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1 { Red.on(Yellow) } else { Red.normal() };
+                let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
                 style.paint(self.stat.unstable.nlink.to_string().as_slice())
             },
 
-            Inode => Purple.paint(self.stat.unstable.inode.to_string().as_slice()),
+            Inode => {
+                Purple.paint(self.stat.unstable.inode.to_string().as_slice())
+            },
+            
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
                     Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
@@ -127,16 +138,17 @@ impl<'a> File<'a> {
             User => {
                 let uid = self.stat.unstable.uid as u32;
                 unix.load_user(uid);
+                let user_name = unix.get_user_name(uid).unwrap_or(uid.to_string());
                 let style = if unix.uid == uid { Yellow.bold() } else { Plain };
-                let string = unix.get_user_name(uid).unwrap_or(uid.to_string());
-                style.paint(string.as_slice())
+                style.paint(user_name.as_slice())
             },
+            
             Group => {
                 let gid = self.stat.unstable.gid as u32;
                 unix.load_group(gid);
-                let name = unix.get_group_name(gid).unwrap_or(gid.to_string());
+                let group_name = unix.get_group_name(gid).unwrap_or(gid.to_string());
                 let style = if unix.is_group_member(gid) { Yellow.normal() } else { Plain };
-                style.paint(name.as_slice())
+                style.paint(group_name.as_slice())
             },
         }
     }
@@ -175,10 +187,11 @@ impl<'a> File<'a> {
             parts: vec![],  // not needed
         });
 
-        // Statting a path usually fails because the file at the other
-        // end doesn't exist. Show this by highlighting the target
-        // file in red instead of displaying an error, because the
-        // error would be shown out of context and it's almost always
+        // Statting a path usually fails because the file at the
+        // other end doesn't exist. Show this by highlighting the
+        // target file in red instead of displaying an error, because
+        // the error would be shown out of context (before the
+        // results, not right by the file) and it's almost always for
         // that reason anyway.
 
         match link_target {
@@ -216,6 +229,10 @@ impl<'a> File<'a> {
 
     pub fn file_colour(&self) -> Style {
         self.get_type().style()
+    }
+    
+    fn has_multiple_links(&self) -> bool {
+        self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1
     }
 
     fn permissions_string(&self) -> String {
