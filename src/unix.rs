@@ -1,4 +1,4 @@
-use std::str::raw::from_c_str;
+use std::string::raw::from_buf;
 use std::ptr::read;
 use std::collections::hashmap::HashMap;
 
@@ -56,7 +56,7 @@ impl Unix {
         let infoptr = unsafe { c::getpwuid(uid as i32) };
         let info = unsafe { infoptr.as_ref().unwrap() };  // the user has to have a name
 
-        let username = unsafe { from_c_str(info.pw_name) };
+        let username = unsafe { from_buf(info.pw_name as *const u8) };
 
         let mut user_names = HashMap::new();
         user_names.insert(uid as u32, Some(username.clone()));
@@ -92,7 +92,7 @@ impl Unix {
     pub fn load_user(&mut self, uid: u32) {
         let pw = unsafe { c::getpwuid(uid as i32) };
         if pw.is_not_null() {
-            let username = unsafe { Some(from_c_str(read(pw).pw_name)) };
+            let username = unsafe { Some(from_buf(read(pw).pw_name as *const u8)) };
             self.user_names.insert(uid, username);
         }
         else {
@@ -112,7 +112,7 @@ impl Unix {
         loop {
             match unsafe { group.offset(i).as_ref().unwrap().as_ref() } {
                 Some(username) => {
-                    if unsafe { from_c_str(username) } == *uname {
+                    if unsafe { from_buf(*username as *const u8) } == *uname {
                         return true;
                     }
                 }
@@ -131,7 +131,7 @@ impl Unix {
                 self.groups.find_or_insert(gid, false);
             },
             Some(r) => {
-                let group_name = unsafe { Some(from_c_str(r.gr_name)) };
+                let group_name = unsafe { Some(from_buf(r.gr_name as *const u8)) };
                 self.groups.find_or_insert(gid, Unix::group_membership(r.gr_mem, &self.username));
                 self.group_names.find_or_insert(gid, group_name);
             }
