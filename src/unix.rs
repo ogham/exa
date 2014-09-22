@@ -13,6 +13,7 @@ mod c {
         time_t
     };
 
+    #[repr(C)]
     pub struct c_passwd {
         pub pw_name:    *const c_char,  // login name
         pub pw_passwd:  *const c_char,
@@ -26,6 +27,7 @@ mod c {
         pub pw_expire:  time_t    // password expiry time
     }
 
+    #[repr(C)]
     pub struct c_group {
         pub gr_name:   *const c_char,   // group name
         pub gr_passwd: *const c_char,   // password
@@ -52,7 +54,7 @@ impl Unix {
     pub fn empty_cache() -> Unix {
         let uid = unsafe { c::getuid() };
         let infoptr = unsafe { c::getpwuid(uid as i32) };
-        let info = unsafe { infoptr.to_option().unwrap() };  // the user has to have a name
+        let info = unsafe { infoptr.as_ref().unwrap() };  // the user has to have a name
 
         let username = unsafe { from_c_str(info.pw_name) };
 
@@ -103,7 +105,7 @@ impl Unix {
 
         // The list of members is a pointer to a pointer of
         // characters, terminated by a null pointer. So the first call
-        // to `to_option` will always succeed, as that memory is
+        // to `as_ref` will always succeed, as that memory is
         // guaranteed to be there (unless we go past the end of RAM).
         // The second call will return None if it's a null pointer.
 
@@ -123,7 +125,7 @@ impl Unix {
     }
 
     pub fn load_group(&mut self, gid: u32) {
-        match unsafe { c::getgrgid(gid).to_option() } {
+        match unsafe { c::getgrgid(gid).as_ref() } {
             None => {
                 self.group_names.find_or_insert(gid, None);
                 self.groups.find_or_insert(gid, false);
