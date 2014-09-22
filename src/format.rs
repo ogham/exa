@@ -21,7 +21,7 @@ fn format_bytes(mut amount: f64, kilo: f64, prefixes: &[&str]) -> (String, Strin
     }
 }
 
-#[allow(non_snake_case_functions)]
+#[allow(non_snake_case)]
 pub fn format_IEC_bytes(amount: u64) -> (String, String) {
     format_bytes(amount as f64, 1024.0, IEC_PREFIXES)
 }

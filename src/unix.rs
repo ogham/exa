@@ -76,15 +76,15 @@ impl Unix {
     }
 
     pub fn get_user_name(&self, uid: u32) -> Option<String> {
-        self.user_names.get(&uid).clone()
+        self.user_names[uid].clone()
     }
 
     pub fn get_group_name(&self, gid: u32) -> Option<String> {
-        self.group_names.get(&gid).clone()
+        self.group_names[gid].clone()
     }
 
     pub fn is_group_member(&self, gid: u32) -> bool {
-        *self.groups.get(&gid)
+        self.groups[gid]
     }
 
     pub fn load_user(&mut self, uid: u32) {
@@ -108,7 +108,7 @@ impl Unix {
         // The second call will return None if it's a null pointer.
 
         loop {
-            match unsafe { group.offset(i).to_option().unwrap().to_option() } {
+            match unsafe { group.offset(i).as_ref().unwrap().as_ref() } {
                 Some(username) => {
                     if unsafe { from_c_str(username) } == *uname {
                         return true;

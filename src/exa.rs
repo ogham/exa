@@ -40,7 +40,7 @@ fn exa(opts: &Options) {
     // more than one of them.
     let print_dir_names = opts.dirs.len() > 1;
     
-    for dir_name in opts.dirs.clone().move_iter() {
+    for dir_name in opts.dirs.clone().into_iter() {
         if first {
             first = false;
         }
@@ -128,7 +128,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
         .collect();
 
     if options.header {
-        table.unshift(columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
+        table.insert(0, columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
     }
 
     // Each column needs to have its invisible colour-formatting
