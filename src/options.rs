@@ -59,7 +59,7 @@ impl Options {
 
         match getopts::getopts(args.tail(), opts) {
             Err(f) => Err(f),
-            Ok(matches) => Ok(Options {
+            Ok(ref matches) => Ok(Options {
                 show_invisibles: matches.opt_present("all"),
                 reverse: matches.opt_present("reverse"),
                 header: matches.opt_present("header"),
@@ -70,7 +70,7 @@ impl Options {
         }
     }
     
-    fn view(matches: getopts::Matches) -> View {
+    fn view(matches: &getopts::Matches) -> View {
         if matches.opt_present("long") {
             View::Details(Options::columns(matches))
         }
@@ -85,7 +85,7 @@ impl Options {
         }
     }
     
-    fn columns(matches: getopts::Matches) -> Vec<Column> {
+    fn columns(matches: &getopts::Matches) -> Vec<Column> {
         let mut columns = vec![];
 
         if matches.opt_present("inode") {
