@@ -153,7 +153,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
             }
 
             if num == columns.len() - 1 {
-                print!("{}", row.get(num));
+                print!("{}", row[num]);
             }
             else {
                 let padding = column_widths[num] - field_widths[num];
