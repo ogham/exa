@@ -22,7 +22,7 @@ static VIDEO_TYPES: &'static [&'static str] = &[
     "mpg", "ogm", "ogv", "vob", "wmv" ];
 
 static MUSIC_TYPES: &'static [&'static str] = &[
-    "aac", "m4a", "mp3", "ogg" ];
+    "aac", "m4a", "mp3", "ogg", "wma" ];
 
 static MUSIC_LOSSLESS: &'static [&'static str] = &[
     "alac", "ape", "flac", "wav" ];
@@ -32,8 +32,9 @@ static COMPRESSED_TYPES: &'static [&'static str] = &[
     "iso", "dmg", "tc", "rar", "par" ];
 
 static DOCUMENT_TYPES: &'static [&'static str] = &[
-    "djvu", "doc", "docx", "eml", "eps", "odp", "ods",
-    "odt", "pdf", "ppt", "pptx", "xls", "xlsx" ];
+    "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd",
+    "odp", "odt", "pdf", "ppt", "pptx", "rtf",
+    "xls", "xlsx" ];
 
 static TEMP_TYPES: &'static [&'static str] = &[
     "tmp", "swp", "swo", "swn", "bak" ];
@@ -52,21 +53,21 @@ static BUILD_TYPES: &'static [&'static str] = &[
 impl FileType {
     pub fn style(&self) -> Style {
         match *self {
-            Normal => Plain,
-            Directory => Blue.bold(),
-            Symlink => Cyan.normal(),
-            Special => Yellow.normal(),
+            Normal     => Plain,
+            Directory  => Blue.bold(),
+            Symlink    => Cyan.normal(),
+            Special    => Yellow.normal(),
             Executable => Green.bold(),
-            Image => Fixed(133).normal(),
-            Video => Fixed(135).normal(),
-            Music => Fixed(92).normal(),
-            Lossless => Fixed(93).normal(),
-            Crypto => Fixed(109).normal(),
-            Document => Fixed(105).normal(),
+            Image      => Fixed(133).normal(),
+            Video      => Fixed(135).normal(),
+            Music      => Fixed(92).normal(),
+            Lossless   => Fixed(93).normal(),
+            Crypto     => Fixed(109).normal(),
+            Document   => Fixed(105).normal(),
             Compressed => Red.normal(),
-            Temp => GREY.normal(),
-            Immediate => Yellow.bold().underline(),
-            Compiled => Fixed(137).normal(),
+            Temp       => GREY.normal(),
+            Immediate  => Yellow.bold().underline(),
+            Compiled   => Fixed(137).normal(),
         }
     }
 }
