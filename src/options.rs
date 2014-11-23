@@ -1,9 +1,11 @@
 extern crate getopts;
 
 use file::File;
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
-use std::ascii::StrAsciiExt;
-use term;
+use column::Column;
+use column::Column::*;
+use term::dimensions;
+
+use std::ascii::AsciiExt;
 
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
@@ -12,12 +14,12 @@ pub enum SortField {
 impl SortField {
     fn from_word(word: String) -> SortField {
         match word.as_slice() {
-            "name"  => Name,
-            "size"  => Size,
-            "ext"   => Extension,
-            "none"  => Unsorted,
-            "inode" => FileInode,
-            _       => fail!("Invalid sorting order"),
+            "name"  => SortField::Name,
+            "size"  => SortField::Size,
+            "ext"   => SortField::Extension,
+            "none"  => SortField::Unsorted,
+            "inode" => SortField::FileInode,
+            _       => panic!("Invalid sorting order"),
         }
     }
 }
@@ -40,7 +42,7 @@ pub struct Options {
 
 impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
-        let opts = [
+        let opts = &[
             getopts::optflag("1", "oneline", "display one entry per line"),
             getopts::optflag("a", "all", "show dot-files"),
             getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
@@ -61,7 +63,7 @@ impl Options {
                 show_invisibles: matches.opt_present("all"),
                 reverse: matches.opt_present("reverse"),
                 header: matches.opt_present("header"),
-                sort_field: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(Name),
+                sort_field: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
                 dirs: if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
                 view: Options::view(matches),
             })
@@ -70,15 +72,15 @@ impl Options {
     
     fn view(matches: getopts::Matches) -> View {
         if matches.opt_present("long") {
-            Details(Options::columns(matches))
+            View::Details(Options::columns(matches))
         }
         else if matches.opt_present("oneline") {
-            Lines
+            View::Lines
         }
         else {
-            match term::dimensions() {
-                None => Lines,
-                Some((width, _)) => Grid(matches.opt_present("across"), width),
+            match dimensions() {
+                None => View::Lines,
+                Some((width, _)) => View::Grid(matches.opt_present("across"), width),
             }
         }
     }
@@ -127,13 +129,13 @@ impl Options {
             .collect();
 
         match self.sort_field {
-            Unsorted => {},
-            Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
-            Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
-            FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
-            Extension => files.sort_by(|a, b| {
-                let exts = a.ext.clone().map(|e| e.as_slice().to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.as_slice().to_ascii_lower()));
-                let names = a.name.as_slice().to_ascii_lower().cmp(&b.name.as_slice().to_ascii_lower());
+            SortField::Unsorted => {},
+            SortField::Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
+            SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
+            SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
+            SortField::Extension => files.sort_by(|a, b| {
+                let exts = a.ext.clone().map(|e| e.to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.to_ascii_lower()));
+                let names = a.name.to_ascii_lower().cmp(&b.name.to_ascii_lower());
                 exts.cmp(&names)
             }),
         }

@@ -1,6 +1,6 @@
 use std::string::raw::from_buf;
 use std::ptr::read;
-use std::collections::hashmap::HashMap;
+use std::collections::HashMap;
 
 mod c {
     #![allow(non_camel_case_types)]
@@ -127,13 +127,13 @@ impl Unix {
     pub fn load_group(&mut self, gid: u32) {
         match unsafe { c::getgrgid(gid).as_ref() } {
             None => {
-                self.group_names.find_or_insert(gid, None);
-                self.groups.find_or_insert(gid, false);
+                self.group_names.insert(gid, None);
+                self.groups.insert(gid, false);
             },
             Some(r) => {
                 let group_name = unsafe { Some(from_buf(r.gr_name as *const u8)) };
-                self.groups.find_or_insert(gid, Unix::group_membership(r.gr_mem, &self.username));
-                self.group_names.find_or_insert(gid, group_name);
+                self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
+                self.group_names.insert(gid, group_name);
             }
         }
         

@@ -21,12 +21,11 @@ mod c {
 
     // Unfortunately the actual command is not standardised...
 
-    #[cfg(target_os = "linux")]
-    #[cfg(target_os = "android")]
+	#[cfg(any(target_os = "linux", target_os = "android"))]
+
     static TIOCGWINSZ: c_ulong = 0x5413;
 
-    #[cfg(target_os = "freebsd")]
-    #[cfg(target_os = "macos")]
+	#[cfg(any(target_os = "macos", target_os = "ios"))]
     static TIOCGWINSZ: c_ulong = 0x40087468;
 
     extern {

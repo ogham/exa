@@ -1,10 +1,10 @@
-use file::File;
+use file::{File, GREY};
+use self::FileType::*;
+
 use std::io;
-use std::ascii::StrAsciiExt;
+use std::ascii::AsciiExt;
 
-use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
-
-static Grey: Colour = Fixed(244);
+use ansi_term::{Paint, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
 
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
@@ -64,7 +64,7 @@ impl FileType {
             Crypto => Fixed(109).normal(),
             Document => Fixed(105).normal(),
             Compressed => Red.normal(),
-            Temp => Grey.normal(),
+            Temp => GREY.normal(),
             Immediate => Yellow.bold().underline(),
             Compiled => Fixed(137).normal(),
         }
@@ -87,14 +87,14 @@ impl<'a> HasType for File<'a> {
         else if self.stat.kind == io::TypeBlockSpecial || self.stat.kind == io::TypeNamedPipe || self.stat.kind == io::TypeUnknown {
             return Special;
         }
-        else if self.stat.perm.contains(io::UserExecute) {
+        else if self.stat.perm.contains(io::USER_EXECUTE) {
             return Executable;
         }
         else if name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == name) {
             return Immediate;
         }
         else if self.ext.is_some() {
-            let e = self.ext.clone().unwrap().as_slice().to_ascii_lower();
+            let e = self.ext.clone().unwrap().to_ascii_lower();
             let ext = e.as_slice();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;

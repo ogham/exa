@@ -19,24 +19,24 @@ pub enum Alignment {
 impl Column {
     pub fn alignment(&self) -> Alignment {
         match *self {
-            FileSize(_) => Right,
-            HardLinks   => Right,
-            Inode       => Right,
-            Blocks      => Right,
-            _           => Left,
+            Column::FileSize(_) => Alignment::Right,
+            Column::HardLinks   => Alignment::Right,
+            Column::Inode       => Alignment::Right,
+            Column::Blocks      => Alignment::Right,
+            _                   => Alignment::Left,
         }
     }
 
     pub fn header(&self) -> &'static str {
         match *self {
-            Permissions => "Permissions",
-            FileName => "Name",
-            FileSize(_) => "Size",
-            Blocks => "Blocks",
-            User => "User",
-            Group => "Group",
-            HardLinks => "Links",
-            Inode => "inode",
+            Column::Permissions => "Permissions",
+            Column::FileName => "Name",
+            Column::FileSize(_) => "Size",
+            Column::Blocks => "Blocks",
+            Column::User => "User",
+            Column::Group => "Group",
+            Column::HardLinks => "Links",
+            Column::Inode => "inode",
         }
     }
 }
@@ -49,8 +49,8 @@ impl Column {
 impl Alignment {
     pub fn pad_string(&self, string: &String, padding: uint) -> String {
         match *self {
-            Left => string.clone().append(" ".to_string().repeat(padding).as_slice()),
-            Right => " ".to_string().repeat(padding).append(string.as_slice()),
+            Alignment::Left => string.clone() + " ".to_string().repeat(padding).as_slice(),
+            Alignment::Right => " ".to_string().repeat(padding) + string.as_slice(),
         }
     }
 }

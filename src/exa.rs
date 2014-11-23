@@ -1,4 +1,4 @@
-#![feature(phase)]
+#![feature(phase, globs)]
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 extern crate ansi_term;
@@ -8,8 +8,9 @@ use std::os;
 
 use file::File;
 use dir::Dir;
-use column::{Column, Left};
-use options::{Options, Details, Lines, Grid};
+use column::Column;
+use column::Alignment::Left;
+use options::{Options, View};
 use unix::Unix;
 
 use ansi_term::{Paint, Plain, strip_formatting};
@@ -25,7 +26,7 @@ pub mod sort;
 pub mod term;
 
 fn main() {
-    let args = os::args();
+    let args: Vec<String> = os::args();
 
     match Options::getopts(args) {
         Err(err) => println!("Invalid options:\n{}", err),
@@ -58,9 +59,9 @@ fn exa(opts: &Options) {
                 }
 
                 match opts.view {
-                    Details(ref cols) => details_view(opts, cols, files),
-                    Lines => lines_view(files),
-                    Grid(across, width) => grid_view(across, width, files),
+                    View::Details(ref cols) => details_view(opts, cols, files),
+                    View::Lines => lines_view(files),
+                    View::Grid(across, width) => grid_view(across, width, files),
                 }
             }
             Err(e) => {
@@ -156,7 +157,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
             }
             else {
                 let padding = column_widths[num] - field_widths[num];
-                print!("{}", column.alignment().pad_string(row.get(num), padding));
+                print!("{}", column.alignment().pad_string(&row[num], padding));
             }
         }
         print!("\n");

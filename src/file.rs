@@ -1,17 +1,17 @@
 use std::io::{fs, IoResult};
 use std::io;
-use unicode::str::UnicodeStrSlice;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
-use column::{Column, Permissions, FileName, FileSize, User, Group, HardLinks, Inode, Blocks};
+use column::Column;
+use column::Column::*;
 use format::{format_metric_bytes, format_IEC_bytes};
 use unix::Unix;
 use sort::SortPart;
 use dir::Dir;
 use filetype::HasType;
 
-static Grey: Colour = Fixed(244);
+pub static GREY: Colour = Fixed(244);
 
 // Instead of working with Rust's Paths, we have our own File object
 // that holds the Path and various cached information. Each file is
@@ -32,7 +32,7 @@ pub struct File<'a> {
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = String::from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8(v.to_vec()).to_string();
         
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
@@ -129,7 +129,7 @@ impl<'a> File<'a> {
                     Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
                 }
                 else {
-                    Grey.paint("-")
+                    GREY.paint("-")
                 }
             },
 
@@ -195,7 +195,7 @@ impl<'a> File<'a> {
         // that reason anyway.
 
         match link_target {
-            Ok(file) => format!("{} {}", Grey.paint("=>"), file.file_colour().paint(filename.as_slice())),
+            Ok(file) => format!("{} {}", GREY.paint("=>"), file.file_colour().paint(filename.as_slice())),
             Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename.as_slice())),
         }
     }
@@ -204,7 +204,7 @@ impl<'a> File<'a> {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
-            Grey.paint("-")
+            GREY.paint("-")
         } else {
             let (size, suffix) = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
@@ -242,15 +242,15 @@ impl<'a> File<'a> {
 
             // The first three are bold because they're the ones used
             // most often.
-            File::permission_bit(bits, io::UserRead,     "r", Yellow.bold()),
-            File::permission_bit(bits, io::UserWrite,    "w", Red.bold()),
-            File::permission_bit(bits, io::UserExecute,  "x", Green.bold().underline()),
-            File::permission_bit(bits, io::GroupRead,    "r", Yellow.normal()),
-            File::permission_bit(bits, io::GroupWrite,   "w", Red.normal()),
-            File::permission_bit(bits, io::GroupExecute, "x", Green.normal()),
-            File::permission_bit(bits, io::OtherRead,    "r", Yellow.normal()),
-            File::permission_bit(bits, io::OtherWrite,   "w", Red.normal()),
-            File::permission_bit(bits, io::OtherExecute, "x", Green.normal()),
+            File::permission_bit(bits, io::USER_READ,     "r", Yellow.bold()),
+            File::permission_bit(bits, io::USER_WRITE,    "w", Red.bold()),
+            File::permission_bit(bits, io::USER_EXECUTE,  "x", Green.bold().underline()),
+            File::permission_bit(bits, io::GROUP_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, io::GROUP_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, io::GROUP_EXECUTE, "x", Green.normal()),
+            File::permission_bit(bits, io::OTHER_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, io::OTHER_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, io::OTHER_EXECUTE, "x", Green.normal()),
        );
     }
 
@@ -258,7 +258,7 @@ impl<'a> File<'a> {
         if bits.contains(bit) {
             style.paint(character.as_slice())
         } else {
-            Grey.paint("-".as_slice())
+            GREY.paint("-".as_slice())
         }
     }
 }

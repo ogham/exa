@@ -1,4 +1,5 @@
-use std::ascii::StrAsciiExt;
+use self::SortPart::*;
+use std::ascii::AsciiExt;
 
 // This is an implementation of "natural sort order". See
 // http://blog.codinghorror.com/sorting-for-humans-natural-sort-order/
@@ -20,11 +21,11 @@ impl SortPart {
         if is_digit {
             // numbers too big for a u64 fall back into strings.
             match from_str::<u64>(slice) {
-                Some(num) => Numeric(num),
-                None => Stringular(slice.to_string()),
+                Some(num) => SortPart::Numeric(num),
+                None => SortPart::Stringular(slice.to_string()),
             }
         } else {
-            Stringular(slice.to_ascii_lower())
+            SortPart::Stringular(slice.to_ascii_lower())
         }
     }
 
@@ -38,11 +39,11 @@ impl SortPart {
             return parts
         }
 
-        let mut is_digit = input.as_slice().char_at(0).is_digit();
+        let mut is_digit = input.as_slice().char_at(0).is_digit(10);
         let mut start = 0;
 
         for (i, c) in input.as_slice().char_indices() {
-            if is_digit != c.is_digit() {
+            if is_digit != c.is_digit(10) {
                 parts.push(SortPart::from_string(is_digit, input.as_slice().slice(start, i)));
                 is_digit = !is_digit;
                 start = i;
