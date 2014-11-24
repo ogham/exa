@@ -25,12 +25,8 @@ impl<'a> Dir<'a> {
         
         for path in self.contents.iter() {
             match File::from_path(path, self) {
-                Ok(file) => {
-                    files.push(file);
-                }
-                Err(e) => {
-                    println!("{}: {}", path.display(), e);
-                }
+                Ok(file) => files.push(file),
+                Err(e)   => println!("{}: {}", path.display(), e),
             }
         }
         

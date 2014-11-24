@@ -30,13 +30,13 @@ impl Column {
     pub fn header(&self) -> &'static str {
         match *self {
             Column::Permissions => "Permissions",
-            Column::FileName => "Name",
+            Column::FileName    => "Name",
             Column::FileSize(_) => "Size",
-            Column::Blocks => "Blocks",
-            Column::User => "User",
-            Column::Group => "Group",
-            Column::HardLinks => "Links",
-            Column::Inode => "inode",
+            Column::Blocks      => "Blocks",
+            Column::User        => "User",
+            Column::Group       => "Group",
+            Column::HardLinks   => "Links",
+            Column::Inode       => "inode",
         }
     }
 }
@@ -49,7 +49,7 @@ impl Column {
 impl Alignment {
     pub fn pad_string(&self, string: &String, padding: uint) -> String {
         match *self {
-            Alignment::Left => string.clone() + " ".repeat(padding).as_slice(),
+            Alignment::Left  => string.clone() + " ".repeat(padding).as_slice(),
             Alignment::Right => " ".repeat(padding) + string.as_slice(),
         }
     }

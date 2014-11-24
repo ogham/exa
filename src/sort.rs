@@ -22,7 +22,7 @@ impl SortPart {
             // numbers too big for a u64 fall back into strings.
             match from_str::<u64>(slice) {
                 Some(num) => SortPart::Numeric(num),
-                None => SortPart::Stringular(slice.to_string()),
+                None      => SortPart::Stringular(slice.to_string()),
             }
         } else {
             SortPart::Stringular(slice.to_ascii_lower())

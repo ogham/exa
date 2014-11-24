@@ -116,7 +116,7 @@ impl Unix {
                     if username == ptr::null() {
                         return false;
                     }
-                    if unsafe { from_buf(username as *const u8) } == *uname {
+                    else if unsafe { from_buf(username as *const u8) } == *uname {
                         return true;
                     }
                     else {

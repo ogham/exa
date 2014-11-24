@@ -52,7 +52,7 @@ impl Options {
             getopts::optflag("l", "long", "display extended details and attributes"),
             getopts::optflag("i", "inode", "show each file's inode number"),
             getopts::optflag("r", "reverse", "reverse order of files"),
-            getopts::optopt("s", "sort", "field to sort by", "WORD"),
+            getopts::optopt ("s", "sort", "field to sort by", "WORD"),
             getopts::optflag("S", "blocks", "show number of file system blocks"),
             getopts::optflag("x", "across", "sort multi-column view entries across"),
         ];
@@ -61,11 +61,11 @@ impl Options {
             Err(f) => Err(f),
             Ok(ref matches) => Ok(Options {
                 show_invisibles: matches.opt_present("all"),
-                reverse: matches.opt_present("reverse"),
-                header: matches.opt_present("header"),
-                sort_field: matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
-                dirs: if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
-                view: Options::view(matches),
+                reverse:         matches.opt_present("reverse"),
+                header:          matches.opt_present("header"),
+                sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
+                dirs:            if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
+                view:            Options::view(matches),
             })
         }
     }
@@ -118,7 +118,8 @@ impl Options {
     fn should_display(&self, f: &File) -> bool {
         if self.show_invisibles {
             true
-        } else {
+        }
+        else {
             !f.name.as_slice().starts_with(".")
         }
     }
@@ -134,7 +135,7 @@ impl Options {
             SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             SortField::Extension => files.sort_by(|a, b| {
-                let exts = a.ext.clone().map(|e| e.to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.to_ascii_lower()));
+                let exts  = a.ext.clone().map(|e| e.to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.to_ascii_lower()));
                 let names = a.name.to_ascii_lower().cmp(&b.name.to_ascii_lower());
                 exts.cmp(&names)
             }),
