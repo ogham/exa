@@ -49,8 +49,8 @@ impl Column {
 impl Alignment {
     pub fn pad_string(&self, string: &String, padding: uint) -> String {
         match *self {
-            Alignment::Left => string.clone() + " ".to_string().repeat(padding).as_slice(),
-            Alignment::Right => " ".to_string().repeat(padding) + string.as_slice(),
+            Alignment::Left => string.clone() + " ".repeat(padding).as_slice(),
+            Alignment::Right => " ".repeat(padding) + string.as_slice(),
         }
     }
 }

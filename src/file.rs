@@ -1,5 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
+use std::str::SendStr;
 
 use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
@@ -216,14 +217,14 @@ impl<'a> File<'a> {
         }
     }
 
-    fn type_char(&self) -> String {
+    fn type_char(&self) -> SendStr {
         return match self.stat.kind {
-            io::TypeFile         => ".".to_string(),
-            io::TypeDirectory    => Blue.paint("d"),
-            io::TypeNamedPipe    => Yellow.paint("|"),
-            io::TypeBlockSpecial => Purple.paint("s"),
-            io::TypeSymlink      => Cyan.paint("l"),
-            io::TypeUnknown      => "?".to_string(),
+            io::TypeFile         => ".".into_maybe_owned(),
+            io::TypeDirectory    => Blue.paint("d").into_maybe_owned(),
+            io::TypeNamedPipe    => Yellow.paint("|").into_maybe_owned(),
+            io::TypeBlockSpecial => Purple.paint("s").into_maybe_owned(),
+            io::TypeSymlink      => Cyan.paint("l").into_maybe_owned(),
+            io::TypeUnknown      => "?".into_maybe_owned(),
         }
     }
 
