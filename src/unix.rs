@@ -1,5 +1,6 @@
 use std::string::raw::from_buf;
 use std::ptr::read;
+use std::ptr;
 use std::collections::HashMap;
 
 mod c {
@@ -17,21 +18,22 @@ mod c {
     pub struct c_passwd {
         pub pw_name:    *const c_char,  // login name
         pub pw_passwd:  *const c_char,
-        pub pw_uid:     c_int,    // user ID
-        pub pw_gid:     c_int,    // group ID
+        pub pw_uid:     c_int,          // user ID
+        pub pw_gid:     c_int,          // group ID
         pub pw_change:  time_t,
         pub pw_class:   *const c_char,
         pub pw_gecos:   *const c_char,  // full name
         pub pw_dir:     *const c_char,  // login dir
         pub pw_shell:   *const c_char,  // login shell
-        pub pw_expire:  time_t    // password expiry time
+        pub pw_expire:  time_t,         // password expiry time
     }
 
     #[repr(C)]
+    #[deriving(Show)]
     pub struct c_group {
-        pub gr_name:   *const c_char,   // group name
-        pub gr_passwd: *const c_char,   // password
-        pub gr_gid:    gid_t,     // group id
+        pub gr_name:   *const c_char,         // group name
+        pub gr_passwd: *const c_char,         // password
+        pub gr_gid:    gid_t,                 // group id
         pub gr_mem:    *const *const c_char,  // names of users in the group
     }
 
@@ -100,7 +102,7 @@ impl Unix {
         }
     }
 
-    fn group_membership(group: *const *const i8, uname: &String) -> bool {
+    fn group_membership(group: *const *const c::c_char, uname: &String) -> bool {
         let mut i = 0;
 
         // The list of members is a pointer to a pointer of
@@ -110,17 +112,20 @@ impl Unix {
         // The second call will return None if it's a null pointer.
 
         loop {
-            match unsafe { group.offset(i).as_ref().unwrap().as_ref() } {
-                Some(username) => {
-                    if unsafe { from_buf(*username as *const u8) } == *uname {
+            match unsafe { group.offset(i).as_ref() } {
+                Some(&username) => {
+                    if username == ptr::null() {
+                        return false;
+                    }
+                    if unsafe { from_buf(username as *const u8) } == *uname {
                         return true;
                     }
-                }
-                None => {
-                    return false;
-                }
+                    else {
+                        i += 1;
+                    }
+                },
+                None => return false,
             }
-            i += 1;
         }
     }
 
@@ -132,11 +137,12 @@ impl Unix {
             },
             Some(r) => {
                 let group_name = unsafe { Some(from_buf(r.gr_name as *const u8)) };
-                self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
+                if !self.groups.contains_key(&gid) {
+                    self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
+                }                
                 self.group_names.insert(gid, group_name);
             }
         }
         
     }
 }
-
