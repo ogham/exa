@@ -21,8 +21,8 @@ impl SortPart {
         if is_digit {
             // numbers too big for a u64 fall back into strings.
             match from_str::<u64>(slice) {
-                Some(num) => SortPart::Numeric(num),
-                None      => SortPart::Stringular(slice.to_string()),
+                Some(num) => Numeric(num),
+                None      => Stringular(slice.to_string()),
             }
         } else {
             SortPart::Stringular(slice.to_ascii_lower())
