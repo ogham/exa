@@ -79,12 +79,12 @@ impl<'a> File<'a> {
         let ext = self.ext.clone().unwrap();
         match ext.as_slice() {
             "class" => vec![self.path.with_extension("java")],  // Java
-            "elc" => vec![self.path.with_extension("el")],  // Emacs Lisp
-            "hi" => vec![self.path.with_extension("hs")],  // Haskell
-            "o" => vec![self.path.with_extension("c"), self.path.with_extension("cpp")],  // C, C++
-            "pyc" => vec![self.path.with_extension("py")],  // Python
-            "js" => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
-            "css" => vec![self.path.with_extension("sass"), self.path.with_extension("less")],  // SASS, Less
+            "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
+            "elc"   => vec![self.path.with_extension("el")],    // Emacs Lisp
+            "hi"    => vec![self.path.with_extension("hs")],    // Haskell
+            "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
+            "o"     => vec![self.path.with_extension("c"),      self.path.with_extension("cpp")], // C, C++
+            "pyc"   => vec![self.path.with_extension("py")],    // Python
 
             "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
             "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
@@ -195,8 +195,8 @@ impl<'a> File<'a> {
         // that reason anyway.
 
         match link_target {
-            Ok(file) => format!("{} {}", GREY.paint("=>"), file.file_colour().paint(filename.as_slice())),
-            Err(_)   => format!("{} {}", Red.paint("=>"), Red.underline().paint(filename.as_slice())),
+            Ok(file) => format!("{} {}{}{}", GREY.paint("=>"), Cyan.paint(target_path.dirname_str().unwrap()), Cyan.paint("/"), file.file_colour().paint(filename.as_slice())),
+            Err(_)   => format!("{} {}",     Red.paint("=>"),  Red.underline().paint(filename.as_slice())),
         }
     }
 
