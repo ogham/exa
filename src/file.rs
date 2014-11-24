@@ -23,15 +23,15 @@ pub static GREY: Colour = Fixed(244);
 
 pub struct File<'a> {
     pub name:  String,
-    pub dir:   &'a Dir<'a>,
+    pub dir:   Option<&'a Dir<'a>>,
     pub ext:   Option<String>,
-    pub path:  &'a Path,
+    pub path:  Path,
     pub stat:  io::FileStat,
     pub parts: Vec<SortPart>,
 }
 
 impl<'a> File<'a> {
-    pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
+    pub fn from_path(path: Path, parent: Option<&'a Dir<'a>>) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
         let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
         
@@ -39,8 +39,8 @@ impl<'a> File<'a> {
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
 
-        fs::lstat(path).map(|stat| File {
-            path:  path,
+        fs::lstat(&path).map(|stat| File {
+            path:  path.clone(),
             dir:   parent,
             stat:  stat,
             name:  filename.clone(),
@@ -158,9 +158,12 @@ impl<'a> File<'a> {
         let name = self.name.as_slice();
         let displayed_name = self.file_colour().paint(name);
         if self.stat.kind == io::TypeSymlink {
-            match fs::readlink(self.path) {
+            match fs::readlink(&self.path) {
                 Ok(path) => {
-                    let target_path = if path.is_absolute() { path } else { self.dir.path.join(path) };
+                	let target_path = match self.dir {
+                		Some(dir) => dir.path.join(path),
+                		None => path,
+                	};
                     format!("{} {}", displayed_name, self.target_file_name_and_arrow(target_path))
                 }
                 Err(_) => displayed_name,
@@ -180,7 +183,7 @@ impl<'a> File<'a> {
         let filename = String::from_utf8_lossy(v).to_string();
         
         let link_target = fs::stat(&target_path).map(|stat| File {
-            path:  &target_path,
+            path:  target_path.clone(),
             dir:   self.dir,
             stat:  stat,
             name:  filename.clone(),

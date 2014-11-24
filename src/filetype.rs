@@ -126,7 +126,7 @@ impl<'a> HasType for File<'a> {
             if source_files.len() == 0 {
                 return Normal;
             }
-            else if source_files.iter().any(|path| self.dir.contains(path)) {
+            else if source_files.iter().any(|path| self.dir.map(|d| d.contains(path)).unwrap_or(false)) {
                 return Temp;
             }
             else {

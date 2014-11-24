@@ -31,12 +31,12 @@ pub enum View {
 }
 
 pub struct Options {
+    pub header: bool,
+    pub path_strs: Vec<String>,
+    pub reverse: bool,
     pub show_invisibles: bool,
     pub sort_field: SortField,
-    pub reverse: bool,
-    pub dirs: Vec<String>,
     pub view: View,
-    pub header: bool,
 }
 
 
@@ -60,11 +60,11 @@ impl Options {
         match getopts::getopts(args.tail(), opts) {
             Err(f) => Err(f),
             Ok(ref matches) => Ok(Options {
-                show_invisibles: matches.opt_present("all"),
-                reverse:         matches.opt_present("reverse"),
                 header:          matches.opt_present("header"),
+                path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
+                reverse:         matches.opt_present("reverse"),
+                show_invisibles: matches.opt_present("all"),
                 sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
-                dirs:            if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
                 view:            Options::view(matches),
             })
         }
@@ -111,8 +111,7 @@ impl Options {
         }
 
         columns.push(FileName);
-
-        return columns;
+		columns
     }
 
     fn should_display(&self, f: &File) -> bool {
@@ -124,9 +123,9 @@ impl Options {
         }
     }
 
-    pub fn transform_files<'a>(&self, unordered_files: &'a Vec<File<'a>>) -> Vec<&'a File<'a>> {
-        let mut files: Vec<&'a File<'a>> = unordered_files.iter()
-            .filter(|&f| self.should_display(f))
+    pub fn transform_files<'a>(&self, unordered_files: Vec<File<'a>>) -> Vec<File<'a>> {
+        let mut files: Vec<File<'a>> = unordered_files.into_iter()
+            .filter(|f| self.should_display(f))
             .collect();
 
         match self.sort_field {
@@ -145,6 +144,6 @@ impl Options {
             files.reverse();
         }
 
-        return files;
+        files
     }
 }

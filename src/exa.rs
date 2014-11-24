@@ -5,6 +5,8 @@ extern crate ansi_term;
 extern crate unicode;
 
 use std::os;
+use std::io::fs;
+use std::io::FileType::TypeDirectory;
 
 use file::File;
 use dir::Dir;
@@ -34,14 +36,24 @@ fn main() {
     };
 }
 
-fn exa(opts: &Options) {
-    let mut first = true;
-    
+fn exa(opts: &Options) {    
     // It's only worth printing out directory names if the user supplied
     // more than one of them.
-    let print_dir_names = opts.dirs.len() > 1;
+    let print_dir_names = opts.path_strs.len() > 1;
+    let (dir_strs, file_strs) = opts.path_strs.clone().partition(|n| fs::stat(&Path::new(n)).unwrap().kind == TypeDirectory);
     
-    for dir_name in opts.dirs.clone().into_iter() {
+	let mut first = file_strs.is_empty();
+	let mut files = vec![];
+	for f in file_strs.iter() {
+		match File::from_path(Path::new(f), None) {
+			Ok(file) => files.push(file),
+			Err(e)   => println!("{}: {}", f, e),
+		}
+	}
+	
+	view(opts, files);
+    
+    for dir_name in dir_strs.into_iter() {
         if first {
             first = false;
         }
@@ -52,17 +64,13 @@ fn exa(opts: &Options) {
         match Dir::readdir(Path::new(dir_name.clone())) {
             Ok(dir) => {
                 let unsorted_files = dir.files();
-                let files: Vec<&File> = opts.transform_files(&unsorted_files);
+                let files: Vec<File> = opts.transform_files(unsorted_files);
 
                 if print_dir_names {
                     println!("{}:", dir_name);
                 }
 
-                match opts.view {
-                    View::Details(ref cols) => details_view(opts, cols, files),
-                    View::Lines => lines_view(files),
-                    View::Grid(across, width) => grid_view(across, width, files),
-                }
+				view(opts, files);
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
@@ -72,13 +80,21 @@ fn exa(opts: &Options) {
     }
 }
 
-fn lines_view(files: Vec<&File>) {
+fn view(options: &Options, files: Vec<File>) {
+	match options.view {
+		View::Details(ref cols) => details_view(options, cols, files),
+		View::Lines => lines_view(files),
+		View::Grid(across, width) => grid_view(across, width, files),
+	}
+}
+
+fn lines_view(files: Vec<File>) {
     for file in files.iter() {
         println!("{}", file.file_name());
     }
 }
 
-fn grid_view(across: bool, console_width: uint, files: Vec<&File>) {
+fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
     let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap_or(0);
     let num_columns = (console_width + 1) / (max_column_length + 1);
     let count = files.len();
@@ -101,7 +117,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<&File>) {
                 continue;
             }
             
-            let file = files[num];
+            let ref file = files[num];
             let file_name = file.name.clone();
             let styled_name = file.file_colour().paint(file_name.as_slice());
             if x == num_columns - 1 {
@@ -115,7 +131,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<&File>) {
     }
 }
 
-fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
+fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum
