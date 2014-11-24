@@ -30,17 +30,15 @@ mod c {
         pub fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int;
     }
 
-    pub fn dimensions() -> winsize {
-        unsafe {
-            let mut window: winsize = zeroed();
-            ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut winsize);
-            window
-        }
+    pub unsafe fn dimensions() -> winsize {
+		let mut window: winsize = zeroed();
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut winsize);
+		window
     }
 }
 
 pub fn dimensions() -> Option<(uint, uint)> {
-    let w = c::dimensions();
+    let w = unsafe { c::dimensions() };
 
     // If either of the dimensions is 0 then the command failed,
     // usually because output isn't to a terminal (instead to a file
