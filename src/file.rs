@@ -32,7 +32,7 @@ pub struct File<'a> {
 impl<'a> File<'a> {
     pub fn from_path(path: &'a Path, parent: &'a Dir) -> IoResult<File<'a>> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = String::from_utf8(v.to_vec()).unwrap();
+        let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
         
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it

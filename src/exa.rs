@@ -79,7 +79,7 @@ fn lines_view(files: Vec<&File>) {
 }
 
 fn grid_view(across: bool, console_width: uint, files: Vec<&File>) {
-    let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap();
+    let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap_or(0);
     let num_columns = (console_width + 1) / (max_column_length + 1);
     let count = files.len();
 
@@ -143,7 +143,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<&File>) {
         .collect();
 
     let column_widths: Vec<uint> = range(0, columns.len())
-        .map(|n| lengths.iter().map(|row| row[n]).max().unwrap())
+        .map(|n| lengths.iter().map(|row| row[n]).max().unwrap_or(0))
         .collect();
 
     for (field_widths, row) in lengths.iter().zip(table.iter()) {

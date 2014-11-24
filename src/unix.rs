@@ -29,7 +29,6 @@ mod c {
     }
 
     #[repr(C)]
-    #[deriving(Show)]
     pub struct c_group {
         pub gr_name:   *const c_char,         // group name
         pub gr_passwd: *const c_char,         // password
@@ -142,7 +141,6 @@ impl Unix {
                 }                
                 self.group_names.insert(gid, group_name);
             }
-        }
-        
+        }        
     }
 }
