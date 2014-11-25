@@ -42,8 +42,8 @@ pub struct Options {
 
 
 impl Options {
-    pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
-        let opts = &[
+    pub fn getopts(args: Vec<String>) -> Result<Options, int> {
+        let opts = [
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
             getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
@@ -57,20 +57,31 @@ impl Options {
             getopts::optopt ("s", "sort",      "field to sort by", "WORD"),
             getopts::optflag("S", "blocks",    "show number of file system blocks"),
             getopts::optflag("x", "across",    "sort multi-column view entries across"),
+            getopts::optflag("?", "help",      "show list of command-line options"),
         ];
-
-        match getopts::getopts(args.tail(), opts) {
-            Err(f) => Err(f),
-            Ok(ref matches) => Ok(Options {
-                header:          matches.opt_present("header"),
-                list_dirs:       matches.opt_present("list-dirs"),
-                path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
-                reverse:         matches.opt_present("reverse"),
-                show_invisibles: matches.opt_present("all"),
-                sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
-                view:            Options::view(matches),
-            })
+        
+        let matches = match getopts::getopts(args.tail(), &opts) {
+        	Ok(m) => m,
+        	Err(e) => {
+        		println!("Invalid options: {}", e);
+        		return Err(1);
+        	}
+        };
+        
+        if matches.opt_present("help") {
+        	println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts))
+        	return Err(2);
         }
+
+        Ok(Options {
+			header:          matches.opt_present("header"),
+			list_dirs:       matches.opt_present("list-dirs"),
+			path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
+			reverse:         matches.opt_present("reverse"),
+			show_invisibles: matches.opt_present("all"),
+			sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
+			view:            Options::view(&matches),
+		})
     }
     
     fn view(matches: &getopts::Matches) -> View {

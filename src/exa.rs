@@ -31,8 +31,8 @@ fn main() {
     let args: Vec<String> = os::args();
 
     match Options::getopts(args) {
-        Err(err) => println!("Invalid options:\n{}", err),
-        Ok(opts) => exa(&opts),
+        Err(error_code) => os::set_exit_status(error_code),
+        Ok(options) => exa(&options),
     };
 }
 
