@@ -24,7 +24,8 @@ impl SortPart {
                 Some(num) => Numeric(num),
                 None      => Stringular(slice.to_string()),
             }
-        } else {
+        }
+        else {
             SortPart::Stringular(slice.to_ascii_lower())
         }
     }

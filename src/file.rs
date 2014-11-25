@@ -37,7 +37,7 @@ impl<'a> File<'a> {
         // encounters a link that's target is non-existent.
         fs::lstat(&path).map(|stat| File::with_stat(stat, path.clone(), parent))
     }
-    
+
     pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir<'a>>) -> File<'a> {
 		let v = path.filename().unwrap();  // fails if / or . or ..
         let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
@@ -79,7 +79,7 @@ impl<'a> File<'a> {
         if self.ext.is_none() {
             return vec![];
         }
-        
+
         let ext = self.ext.clone().unwrap();
         match ext.as_slice() {
             "class" => vec![self.path.with_extension("java")],  // Java
@@ -107,11 +107,11 @@ impl<'a> File<'a> {
             Permissions => {
                 self.permissions_string()
             },
-            
+
             FileName => {
                 self.file_name()
             },
-            
+
             FileSize(use_iec) => {
                 self.file_size(use_iec)
             },
@@ -127,7 +127,7 @@ impl<'a> File<'a> {
             Inode => {
                 Purple.paint(self.stat.unstable.inode.to_string().as_slice())
             },
-            
+
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
                     Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
@@ -146,7 +146,7 @@ impl<'a> File<'a> {
                 let style = if unix.uid == uid { Yellow.bold() } else { Plain };
                 style.paint(user_name.as_slice())
             },
-            
+
             Group => {
                 let gid = self.stat.unstable.gid as u32;
                 unix.load_group(gid);
@@ -184,7 +184,8 @@ impl<'a> File<'a> {
     fn target_file_name_and_arrow(&self, target_path: Path) -> String {
         let v = target_path.filename().unwrap();
         let filename = String::from_utf8_lossy(v).to_string();
-        
+
+        // Use stat instead of lstat - we *want* to follow links.
         let link_target = fs::stat(&target_path).map(|stat| File {
             path:  target_path.clone(),
             dir:   self.dir,
@@ -212,10 +213,12 @@ impl<'a> File<'a> {
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
             GREY.paint("-")
-        } else {
+        }
+        else {
             let (size, suffix) = if use_iec_prefixes {
                 format_IEC_bytes(self.stat.size)
-            } else {
+            }
+            else {
                 format_metric_bytes(self.stat.size)
             };
 
@@ -237,7 +240,7 @@ impl<'a> File<'a> {
     pub fn file_colour(&self) -> Style {
         self.get_type().style()
     }
-    
+
     fn has_multiple_links(&self) -> bool {
         self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1
     }
@@ -264,7 +267,8 @@ impl<'a> File<'a> {
     fn permission_bit(bits: io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> String {
         if bits.contains(bit) {
             style.paint(character.as_slice())
-        } else {
+        }
+        else {
             GREY.paint("-".as_slice())
         }
     }

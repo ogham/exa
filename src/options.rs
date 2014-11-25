@@ -40,7 +40,6 @@ pub struct Options {
     pub view: View,
 }
 
-
 impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, int> {
         let opts = [
@@ -59,7 +58,7 @@ impl Options {
             getopts::optflag("x", "across",    "sort multi-column view entries across"),
             getopts::optflag("?", "help",      "show list of command-line options"),
         ];
-        
+
         let matches = match getopts::getopts(args.tail(), &opts) {
         	Ok(m) => m,
         	Err(e) => {
@@ -67,7 +66,7 @@ impl Options {
         		return Err(1);
         	}
         };
-        
+
         if matches.opt_present("help") {
         	println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts))
         	return Err(2);
@@ -83,7 +82,7 @@ impl Options {
 			view:            Options::view(&matches),
 		})
     }
-    
+
     fn view(matches: &getopts::Matches) -> View {
         if matches.opt_present("long") {
             View::Details(Options::columns(matches))
@@ -98,7 +97,7 @@ impl Options {
             }
         }
     }
-    
+
     fn columns(matches: &getopts::Matches) -> Vec<Column> {
         let mut columns = vec![];
 
@@ -111,7 +110,7 @@ impl Options {
         if matches.opt_present("links") {
             columns.push(HardLinks);
         }
-        
+
         columns.push(FileSize(matches.opt_present("binary")));
 
         if matches.opt_present("blocks") {

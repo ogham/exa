@@ -104,25 +104,21 @@ impl Unix {
         let mut i = 0;
 
         // The list of members is a pointer to a pointer of
-        // characters, terminated by a null pointer. So the first call
-        // to `as_ref` will always succeed, as that memory is
-        // guaranteed to be there (unless we go past the end of RAM).
-        // The second call will return None if it's a null pointer.
-
+        // characters, terminated by a null pointer.
         loop {
             match unsafe { group.offset(i).as_ref() } {
                 Some(&username) => {
                     if username == ptr::null() {
-                        return false;
+                        return false;  // username was null, weird
                     }
                     else if unsafe { String::from_raw_buf(username as *const u8) } == *uname {
-                        return true;
+                        return true;   // group found!
                     }
                     else {
-                        i += 1;
+                        i += 1;        // try again with the next group
                     }
                 },
-                None => return false,
+                None => return false,  // no more groups to check, and none found
             }
         }
     }
@@ -137,9 +133,9 @@ impl Unix {
                 let group_name = unsafe { Some(String::from_raw_buf(r.gr_name as *const u8)) };
                 if !self.groups.contains_key(&gid) {
                     self.groups.insert(gid, Unix::group_membership(r.gr_mem, &self.username));
-                }                
+                }
                 self.group_names.insert(gid, group_name);
             }
-        }        
+        }
     }
 }
