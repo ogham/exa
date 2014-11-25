@@ -65,7 +65,9 @@ fn exa(opts: &Options) {
     let print_dir_names = opts.path_strs.len() > 1;
 	let mut first = files.is_empty();
 
-	view(opts, files);
+	if !files.is_empty() {
+		view(opts, files);
+	}
     
     for dir_name in dirs.into_iter() {
         if first {
