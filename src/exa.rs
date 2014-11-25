@@ -36,24 +36,38 @@ fn main() {
     };
 }
 
-fn exa(opts: &Options) {    
+fn exa(opts: &Options) {
+	let mut dirs: Vec<String> = vec![];
+	let mut files: Vec<File> = vec![];
+	
+	// Separate the user-supplied paths into directories and files.
+	// Files are shown first, and then each directory is expanded
+	// and listed second.
+	for file in opts.path_strs.iter() {
+		let path = Path::new(file);
+		match fs::stat(&path) {
+			Ok(stat) => {
+				if !opts.list_dirs && stat.kind == TypeDirectory {
+					dirs.push(file.clone());
+				}
+				else {
+					// May as well reuse the stat result from earlier
+					// instead of just using File::from_path().
+					files.push(File::with_stat(stat, path, None));
+				}
+			}
+			Err(e) => println!("{}: {}", file, e),
+		}
+	}
+
     // It's only worth printing out directory names if the user supplied
     // more than one of them.
     let print_dir_names = opts.path_strs.len() > 1;
-    let (dir_strs, file_strs) = opts.path_strs.clone().partition(|n| fs::stat(&Path::new(n)).unwrap().kind == TypeDirectory);
-    
-	let mut first = file_strs.is_empty();
-	let mut files = vec![];
-	for f in file_strs.iter() {
-		match File::from_path(Path::new(f), None) {
-			Ok(file) => files.push(file),
-			Err(e)   => println!("{}: {}", f, e),
-		}
-	}
-	
+	let mut first = files.is_empty();
+
 	view(opts, files);
     
-    for dir_name in dir_strs.into_iter() {
+    for dir_name in dirs.into_iter() {
         if first {
             first = false;
         }

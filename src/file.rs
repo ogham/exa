@@ -32,21 +32,24 @@ pub struct File<'a> {
 
 impl<'a> File<'a> {
     pub fn from_path(path: Path, parent: Option<&'a Dir<'a>>) -> IoResult<File<'a>> {
-        let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
-        
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
+        fs::lstat(&path).map(|stat| File::with_stat(stat, path.clone(), parent))
+    }
+    
+    pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir<'a>>) -> File<'a> {
+		let v = path.filename().unwrap();  // fails if / or . or ..
+        let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
 
-        fs::lstat(&path).map(|stat| File {
+    	File {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
             name:  filename.clone(),
             ext:   File::ext(filename.clone()),
             parts: SortPart::split_into_parts(filename.clone()),
-        })
+    	}
     }
 
     fn ext(name: String) -> Option<String> {

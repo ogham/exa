@@ -32,6 +32,7 @@ pub enum View {
 
 pub struct Options {
     pub header: bool,
+    pub list_dirs: bool,
     pub path_strs: Vec<String>,
     pub reverse: bool,
     pub show_invisibles: bool,
@@ -43,24 +44,26 @@ pub struct Options {
 impl Options {
     pub fn getopts(args: Vec<String>) -> Result<Options, getopts::Fail_> {
         let opts = &[
-            getopts::optflag("1", "oneline", "display one entry per line"),
-            getopts::optflag("a", "all", "show dot-files"),
-            getopts::optflag("b", "binary", "use binary prefixes in file sizes"),
-            getopts::optflag("g", "group", "show group as well as user"),
-            getopts::optflag("h", "header", "show a header row at the top"),
-            getopts::optflag("H", "links", "show number of hard links"),
-            getopts::optflag("l", "long", "display extended details and attributes"),
-            getopts::optflag("i", "inode", "show each file's inode number"),
-            getopts::optflag("r", "reverse", "reverse order of files"),
-            getopts::optopt ("s", "sort", "field to sort by", "WORD"),
-            getopts::optflag("S", "blocks", "show number of file system blocks"),
-            getopts::optflag("x", "across", "sort multi-column view entries across"),
+            getopts::optflag("1", "oneline",   "display one entry per line"),
+            getopts::optflag("a", "all",       "show dot-files"),
+            getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
+			getopts::optflag("d", "list-dirs", "list directories as regular files"),
+            getopts::optflag("g", "group",     "show group as well as user"),
+            getopts::optflag("h", "header",    "show a header row at the top"),
+            getopts::optflag("H", "links",     "show number of hard links"),
+            getopts::optflag("l", "long",      "display extended details and attributes"),
+            getopts::optflag("i", "inode",     "show each file's inode number"),
+            getopts::optflag("r", "reverse",   "reverse order of files"),
+            getopts::optopt ("s", "sort",      "field to sort by", "WORD"),
+            getopts::optflag("S", "blocks",    "show number of file system blocks"),
+            getopts::optflag("x", "across",    "sort multi-column view entries across"),
         ];
 
         match getopts::getopts(args.tail(), opts) {
             Err(f) => Err(f),
             Ok(ref matches) => Ok(Options {
                 header:          matches.opt_present("header"),
+                list_dirs:       matches.opt_present("list-dirs"),
                 path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
                 reverse:         matches.opt_present("reverse"),
                 show_invisibles: matches.opt_present("all"),

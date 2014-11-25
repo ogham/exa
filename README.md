@@ -16,6 +16,7 @@ Options
 - **-1**, **--oneline**: display one entry per line
 - **-a**, **--all**: show dot files
 - **-b**, **--binary**: use binary (power of two) file sizes
+- **-d**, **--list-dirs**: list directories as regular files
 - **-g**, **--group**: show group as well as user
 - **-h**, **--header**: show a header row
 - **-H**, **--links**: show number of hard links column
@@ -31,4 +32,4 @@ You can sort by **name**, **size**, **ext**, **inode**, or **none**.
 Installation
 ------------
 
-exa is written in [Rust](http://www.rust-lang.org). You'll have to use the nightly -- I try to keep it up to date with the latest version when possible. You will also need [Cargo](http://crates.io), the Rust package manager. Once you have them both set up, a simple `cargo build` will pull in all the dependencies and compile exa.
+exa is written in [Rust](http://www.rust-lang.org). You'll have to use the nightly -- I try to keep it up to date with the latest version when possible. Once you have it set up, a simple `cargo build` will pull in all the dependencies and compile exa.
