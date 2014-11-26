@@ -7,20 +7,20 @@ use file::File;
 // surrounding files, such as whether it needs to be coloured
 // differently if a certain other file exists.
 
-pub struct Dir<'a> {
+pub struct Dir {
     pub contents: Vec<Path>,
     pub path: Path,
 }
 
-impl<'a> Dir<'a> {
-    pub fn readdir(path: Path) -> IoResult<Dir<'a>> {
+impl Dir {
+    pub fn readdir(path: Path) -> IoResult<Dir> {
         fs::readdir(&path).map(|paths| Dir {
             contents: paths,
             path: path.clone(),
         })
     }
 
-    pub fn files(&'a self) -> Vec<File<'a>> {
+    pub fn files(&self) -> Vec<File> {
         let mut files = vec![];
         
         for path in self.contents.iter() {

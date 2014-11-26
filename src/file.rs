@@ -22,7 +22,7 @@ pub static GREY: Colour = Fixed(244);
 
 pub struct File<'a> {
     pub name:  String,
-    pub dir:   Option<&'a Dir<'a>>,
+    pub dir:   Option<&'a Dir>,
     pub ext:   Option<String>,
     pub path:  Path,
     pub stat:  io::FileStat,
@@ -30,14 +30,14 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub fn from_path(path: Path, parent: Option<&'a Dir<'a>>) -> IoResult<File<'a>> {
+    pub fn from_path(path: Path, parent: Option<&'a Dir>) -> IoResult<File<'a>> {
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
         fs::lstat(&path).map(|stat| File::with_stat(stat, path.clone(), parent))
     }
 
-    pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir<'a>>) -> File<'a> {
+    pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir>) -> File<'a> {
 		let v = path.filename().unwrap();  // fails if / or . or ..
         let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
 
