@@ -7,6 +7,8 @@ extern crate unicode;
 use std::os;
 use std::io::fs;
 use std::io::FileType::TypeDirectory;
+use std::iter::AdditiveIterator;
+use std::str::StrVector;
 
 use file::File;
 use dir::Dir;
@@ -37,37 +39,37 @@ fn main() {
 }
 
 fn exa(opts: &Options) {
-	let mut dirs: Vec<String> = vec![];
-	let mut files: Vec<File> = vec![];
-	
-	// Separate the user-supplied paths into directories and files.
-	// Files are shown first, and then each directory is expanded
-	// and listed second.
-	for file in opts.path_strs.iter() {
-		let path = Path::new(file);
-		match fs::stat(&path) {
-			Ok(stat) => {
-				if !opts.list_dirs && stat.kind == TypeDirectory {
-					dirs.push(file.clone());
-				}
-				else {
-					// May as well reuse the stat result from earlier
-					// instead of just using File::from_path().
-					files.push(File::with_stat(stat, path, None));
-				}
-			}
-			Err(e) => println!("{}: {}", file, e),
-		}
-	}
+    let mut dirs: Vec<String> = vec![];
+    let mut files: Vec<File> = vec![];
+    
+    // Separate the user-supplied paths into directories and files.
+    // Files are shown first, and then each directory is expanded
+    // and listed second.
+    for file in opts.path_strs.iter() {
+        let path = Path::new(file);
+        match fs::stat(&path) {
+            Ok(stat) => {
+                if !opts.list_dirs && stat.kind == TypeDirectory {
+                    dirs.push(file.clone());
+                }
+                else {
+                    // May as well reuse the stat result from earlier
+                    // instead of just using File::from_path().
+                    files.push(File::with_stat(stat, path, None));
+                }
+            }
+            Err(e) => println!("{}: {}", file, e),
+        }
+    }
 
     // It's only worth printing out directory names if the user supplied
     // more than one of them.
     let print_dir_names = opts.path_strs.len() > 1;
-	let mut first = files.is_empty();
+    let mut first = files.is_empty();
 
-	if !files.is_empty() {
-		view(opts, files);
-	}
+    if !files.is_empty() {
+        view(opts, files);
+    }
     
     for dir_name in dirs.into_iter() {
         if first {
@@ -86,7 +88,7 @@ fn exa(opts: &Options) {
                     println!("{}:", dir_name);
                 }
 
-				view(opts, files);
+                view(opts, files);
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
@@ -97,11 +99,11 @@ fn exa(opts: &Options) {
 }
 
 fn view(options: &Options, files: Vec<File>) {
-	match options.view {
-		View::Details(ref cols) => details_view(options, cols, files),
-		View::Lines => lines_view(files),
-		View::Grid(across, width) => grid_view(across, width, files),
-	}
+    match options.view {
+        View::Details(ref cols) => details_view(options, cols, files),
+        View::Lines => lines_view(files),
+        View::Grid(across, width) => grid_view(across, width, files),
+    }
 }
 
 fn lines_view(files: Vec<File>) {
@@ -111,9 +113,19 @@ fn lines_view(files: Vec<File>) {
 }
 
 fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
+    // Check if all the files can be displayed on one line, and do
+    // that if possible.
+    let count = files.len();
+    let spacing = 2;
+    if files.iter().map(|ref f| f.name.len() + spacing).sum() + (count - 1) * spacing <= console_width {
+        let names: Vec<String> = files.iter().map(|ref f| f.file_name().to_string()).collect();
+        println!("{}", names.connect("  "));
+        return;
+    }
+
+    // Otherwise, contort them into a grid.
     let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap_or(0);
     let num_columns = (console_width + 1) / (max_column_length + 1);
-    let count = files.len();
 
     let mut num_rows = count / num_columns;
     if count % num_columns != 0 {
