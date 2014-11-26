@@ -114,11 +114,18 @@ fn lines_view(files: Vec<File>) {
 
 fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
     // Check if all the files can be displayed on one line, and do
-    // that if possible.
-    let count = files.len();
-    let spacing = 2;
-    if files.iter().map(|ref f| f.name.len() + spacing).sum() + (count - 1) * spacing <= console_width {
-        let names: Vec<String> = files.iter().map(|ref f| f.file_name().to_string()).collect();
+    // that if possible. The width has to take into account the
+    // two-space separator between file names for every file except
+    // the last one (because it's a separator)
+    let width = files.iter()
+                     .map(|f| f.name.len() + 2)
+                     .sum() - 2;
+    
+    if width <= console_width {
+        let names: Vec<String> = files.iter()
+                                      .map(|f| f.file_name().to_string())
+                                      .collect();
+
         println!("{}", names.connect("  "));
         return;
     }
@@ -126,6 +133,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
     // Otherwise, contort them into a grid.
     let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap_or(0);
     let num_columns = (console_width + 1) / (max_column_length + 1);
+    let count = files.len();
 
     let mut num_rows = count / num_columns;
     if count % num_columns != 0 {
