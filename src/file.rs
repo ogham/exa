@@ -1,8 +1,7 @@
 use std::io::{fs, IoResult};
 use std::io;
-use std::str::SendStr;
 
-use ansi_term::{Paint, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::{ANSIString, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use column::Column;
 use column::Column::*;
@@ -121,19 +120,19 @@ impl<'a> File<'a> {
             // the time.
             HardLinks => {
                 let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-                style.paint(self.stat.unstable.nlink.to_string().as_slice())
+                style.paint(self.stat.unstable.nlink.to_string().as_slice()).to_string()
             },
 
             Inode => {
-                Purple.paint(self.stat.unstable.inode.to_string().as_slice())
+                Purple.paint(self.stat.unstable.inode.to_string().as_slice()).to_string()
             },
 
             Blocks => {
                 if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
-                    Cyan.paint(self.stat.unstable.blocks.to_string().as_slice())
+                    Cyan.paint(self.stat.unstable.blocks.to_string().as_slice()).to_string()
                 }
                 else {
-                    GREY.paint("-")
+                    GREY.paint("-").to_string()
                 }
             },
 
@@ -144,7 +143,7 @@ impl<'a> File<'a> {
                 unix.load_user(uid);
                 let user_name = unix.get_user_name(uid).unwrap_or(uid.to_string());
                 let style = if unix.uid == uid { Yellow.bold() } else { Plain };
-                style.paint(user_name.as_slice())
+                style.paint(user_name.as_slice()).to_string()
             },
 
             Group => {
@@ -152,7 +151,7 @@ impl<'a> File<'a> {
                 unix.load_group(gid);
                 let group_name = unix.get_group_name(gid).unwrap_or(gid.to_string());
                 let style = if unix.is_group_member(gid) { Yellow.normal() } else { Plain };
-                style.paint(group_name.as_slice())
+                style.paint(group_name.as_slice()).to_string()
             },
         }
     }
@@ -169,11 +168,11 @@ impl<'a> File<'a> {
                 	};
                     format!("{} {}", displayed_name, self.target_file_name_and_arrow(target_path))
                 }
-                Err(_) => displayed_name,
+                Err(_) => displayed_name.to_string(),
             }
         }
         else {
-            displayed_name
+            displayed_name.to_string()
         }
     }
 
@@ -212,7 +211,7 @@ impl<'a> File<'a> {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::TypeDirectory {
-            GREY.paint("-")
+            GREY.paint("-").to_string()
         }
         else {
             let (size, suffix) = if use_iec_prefixes {
@@ -226,14 +225,14 @@ impl<'a> File<'a> {
         }
     }
 
-    fn type_char(&self) -> SendStr {
+    fn type_char(&self) -> ANSIString {
         return match self.stat.kind {
-            io::TypeFile         => ".".into_maybe_owned(),
-            io::TypeDirectory    => Blue.paint("d").into_maybe_owned(),
-            io::TypeNamedPipe    => Yellow.paint("|").into_maybe_owned(),
-            io::TypeBlockSpecial => Purple.paint("s").into_maybe_owned(),
-            io::TypeSymlink      => Cyan.paint("l").into_maybe_owned(),
-            io::TypeUnknown      => "?".into_maybe_owned(),
+            io::TypeFile         => Plain.paint("."),
+            io::TypeDirectory    => Blue.paint("d"),
+            io::TypeNamedPipe    => Yellow.paint("|"),
+            io::TypeBlockSpecial => Purple.paint("s"),
+            io::TypeSymlink      => Cyan.paint("l"),
+            io::TypeUnknown      => Plain.paint("?"),
         }
     }
 
@@ -264,7 +263,7 @@ impl<'a> File<'a> {
        );
     }
 
-    fn permission_bit(bits: io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> String {
+    fn permission_bit(bits: io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> ANSIString {
         if bits.contains(bit) {
             style.paint(character.as_slice())
         }

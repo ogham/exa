@@ -1,0 +1,12 @@
+[root]
+name = "exa"
+version = "0.1.0"
+dependencies = [
+ "ansi_term 0.3.0 (git+https://github.com/ogham/rust-ansi-term.git)",
+]
+
+[[package]]
+name = "ansi_term"
+version = "0.3.0"
+source = "git+https://github.com/ogham/rust-ansi-term.git#4b9ea6cf266053e1a771e75b935b4e54c586c139"
+

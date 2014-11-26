@@ -4,7 +4,7 @@ use self::FileType::*;
 use std::io;
 use std::ascii::AsciiExt;
 
-use ansi_term::{Paint, Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
+use ansi_term::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
 
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,

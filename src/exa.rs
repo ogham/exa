@@ -15,7 +15,7 @@ use column::Alignment::Left;
 use options::{Options, View};
 use unix::Unix;
 
-use ansi_term::{Paint, Plain, strip_formatting};
+use ansi_term::{Plain, strip_formatting};
 
 pub mod column;
 pub mod dir;
@@ -135,7 +135,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
             
             let ref file = files[num];
             let file_name = file.name.clone();
-            let styled_name = file.file_colour().paint(file_name.as_slice());
+            let styled_name = file.file_colour().paint(file_name.as_slice()).to_string();
             if x == num_columns - 1 {
                 print!("{}", styled_name);
             }
@@ -161,7 +161,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
         .collect();
 
     if options.header {
-        table.insert(0, columns.iter().map(|c| Plain.underline().paint(c.header())).collect());
+        table.insert(0, columns.iter().map(|c| Plain.underline().paint(c.header()).to_string()).collect());
     }
 
     // Each column needs to have its invisible colour-formatting
