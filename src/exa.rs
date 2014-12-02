@@ -6,7 +6,7 @@ extern crate unicode;
 
 use std::os;
 use std::io::fs;
-use std::io::FileType::TypeDirectory;
+use std::io::FileType;
 use std::iter::AdditiveIterator;
 use std::str::StrVector;
 
@@ -17,7 +17,8 @@ use column::Alignment::Left;
 use options::{Options, View};
 use unix::Unix;
 
-use ansi_term::{Plain, strip_formatting};
+use ansi_term::Style::Plain;
+use ansi_term::strip_formatting;
 
 pub mod column;
 pub mod dir;
@@ -49,7 +50,7 @@ fn exa(opts: &Options) {
         let path = Path::new(file);
         match fs::stat(&path) {
             Ok(stat) => {
-                if !opts.list_dirs && stat.kind == TypeDirectory {
+                if !opts.list_dirs && stat.kind == FileType::Directory {
                     dirs.push(file.clone());
                 }
                 else {

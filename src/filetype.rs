@@ -4,7 +4,9 @@ use self::FileType::*;
 use std::io;
 use std::ascii::AsciiExt;
 
-use ansi_term::{Plain, Style, Red, Green, Yellow, Blue, Cyan, Fixed};
+use ansi_term::Style;
+use ansi_term::Style::Plain;
+use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
@@ -79,13 +81,13 @@ pub trait HasType {
 impl<'a> HasType for File<'a> {
     fn get_type(&self) -> FileType {
         let name = self.name.as_slice();
-        if self.stat.kind == io::TypeDirectory {
+        if self.stat.kind == io::FileType::Directory {
             return Directory;
         }
-        else if self.stat.kind == io::TypeSymlink {
+        else if self.stat.kind == io::FileType::Symlink {
             return Symlink;
         }
-        else if self.stat.kind == io::TypeBlockSpecial || self.stat.kind == io::TypeNamedPipe || self.stat.kind == io::TypeUnknown {
+        else if self.stat.kind == io::FileType::BlockSpecial || self.stat.kind == io::FileType::NamedPipe || self.stat.kind == io::FileType::Unknown {
             return Special;
         }
         else if self.stat.perm.contains(io::USER_EXECUTE) {

@@ -1,7 +1,9 @@
 use std::io::{fs, IoResult};
 use std::io;
 
-use ansi_term::{ANSIString, Colour, Plain, Style, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::{ANSIString, Colour, Style};
+use ansi_term::Style::Plain;
+use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use column::Column;
 use column::Column::*;
@@ -128,7 +130,7 @@ impl<'a> File<'a> {
             },
 
             Blocks => {
-                if self.stat.kind == io::TypeFile || self.stat.kind == io::TypeSymlink {
+                if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
                     Cyan.paint(self.stat.unstable.blocks.to_string().as_slice()).to_string()
                 }
                 else {
@@ -159,7 +161,7 @@ impl<'a> File<'a> {
     pub fn file_name(&self) -> String {
         let name = self.name.as_slice();
         let displayed_name = self.file_colour().paint(name);
-        if self.stat.kind == io::TypeSymlink {
+        if self.stat.kind == io::FileType::Symlink {
             match fs::readlink(&self.path) {
                 Ok(path) => {
                 	let target_path = match self.dir {
@@ -210,7 +212,7 @@ impl<'a> File<'a> {
     fn file_size(&self, use_iec_prefixes: bool) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
-        if self.stat.kind == io::TypeDirectory {
+        if self.stat.kind == io::FileType::Directory {
             GREY.paint("-").to_string()
         }
         else {
@@ -227,12 +229,12 @@ impl<'a> File<'a> {
 
     fn type_char(&self) -> ANSIString {
         return match self.stat.kind {
-            io::TypeFile         => Plain.paint("."),
-            io::TypeDirectory    => Blue.paint("d"),
-            io::TypeNamedPipe    => Yellow.paint("|"),
-            io::TypeBlockSpecial => Purple.paint("s"),
-            io::TypeSymlink      => Cyan.paint("l"),
-            io::TypeUnknown      => Plain.paint("?"),
+            io::FileType::RegularFile  => Plain.paint("."),
+            io::FileType::Directory    => Blue.paint("d"),
+            io::FileType::NamedPipe    => Yellow.paint("|"),
+            io::FileType::BlockSpecial => Purple.paint("s"),
+            io::FileType::Symlink      => Cyan.paint("l"),
+            io::FileType::Unknown      => Plain.paint("?"),
         }
     }
 
@@ -241,7 +243,7 @@ impl<'a> File<'a> {
     }
 
     fn has_multiple_links(&self) -> bool {
-        self.stat.kind == io::TypeFile && self.stat.unstable.nlink > 1
+        self.stat.kind == io::FileType::RegularFile && self.stat.unstable.nlink > 1
     }
 
     fn permissions_string(&self) -> String {
