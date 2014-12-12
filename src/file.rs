@@ -6,7 +6,7 @@ use ansi_term::{ANSIString, Colour, Style};
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
-use users::{Users, OSUsers};
+use users::Users;
 
 use column::Column;
 use column::Column::*;
@@ -103,7 +103,7 @@ impl<'a> File<'a> {
         }
     }
 
-    pub fn display(&self, column: &Column, users_cache: &mut OSUsers) -> String {
+    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> String {
         match *column {
             Permissions => {
                 self.permissions_string()
