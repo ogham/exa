@@ -3,10 +3,16 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.3.0 (git+https://github.com/ogham/rust-ansi-term.git)",
+ "users 0.1.0 (git+https://github.com/ogham/rust-users)",
 ]
 
 [[package]]
 name = "ansi_term"
 version = "0.3.0"
 source = "git+https://github.com/ogham/rust-ansi-term.git#4b9ea6cf266053e1a771e75b935b4e54c586c139"
+
+[[package]]
+name = "users"
+version = "0.1.0"
+source = "git+https://github.com/ogham/rust-users#221a1463d3e25acac41615186a1c7fdcf0ad36d7"
 

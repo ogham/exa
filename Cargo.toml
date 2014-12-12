@@ -1,13 +1,13 @@
 [package]
-
 name = "exa"
 version = "0.1.0"
 authors = [ "ogham@bsago.me" ]
 
 [[bin]]
-
 name = "exa"
 
 [dependencies.ansi_term]
-
 git = "https://github.com/ogham/rust-ansi-term.git"
+
+[dependencies.users]
+git = "https://github.com/ogham/rust-users.git"

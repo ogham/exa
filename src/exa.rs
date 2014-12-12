@@ -2,30 +2,31 @@
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 extern crate ansi_term;
+extern crate users;
 extern crate unicode;
 
-use std::os;
-use std::io::fs;
 use std::io::FileType;
+use std::io::fs;
 use std::iter::AdditiveIterator;
+use std::os;
 use std::str::StrVector;
 
-use file::File;
-use dir::Dir;
-use column::Column;
 use column::Alignment::Left;
+use column::Column;
+use dir::Dir;
+use file::File;
 use options::{Options, View};
-use unix::Unix;
 
 use ansi_term::Style::Plain;
 use ansi_term::strip_formatting;
+
+use users::OSUsers;
 
 pub mod column;
 pub mod dir;
 pub mod format;
 pub mod file;
 pub mod filetype;
-pub mod unix;
 pub mod options;
 pub mod sort;
 pub mod term;
@@ -42,7 +43,7 @@ fn main() {
 fn exa(opts: &Options) {
     let mut dirs: Vec<String> = vec![];
     let mut files: Vec<File> = vec![];
-    
+
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
     // and listed second.
@@ -71,7 +72,7 @@ fn exa(opts: &Options) {
     if !files.is_empty() {
         view(opts, files);
     }
-    
+
     for dir_name in dirs.into_iter() {
         if first {
             first = false;
@@ -121,7 +122,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
     let width = files.iter()
                      .map(|f| f.name.len() + 2)
                      .sum() - 2;
-    
+
     if width <= console_width {
         let names: Vec<String> = files.iter()
                                       .map(|f| f.file_name().to_string())
@@ -140,7 +141,7 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
     if count % num_columns != 0 {
         num_rows += 1;
     }
-    
+
     for y in range(0, num_rows) {
         for x in range(0, num_columns) {
             let num = if across {
@@ -149,11 +150,11 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
             else {
                 y + num_rows * x
             };
-            
+
             if num >= count {
                 continue;
             }
-            
+
             let ref file = files[num];
             let file_name = file.name.clone();
             let styled_name = file.file_colour().paint(file_name.as_slice()).to_string();
@@ -175,7 +176,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
     // width of each column based on the length of the results and
     // padding the fields during output.
 
-    let mut cache = Unix::empty_cache();
+    let mut cache = OSUsers::empty_cache();
 
     let mut table: Vec<Vec<String>> = files.iter()
         .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())

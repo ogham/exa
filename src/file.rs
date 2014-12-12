@@ -5,10 +5,11 @@ use ansi_term::{ANSIString, Colour, Style};
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
+use users::{Users, OSUsers};
+
 use column::Column;
 use column::Column::*;
 use format::{format_metric_bytes, format_IEC_bytes};
-use unix::Unix;
 use sort::SortPart;
 use dir::Dir;
 use filetype::HasType;
@@ -40,17 +41,17 @@ impl<'a> File<'a> {
     }
 
     pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir>) -> File<'a> {
-		let v = path.filename().unwrap();  // fails if / or . or ..
+        let v = path.filename().unwrap();  // fails if / or . or ..
         let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
 
-    	File {
+        File {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
             name:  filename.clone(),
             ext:   File::ext(filename.clone()),
             parts: SortPart::split_into_parts(filename.clone()),
-    	}
+        }
     }
 
     fn ext(name: String) -> Option<String> {
@@ -103,7 +104,7 @@ impl<'a> File<'a> {
         }
     }
 
-    pub fn display(&self, column: &Column, unix: &mut Unix) -> String {
+    pub fn display(&self, column: &Column, users_cache: &mut OSUsers) -> String {
         match *column {
             Permissions => {
                 self.permissions_string()
@@ -141,18 +142,34 @@ impl<'a> File<'a> {
             // Display the ID if the user/group doesn't exist, which
             // usually means it was deleted but its files weren't.
             User => {
-                let uid = self.stat.unstable.uid as u32;
-                unix.load_user(uid);
-                let user_name = unix.get_user_name(uid).unwrap_or(uid.to_string());
-                let style = if unix.uid == uid { Yellow.bold() } else { Plain };
+                let uid = self.stat.unstable.uid as i32;
+
+                let user_name = match users_cache.get_user_by_uid(uid) {
+                    Some(user) => user.name,
+                    None => uid.to_string(),
+                };
+
+                let style = if users_cache.get_current_uid() == uid { Yellow.bold() } else { Plain };
                 style.paint(user_name.as_slice()).to_string()
             },
 
             Group => {
                 let gid = self.stat.unstable.gid as u32;
-                unix.load_group(gid);
-                let group_name = unix.get_group_name(gid).unwrap_or(gid.to_string());
-                let style = if unix.is_group_member(gid) { Yellow.normal() } else { Plain };
+                let mut style = Plain;
+
+                let group_name = match users_cache.get_group_by_gid(gid) {
+                    Some(group) => {
+                        let current_uid = users_cache.get_current_uid();
+                        if let Some(current_user) = users_cache.get_user_by_uid(current_uid) {
+                            if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
+                                style = Yellow.bold();
+                            }
+                        }
+                        group.name
+                    },
+                    None => gid.to_string(),
+                };
+
                 style.paint(group_name.as_slice()).to_string()
             },
         }
@@ -164,10 +181,10 @@ impl<'a> File<'a> {
         if self.stat.kind == io::FileType::Symlink {
             match fs::readlink(&self.path) {
                 Ok(path) => {
-                	let target_path = match self.dir {
-                		Some(dir) => dir.path.join(path),
-                		None => path,
-                	};
+                    let target_path = match self.dir {
+                        Some(dir) => dir.path.join(path),
+                        None => path,
+                    };
                     format!("{} {}", displayed_name, self.target_file_name_and_arrow(target_path))
                 }
                 Err(_) => displayed_name.to_string(),
