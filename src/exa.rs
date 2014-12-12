@@ -28,7 +28,6 @@ pub mod format;
 pub mod file;
 pub mod filetype;
 pub mod options;
-pub mod sort;
 pub mod term;
 
 fn main() {

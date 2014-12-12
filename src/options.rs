@@ -1,4 +1,5 @@
 extern crate getopts;
+extern crate natord;
 
 use file::File;
 use column::Column;
@@ -46,7 +47,7 @@ impl Options {
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
             getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
-			getopts::optflag("d", "list-dirs", "list directories as regular files"),
+            getopts::optflag("d", "list-dirs", "list directories as regular files"),
             getopts::optflag("g", "group",     "show group as well as user"),
             getopts::optflag("h", "header",    "show a header row at the top"),
             getopts::optflag("H", "links",     "show number of hard links"),
@@ -60,27 +61,27 @@ impl Options {
         ];
 
         let matches = match getopts::getopts(args.tail(), &opts) {
-        	Ok(m) => m,
-        	Err(e) => {
-        		println!("Invalid options: {}", e);
-        		return Err(1);
-        	}
+            Ok(m) => m,
+            Err(e) => {
+                println!("Invalid options: {}", e);
+                return Err(1);
+            }
         };
 
         if matches.opt_present("help") {
-        	println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts))
-        	return Err(2);
+            println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts))
+            return Err(2);
         }
 
         Ok(Options {
-			header:          matches.opt_present("header"),
-			list_dirs:       matches.opt_present("list-dirs"),
-			path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
-			reverse:         matches.opt_present("reverse"),
-			show_invisibles: matches.opt_present("all"),
-			sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
-			view:            Options::view(&matches),
-		})
+            header:          matches.opt_present("header"),
+            list_dirs:       matches.opt_present("list-dirs"),
+            path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
+            reverse:         matches.opt_present("reverse"),
+            show_invisibles: matches.opt_present("all"),
+            sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
+            view:            Options::view(&matches),
+        })
     }
 
     fn view(matches: &getopts::Matches) -> View {
@@ -124,7 +125,7 @@ impl Options {
         }
 
         columns.push(FileName);
-		columns
+        columns
     }
 
     fn should_display(&self, f: &File) -> bool {
@@ -143,7 +144,7 @@ impl Options {
 
         match self.sort_field {
             SortField::Unsorted => {},
-            SortField::Name => files.sort_by(|a, b| a.parts.cmp(&b.parts)),
+            SortField::Name => files.sort_by(|a, b| natord::compare(a.name.as_slice(), b.name.as_slice())),
             SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             SortField::Extension => files.sort_by(|a, b| {

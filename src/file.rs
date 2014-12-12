@@ -10,7 +10,6 @@ use users::{Users, OSUsers};
 use column::Column;
 use column::Column::*;
 use format::{format_metric_bytes, format_IEC_bytes};
-use sort::SortPart;
 use dir::Dir;
 use filetype::HasType;
 
@@ -29,7 +28,6 @@ pub struct File<'a> {
     pub ext:   Option<String>,
     pub path:  Path,
     pub stat:  io::FileStat,
-    pub parts: Vec<SortPart>,
 }
 
 impl<'a> File<'a> {
@@ -50,7 +48,6 @@ impl<'a> File<'a> {
             stat:  stat,
             name:  filename.clone(),
             ext:   File::ext(filename.clone()),
-            parts: SortPart::split_into_parts(filename.clone()),
         }
     }
 
@@ -210,7 +207,6 @@ impl<'a> File<'a> {
             stat:  stat,
             name:  filename.clone(),
             ext:   File::ext(filename.clone()),
-            parts: vec![],  // not needed
         });
 
         // Statting a path usually fails because the file at the
