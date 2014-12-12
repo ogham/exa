@@ -2,15 +2,15 @@
 name = "exa"
 version = "0.1.0"
 dependencies = [
- "ansi_term 0.3.0 (git+https://github.com/ogham/rust-ansi-term.git)",
+ "ansi_term 0.4.0 (git+https://github.com/ogham/rust-ansi-term.git)",
  "natord 1.0.0 (git+https://github.com/lifthrasiir/rust-natord.git)",
  "users 0.1.0 (git+https://github.com/ogham/rust-users.git)",
 ]
 
 [[package]]
 name = "ansi_term"
-version = "0.3.0"
-source = "git+https://github.com/ogham/rust-ansi-term.git#e17d8d3dc56526247f88b0f279f90dc46342db49"
+version = "0.4.0"
+source = "git+https://github.com/ogham/rust-ansi-term.git#19b6f71c716ec56fb960c84f3012fb374e8ac1e3"
 
 [[package]]
 name = "natord"

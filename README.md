@@ -1,17 +1,14 @@
-exa
-===
+# exa [![Build status](https://travis-ci.org/ogham/exa.svg)](https://travis-ci.org/ogham/exa)
 
 exa is a replacement for `ls` written in Rust.
 
-[![Build status](https://travis-ci.org/ogham/exa.svg)](https://travis-ci.org/ogham/exa)
 
-Screenshot
-----------
+## Screenshot
 
 ![Screenshot of exa](https://raw.githubusercontent.com/ogham/exa/master/screenshot.png)
 
-Options
--------
+
+## Options
 
 - **-1**, **--oneline**: display one entry per line
 - **-a**, **--all**: show dot files
@@ -29,7 +26,7 @@ Options
 
 You can sort by **name**, **size**, **ext**, **inode**, or **none**.
 
-Installation
-------------
+
+## Installation
 
 exa is written in [Rust](http://www.rust-lang.org). You'll have to use the nightly -- I try to keep it up to date with the latest version when possible. Once you have it set up, a simple `cargo build` will pull in all the dependencies and compile exa.
