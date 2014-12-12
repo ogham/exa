@@ -96,9 +96,8 @@ impl<'a> HasType for File<'a> {
         else if name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == name) {
             return Immediate;
         }
-        else if self.ext.is_some() {
-            let e = self.ext.clone().unwrap().to_ascii_lower();
-            let ext = e.as_slice();
+        else if let Some(ref e) = self.ext {
+            let ext = e.as_slice().to_ascii_lower();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;
             }
@@ -125,7 +124,7 @@ impl<'a> HasType for File<'a> {
             }
 
             let source_files = self.get_source_files();
-            if source_files.len() == 0 {
+            if source_files.is_empty() {
                 return Normal;
             }
             else if source_files.iter().any(|path| self.dir.map(|d| d.contains(path)).unwrap_or(false)) {
@@ -140,6 +139,7 @@ impl<'a> HasType for File<'a> {
                 }
             }
         }
+
         return Normal;  // no filetype
     }
 }

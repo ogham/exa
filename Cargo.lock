@@ -4,13 +4,13 @@ version = "0.1.0"
 dependencies = [
  "ansi_term 0.3.0 (git+https://github.com/ogham/rust-ansi-term.git)",
  "natord 1.0.0 (git+https://github.com/lifthrasiir/rust-natord.git)",
- "users 0.1.0 (git+https://github.com/ogham/rust-users)",
+ "users 0.1.0 (git+https://github.com/ogham/rust-users.git)",
 ]
 
 [[package]]
 name = "ansi_term"
 version = "0.3.0"
-source = "git+https://github.com/ogham/rust-ansi-term.git#4b9ea6cf266053e1a771e75b935b4e54c586c139"
+source = "git+https://github.com/ogham/rust-ansi-term.git#e17d8d3dc56526247f88b0f279f90dc46342db49"
 
 [[package]]
 name = "natord"
@@ -20,5 +20,5 @@ source = "git+https://github.com/lifthrasiir/rust-natord.git#83ebf6e7999fe2646bc
 [[package]]
 name = "users"
 version = "0.1.0"
-source = "git+https://github.com/ogham/rust-users#221a1463d3e25acac41615186a1c7fdcf0ad36d7"
+source = "git+https://github.com/ogham/rust-users.git#221a1463d3e25acac41615186a1c7fdcf0ad36d7"
 

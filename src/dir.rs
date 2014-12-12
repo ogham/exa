@@ -24,7 +24,7 @@ impl Dir {
         let mut files = vec![];
 
         for path in self.contents.iter() {
-            match File::from_path(path.clone(), Some(self)) {
+            match File::from_path(path, Some(self)) {
                 Ok(file) => files.push(file),
                 Err(e)   => println!("{}: {}", path.display(), e),
             }

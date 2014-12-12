@@ -56,7 +56,7 @@ fn exa(opts: &Options) {
                 else {
                     // May as well reuse the stat result from earlier
                     // instead of just using File::from_path().
-                    files.push(File::with_stat(stat, path, None));
+                    files.push(File::with_stat(stat, &path, None));
                 }
             }
             Err(e) => println!("{}: {}", file, e),
@@ -72,7 +72,7 @@ fn exa(opts: &Options) {
         view(opts, files);
     }
 
-    for dir_name in dirs.into_iter() {
+    for dir_name in dirs.iter() {
         if first {
             first = false;
         }
@@ -155,13 +155,12 @@ fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
             }
 
             let ref file = files[num];
-            let file_name = file.name.clone();
-            let styled_name = file.file_colour().paint(file_name.as_slice()).to_string();
+            let styled_name = file.file_colour().paint(file.name.as_slice()).to_string();
             if x == num_columns - 1 {
                 print!("{}", styled_name);
             }
             else {
-                print!("{}", Left.pad_string(&styled_name, max_column_length - file_name.len() + 1));
+                print!("{}", Left.pad_string(&styled_name, max_column_length - file.name.len() + 1));
             }
         }
         print!("\n");
@@ -192,7 +191,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
     // results are cached.
 
     let lengths: Vec<Vec<uint>> = table.iter()
-        .map(|row| row.iter().map(|col| strip_formatting(col.clone()).len()).collect())
+        .map(|row| row.iter().map(|col| strip_formatting(col.as_slice()).len()).collect())
         .collect();
 
     let column_widths: Vec<uint> = range(0, columns.len())

@@ -1,5 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
+use std::str::CowString;
 
 use ansi_term::{ANSIString, Colour, Style};
 use ansi_term::Style::Plain;
@@ -31,27 +32,27 @@ pub struct File<'a> {
 }
 
 impl<'a> File<'a> {
-    pub fn from_path(path: Path, parent: Option<&'a Dir>) -> IoResult<File<'a>> {
+    pub fn from_path(path: &Path, parent: Option<&'a Dir>) -> IoResult<File<'a>> {
         // Use lstat here instead of file.stat(), as it doesn't follow
         // symbolic links. Otherwise, the stat() call will fail if it
         // encounters a link that's target is non-existent.
-        fs::lstat(&path).map(|stat| File::with_stat(stat, path.clone(), parent))
+        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent))
     }
 
-    pub fn with_stat(stat: io::FileStat, path: Path, parent: Option<&'a Dir>) -> File<'a> {
+    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>) -> File<'a> {
         let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = String::from_utf8(v.to_vec()).unwrap_or_else(|_| panic!("Name was not valid UTF-8"));
+        let filename = String::from_utf8_lossy(v);
 
         File {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
-            name:  filename.clone(),
-            ext:   File::ext(filename.clone()),
+            name:  filename.to_string(),
+            ext:   File::ext(filename),
         }
     }
 
-    fn ext(name: String) -> Option<String> {
+    fn ext(name: CowString) -> Option<String> {
         // The extension is the series of characters after a dot at
         // the end of a filename. This deliberately also counts
         // dotfiles - the ".git" folder has the extension "git".
@@ -75,29 +76,30 @@ impl<'a> File<'a> {
     // without a .coffee.
 
     pub fn get_source_files(&self) -> Vec<Path> {
-        if self.ext.is_none() {
-            return vec![];
+        if let Some(ref ext) = self.ext {
+            let ext = ext.as_slice();
+            match ext {
+                "class" => vec![self.path.with_extension("java")],  // Java
+                "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
+                "elc"   => vec![self.path.with_extension("el")],    // Emacs Lisp
+                "hi"    => vec![self.path.with_extension("hs")],    // Haskell
+                "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
+                "o"     => vec![self.path.with_extension("c"),      self.path.with_extension("cpp")], // C, C++
+                "pyc"   => vec![self.path.with_extension("py")],    // Python
+
+                "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
+                "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
+                "blg" => vec![self.path.with_extension("tex")],  // BibTeX log file
+                "lof" => vec![self.path.with_extension("tex")],  // TeX list of figures
+                "log" => vec![self.path.with_extension("tex")],  // TeX log file
+                "lot" => vec![self.path.with_extension("tex")],  // TeX list of tables
+                "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
+
+                _ => vec![],  // No source files if none of the above
+            }
         }
-
-        let ext = self.ext.clone().unwrap();
-        match ext.as_slice() {
-            "class" => vec![self.path.with_extension("java")],  // Java
-            "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
-            "elc"   => vec![self.path.with_extension("el")],    // Emacs Lisp
-            "hi"    => vec![self.path.with_extension("hs")],    // Haskell
-            "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
-            "o"     => vec![self.path.with_extension("c"),      self.path.with_extension("cpp")], // C, C++
-            "pyc"   => vec![self.path.with_extension("py")],    // Python
-
-            "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
-            "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
-            "blg" => vec![self.path.with_extension("tex")],  // BibTeX log file
-            "lof" => vec![self.path.with_extension("tex")],  // TeX list of figures
-            "log" => vec![self.path.with_extension("tex")],  // TeX log file
-            "lot" => vec![self.path.with_extension("tex")],  // TeX list of tables
-            "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
-
-            _ => vec![],
+        else {
+            vec![]  // No source files if there's no extension, either!
         }
     }
 
@@ -182,7 +184,7 @@ impl<'a> File<'a> {
                         Some(dir) => dir.path.join(path),
                         None => path,
                     };
-                    format!("{} {}", displayed_name, self.target_file_name_and_arrow(target_path))
+                    format!("{} {}", displayed_name, self.target_file_name_and_arrow(&target_path))
                 }
                 Err(_) => displayed_name.to_string(),
             }
@@ -196,16 +198,16 @@ impl<'a> File<'a> {
         self.name.as_slice().width(false)
     }
 
-    fn target_file_name_and_arrow(&self, target_path: Path) -> String {
+    fn target_file_name_and_arrow(&self, target_path: &Path) -> String {
         let v = target_path.filename().unwrap();
-        let filename = String::from_utf8_lossy(v).to_string();
+        let filename = String::from_utf8_lossy(v);
 
         // Use stat instead of lstat - we *want* to follow links.
-        let link_target = fs::stat(&target_path).map(|stat| File {
+        let link_target = fs::stat(target_path).map(|stat| File {
             path:  target_path.clone(),
             dir:   self.dir,
             stat:  stat,
-            name:  filename.clone(),
+            name:  filename.to_string(),
             ext:   File::ext(filename.clone()),
         });
 
