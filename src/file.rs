@@ -282,10 +282,10 @@ impl<'a> File<'a> {
 
     fn permission_bit(bits: io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> ANSIString {
         if bits.contains(bit) {
-            style.paint(character.as_slice())
+            style.paint(character)
         }
         else {
-            GREY.paint("-".as_slice())
+            GREY.paint("-")
         }
     }
 }
