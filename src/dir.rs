@@ -22,14 +22,14 @@ impl Dir {
 
     pub fn files(&self) -> Vec<File> {
         let mut files = vec![];
-        
+
         for path in self.contents.iter() {
             match File::from_path(path.clone(), Some(self)) {
                 Ok(file) => files.push(file),
                 Err(e)   => println!("{}: {}", path.display(), e),
             }
         }
-        
+
         files
     }
 

@@ -31,9 +31,9 @@ mod c {
     }
 
     pub unsafe fn dimensions() -> winsize {
-		let mut window: winsize = zeroed();
-		ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut winsize);
-		window
+        let mut window: winsize = zeroed();
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut winsize);
+        window
     }
 }
 

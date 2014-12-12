@@ -46,7 +46,7 @@ static CRYPTO_TYPES: &'static [&'static str] = &[
 
 static COMPILED_TYPES: &'static [&'static str] = &[
     "class", "elc", "hi", "o", "pyc" ];
-    
+
 static BUILD_TYPES: &'static [&'static str] = &[
     "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
     "build.gradle", "Rakefile", "Gruntfile.js",
@@ -123,7 +123,7 @@ impl<'a> HasType for File<'a> {
             else if self.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == ext) {
                 return Temp;
             }
-            
+
             let source_files = self.get_source_files();
             if source_files.len() == 0 {
                 return Normal;
