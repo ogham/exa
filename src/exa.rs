@@ -9,7 +9,7 @@ use std::io::FileType;
 use std::io::fs;
 use std::iter::AdditiveIterator;
 use std::os;
-use std::str::StrVector;
+use std::cmp::max;
 
 use column::Alignment::Left;
 use column::Column;
@@ -113,57 +113,90 @@ fn lines_view(files: Vec<File>) {
     }
 }
 
-fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
-    // Check if all the files can be displayed on one line, and do
-    // that if possible. The width has to take into account the
-    // two-space separator between file names for every file except
-    // the last one (because it's a separator)
-    let width = files.iter()
-                     .map(|f| f.name.len() + 2)
-                     .sum() - 2;
-
-    if width <= console_width {
-        let names: Vec<String> = files.iter()
-                                      .map(|f| f.file_name().to_string())
-                                      .collect();
-
-        println!("{}", names.connect("  "));
-        return;
-    }
-
-    // Otherwise, contort them into a grid.
-    let max_column_length = files.iter().map(|f| f.file_name_width()).max().unwrap_or(0);
-    let num_columns = (console_width + 1) / (max_column_length + 1);
-    let count = files.len();
-
-    let mut num_rows = count / num_columns;
-    if count % num_columns != 0 {
-        num_rows += 1;
-    }
-
-    for y in range(0, num_rows) {
-        for x in range(0, num_columns) {
-            let num = if across {
-                y * num_columns + x
-            }
-            else {
-                y + num_rows * x
-            };
-
-            if num >= count {
-                continue;
-            }
-
-            let ref file = files[num];
-            let styled_name = file.file_colour().paint(file.name.as_slice()).to_string();
-            if x == num_columns - 1 {
-                print!("{}", styled_name);
-            }
-            else {
-                print!("{}", Left.pad_string(&styled_name, max_column_length - file.name.len() + 1));
-            }
+fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option<(uint, Vec<uint>)> {
+    // TODO: this function could almost certainly be optimised...
+    // surely not *all* of the numbers of lines are worth searching through!
+    
+    // Instead of numbers of columns, try to find the fewest number of *lines*
+    // that the output will fit in.
+    for num_lines in range(1, files.len()) {
+    
+        // The number of columns is the number of files divided by the number
+        // of lines, *rounded up*.
+        let mut num_columns = files.len() / num_lines;
+        if files.len() % num_lines != 0 {
+            num_columns += 1;
         }
-        print!("\n");
+
+        // Early abort: if there are so many columns that the width of the
+        // *column separators* is bigger than the width of the screen, then
+        // don't even try to tabulate it.
+        // This is actually a necessary check, because the width is stored as
+        // a uint, and making it go negative makes it huge instead, but it
+        // also serves as a speed-up.
+        if console_width < (num_columns - 1) * 2 {
+            continue;
+        }
+
+        // Remove the separator width from the available space.
+        let adjusted_width = console_width - (num_columns - 1) * 2;
+
+        // Find the width of each column by adding the lengths of the file
+        // names in that column up.
+        let mut column_widths = Vec::from_fn(num_columns, |_| 0u);
+        for (index, file) in files.iter().enumerate() {
+            let index = if across {
+                index % num_columns
+            }
+            else {
+                index / num_lines
+            };
+            column_widths[index] = max(column_widths[index], file.name.len());
+        }
+
+        // If they all fit in the terminal, combined, then success!
+        if column_widths.iter().map(|&x| x).sum() < adjusted_width {
+            return Some((num_lines, column_widths));
+        }
+    }
+
+    // If you get here you have really long file names.
+    return None;
+}
+
+fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
+    if let Some((num_lines, widths)) = fit_into_grid(across, console_width, &files) {
+        for y in range(0, num_lines) {
+            for x in range(0, widths.len()) {
+                let num = if across {
+                    y * widths.len() + x
+                }
+                else {
+                    y + num_lines * x
+                };
+
+                // Show whitespace in the place of trailing files
+                if num >= files.len() {
+                    continue;
+                }
+
+                let ref file = files[num];
+                let styled_name = file.file_colour().paint(file.name.as_slice()).to_string();
+                if x == widths.len() - 1 {
+                    // The final column doesn't need to have trailing spaces
+                    print!("{}", styled_name);
+                }
+                else {
+                    assert!(widths[x] >= file.name.len());
+                    print!("{}", Left.pad_string(&styled_name, widths[x] - file.name.len() + 2));
+                }
+            }
+            print!("\n");
+        }
+    }
+    else {
+        // Drop down to lines view if the file names are too big for a grid
+        lines_view(files);
     }
 }
 
@@ -201,10 +234,11 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
     for (field_widths, row) in lengths.iter().zip(table.iter()) {
         for (num, column) in columns.iter().enumerate() {
             if num != 0 {
-                print!(" ");
+                print!(" ");  // Separator
             }
 
             if num == columns.len() - 1 {
+                // The final column doesn't need to have trailing spaces
                 print!("{}", row[num]);
             }
             else {
