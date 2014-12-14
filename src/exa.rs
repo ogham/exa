@@ -134,12 +134,13 @@ fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option
         // This is actually a necessary check, because the width is stored as
         // a uint, and making it go negative makes it huge instead, but it
         // also serves as a speed-up.
-        if console_width < (num_columns - 1) * 2 {
+        let separator_width = (num_columns - 1) * 2;
+        if console_width < separator_width {
             continue;
         }
 
         // Remove the separator width from the available space.
-        let adjusted_width = console_width - (num_columns - 1) * 2;
+        let adjusted_width = console_width - separator_width;
 
         // Find the width of each column by adding the lengths of the file
         // names in that column up.
