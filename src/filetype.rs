@@ -13,6 +13,8 @@ pub enum FileType {
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
 }
 
+impl Copy for FileType { }
+
 static IMAGE_TYPES: &'static [&'static str] = &[
     "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
     "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",

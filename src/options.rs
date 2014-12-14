@@ -12,6 +12,8 @@ pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
 }
 
+impl Copy for SortField { }
+
 impl SortField {
     fn from_word(word: String) -> SortField {
         match word.as_slice() {

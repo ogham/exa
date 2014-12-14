@@ -9,12 +9,16 @@ pub enum Column {
     Inode,
 }
 
+impl Copy for Column { }
+
 // Each column can pick its own alignment. Usually, numbers are
 // right-aligned, and text is left-aligned.
 
 pub enum Alignment {
     Left, Right,
 }
+
+impl Copy for Alignment { }
 
 impl Column {
     pub fn alignment(&self) -> Alignment {
