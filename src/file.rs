@@ -268,6 +268,11 @@ impl<'a> File<'a> {
 
     fn permissions_string(&self) -> String {
         let bits = self.stat.perm;
+        let executable_colour = match self.stat.kind {
+        	io::FileType::RegularFile => Green.bold().underline(),
+        	_ => Green.bold(),
+        };
+        
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
 
@@ -275,7 +280,7 @@ impl<'a> File<'a> {
             // most often.
             File::permission_bit(bits, io::USER_READ,     "r", Yellow.bold()),
             File::permission_bit(bits, io::USER_WRITE,    "w", Red.bold()),
-            File::permission_bit(bits, io::USER_EXECUTE,  "x", Green.bold().underline()),
+            File::permission_bit(bits, io::USER_EXECUTE,  "x", executable_colour),
             File::permission_bit(bits, io::GROUP_READ,    "r", Yellow.normal()),
             File::permission_bit(bits, io::GROUP_WRITE,   "w", Red.normal()),
             File::permission_bit(bits, io::GROUP_EXECUTE, "x", Green.normal()),
