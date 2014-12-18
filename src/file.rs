@@ -234,7 +234,8 @@ impl<'a> File<'a> {
         else {
         	let result = match size_format {
         		SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
-        		SizeFormat::BinaryBytes => binary_prefix(self.stat.size as f64),
+        		SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
+        		SizeFormat::JustBytes    => return Green.bold().paint(self.stat.size.to_string().as_slice()).to_string(),
         	};
         	
 			match result {

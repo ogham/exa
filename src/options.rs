@@ -49,6 +49,7 @@ impl Options {
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
             getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
+            getopts::optflag("B", "bytes",     "list file sizes in bytes, without prefixes"),
             getopts::optflag("d", "list-dirs", "list directories as regular files"),
             getopts::optflag("g", "group",     "show group as well as user"),
             getopts::optflag("h", "header",    "show a header row at the top"),
@@ -116,6 +117,9 @@ impl Options {
 
 		if matches.opt_present("binary") {
 			columns.push(FileSize(SizeFormat::BinaryBytes))
+		}
+		else if matches.opt_present("bytes") {
+			columns.push(FileSize(SizeFormat::JustBytes))
 		}
 		else {
 			columns.push(FileSize(SizeFormat::DecimalBytes))

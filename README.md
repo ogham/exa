@@ -13,6 +13,7 @@ exa is a replacement for `ls` written in Rust.
 - **-1**, **--oneline**: display one entry per line
 - **-a**, **--all**: show dot files
 - **-b**, **--binary**: use binary (power of two) file sizes
+- **-B**, **--bytes**: list file sizes in bytes, without prefixes
 - **-d**, **--list-dirs**: list directories as regular files
 - **-g**, **--group**: show group as well as user
 - **-h**, **--header**: show a header row

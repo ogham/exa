@@ -14,6 +14,7 @@ impl Copy for Column { }
 pub enum SizeFormat {
     DecimalBytes,
     BinaryBytes,
+    JustBytes,
 }
 
 impl Copy for SizeFormat { }
