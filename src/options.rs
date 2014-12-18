@@ -2,7 +2,7 @@ extern crate getopts;
 extern crate natord;
 
 use file::File;
-use column::Column;
+use column::{Column, SizeFormat};
 use column::Column::*;
 use term::dimensions;
 
@@ -114,7 +114,12 @@ impl Options {
             columns.push(HardLinks);
         }
 
-        columns.push(FileSize(matches.opt_present("binary")));
+		if matches.opt_present("binary") {
+			columns.push(FileSize(SizeFormat::BinaryBytes))
+		}
+		else {
+			columns.push(FileSize(SizeFormat::DecimalBytes))
+		}
 
         if matches.opt_present("blocks") {
             columns.push(Blocks);

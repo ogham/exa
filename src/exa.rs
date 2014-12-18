@@ -2,8 +2,9 @@
 extern crate regex;
 #[phase(plugin)] extern crate regex_macros;
 extern crate ansi_term;
-extern crate users;
+extern crate number_prefix;
 extern crate unicode;
+extern crate users;
 
 use std::io::FileType;
 use std::io::fs;
@@ -24,7 +25,6 @@ use users::OSUsers;
 
 pub mod column;
 pub mod dir;
-pub mod format;
 pub mod file;
 pub mod filetype;
 pub mod options;

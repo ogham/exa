@@ -8,9 +8,10 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use users::Users;
 
-use column::Column;
+use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
+use column::{Column, SizeFormat};
 use column::Column::*;
-use format::{format_metric_bytes, format_IEC_bytes};
 use dir::Dir;
 use filetype::HasType;
 
@@ -224,21 +225,25 @@ impl<'a> File<'a> {
         }
     }
 
-    fn file_size(&self, use_iec_prefixes: bool) -> String {
+    fn file_size(&self, size_format: SizeFormat) -> String {
         // Don't report file sizes for directories. I've never looked
         // at one of those numbers and gained any information from it.
         if self.stat.kind == io::FileType::Directory {
             GREY.paint("-").to_string()
         }
         else {
-            let (size, suffix) = if use_iec_prefixes {
-                format_IEC_bytes(self.stat.size)
-            }
-            else {
-                format_metric_bytes(self.stat.size)
-            };
-
-            return format!("{}{}", Green.bold().paint(size.as_slice()), Green.paint(suffix.as_slice()));
+        	let result = match size_format {
+        		SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
+        		SizeFormat::BinaryBytes => binary_prefix(self.stat.size as f64),
+        	};
+        	
+			match result {
+				Standalone(bytes) => Green.bold().paint(bytes.to_string().as_slice()).to_string(),
+				Prefixed(prefix, n) => {
+					let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
+					format!("{}{}", Green.bold().paint(number.as_slice()), Green.paint(prefix.symbol()))
+				}
+			}
         }
     }
 

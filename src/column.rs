@@ -1,7 +1,7 @@
 pub enum Column {
     Permissions,
     FileName,
-    FileSize(bool),
+    FileSize(SizeFormat),
     Blocks,
     User,
     Group,
@@ -10,6 +10,13 @@ pub enum Column {
 }
 
 impl Copy for Column { }
+
+pub enum SizeFormat {
+    DecimalBytes,
+    BinaryBytes,
+}
+
+impl Copy for SizeFormat { }
 
 // Each column can pick its own alignment. Usually, numbers are
 // right-aligned, and text is left-aligned.

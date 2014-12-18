@@ -9,8 +9,11 @@ name = "exa"
 [dependencies.ansi_term]
 git = "https://github.com/ogham/rust-ansi-term.git"
 
-[dependencies.users]
-git = "https://github.com/ogham/rust-users.git"
-
 [dependencies.natord]
 git = "https://github.com/lifthrasiir/rust-natord.git"
+
+[dependencies.number_prefix]
+git = "https://github.com/ogham/rust-number-prefix.git"
+
+[dependencies.users]
+git = "https://github.com/ogham/rust-users.git"
