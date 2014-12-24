@@ -3,20 +3,20 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.4.0 (git+https://github.com/ogham/rust-ansi-term.git)",
- "natord 1.0.0 (git+https://github.com/lifthrasiir/rust-natord.git)",
+ "natord 1.0.1 (git+https://github.com/lifthrasiir/rust-natord.git)",
  "number_prefix 0.2.0 (git+https://github.com/ogham/rust-number-prefix.git)",
- "users 0.1.0 (git+https://github.com/ogham/rust-users.git)",
+ "users 0.1.1 (git+https://github.com/ogham/rust-users.git)",
 ]
 
 [[package]]
 name = "ansi_term"
 version = "0.4.0"
-source = "git+https://github.com/ogham/rust-ansi-term.git#19b6f71c716ec56fb960c84f3012fb374e8ac1e3"
+source = "git+https://github.com/ogham/rust-ansi-term.git#7e051531231838dc9431ec099ddf9fe9cc04c558"
 
 [[package]]
 name = "natord"
-version = "1.0.0"
-source = "git+https://github.com/lifthrasiir/rust-natord.git#83ebf6e7999fe2646bca45d5f6800728a0bbd5c5"
+version = "1.0.1"
+source = "git+https://github.com/lifthrasiir/rust-natord.git#fecab8556a4a6675577166bc2c0e269ede1ccc80"
 
 [[package]]
 name = "number_prefix"
@@ -25,6 +25,6 @@ source = "git+https://github.com/ogham/rust-number-prefix.git#3f690804a3f1704ee9
 
 [[package]]
 name = "users"
-version = "0.1.0"
-source = "git+https://github.com/ogham/rust-users.git#221a1463d3e25acac41615186a1c7fdcf0ad36d7"
+version = "0.1.1"
+source = "git+https://github.com/ogham/rust-users.git#c2911ab96a2b2459333029dde3728bfb5847ef04"
 

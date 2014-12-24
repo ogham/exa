@@ -72,7 +72,7 @@ impl Options {
         };
 
         if matches.opt_present("help") {
-            println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts))
+            println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts));
             return Err(2);
         }
 
