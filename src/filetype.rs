@@ -99,7 +99,7 @@ impl<'a> HasType for File<'a> {
             return Immediate;
         }
         else if let Some(ref e) = self.ext {
-            let ext = e.as_slice().to_ascii_lower();
+            let ext = e.as_slice().to_ascii_lowercase();
             if IMAGE_TYPES.iter().any(|&s| s == ext) {
                 return Image;
             }

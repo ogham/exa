@@ -159,8 +159,8 @@ impl Options {
             SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             SortField::Extension => files.sort_by(|a, b| {
-                let exts  = a.ext.clone().map(|e| e.to_ascii_lower()).cmp(&b.ext.clone().map(|e| e.to_ascii_lower()));
-                let names = a.name.to_ascii_lower().cmp(&b.name.to_ascii_lower());
+                let exts  = a.ext.clone().map(|e| e.to_ascii_lowercase()).cmp(&b.ext.clone().map(|e| e.to_ascii_lowercase()));
+                let names = a.name.to_ascii_lowercase().cmp(&b.name.to_ascii_lowercase());
                 exts.cmp(&names)
             }),
         }
