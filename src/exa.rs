@@ -8,7 +8,7 @@ extern crate users;
 
 use std::io::FileType;
 use std::io::fs;
-use std::iter::AdditiveIterator;
+use std::iter::{AdditiveIterator, repeat};
 use std::os;
 use std::cmp::max;
 
@@ -144,7 +144,7 @@ fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option
 
         // Find the width of each column by adding the lengths of the file
         // names in that column up.
-        let mut column_widths = Vec::from_fn(num_columns, |_| 0u);
+        let mut column_widths: Vec<uint> = repeat(0).take(num_columns).collect();
         for (index, file) in files.iter().enumerate() {
             let index = if across {
                 index % num_columns
