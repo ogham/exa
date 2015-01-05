@@ -1,6 +1,5 @@
 use std::io::{fs, IoResult};
 use std::io;
-use std::str::CowString;
 
 use ansi_term::{ANSIString, Colour, Style};
 use ansi_term::Style::Plain;
@@ -49,16 +48,15 @@ impl<'a> File<'a> {
             dir:   parent,
             stat:  stat,
             name:  filename.to_string(),
-            ext:   File::ext(filename),
+            ext:   File::ext(filename.as_slice()),
         }
     }
 
-    fn ext(name: CowString) -> Option<String> {
+    fn ext(name: &'a str) -> Option<String> {
         // The extension is the series of characters after a dot at
         // the end of a filename. This deliberately also counts
         // dotfiles - the ".git" folder has the extension "git".
-        let re = regex!(r"\.([^.]+)$");
-        re.captures(name.as_slice()).map(|caps| caps.at(1).to_string())
+        name.rfind('.').map(|pos| name.slice_from(pos + 1).to_string())
     }
 
     pub fn is_dotfile(&self) -> bool {
@@ -209,7 +207,7 @@ impl<'a> File<'a> {
             dir:   self.dir,
             stat:  stat,
             name:  filename.to_string(),
-            ext:   File::ext(filename.clone()),
+            ext:   File::ext(filename.as_slice()),
         });
 
         // Statting a path usually fails because the file at the
@@ -232,19 +230,19 @@ impl<'a> File<'a> {
             GREY.paint("-").to_string()
         }
         else {
-        	let result = match size_format {
-        		SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
-        		SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-        		SizeFormat::JustBytes    => return Green.bold().paint(self.stat.size.to_string().as_slice()).to_string(),
-        	};
-        	
-			match result {
-				Standalone(bytes) => Green.bold().paint(bytes.to_string().as_slice()).to_string(),
-				Prefixed(prefix, n) => {
-					let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
-					format!("{}{}", Green.bold().paint(number.as_slice()), Green.paint(prefix.symbol()))
-				}
-			}
+            let result = match size_format {
+                SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
+                SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
+                SizeFormat::JustBytes    => return Green.bold().paint(self.stat.size.to_string().as_slice()).to_string(),
+            };
+
+            match result {
+                Standalone(bytes) => Green.bold().paint(bytes.to_string().as_slice()).to_string(),
+                Prefixed(prefix, n) => {
+                    let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
+                    format!("{}{}", Green.bold().paint(number.as_slice()), Green.paint(prefix.symbol()))
+                }
+            }
         }
     }
 
@@ -270,10 +268,10 @@ impl<'a> File<'a> {
     fn permissions_string(&self) -> String {
         let bits = self.stat.perm;
         let executable_colour = match self.stat.kind {
-        	io::FileType::RegularFile => Green.bold().underline(),
-        	_ => Green.bold(),
+            io::FileType::RegularFile => Green.bold().underline(),
+            _ => Green.bold(),
         };
-        
+
         return format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
 

@@ -2,21 +2,25 @@
 name = "exa"
 version = "0.1.0"
 dependencies = [
- "ansi_term 0.4.0 (git+https://github.com/ogham/rust-ansi-term.git)",
- "natord 1.0.2 (git+https://github.com/lifthrasiir/rust-natord.git)",
+ "ansi_term 0.4.1 (git+https://github.com/ogham/rust-ansi-term.git)",
+ "natord 1.0.3 (git+https://github.com/lifthrasiir/rust-natord.git)",
  "number_prefix 0.2.0 (git+https://github.com/ogham/rust-number-prefix.git)",
- "users 0.1.1 (git+https://github.com/ogham/rust-users.git)",
+ "users 0.2.0 (git+https://github.com/ogham/rust-users.git)",
 ]
 
 [[package]]
 name = "ansi_term"
-version = "0.4.0"
-source = "git+https://github.com/ogham/rust-ansi-term.git#df6fcf773bae488c2c3a1456295531d6803e638a"
+version = "0.4.1"
+source = "git+https://github.com/ogham/rust-ansi-term.git#6db0b81cf4517e482293351c133cf07cced8c703"
+dependencies = [
+ "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex_macros 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "natord"
-version = "1.0.2"
-source = "git+https://github.com/lifthrasiir/rust-natord.git#6a42c8c168646c9de390af734a2e9dbe48bfdb91"
+version = "1.0.3"
+source = "git+https://github.com/lifthrasiir/rust-natord.git#b3a70271270effd7233fc36aef97215015d53af4"
 
 [[package]]
 name = "number_prefix"
@@ -24,7 +28,20 @@ version = "0.2.0"
 source = "git+https://github.com/ogham/rust-number-prefix.git#e4b56f7661c7d1b414b62af36a0e592f77911e4f"
 
 [[package]]
+name = "regex"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "regex_macros"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "users"
-version = "0.1.1"
-source = "git+https://github.com/ogham/rust-users.git#c2911ab96a2b2459333029dde3728bfb5847ef04"
+version = "0.2.0"
+source = "git+https://github.com/ogham/rust-users.git#63d2760c52ee0a8c1e5592dea088dc90fc069f26"
 

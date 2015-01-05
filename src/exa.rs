@@ -1,6 +1,5 @@
-#![feature(phase, globs)]
-extern crate regex;
-#[phase(plugin)] extern crate regex_macros;
+#![feature(globs)]
+
 extern crate ansi_term;
 extern crate number_prefix;
 extern crate unicode;
@@ -116,11 +115,11 @@ fn lines_view(files: Vec<File>) {
 fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option<(uint, Vec<uint>)> {
     // TODO: this function could almost certainly be optimised...
     // surely not *all* of the numbers of lines are worth searching through!
-    
+
     // Instead of numbers of columns, try to find the fewest number of *lines*
     // that the output will fit in.
     for num_lines in range(1, files.len()) {
-    
+
         // The number of columns is the number of files divided by the number
         // of lines, *rounded up*.
         let mut num_columns = files.len() / num_lines;
