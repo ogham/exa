@@ -3,7 +3,7 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.4.1 (git+https://github.com/ogham/rust-ansi-term.git)",
- "natord 1.0.3 (git+https://github.com/lifthrasiir/rust-natord.git)",
+ "natord 1.0.4 (git+https://github.com/lifthrasiir/rust-natord.git)",
  "number_prefix 0.2.0 (git+https://github.com/ogham/rust-number-prefix.git)",
  "users 0.2.0 (git+https://github.com/ogham/rust-users.git)",
 ]
@@ -14,13 +14,13 @@ version = "0.4.1"
 source = "git+https://github.com/ogham/rust-ansi-term.git#6db0b81cf4517e482293351c133cf07cced8c703"
 dependencies = [
  "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex_macros 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex_macros 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "natord"
-version = "1.0.3"
-source = "git+https://github.com/lifthrasiir/rust-natord.git#b3a70271270effd7233fc36aef97215015d53af4"
+version = "1.0.4"
+source = "git+https://github.com/lifthrasiir/rust-natord.git#6dc14929c67dcf898fe98c3aabdeec10274497f9"
 
 [[package]]
 name = "number_prefix"
@@ -34,7 +34,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "regex_macros"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "regex 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
