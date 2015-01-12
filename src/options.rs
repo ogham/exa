@@ -17,16 +17,20 @@ pub enum SortField {
 impl Copy for SortField { }
 
 impl SortField {
-    fn from_word(word: String) -> SortField {
+    fn from_word(word: String) -> Result<SortField, Error> {
         match word.as_slice() {
-            "name"  => SortField::Name,
-            "size"  => SortField::Size,
-            "ext"   => SortField::Extension,
-            "none"  => SortField::Unsorted,
-            "inode" => SortField::FileInode,
-            _       => panic!("Invalid sorting order"),
+            "name"  => Ok(SortField::Name),
+            "size"  => Ok(SortField::Size),
+            "ext"   => Ok(SortField::Extension),
+            "none"  => Ok(SortField::Unsorted),
+            "inode" => Ok(SortField::FileInode),
+            field   => Err(no_sort_field(field))
         }
     }
+}
+
+fn no_sort_field(field: &str) -> Error {
+    Error::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
 }
 
 pub struct Options {
@@ -38,9 +42,14 @@ pub struct Options {
     pub view: View,
 }
 
+pub enum Error {
+    InvalidOptions(getopts::Fail),
+    Help(String),
+}
+
 impl Options {
-    pub fn getopts(args: Vec<String>) -> Result<Options, isize> {
-        let opts = [
+    pub fn getopts(args: Vec<String>) -> Result<Options, Error> {
+        let opts = &[
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
             getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
@@ -58,25 +67,26 @@ impl Options {
             getopts::optflag("?", "help",      "show list of command-line options"),
         ];
 
-        let matches = match getopts::getopts(args.tail(), &opts) {
+        let matches = match getopts::getopts(args.tail(), opts) {
             Ok(m) => m,
-            Err(e) => {
-                println!("Invalid options: {}", e);
-                return Err(1);
-            }
+            Err(e) => return Err(Error::InvalidOptions(e)),
         };
 
         if matches.opt_present("help") {
-            println!("exa - ls with more features\n\n{}", getopts::usage("Usage:\n  exa [options] [files...]", &opts));
-            return Err(2);
+            return Err(Error::Help(getopts::usage("Usage:\n  exa [options] [files...]", opts)));
         }
+
+        let sort_field = match matches.opt_str("sort") {
+            Some(word) => try!(SortField::from_word(word)),
+            None => SortField::Name,
+        };
 
         Ok(Options {
             list_dirs:       matches.opt_present("list-dirs"),
             path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
             reverse:         matches.opt_present("reverse"),
             show_invisibles: matches.opt_present("all"),
-            sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
+            sort_field:      sort_field,
             view:            Options::view(&matches),
         })
     }

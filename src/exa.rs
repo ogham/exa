@@ -7,11 +7,12 @@ extern crate users;
 
 use std::io::FileType;
 use std::io::fs;
-use std::os;
+use std::os::{args, set_exit_status};
 
 use dir::Dir;
 use file::File;
 use options::Options;
+use options::Error::*;
 
 pub mod column;
 pub mod dir;
@@ -20,15 +21,6 @@ pub mod filetype;
 pub mod options;
 pub mod output;
 pub mod term;
-
-fn main() {
-    let args: Vec<String> = os::args();
-
-    match Options::getopts(args) {
-        Err(error_code) => os::set_exit_status(error_code),
-        Ok(options) => exa(&options),
-    };
-}
 
 fn exa(options: &Options) {
     let mut dirs: Vec<String> = vec![];
@@ -91,4 +83,20 @@ fn exa(options: &Options) {
             }
         };
     }
+}
+
+fn main() {
+    let args: Vec<String> = args();
+
+    match Options::getopts(args) {
+        Ok(options) => exa(&options),
+        Err(Help(text)) => {
+            println!("{}", text);
+            set_exit_status(2);
+        },
+        Err(InvalidOptions(e)) => {
+            println!("{}", e);
+            set_exit_status(3);
+        },
+    };
 }
