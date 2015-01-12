@@ -6,14 +6,8 @@ authors = [ "ogham@bsago.me" ]
 [[bin]]
 name = "exa"
 
-[dependencies.ansi_term]
-git = "https://github.com/ogham/rust-ansi-term.git"
-
-[dependencies.natord]
-git = "https://github.com/lifthrasiir/rust-natord.git"
-
-[dependencies.number_prefix]
-git = "https://github.com/ogham/rust-number-prefix.git"
-
-[dependencies.users]
-git = "https://github.com/ogham/rust-users.git"
+[dependencies]
+ansi_term = "0.4.2"
+natord = "1.0.6"
+number_prefix = "0.2.1"
+users = "0.2.1"
