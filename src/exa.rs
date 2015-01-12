@@ -19,7 +19,6 @@ use options::{Options, View};
 
 use ansi_term::Style::Plain;
 use ansi_term::strip_formatting;
-
 use users::OSUsers;
 
 pub mod column;
@@ -38,7 +37,7 @@ fn main() {
     };
 }
 
-fn exa(opts: &Options) {
+fn exa(options: &Options) {
     let mut dirs: Vec<String> = vec![];
     let mut files: Vec<File> = vec![];
 
@@ -49,11 +48,11 @@ fn exa(opts: &Options) {
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
     // and listed second.
-    for file in opts.path_strings() {
+    for file in options.path_strings() {
         let path = Path::new(file);
         match fs::stat(&path) {
             Ok(stat) => {
-                if !opts.list_dirs && stat.kind == FileType::Directory {
+                if !options.list_dirs && stat.kind == FileType::Directory {
                     dirs.push(file.clone());
                 }
                 else {
@@ -71,7 +70,7 @@ fn exa(opts: &Options) {
     let mut first = files.is_empty();
 
     if !files.is_empty() {
-        view(opts, files);
+        view(options, files);
     }
 
     for dir_name in dirs.iter() {
@@ -85,13 +84,13 @@ fn exa(opts: &Options) {
         match Dir::readdir(Path::new(dir_name.clone())) {
             Ok(dir) => {
                 let unsorted_files = dir.files();
-                let files: Vec<File> = opts.transform_files(unsorted_files);
+                let files: Vec<File> = options.transform_files(unsorted_files);
 
                 if print_dir_names {
                     println!("{}:", dir_name);
                 }
 
-                view(opts, files);
+                view(options, files);
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
@@ -103,9 +102,9 @@ fn exa(opts: &Options) {
 
 fn view(options: &Options, files: Vec<File>) {
     match options.view {
-        View::Details(ref cols) => details_view(options, cols, files),
-        View::Lines => lines_view(files),
-        View::Grid(across, width) => grid_view(across, width, files),
+        View::Grid(across, width)  => grid_view(across, width, files),
+        View::Details(ref cols)    => details_view(cols, files, options.header),
+        View::Lines                => lines_view(files),
     }
 }
 
@@ -203,7 +202,7 @@ fn grid_view(across: bool, console_width: usize, files: Vec<File>) {
     }
 }
 
-fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
+fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum
@@ -216,7 +215,7 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
         .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
 
-    if options.header {
+    if header {
         table.insert(0, columns.iter().map(|c| Plain.underline().paint(c.header()).to_string()).collect());
     }
 
