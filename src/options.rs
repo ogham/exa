@@ -4,6 +4,7 @@ extern crate natord;
 use file::File;
 use column::{Column, SizeFormat};
 use column::Column::*;
+use output::View;
 use term::dimensions;
 
 use std::ascii::AsciiExt;
@@ -28,14 +29,7 @@ impl SortField {
     }
 }
 
-pub enum View {
-    Details(Vec<Column>),
-    Lines,
-    Grid(bool, usize),
-}
-
 pub struct Options {
-    pub header: bool,
     pub list_dirs: bool,
     path_strs: Vec<String>,
     reverse: bool,
@@ -78,7 +72,6 @@ impl Options {
         }
 
         Ok(Options {
-            header:          matches.opt_present("header"),
             list_dirs:       matches.opt_present("list-dirs"),
             path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
             reverse:         matches.opt_present("reverse"),
@@ -94,7 +87,7 @@ impl Options {
 
     fn view(matches: &getopts::Matches) -> View {
         if matches.opt_present("long") {
-            View::Details(Options::columns(matches))
+            View::Details(Options::columns(matches), matches.opt_present("header"))
         }
         else if matches.opt_present("oneline") {
             View::Lines
