@@ -42,10 +42,14 @@ fn exa(opts: &Options) {
     let mut dirs: Vec<String> = vec![];
     let mut files: Vec<File> = vec![];
 
+    // It's only worth printing out directory names if the user supplied
+    // more than one of them.
+    let mut print_dir_names = false;
+
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
     // and listed second.
-    for file in opts.path_strs.iter() {
+    for file in opts.path_strings() {
         let path = Path::new(file);
         match fs::stat(&path) {
             Ok(stat) => {
@@ -60,11 +64,10 @@ fn exa(opts: &Options) {
             }
             Err(e) => println!("{}: {}", file, e),
         }
+
+        print_dir_names = true;
     }
 
-    // It's only worth printing out directory names if the user supplied
-    // more than one of them.
-    let print_dir_names = opts.path_strs.len() > 1;
     let mut first = files.is_empty();
 
     if !files.is_empty() {

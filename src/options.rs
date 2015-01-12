@@ -7,6 +7,7 @@ use column::Column::*;
 use term::dimensions;
 
 use std::ascii::AsciiExt;
+use std::slice::Iter;
 
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
@@ -36,10 +37,10 @@ pub enum View {
 pub struct Options {
     pub header: bool,
     pub list_dirs: bool,
-    pub path_strs: Vec<String>,
-    pub reverse: bool,
-    pub show_invisibles: bool,
-    pub sort_field: SortField,
+    path_strs: Vec<String>,
+    reverse: bool,
+    show_invisibles: bool,
+    sort_field: SortField,
     pub view: View,
 }
 
@@ -85,6 +86,10 @@ impl Options {
             sort_field:      matches.opt_str("sort").map(|word| SortField::from_word(word)).unwrap_or(SortField::Name),
             view:            Options::view(&matches),
         })
+    }
+
+    pub fn path_strings(&self) -> Iter<String> {
+        self.path_strs.iter()
     }
 
     fn view(matches: &getopts::Matches) -> View {
