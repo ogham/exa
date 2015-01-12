@@ -88,7 +88,7 @@ fn exa(options: &Options) {
 fn main() {
     let args: Vec<String> = args();
 
-    match Options::getopts(args) {
+    match Options::getopts(args.tail()) {
         Ok(options) => exa(&options),
         Err(Help(text)) => {
             println!("{}", text);

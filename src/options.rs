@@ -35,20 +35,21 @@ fn no_sort_field(field: &str) -> Error {
 
 pub struct Options {
     pub list_dirs: bool,
-    path_strs: Vec<String>,
+    pub path_strs: Vec<String>,
     reverse: bool,
     show_invisibles: bool,
     sort_field: SortField,
     pub view: View,
 }
 
+#[derive(Show)]
 pub enum Error {
     InvalidOptions(getopts::Fail),
     Help(String),
 }
 
 impl Options {
-    pub fn getopts(args: Vec<String>) -> Result<Options, Error> {
+    pub fn getopts(args: &[String]) -> Result<Options, Error> {
         let opts = &[
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
@@ -67,7 +68,7 @@ impl Options {
             getopts::optflag("?", "help",      "show list of command-line options"),
         ];
 
-        let matches = match getopts::getopts(args.tail(), opts) {
+        let matches = match getopts::getopts(args, opts) {
             Ok(m) => m,
             Err(e) => return Err(Error::InvalidOptions(e)),
         };
@@ -123,15 +124,15 @@ impl Options {
             columns.push(HardLinks);
         }
 
-		if matches.opt_present("binary") {
-			columns.push(FileSize(SizeFormat::BinaryBytes))
-		}
-		else if matches.opt_present("bytes") {
-			columns.push(FileSize(SizeFormat::JustBytes))
-		}
-		else {
-			columns.push(FileSize(SizeFormat::DecimalBytes))
-		}
+        if matches.opt_present("binary") {
+            columns.push(FileSize(SizeFormat::BinaryBytes))
+        }
+        else if matches.opt_present("bytes") {
+            columns.push(FileSize(SizeFormat::JustBytes))
+        }
+        else {
+            columns.push(FileSize(SizeFormat::DecimalBytes))
+        }
 
         if matches.opt_present("blocks") {
             columns.push(Blocks);
@@ -178,5 +179,49 @@ impl Options {
         }
 
         files
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Options;
+    use super::Error;
+    use super::Error::*;
+
+    fn is_helpful(error: Result<Options, Error>) -> bool {
+        match error {
+            Err(Help(_)) => true,
+            _            => false,
+        }
+    }
+
+    #[test]
+    fn help() {
+        let opts = Options::getopts(&[ "--help".to_string() ]);
+        assert!(is_helpful(opts))
+    }
+
+    #[test]
+    fn help_with_file() {
+        let opts = Options::getopts(&[ "--help".to_string(), "me".to_string() ]);
+        assert!(is_helpful(opts))
+    }
+
+    #[test]
+    fn files() {
+        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]);
+        assert_eq!(opts.unwrap().path_strs, vec![ "this file".to_string(), "that file".to_string() ])
+    }
+
+    #[test]
+    fn no_args() {
+        let opts = Options::getopts(&[]);
+        assert_eq!(opts.unwrap().path_strs, vec![ ".".to_string() ])
+    }
+
+    #[test]
+    fn view() {
+        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]);
+        assert_eq!(opts.unwrap().path_strs, vec![ "this file".to_string(), "that file".to_string() ])
     }
 }
