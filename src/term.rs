@@ -37,7 +37,7 @@ mod c {
     }
 }
 
-pub fn dimensions() -> Option<(uint, uint)> {
+pub fn dimensions() -> Option<(usize, usize)> {
     let w = unsafe { c::dimensions() };
 
     // If either of the dimensions is 0 then the command failed,
@@ -47,6 +47,6 @@ pub fn dimensions() -> Option<(uint, uint)> {
         None
     }
     else {
-        Some((w.ws_col as uint, w.ws_row as uint))
+        Some((w.ws_col as usize, w.ws_row as usize))
     }
 }

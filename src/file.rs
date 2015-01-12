@@ -193,7 +193,7 @@ impl<'a> File<'a> {
         }
     }
 
-    pub fn file_name_width(&self) -> uint {
+    pub fn file_name_width(&self) -> usize {
         self.name.as_slice().width(false)
     }
 

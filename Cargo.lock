@@ -3,6 +3,7 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "getopts 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "number_prefix 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "users 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -16,6 +17,11 @@ dependencies = [
  "regex 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex_macros 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "getopts"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "natord"

@@ -1,4 +1,4 @@
-#![feature(globs)]
+#![allow(unstable)]
 
 extern crate ansi_term;
 extern crate number_prefix;
@@ -112,7 +112,7 @@ fn lines_view(files: Vec<File>) {
     }
 }
 
-fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option<(uint, Vec<uint>)> {
+fn fit_into_grid(across: bool, console_width: usize, files: &Vec<File>) -> Option<(usize, Vec<usize>)> {
     // TODO: this function could almost certainly be optimised...
     // surely not *all* of the numbers of lines are worth searching through!
 
@@ -131,7 +131,7 @@ fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option
         // *column separators* is bigger than the width of the screen, then
         // don't even try to tabulate it.
         // This is actually a necessary check, because the width is stored as
-        // a uint, and making it go negative makes it huge instead, but it
+        // a usize, and making it go negative makes it huge instead, but it
         // also serves as a speed-up.
         let separator_width = (num_columns - 1) * 2;
         if console_width < separator_width {
@@ -143,7 +143,7 @@ fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option
 
         // Find the width of each column by adding the lengths of the file
         // names in that column up.
-        let mut column_widths: Vec<uint> = repeat(0).take(num_columns).collect();
+        let mut column_widths: Vec<usize> = repeat(0).take(num_columns).collect();
         for (index, file) in files.iter().enumerate() {
             let index = if across {
                 index % num_columns
@@ -164,7 +164,7 @@ fn fit_into_grid(across: bool, console_width: uint, files: &Vec<File>) -> Option
     return None;
 }
 
-fn grid_view(across: bool, console_width: uint, files: Vec<File>) {
+fn grid_view(across: bool, console_width: usize, files: Vec<File>) {
     if let Some((num_lines, widths)) = fit_into_grid(across, console_width, &files) {
         for y in range(0, num_lines) {
             for x in range(0, widths.len()) {
@@ -223,11 +223,11 @@ fn details_view(options: &Options, columns: &Vec<Column>, files: Vec<File>) {
     // This is fairly expensive to do (it uses a regex), so the
     // results are cached.
 
-    let lengths: Vec<Vec<uint>> = table.iter()
+    let lengths: Vec<Vec<usize>> = table.iter()
         .map(|row| row.iter().map(|col| strip_formatting(col.as_slice()).len()).collect())
         .collect();
 
-    let column_widths: Vec<uint> = range(0, columns.len())
+    let column_widths: Vec<usize> = range(0, columns.len())
         .map(|n| lengths.iter().map(|row| row[n]).max().unwrap_or(0))
         .collect();
 

@@ -55,7 +55,7 @@ impl Column {
     }
 }
 
-fn spaces(length: uint) -> String {
+fn spaces(length: usize) -> String {
     repeat(" ").take(length).collect()
 }
 
@@ -65,7 +65,7 @@ fn spaces(length: uint) -> String {
 // because these strings are usually full of control characters.
 
 impl Alignment {
-    pub fn pad_string(&self, string: &String, padding: uint) -> String {
+    pub fn pad_string(&self, string: &String, padding: usize) -> String {
         match *self {
             Alignment::Left  => format!("{}{}", string, spaces(padding).as_slice()),
             Alignment::Right => format!("{}{}", spaces(padding), string.as_slice()),

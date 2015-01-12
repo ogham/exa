@@ -30,7 +30,7 @@ impl SortField {
 pub enum View {
     Details(Vec<Column>),
     Lines,
-    Grid(bool, uint),
+    Grid(bool, usize),
 }
 
 pub struct Options {
@@ -44,7 +44,7 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn getopts(args: Vec<String>) -> Result<Options, int> {
+    pub fn getopts(args: Vec<String>) -> Result<Options, isize> {
         let opts = [
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
