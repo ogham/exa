@@ -37,5 +37,3 @@ impl Dir {
         self.contents.contains(path)
     }
 }
-
-
