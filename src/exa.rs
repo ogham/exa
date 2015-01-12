@@ -28,7 +28,7 @@ fn exa(options: &Options) {
 
     // It's only worth printing out directory names if the user supplied
     // more than one of them.
-    let mut print_dir_names = false;
+    let mut count = 0;
 
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
@@ -49,7 +49,7 @@ fn exa(options: &Options) {
             Err(e) => println!("{}: {}", file, e),
         }
 
-        print_dir_names = true;
+        count += 1;
     }
 
     let mut first = files.is_empty();
@@ -71,7 +71,7 @@ fn exa(options: &Options) {
                 let unsorted_files = dir.files();
                 let files: Vec<File> = options.transform_files(unsorted_files);
 
-                if print_dir_names {
+                if count > 1 {
                     println!("{}:", dir_name);
                 }
 
