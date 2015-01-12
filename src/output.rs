@@ -9,6 +9,7 @@ use users::OSUsers;
 use ansi_term::Style::Plain;
 use ansi_term::strip_formatting;
 
+#[derive(PartialEq, Show)]
 pub enum View {
     Details(Vec<Column>, bool),
     Lines,

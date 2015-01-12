@@ -10,6 +10,7 @@ use term::dimensions;
 use std::ascii::AsciiExt;
 use std::slice::Iter;
 
+#[derive(PartialEq, Show)]
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
 }
@@ -33,6 +34,7 @@ fn no_sort_field(field: &str) -> Error {
     Error::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
 }
 
+#[derive(PartialEq, Show)]
 pub struct Options {
     pub list_dirs: bool,
     pub path_strs: Vec<String>,
@@ -42,10 +44,12 @@ pub struct Options {
     pub view: View,
 }
 
-#[derive(Show)]
+#[derive(PartialEq, Show)]
 pub enum Error {
     InvalidOptions(getopts::Fail),
     Help(String),
+    Conflict(&'static str, &'static str),
+    Useless(&'static str, bool, &'static str),
 }
 
 impl Options {
@@ -88,73 +92,12 @@ impl Options {
             reverse:         matches.opt_present("reverse"),
             show_invisibles: matches.opt_present("all"),
             sort_field:      sort_field,
-            view:            Options::view(&matches),
+            view:            try!(view(&matches)),
         })
     }
 
     pub fn path_strings(&self) -> Iter<String> {
         self.path_strs.iter()
-    }
-
-    fn view(matches: &getopts::Matches) -> View {
-        if matches.opt_present("long") {
-            View::Details(Options::columns(matches), matches.opt_present("header"))
-        }
-        else if matches.opt_present("oneline") {
-            View::Lines
-        }
-        else {
-            match dimensions() {
-                None => View::Lines,
-                Some((width, _)) => View::Grid(matches.opt_present("across"), width),
-            }
-        }
-    }
-
-    fn columns(matches: &getopts::Matches) -> Vec<Column> {
-        let mut columns = vec![];
-
-        if matches.opt_present("inode") {
-            columns.push(Inode);
-        }
-
-        columns.push(Permissions);
-
-        if matches.opt_present("links") {
-            columns.push(HardLinks);
-        }
-
-        if matches.opt_present("binary") {
-            columns.push(FileSize(SizeFormat::BinaryBytes))
-        }
-        else if matches.opt_present("bytes") {
-            columns.push(FileSize(SizeFormat::JustBytes))
-        }
-        else {
-            columns.push(FileSize(SizeFormat::DecimalBytes))
-        }
-
-        if matches.opt_present("blocks") {
-            columns.push(Blocks);
-        }
-
-        columns.push(User);
-
-        if matches.opt_present("group") {
-            columns.push(Group);
-        }
-
-        columns.push(FileName);
-        columns
-    }
-
-    fn should_display(&self, f: &File) -> bool {
-        if self.show_invisibles {
-            true
-        }
-        else {
-            !f.name.as_slice().starts_with(".")
-        }
     }
 
     pub fn transform_files<'a>(&self, unordered_files: Vec<File<'a>>) -> Vec<File<'a>> {
@@ -180,6 +123,90 @@ impl Options {
 
         files
     }
+
+    fn should_display(&self, f: &File) -> bool {
+        if self.show_invisibles {
+            true
+        }
+        else {
+            !f.name.as_slice().starts_with(".")
+        }
+    }
+}
+
+fn view(matches: &getopts::Matches) -> Result<View, Error> {
+    if matches.opt_present("long") {
+        if matches.opt_present("across") {
+            Err(Error::Useless("across", true, "long"))
+        }
+        else if matches.opt_present("oneline") {
+            Err(Error::Useless("across", true, "long"))
+        }
+        else {
+            Ok(View::Details(try!(columns(matches)), matches.opt_present("header")))
+        }
+    }
+    else if matches.opt_present("binary") {
+        Err(Error::Useless("binary", false, "long"))
+    }
+    else if matches.opt_present("bytes") {
+        Err(Error::Useless("bytes", false, "long"))
+    }
+    else if matches.opt_present("oneline") {
+        if matches.opt_present("across") {
+            Err(Error::Useless("across", true, "oneline"))
+        }
+        else {
+            Ok(View::Lines)
+        }
+    }
+    else {
+        match dimensions() {
+            None => Ok(View::Lines),
+            Some((width, _)) => Ok(View::Grid(matches.opt_present("across"), width)),
+        }
+    }
+}
+
+fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Error> {
+    let binary = matches.opt_present("binary");
+    let bytes = matches.opt_present("bytes");
+
+    match (binary, bytes) {
+        (true,  true ) => Err(Error::Conflict("binary", "bytes")),
+        (true,  false) => Ok(SizeFormat::BinaryBytes),
+        (false, true ) => Ok(SizeFormat::JustBytes),
+        (false, false) => Ok(SizeFormat::DecimalBytes),
+    }
+}
+
+fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Error> {
+    let mut columns = vec![];
+
+    if matches.opt_present("inode") {
+        columns.push(Inode);
+    }
+
+    columns.push(Permissions);
+
+    if matches.opt_present("links") {
+        columns.push(HardLinks);
+    }
+
+    columns.push(FileSize(try!(file_size(matches))));
+
+    if matches.opt_present("blocks") {
+        columns.push(Blocks);
+    }
+
+    columns.push(User);
+
+    if matches.opt_present("group") {
+        columns.push(Group);
+    }
+
+    columns.push(FileName);
+    Ok(columns)
 }
 
 #[cfg(test)]
@@ -220,8 +247,34 @@ mod test {
     }
 
     #[test]
-    fn view() {
-        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]);
-        assert_eq!(opts.unwrap().path_strs, vec![ "this file".to_string(), "that file".to_string() ])
+    fn file_sizes() {
+        let opts = Options::getopts(&[ "--long".to_string(), "--binary".to_string(), "--bytes".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Error::Conflict("binary", "bytes"))
     }
+
+    #[test]
+    fn just_binary() {
+        let opts = Options::getopts(&[ "--binary".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Error::Useless("binary", false, "long"))
+    }
+
+    #[test]
+    fn just_bytes() {
+        let opts = Options::getopts(&[ "--bytes".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Error::Useless("bytes", false, "long"))
+    }
+
+    #[test]
+    fn long_across() {
+        let opts = Options::getopts(&[ "--long".to_string(), "--across".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Error::Useless("across", true, "long"))
+    }
+
+    #[test]
+    fn oneline_across() {
+        let opts = Options::getopts(&[ "--oneline".to_string(), "--across".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Error::Useless("across", true, "oneline"))
+    }
+
+
 }

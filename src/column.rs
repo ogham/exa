@@ -1,5 +1,6 @@
 use std::iter::repeat;
 
+#[derive(PartialEq, Show)]
 pub enum Column {
     Permissions,
     FileName,
@@ -13,6 +14,7 @@ pub enum Column {
 
 impl Copy for Column { }
 
+#[derive(PartialEq, Show)]
 pub enum SizeFormat {
     DecimalBytes,
     BinaryBytes,

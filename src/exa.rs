@@ -98,5 +98,17 @@ fn main() {
             println!("{}", e);
             set_exit_status(3);
         },
+        Err(Conflict(a, b)) => {
+            println!("Option --{} conflicts with option {}", a, b);
+            set_exit_status(3);
+        },
+        Err(Useless(a, false, b)) => {
+            println!("Option --{} is useless without option --{}", a, b);
+            set_exit_status(3);
+        },
+        Err(Useless(a, true, b)) => {
+            println!("Option --{} is useless given option --{}", a, b);
+            set_exit_status(3);
+        },
     };
 }
