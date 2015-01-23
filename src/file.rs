@@ -56,7 +56,7 @@ impl<'a> File<'a> {
         // The extension is the series of characters after a dot at
         // the end of a filename. This deliberately also counts
         // dotfiles - the ".git" folder has the extension "git".
-        name.rfind('.').map(|pos| name.slice_from(pos + 1).to_string())
+        name.rfind('.').map(|p| name[p+1..].to_string())
     }
 
     pub fn is_dotfile(&self) -> bool {

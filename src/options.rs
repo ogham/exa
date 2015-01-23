@@ -9,8 +9,11 @@ use term::dimensions;
 
 use std::ascii::AsciiExt;
 use std::slice::Iter;
+use std::fmt;
 
-#[derive(PartialEq, Show)]
+use self::Error::*;
+
+#[derive(PartialEq, Debug)]
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
 }
@@ -34,7 +37,7 @@ fn no_sort_field(field: &str) -> Error {
     Error::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
 }
 
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug)]
 pub struct Options {
     pub list_dirs: bool,
     pub path_strs: Vec<String>,
@@ -44,12 +47,31 @@ pub struct Options {
     pub view: View,
 }
 
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug)]
 pub enum Error {
     InvalidOptions(getopts::Fail),
     Help(String),
     Conflict(&'static str, &'static str),
     Useless(&'static str, bool, &'static str),
+}
+
+impl Error {
+    pub fn error_code(&self) -> isize {
+        if let Help(_) = *self { 2 }
+                          else { 3 }
+    }
+}
+
+impl fmt::Display for Error {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                match *self {
+                    InvalidOptions(ref e) => write!(f, "{}", e),
+                    Help(ref text)        => write!(f, "{}", text),
+                    Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}", a, b),
+                    Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}", a, b),
+                    Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}", a, b),
+                }
+        }
 }
 
 impl Options {
@@ -215,10 +237,18 @@ mod test {
     use super::Error;
     use super::Error::*;
 
+    use std::fmt;
+
     fn is_helpful(error: Result<Options, Error>) -> bool {
         match error {
             Err(Help(_)) => true,
             _            => false,
+        }
+    }
+
+    impl fmt::Display for Options {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{:?}", self)
         }
     }
 
@@ -275,6 +305,4 @@ mod test {
         let opts = Options::getopts(&[ "--oneline".to_string(), "--across".to_string() ]);
         assert_eq!(opts.unwrap_err(), Error::Useless("across", true, "oneline"))
     }
-
-
 }

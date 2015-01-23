@@ -12,7 +12,6 @@ use std::os::{args, set_exit_status};
 use dir::Dir;
 use file::File;
 use options::Options;
-use options::Error::*;
 
 pub mod column;
 pub mod dir;
@@ -90,25 +89,9 @@ fn main() {
 
     match Options::getopts(args.tail()) {
         Ok(options) => exa(&options),
-        Err(Help(text)) => {
-            println!("{}", text);
-            set_exit_status(2);
-        },
-        Err(InvalidOptions(e)) => {
+        Err(e) => {
             println!("{}", e);
-            set_exit_status(3);
-        },
-        Err(Conflict(a, b)) => {
-            println!("Option --{} conflicts with option {}", a, b);
-            set_exit_status(3);
-        },
-        Err(Useless(a, false, b)) => {
-            println!("Option --{} is useless without option --{}", a, b);
-            set_exit_status(3);
-        },
-        Err(Useless(a, true, b)) => {
-            println!("Option --{} is useless given option --{}", a, b);
-            set_exit_status(3);
+            set_exit_status(e.error_code());
         },
     };
 }
