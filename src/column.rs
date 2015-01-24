@@ -23,9 +23,8 @@ pub enum SizeFormat {
 
 impl Copy for SizeFormat { }
 
-// Each column can pick its own alignment. Usually, numbers are
-// right-aligned, and text is left-aligned.
-
+/// Each column can pick its own **Alignment**. Usually, numbers are
+/// right-aligned, and text is left-aligned.
 pub enum Alignment {
     Left, Right,
 }
@@ -33,6 +32,8 @@ pub enum Alignment {
 impl Copy for Alignment { }
 
 impl Column {
+
+    /// Get the alignment this column should use.
     pub fn alignment(&self) -> Alignment {
         match *self {
             Column::FileSize(_) => Alignment::Right,
@@ -43,6 +44,8 @@ impl Column {
         }
     }
 
+    /// Get the text that should be printed at the top, when the user elects
+    /// to have a header row printed.
     pub fn header(&self) -> &'static str {
         match *self {
             Column::Permissions => "Permissions",
@@ -57,16 +60,18 @@ impl Column {
     }
 }
 
+/// Pad a string with the given number of spaces.
 fn spaces(length: usize) -> String {
     repeat(" ").take(length).collect()
 }
 
-// An Alignment is used to pad a string to a certain length, letting
-// it pick which end it puts the text on. It takes the amount of
-// padding to apply, rather than the width the text should end up,
-// because these strings are usually full of control characters.
-
 impl Alignment {
+    /// Pad a string with the given alignment and number of spaces.
+    ///
+    /// This doesn't take the width the string *should* be, rather the number
+    /// of spaces to add: this is because the strings are usually full of
+    /// invisible control characters, so getting the displayed width of the
+    /// string is not as simple as just getting its length.
     pub fn pad_string(&self, string: &String, padding: usize) -> String {
         match *self {
             Alignment::Left  => format!("{}{}", string, spaces(padding).as_slice()),

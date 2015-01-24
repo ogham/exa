@@ -1,18 +1,21 @@
 use std::io::{fs, IoResult};
 use file::File;
 
-// The purpose of a Dir is to provide a cached list of the file paths
-// in the directory being searched for. This object is then passed to
-// the Files themselves, which can then check the status of their
-// surrounding files, such as whether it needs to be coloured
-// differently if a certain other file exists.
-
+/// A **Dir** provides a cached list of the file paths in a directory that's
+/// being listed.
+///
+/// This object gets passed to the Files themselves, in order for them to
+/// check the existence of surrounding files, then highlight themselves
+/// accordingly. (See `File#get_source_files`)
 pub struct Dir {
     pub contents: Vec<Path>,
     pub path: Path,
 }
 
 impl Dir {
+    /// Create a new Dir object filled with all the files in the directory
+    /// pointed to by the given path. Fails if the directory can't be read, or
+    /// isn't actually a directory.
     pub fn readdir(path: Path) -> IoResult<Dir> {
         fs::readdir(&path).map(|paths| Dir {
             contents: paths,
@@ -20,6 +23,8 @@ impl Dir {
         })
     }
 
+    /// Produce a vector of File objects from an initialised directory,
+    /// printing out an error if any of the Files fail to be created.
     pub fn files(&self) -> Vec<File> {
         let mut files = vec![];
 
@@ -33,6 +38,7 @@ impl Dir {
         files
     }
 
+    /// Whether this directory contains a file with the given path.
     pub fn contains(&self, path: &Path) -> bool {
         self.contents.contains(path)
     }

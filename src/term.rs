@@ -37,12 +37,11 @@ mod c {
     }
 }
 
+/// Query the current processes's output, returning its width and height as a
+/// number of characters. Returns None if the output isn't to a terminal.
 pub fn dimensions() -> Option<(usize, usize)> {
     let w = unsafe { c::dimensions() };
 
-    // If either of the dimensions is 0 then the command failed,
-    // usually because output isn't to a terminal (instead to a file
-    // or pipe or something)
     if w.ws_col == 0 || w.ws_row == 0 {
         None
     }

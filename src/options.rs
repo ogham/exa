@@ -11,32 +11,10 @@ use std::ascii::AsciiExt;
 use std::slice::Iter;
 use std::fmt;
 
-use self::Error::*;
+use self::Misfire::*;
 
-#[derive(PartialEq, Debug)]
-pub enum SortField {
-    Unsorted, Name, Extension, Size, FileInode
-}
-
-impl Copy for SortField { }
-
-impl SortField {
-    fn from_word(word: String) -> Result<SortField, Error> {
-        match word.as_slice() {
-            "name"  => Ok(SortField::Name),
-            "size"  => Ok(SortField::Size),
-            "ext"   => Ok(SortField::Extension),
-            "none"  => Ok(SortField::Unsorted),
-            "inode" => Ok(SortField::FileInode),
-            field   => Err(no_sort_field(field))
-        }
-    }
-}
-
-fn no_sort_field(field: &str) -> Error {
-    Error::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
-}
-
+/// The *Options* struct represents a parsed version of the user's
+/// command-line options.
 #[derive(PartialEq, Debug)]
 pub struct Options {
     pub list_dirs: bool,
@@ -47,35 +25,10 @@ pub struct Options {
     pub view: View,
 }
 
-#[derive(PartialEq, Debug)]
-pub enum Error {
-    InvalidOptions(getopts::Fail),
-    Help(String),
-    Conflict(&'static str, &'static str),
-    Useless(&'static str, bool, &'static str),
-}
-
-impl Error {
-    pub fn error_code(&self) -> isize {
-        if let Help(_) = *self { 2 }
-                          else { 3 }
-    }
-}
-
-impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                match *self {
-                    InvalidOptions(ref e) => write!(f, "{}", e),
-                    Help(ref text)        => write!(f, "{}", text),
-                    Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}", a, b),
-                    Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}", a, b),
-                    Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}", a, b),
-                }
-        }
-}
-
 impl Options {
-    pub fn getopts(args: &[String]) -> Result<Options, Error> {
+
+    /// Call getopts on the given slice of command-line strings.
+    pub fn getopts(args: &[String]) -> Result<Options, Misfire> {
         let opts = &[
             getopts::optflag("1", "oneline",   "display one entry per line"),
             getopts::optflag("a", "all",       "show dot-files"),
@@ -96,11 +49,11 @@ impl Options {
 
         let matches = match getopts::getopts(args, opts) {
             Ok(m) => m,
-            Err(e) => return Err(Error::InvalidOptions(e)),
+            Err(e) => return Err(Misfire::InvalidOptions(e)),
         };
 
         if matches.opt_present("help") {
-            return Err(Error::Help(getopts::usage("Usage:\n  exa [options] [files...]", opts)));
+            return Err(Misfire::Help(getopts::usage("Usage:\n  exa [options] [files...]", opts)));
         }
 
         let sort_field = match matches.opt_str("sort") {
@@ -122,6 +75,7 @@ impl Options {
         self.path_strs.iter()
     }
 
+    /// Transform the files somehow before listing them.
     pub fn transform_files<'a>(&self, unordered_files: Vec<File<'a>>) -> Vec<File<'a>> {
         let mut files: Vec<File<'a>> = unordered_files.into_iter()
             .filter(|f| self.should_display(f))
@@ -156,27 +110,95 @@ impl Options {
     }
 }
 
-fn view(matches: &getopts::Matches) -> Result<View, Error> {
+/// User-supplied field to sort by
+#[derive(PartialEq, Debug)]
+pub enum SortField {
+    Unsorted, Name, Extension, Size, FileInode
+}
+
+impl Copy for SortField { }
+
+impl SortField {
+
+    /// Find which field to use based on a user-supplied word.
+    fn from_word(word: String) -> Result<SortField, Misfire> {
+        match word.as_slice() {
+            "name"  => Ok(SortField::Name),
+            "size"  => Ok(SortField::Size),
+            "ext"   => Ok(SortField::Extension),
+            "none"  => Ok(SortField::Unsorted),
+            "inode" => Ok(SortField::FileInode),
+            field   => Err(SortField::none(field))
+        }
+    }
+
+    /// How to display an error when the word didn't match with anything.
+    fn none(field: &str) -> Misfire {
+        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
+    }
+}
+
+/// One of these things could happen instead of listing files.
+#[derive(PartialEq, Debug)]
+pub enum Misfire {
+
+    /// The getopts crate didn't like these arguments.
+    InvalidOptions(getopts::Fail),
+
+    /// The user asked for help. This isn't strictly an error, which is why
+    /// this enum isn't named Error!
+    Help(String),
+
+    /// Two options were given that conflict with one another
+    Conflict(&'static str, &'static str),
+
+    /// An option was given that does nothing when another one either is or
+    /// isn't present.
+    Useless(&'static str, bool, &'static str),
+}
+
+impl Misfire {
+    /// The OS return code this misfire should signify.
+    pub fn error_code(&self) -> isize {
+        if let Help(_) = *self { 2 }
+                          else { 3 }
+    }
+}
+
+impl fmt::Display for Misfire {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            InvalidOptions(ref e) => write!(f, "{}", e),
+            Help(ref text)        => write!(f, "{}", text),
+            Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}", a, b),
+            Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}", a, b),
+            Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}", a, b),
+        }
+    }
+}
+
+/// Turns the Getopts results object into a View object.
+fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
     if matches.opt_present("long") {
         if matches.opt_present("across") {
-            Err(Error::Useless("across", true, "long"))
+            Err(Misfire::Useless("across", true, "long"))
         }
         else if matches.opt_present("oneline") {
-            Err(Error::Useless("across", true, "long"))
+            Err(Misfire::Useless("across", true, "long"))
         }
         else {
             Ok(View::Details(try!(columns(matches)), matches.opt_present("header")))
         }
     }
     else if matches.opt_present("binary") {
-        Err(Error::Useless("binary", false, "long"))
+        Err(Misfire::Useless("binary", false, "long"))
     }
     else if matches.opt_present("bytes") {
-        Err(Error::Useless("bytes", false, "long"))
+        Err(Misfire::Useless("bytes", false, "long"))
     }
     else if matches.opt_present("oneline") {
         if matches.opt_present("across") {
-            Err(Error::Useless("across", true, "oneline"))
+            Err(Misfire::Useless("across", true, "oneline"))
         }
         else {
             Ok(View::Lines)
@@ -190,19 +212,22 @@ fn view(matches: &getopts::Matches) -> Result<View, Error> {
     }
 }
 
-fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Error> {
+/// Finds out which file size the user has asked for.
+fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
     let binary = matches.opt_present("binary");
     let bytes = matches.opt_present("bytes");
 
     match (binary, bytes) {
-        (true,  true ) => Err(Error::Conflict("binary", "bytes")),
+        (true,  true ) => Err(Misfire::Conflict("binary", "bytes")),
         (true,  false) => Ok(SizeFormat::BinaryBytes),
         (false, true ) => Ok(SizeFormat::JustBytes),
         (false, false) => Ok(SizeFormat::DecimalBytes),
     }
 }
 
-fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Error> {
+/// Turns the Getopts results object into a list of columns for the columns
+/// view, depending on the passed-in command-line arguments.
+fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Misfire> {
     let mut columns = vec![];
 
     if matches.opt_present("inode") {
@@ -215,6 +240,7 @@ fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Error> {
         columns.push(HardLinks);
     }
 
+    // Fail early here if two file size flags are given
     columns.push(FileSize(try!(file_size(matches))));
 
     if matches.opt_present("blocks") {
@@ -234,13 +260,13 @@ fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Error> {
 #[cfg(test)]
 mod test {
     use super::Options;
-    use super::Error;
-    use super::Error::*;
+    use super::Misfire;
+    use super::Misfire::*;
 
     use std::fmt;
 
-    fn is_helpful(error: Result<Options, Error>) -> bool {
-        match error {
+    fn is_helpful(misfire: Result<Options, Misfire>) -> bool {
+        match misfire {
             Err(Help(_)) => true,
             _            => false,
         }
@@ -279,30 +305,30 @@ mod test {
     #[test]
     fn file_sizes() {
         let opts = Options::getopts(&[ "--long".to_string(), "--binary".to_string(), "--bytes".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Error::Conflict("binary", "bytes"))
+        assert_eq!(opts.unwrap_err(), Misfire::Conflict("binary", "bytes"))
     }
 
     #[test]
     fn just_binary() {
         let opts = Options::getopts(&[ "--binary".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Error::Useless("binary", false, "long"))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("binary", false, "long"))
     }
 
     #[test]
     fn just_bytes() {
         let opts = Options::getopts(&[ "--bytes".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Error::Useless("bytes", false, "long"))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("bytes", false, "long"))
     }
 
     #[test]
     fn long_across() {
         let opts = Options::getopts(&[ "--long".to_string(), "--across".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Error::Useless("across", true, "long"))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "long"))
     }
 
     #[test]
     fn oneline_across() {
         let opts = Options::getopts(&[ "--oneline".to_string(), "--across".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Error::Useless("across", true, "oneline"))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "oneline"))
     }
 }

@@ -26,9 +26,10 @@ impl View {
     }
 }
 
+/// The lines view literally just displays each file, line-by-line.
 fn lines_view(files: Vec<File>) {
     for file in files.iter() {
-        println!("{}", file.file_name());
+        println!("{}", file.file_name_view());
     }
 }
 

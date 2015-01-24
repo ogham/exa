@@ -55,6 +55,8 @@ static BUILD_TYPES: &'static [&'static str] = &[
     "Gruntfile.coffee" ];
 
 impl FileType {
+
+    /// Get the `ansi_term::Style` that a file of this type should use.
     pub fn style(&self) -> Style {
         match *self {
             Normal     => Plain,
@@ -77,6 +79,7 @@ impl FileType {
 }
 
 pub trait HasType {
+    /// For a given file, find out what type it has.
     fn get_type(&self) -> FileType;
 }
 
