@@ -182,7 +182,7 @@ fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
             Err(Misfire::Useless("across", true, "long"))
         }
         else if matches.opt_present("oneline") {
-            Err(Misfire::Useless("across", true, "long"))
+            Err(Misfire::Useless("oneline", true, "long"))
         }
         else {
             Ok(View::Details(try!(columns(matches)), matches.opt_present("header")))
