@@ -1,5 +1,7 @@
 use std::iter::repeat;
 
+use ansi_term::Style;
+
 #[derive(PartialEq, Show)]
 pub enum Column {
     Permissions,
@@ -76,6 +78,20 @@ impl Alignment {
         match *self {
             Alignment::Left  => format!("{}{}", string, spaces(padding).as_slice()),
             Alignment::Right => format!("{}{}", spaces(padding), string.as_slice()),
+        }
+    }
+}
+
+pub struct Cell {
+    pub length: usize,
+    pub text: String,
+}
+
+impl Cell {
+    pub fn paint(style: Style, string: &str) -> Cell {
+        Cell {
+            text: style.paint(string).to_string(),
+            length: string.len(),
         }
     }
 }

@@ -9,7 +9,7 @@ use users::Users;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
-use column::{Column, SizeFormat};
+use column::{Column, SizeFormat, Cell};
 use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
@@ -68,7 +68,7 @@ impl<'a> File<'a> {
     }
 
     /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> String {
+    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
         match *column {
             Permissions  => self.permissions_string(),
             FileName     => self.file_name_view(),
@@ -86,11 +86,16 @@ impl<'a> File<'a> {
     ///
     /// It consists of the file name coloured in the appropriate style, and,
     /// if it's a symlink, an arrow pointing to the file it links to, also
-    /// coloured in the appropriate style. Files that don't exist will be
-    /// coloured red.
-    pub fn file_name_view(&self) -> String {
-        let name = self.name.as_slice();
-        let displayed_name = self.file_colour().paint(name);
+    /// coloured in the appropriate style.
+    ///
+    /// If the symlink target doesn't exist, then instead of displaying
+    /// an error, highlight the target and arrow in red. The error would
+    /// be shown out of context, and it's almost always because the
+    /// target doesn't exist.
+    pub fn file_name_view(&self) -> Cell {
+        let name = &*self.name;
+        let style = self.file_colour();
+
         if self.stat.kind == io::FileType::Symlink {
             match fs::readlink(&self.path) {
                 Ok(path) => {
@@ -98,13 +103,31 @@ impl<'a> File<'a> {
                         Some(dir) => dir.path.join(path),
                         None => path,
                     };
-                    format!("{} {}", displayed_name, self.target_file_name_and_arrow(&target_path))
+
+                    match self.target_file(&target_path) {
+                        Ok(file) => Cell {
+                            length: 0,  // These lengths are never actually used...
+                            text: format!("{} {} {}{}{}",
+                                          style.paint(name),
+                                          GREY.paint("=>"),
+                                          Cyan.paint(target_path.dirname_str().unwrap()),
+                                          Cyan.paint("/"),
+                                          file.file_colour().paint(file.name.as_slice())),
+                        },
+                        Err(filename) => Cell {
+                            length: 0,  // ...because the rightmost column lengths are ignored!
+                            text: format!("{} {} {}",
+                                          style.paint(name),
+                                          Red.paint("=>"),
+                                          Red.underline().paint(filename.as_slice())),
+                        },
+                    }
                 }
-                Err(_) => displayed_name.to_string(),
+                Err(_) => Cell::paint(style, name),
             }
         }
         else {
-            displayed_name.to_string()
+            Cell::paint(style, name)
         }
     }
 
@@ -122,36 +145,35 @@ impl<'a> File<'a> {
         self.name.as_slice().width(false)
     }
 
-    fn target_file_name_and_arrow(&self, target_path: &Path) -> String {
+    /// Assuming the current file is a symlink, follows the link and
+    /// returns a File object from the path the link points to.
+    ///
+    /// If statting the file fails (usually because the file on the
+    /// other end doesn't exist), returns the *filename* of the file
+    /// that should be there.
+    fn target_file(&self, target_path: &Path) -> Result<File, String> {
         let v = target_path.filename().unwrap();
         let filename = String::from_utf8_lossy(v);
 
         // Use stat instead of lstat - we *want* to follow links.
-        let link_target = fs::stat(target_path).map(|stat| File {
-            path:  target_path.clone(),
-            dir:   self.dir,
-            stat:  stat,
-            name:  filename.to_string(),
-            ext:   ext(filename.as_slice()),
-        });
-
-        // Statting a path usually fails because the file at the
-        // other end doesn't exist. Show this by highlighting the
-        // target file in red instead of displaying an error, because
-        // the error would be shown out of context (before the
-        // results, not right by the file) and it's almost always for
-        // that reason anyway.
-
-        match link_target {
-            Ok(file) => format!("{} {}{}{}", GREY.paint("=>"), Cyan.paint(target_path.dirname_str().unwrap()), Cyan.paint("/"), file.file_colour().paint(filename.as_slice())),
-            Err(_)   => format!("{} {}",     Red.paint("=>"),  Red.underline().paint(filename.as_slice())),
+        if let Ok(stat) = fs::stat(target_path) {
+            Ok(File {
+                path:  target_path.clone(),
+                dir:   self.dir,
+                stat:  stat,
+                name:  filename.to_string(),
+                ext:   ext(filename.as_slice()),
+            })
+        }
+        else {
+            Err(filename.to_string())
         }
     }
 
     /// This file's number of hard links as a coloured string.
-    fn hard_links(&self) -> String {
+    fn hard_links(&self) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        style.paint(self.stat.unstable.nlink.to_string().as_slice()).to_string()
+        Cell::paint(style, &*self.stat.unstable.nlink.to_string())
     }
 
     /// Whether this is a regular file with more than one link.
@@ -164,17 +186,17 @@ impl<'a> File<'a> {
     }
 
     /// This file's inode as a coloured string.
-    fn inode(&self) -> String {
-        Purple.paint(self.stat.unstable.inode.to_string().as_slice()).to_string()
+    fn inode(&self) -> Cell {
+        Cell::paint(Purple.normal(), &*self.stat.unstable.inode.to_string())
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
-    fn blocks(&self) -> String {
+    fn blocks(&self) -> Cell {
         if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
-            Cyan.paint(self.stat.unstable.blocks.to_string().as_slice()).to_string()
+            Cell::paint(Cyan.normal(), &*self.stat.unstable.blocks.to_string())
         }
         else {
-            GREY.paint("-").to_string()
+            Cell { text: GREY.paint("-").to_string(), length: 1 }
         }
     }
 
@@ -183,7 +205,7 @@ impl<'a> File<'a> {
     /// If the user is not present, then it formats the uid as a number
     /// instead. This usually happens when a user is deleted, but still owns
     /// files.
-    fn user<U: Users>(&self, users_cache: &mut U) -> String {
+    fn user<U: Users>(&self, users_cache: &mut U) -> Cell {
         let uid = self.stat.unstable.uid as i32;
 
         let user_name = match users_cache.get_user_by_uid(uid) {
@@ -192,13 +214,13 @@ impl<'a> File<'a> {
         };
 
         let style = if users_cache.get_current_uid() == uid { Yellow.bold() } else { Plain };
-        style.paint(user_name.as_slice()).to_string()
+        Cell::paint(style, &*user_name)
     }
 
     /// This file's group name as a coloured string.
     ///
     /// As above, if not present, it formats the gid as a number instead.
-    fn group<U: Users>(&self, users_cache: &mut U) -> String {
+    fn group<U: Users>(&self, users_cache: &mut U) -> Cell {
         let gid = self.stat.unstable.gid as u32;
         let mut style = Plain;
 
@@ -215,7 +237,7 @@ impl<'a> File<'a> {
             None => gid.to_string(),
         };
 
-        style.paint(group_name.as_slice()).to_string()
+        Cell::paint(style, &*group_name)
     }
 
     /// This file's size, formatted using the given way, as a coloured string.
@@ -224,22 +246,27 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    fn file_size(&self, size_format: SizeFormat) -> String {
+    fn file_size(&self, size_format: SizeFormat) -> Cell {
         if self.stat.kind == io::FileType::Directory {
-            GREY.paint("-").to_string()
+            Cell { text: GREY.paint("-").to_string(), length: 1 }
         }
         else {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => return Green.bold().paint(self.stat.size.to_string().as_slice()).to_string(),
+                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &*self.stat.size.to_string())
             };
 
             match result {
-                Standalone(bytes) => Green.bold().paint(bytes.to_string().as_slice()).to_string(),
+                Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),
                 Prefixed(prefix, n) => {
                     let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
-                    format!("{}{}", Green.bold().paint(number.as_slice()), Green.paint(prefix.symbol()))
+                    let symbol = prefix.symbol();
+
+                    Cell {
+                        text: format!("{}{}", Green.bold().paint(&*number), Green.paint(symbol)),
+                        length: number.len() + symbol.len(),
+                    }
                 }
             }
         }
@@ -265,14 +292,14 @@ impl<'a> File<'a> {
     /// Each character is given its own colour. The first three permission
     /// bits are bold because they're the ones used most often, and executable
     /// files are underlined to make them stand out more.
-    fn permissions_string(&self) -> String {
+    fn permissions_string(&self) -> Cell {
         let bits = self.stat.perm;
         let executable_colour = match self.stat.kind {
             io::FileType::RegularFile => Green.bold().underline(),
             _ => Green.bold(),
         };
 
-        return format!("{}{}{}{}{}{}{}{}{}{}",
+        let string = format!("{}{}{}{}{}{}{}{}{}{}",
             self.type_char(),
             File::permission_bit(&bits, io::USER_READ,     "r", Yellow.bold()),
             File::permission_bit(&bits, io::USER_WRITE,    "w", Red.bold()),
@@ -284,6 +311,8 @@ impl<'a> File<'a> {
             File::permission_bit(&bits, io::OTHER_WRITE,   "w", Red.normal()),
             File::permission_bit(&bits, io::OTHER_EXECUTE, "x", Green.normal()),
        );
+
+        Cell { text: string, length: 10 }
     }
 
     /// Helper method for the permissions string.

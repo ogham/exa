@@ -1,13 +1,12 @@
 use std::cmp::max;
 use std::iter::{AdditiveIterator, repeat};
 
-use column::Column;
+use column::{Column, Cell};
 use column::Alignment::Left;
 use file::File;
 use users::OSUsers;
 
 use ansi_term::Style::Plain;
-use ansi_term::strip_formatting;
 
 #[derive(PartialEq, Show)]
 pub enum View {
@@ -29,7 +28,7 @@ impl View {
 /// The lines view literally just displays each file, line-by-line.
 fn lines_view(files: Vec<File>) {
     for file in files.iter() {
-        println!("{}", file.file_name_view());
+        println!("{}", file.file_name_view().text);
     }
 }
 
@@ -130,22 +129,16 @@ fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
 
     let mut cache = OSUsers::empty_cache();
 
-    let mut table: Vec<Vec<String>> = files.iter()
+    let mut table: Vec<Vec<Cell>> = files.iter()
         .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())
         .collect();
 
     if header {
-        table.insert(0, columns.iter().map(|c| Plain.underline().paint(c.header()).to_string()).collect());
+        table.insert(0, columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect());
     }
 
-    // Each column needs to have its invisible colour-formatting
-    // characters stripped before it has its width calculated, or the
-    // width will be incorrect and the columns won't line up properly.
-    // This is fairly expensive to do (it uses a regex), so the
-    // results are cached.
-
     let lengths: Vec<Vec<usize>> = table.iter()
-        .map(|row| row.iter().map(|col| strip_formatting(col.as_slice()).len()).collect())
+        .map(|row| row.iter().map(|c| c.length).collect())
         .collect();
 
     let column_widths: Vec<usize> = range(0, columns.len())
@@ -160,11 +153,11 @@ fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
 
             if num == columns.len() - 1 {
                 // The final column doesn't need to have trailing spaces
-                print!("{}", row[num]);
+                print!("{}", row[num].text);
             }
             else {
                 let padding = column_widths[num] - field_widths[num];
-                print!("{}", column.alignment().pad_string(&row[num], padding));
+                print!("{}", column.alignment().pad_string(&row[num].text, padding));
             }
         }
         print!("\n");
