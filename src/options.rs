@@ -168,9 +168,9 @@ impl fmt::Display for Misfire {
         match *self {
             InvalidOptions(ref e) => write!(f, "{}", e),
             Help(ref text)        => write!(f, "{}", text),
-            Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}", a, b),
-            Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}", a, b),
-            Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}", a, b),
+            Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}.", a, b),
+            Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}.", a, b),
+            Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}.", a, b),
         }
     }
 }
