@@ -84,46 +84,55 @@ impl<'a> File<'a> {
     /// The "file name view" is what's displayed in the column and lines
     /// views, but *not* in the grid view.
     ///
-    /// It consists of the file name coloured in the appropriate style, and,
-    /// if it's a symlink, an arrow pointing to the file it links to, also
+    /// It consists of the file name coloured in the appropriate style,
+    /// with special formatting for a symlink.
+    pub fn file_name_view(&self) -> Cell {
+        if self.stat.kind == io::FileType::Symlink {
+            self.symlink_file_name_view()
+        }
+        else {
+            Cell {
+                length: 0,  // This length is ignored (rightmost column)
+                text: self.file_colour().paint(&*self.name).to_string(),
+            }
+        }
+    }
+
+    /// If this file is a symlink, returns a string displaying its name,
+    /// and an arrow pointing to the file it links to, which is also
     /// coloured in the appropriate style.
     ///
     /// If the symlink target doesn't exist, then instead of displaying
     /// an error, highlight the target and arrow in red. The error would
     /// be shown out of context, and it's almost always because the
     /// target doesn't exist.
-    pub fn file_name_view(&self) -> Cell {
+    fn symlink_file_name_view(&self) -> Cell {
         let name = &*self.name;
         let style = self.file_colour();
 
-        if self.stat.kind == io::FileType::Symlink {
-            match fs::readlink(&self.path) {
-                Ok(path) => {
-                    let target_path = match self.dir {
-                        Some(dir) => dir.path.join(path),
-                        None => path,
-                    };
+        if let Ok(path) = fs::readlink(&self.path) {
+            let target_path = match self.dir {
+                Some(dir) => dir.path.join(path),
+                None => path,
+            };
 
-                    match self.target_file(&target_path) {
-                        Ok(file) => Cell {
-                            length: 0,  // These lengths are never actually used...
-                            text: format!("{} {} {}{}{}",
-                                          style.paint(name),
-                                          GREY.paint("=>"),
-                                          Cyan.paint(target_path.dirname_str().unwrap()),
-                                          Cyan.paint("/"),
-                                          file.file_colour().paint(file.name.as_slice())),
-                        },
-                        Err(filename) => Cell {
-                            length: 0,  // ...because the rightmost column lengths are ignored!
-                            text: format!("{} {} {}",
-                                          style.paint(name),
-                                          Red.paint("=>"),
-                                          Red.underline().paint(filename.as_slice())),
-                        },
-                    }
-                }
-                Err(_) => Cell::paint(style, name),
+            match self.target_file(&target_path) {
+                Ok(file) => Cell {
+                    length: 0,  // These lengths are never actually used...
+                    text: format!("{} {} {}{}{}",
+                                  style.paint(name),
+                                  GREY.paint("=>"),
+                                  Cyan.paint(target_path.dirname_str().unwrap()),
+                                  Cyan.paint("/"),
+                                  file.file_colour().paint(file.name.as_slice())),
+                },
+                Err(filename) => Cell {
+                    length: 0,  // ...because the rightmost column lengths are ignored!
+                    text: format!("{} {} {}",
+                                  style.paint(name),
+                                  Red.paint("=>"),
+                                  Red.underline().paint(filename.as_slice())),
+                },
             }
         }
         else {
