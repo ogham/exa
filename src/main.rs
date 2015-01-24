@@ -54,7 +54,7 @@ fn exa(options: &Options) {
     let mut first = files.is_empty();
 
     if !files.is_empty() {
-        options.view.view(files);
+        options.view(files);
     }
 
     for dir_name in dirs.iter() {
@@ -74,7 +74,7 @@ fn exa(options: &Options) {
                     println!("{}:", dir_name);
                 }
 
-                options.view.view(files);
+                options.view(files);
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);

@@ -18,11 +18,11 @@ use self::Misfire::*;
 #[derive(PartialEq, Debug)]
 pub struct Options {
     pub list_dirs: bool,
-    pub path_strs: Vec<String>,
+    path_strs: Vec<String>,
     reverse: bool,
     show_invisibles: bool,
     sort_field: SortField,
-    pub view: View,
+    view: View,
 }
 
 impl Options {
@@ -71,8 +71,14 @@ impl Options {
         })
     }
 
+    /// Iterate over the non-option arguments left oven from getopts.
     pub fn path_strings(&self) -> Iter<String> {
         self.path_strs.iter()
+    }
+
+    /// Display the files using this Option's View.
+    pub fn view(&self, files: Vec<File>) {
+        self.view.view(files)
     }
 
     /// Transform the files somehow before listing them.
@@ -284,14 +290,16 @@ mod test {
 
     #[test]
     fn files() {
-        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]);
-        assert_eq!(opts.unwrap().path_strs, vec![ "this file".to_string(), "that file".to_string() ])
+        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]).unwrap();
+        let args: Vec<&String> = opts.path_strings().collect();
+        assert_eq!(args, vec![ &"this file".to_string(), &"that file".to_string() ])
     }
 
     #[test]
     fn no_args() {
-        let opts = Options::getopts(&[]);
-        assert_eq!(opts.unwrap().path_strs, vec![ ".".to_string() ])
+        let opts = Options::getopts(&[]).unwrap();
+        let args: Vec<&String> = opts.path_strings().collect();
+        assert_eq!(args, vec![ &".".to_string() ])
     }
 
     #[test]
