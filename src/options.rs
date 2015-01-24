@@ -76,10 +76,11 @@ impl Options {
     }
 
     /// Transform the files somehow before listing them.
-    pub fn transform_files<'a>(&self, unordered_files: Vec<File<'a>>) -> Vec<File<'a>> {
-        let mut files: Vec<File<'a>> = unordered_files.into_iter()
-            .filter(|f| self.should_display(f))
-            .collect();
+    pub fn transform_files<'a>(&self, mut files: Vec<File<'a>>) -> Vec<File<'a>> {
+
+        if !self.show_invisibles {
+            files = files.into_iter().filter(|f| !f.is_dotfile()).collect();
+        }
 
         match self.sort_field {
             SortField::Unsorted => {},
@@ -98,15 +99,6 @@ impl Options {
         }
 
         files
-    }
-
-    fn should_display(&self, f: &File) -> bool {
-        if self.show_invisibles {
-            true
-        }
-        else {
-            !f.name.as_slice().starts_with(".")
-        }
     }
 }
 
