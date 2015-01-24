@@ -194,6 +194,18 @@ fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
     else if matches.opt_present("bytes") {
         Err(Misfire::Useless("bytes", false, "long"))
     }
+    else if matches.opt_present("inode") {
+        Err(Misfire::Useless("inode", false, "long"))
+    }
+    else if matches.opt_present("links") {
+        Err(Misfire::Useless("links", false, "long"))
+    }
+    else if matches.opt_present("header") {
+        Err(Misfire::Useless("header", false, "long"))
+    }
+    else if matches.opt_present("blocks") {
+        Err(Misfire::Useless("blocks", false, "long"))
+    }
     else if matches.opt_present("oneline") {
         if matches.opt_present("across") {
             Err(Misfire::Useless("across", true, "oneline"))
@@ -331,4 +343,29 @@ mod test {
         let opts = Options::getopts(&[ "--oneline".to_string(), "--across".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "oneline"))
     }
+
+    #[test]
+    fn just_header() {
+        let opts = Options::getopts(&[ "--header".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("header", false, "long"))
+    }
+
+    #[test]
+    fn just_inode() {
+        let opts = Options::getopts(&[ "--inode".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("inode", false, "long"))
+    }
+
+    #[test]
+    fn just_links() {
+        let opts = Options::getopts(&[ "--links".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("links", false, "long"))
+    }
+
+    #[test]
+    fn just_blocks() {
+        let opts = Options::getopts(&[ "--blocks".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
+    }
+
 }
