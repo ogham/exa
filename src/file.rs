@@ -377,3 +377,93 @@ impl<'a> File<'a> {
 fn ext<'a>(name: &'a str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_string())
 }
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use column::{Cell, Column};
+    use std::io;
+    use users::User;
+    use users::mock::MockUsers;
+
+    use ansi_term::Style::Plain;
+    use ansi_term::Colour::Yellow;
+
+	fn dummy_stat() -> io::FileStat {
+	    io::FileStat {
+            size: 0,
+            kind: io::FileType::RegularFile,
+            created: 0,
+            modified: 0,
+            accessed: 0,
+            perm: io::USER_READ,
+            unstable: io::UnstableFileStat {
+                inode: 0,
+                device: 0,
+                rdev: 0,
+                nlink: 0,
+                uid: 0,
+                gid: 0,
+                blksize: 0,
+                blocks: 0,
+                flags: 0,
+                gen: 0,
+            }
+        }
+    }
+
+    #[test]
+    fn user_with_name() {
+        let mut stat = dummy_stat();
+        stat.unstable.uid = 1000;
+
+        let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+        let mut users = MockUsers::with_current_uid(1000);
+        users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+
+        let cell = Cell::paint(Yellow.bold(), "enoch");
+        assert_eq!(cell, file.display(&Column::User, &mut users))
+    }
+
+    #[test]
+    fn user_with_no_name() {
+        let mut stat = dummy_stat();
+        stat.unstable.uid = 1000;
+
+        let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+        let mut users = MockUsers::with_current_uid(1000);
+
+        let cell = Cell::paint(Yellow.bold(), "1000");
+        assert_eq!(cell, file.display(&Column::User, &mut users))
+    }
+
+    #[test]
+    fn a_different_user() {
+        let mut stat = dummy_stat();
+        stat.unstable.uid = 1000;
+
+        let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+        let mut users = MockUsers::with_current_uid(3);
+        users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+
+        let cell = Cell::paint(Plain, "enoch");
+        assert_eq!(cell, file.display(&Column::User, &mut users))
+    }
+
+    #[test]
+    fn a_different_yet_unnamed_user() {
+        let mut stat = dummy_stat();
+        stat.unstable.uid = 1000;
+
+        let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+        let mut users = MockUsers::with_current_uid(3);
+
+        let cell = Cell::paint(Plain, "1000");
+        assert_eq!(cell, file.display(&Column::User, &mut users))
+    }
+}

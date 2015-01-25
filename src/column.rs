@@ -82,6 +82,7 @@ impl Alignment {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Cell {
     pub length: usize,
     pub text: String,
