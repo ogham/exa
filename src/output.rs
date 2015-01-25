@@ -137,15 +137,11 @@ fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
         table.insert(0, columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect());
     }
 
-    let lengths: Vec<Vec<usize>> = table.iter()
-        .map(|row| row.iter().map(|c| c.length).collect())
-        .collect();
-
     let column_widths: Vec<usize> = range(0, columns.len())
-        .map(|n| lengths.iter().map(|row| row[n]).max().unwrap_or(0))
+        .map(|n| table.iter().map(|row| row[n].length).max().unwrap_or(0))
         .collect();
 
-    for (field_widths, row) in lengths.iter().zip(table.iter()) {
+    for row in table.iter() {
         for (num, column) in columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");  // Separator
@@ -156,7 +152,7 @@ fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
                 print!("{}", row[num].text);
             }
             else {
-                let padding = column_widths[num] - field_widths[num];
+                let padding = column_widths[num] - row[num].length;
                 print!("{}", column.alignment().pad_string(&row[num].text, padding));
             }
         }
