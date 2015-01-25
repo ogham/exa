@@ -381,16 +381,16 @@ fn ext<'a>(name: &'a str) -> Option<String> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use column::{Cell, Column};
-    use std::io;
-    use users::User;
-    use users::mock::MockUsers;
+    pub use super::*;
+    pub use column::{Cell, Column};
+    pub use std::io;
+    pub use users::{User, Group};
+    pub use users::mock::MockUsers;
 
-    use ansi_term::Style::Plain;
-    use ansi_term::Colour::Yellow;
+    pub use ansi_term::Style::Plain;
+    pub use ansi_term::Colour::Yellow;
 
-	fn dummy_stat() -> io::FileStat {
+	pub fn dummy_stat() -> io::FileStat {
 	    io::FileStat {
             size: 0,
             kind: io::FileType::RegularFile,
@@ -413,57 +413,122 @@ mod test {
         }
     }
 
-    #[test]
-    fn user_with_name() {
-        let mut stat = dummy_stat();
-        stat.unstable.uid = 1000;
+    mod users {
+        use super::*;
 
-        let file = File::with_stat(stat, &Path::new("/hi"), None);
+        #[test]
+        fn named() {
+            let mut stat = dummy_stat();
+            stat.unstable.uid = 1000;
 
-        let mut users = MockUsers::with_current_uid(1000);
-        users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
 
-        let cell = Cell::paint(Yellow.bold(), "enoch");
-        assert_eq!(cell, file.display(&Column::User, &mut users))
+            let mut users = MockUsers::with_current_uid(1000);
+            users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+
+            let cell = Cell::paint(Yellow.bold(), "enoch");
+            assert_eq!(cell, file.display(&Column::User, &mut users))
+        }
+
+        #[test]
+        fn unnamed() {
+            let mut stat = dummy_stat();
+            stat.unstable.uid = 1000;
+
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+            let mut users = MockUsers::with_current_uid(1000);
+
+            let cell = Cell::paint(Yellow.bold(), "1000");
+            assert_eq!(cell, file.display(&Column::User, &mut users))
+        }
+
+        #[test]
+        fn different_named() {
+            let mut stat = dummy_stat();
+            stat.unstable.uid = 1000;
+
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+            let mut users = MockUsers::with_current_uid(3);
+            users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+
+            let cell = Cell::paint(Plain, "enoch");
+            assert_eq!(cell, file.display(&Column::User, &mut users))
+        }
+
+        #[test]
+        fn different_unnamed() {
+            let mut stat = dummy_stat();
+            stat.unstable.uid = 1000;
+
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+            let mut users = MockUsers::with_current_uid(3);
+
+            let cell = Cell::paint(Plain, "1000");
+            assert_eq!(cell, file.display(&Column::User, &mut users))
+        }
     }
 
-    #[test]
-    fn user_with_no_name() {
-        let mut stat = dummy_stat();
-        stat.unstable.uid = 1000;
+    mod groups {
+        use super::*;
 
-        let file = File::with_stat(stat, &Path::new("/hi"), None);
+        #[test]
+        fn named() {
+            let mut stat = dummy_stat();
+            stat.unstable.gid = 100;
 
-        let mut users = MockUsers::with_current_uid(1000);
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
 
-        let cell = Cell::paint(Yellow.bold(), "1000");
-        assert_eq!(cell, file.display(&Column::User, &mut users))
-    }
+            let mut users = MockUsers::with_current_uid(3);
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
 
-    #[test]
-    fn a_different_user() {
-        let mut stat = dummy_stat();
-        stat.unstable.uid = 1000;
+            let cell = Cell::paint(Plain, "folk");
+            assert_eq!(cell, file.display(&Column::Group, &mut users))
+        }
 
-        let file = File::with_stat(stat, &Path::new("/hi"), None);
+        #[test]
+        fn unnamed() {
+            let mut stat = dummy_stat();
+            stat.unstable.gid = 100;
 
-        let mut users = MockUsers::with_current_uid(3);
-        users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
 
-        let cell = Cell::paint(Plain, "enoch");
-        assert_eq!(cell, file.display(&Column::User, &mut users))
-    }
+            let mut users = MockUsers::with_current_uid(3);
 
-    #[test]
-    fn a_different_yet_unnamed_user() {
-        let mut stat = dummy_stat();
-        stat.unstable.uid = 1000;
+            let cell = Cell::paint(Plain, "100");
+            assert_eq!(cell, file.display(&Column::Group, &mut users))
+        }
 
-        let file = File::with_stat(stat, &Path::new("/hi"), None);
+        #[test]
+        fn primary() {
+            let mut stat = dummy_stat();
+            stat.unstable.gid = 100;
 
-        let mut users = MockUsers::with_current_uid(3);
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
 
-        let cell = Cell::paint(Plain, "1000");
-        assert_eq!(cell, file.display(&Column::User, &mut users))
+            let mut users = MockUsers::with_current_uid(3);
+            users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 100 });
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
+
+            let cell = Cell::paint(Yellow.bold(), "folk");
+            assert_eq!(cell, file.display(&Column::Group, &mut users))
+        }
+
+        #[test]
+        fn secondary() {
+            let mut stat = dummy_stat();
+            stat.unstable.gid = 100;
+
+            let file = File::with_stat(stat, &Path::new("/hi"), None);
+
+            let mut users = MockUsers::with_current_uid(3);
+            users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 12 });
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
+
+            let cell = Cell::paint(Yellow.bold(), "folk");
+            assert_eq!(cell, file.display(&Column::Group, &mut users))
+        }
     }
 }
