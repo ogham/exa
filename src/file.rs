@@ -378,7 +378,6 @@ fn ext<'a>(name: &'a str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_string())
 }
 
-
 #[cfg(test)]
 mod test {
     pub use super::*;
@@ -389,6 +388,21 @@ mod test {
 
     pub use ansi_term::Style::Plain;
     pub use ansi_term::Colour::Yellow;
+
+    #[test]
+    fn extension() {
+        assert_eq!(Some("dat".to_string()), super::ext("fester.dat"))
+    }
+
+    #[test]
+    fn dotfile() {
+        assert_eq!(Some("vimrc".to_string()), super::ext(".vimrc"))
+    }
+
+    #[test]
+    fn no_extension() {
+        assert_eq!(None, super::ext("jarlsberg"))
+    }
 
 	pub fn dummy_stat() -> io::FileStat {
 	    io::FileStat {
