@@ -8,7 +8,7 @@ use users::OSUsers;
 
 use ansi_term::Style::Plain;
 
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug)]
 pub enum View {
     Details(Vec<Column>, bool),
     Lines,

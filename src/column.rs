@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 use ansi_term::Style;
 
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug, Copy)]
 pub enum Column {
     Permissions,
     FileName,
@@ -14,24 +14,19 @@ pub enum Column {
     Inode,
 }
 
-impl Copy for Column { }
-
-#[derive(PartialEq, Show)]
+#[derive(PartialEq, Debug, Copy)]
 pub enum SizeFormat {
     DecimalBytes,
     BinaryBytes,
     JustBytes,
 }
 
-impl Copy for SizeFormat { }
-
 /// Each column can pick its own **Alignment**. Usually, numbers are
 /// right-aligned, and text is left-aligned.
+#[derive(Copy)]
 pub enum Alignment {
     Left, Right,
 }
-
-impl Copy for Alignment { }
 
 impl Column {
 

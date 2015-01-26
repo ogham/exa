@@ -8,12 +8,11 @@ use ansi_term::Style;
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
+#[derive(Copy)]
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
 }
-
-impl Copy for FileType { }
 
 static IMAGE_TYPES: &'static [&'static str] = &[
     "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",

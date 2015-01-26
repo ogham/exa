@@ -109,12 +109,10 @@ impl Options {
 }
 
 /// User-supplied field to sort by
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy)]
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
 }
-
-impl Copy for SortField { }
 
 impl SortField {
 
