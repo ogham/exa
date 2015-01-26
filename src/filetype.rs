@@ -2,13 +2,12 @@ use file::{File, GREY};
 use self::FileType::*;
 
 use std::io;
-use std::ascii::AsciiExt;
 
 use ansi_term::Style;
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
-#[derive(Copy)]
+#[derive(PartialEq, Debug, Copy)]
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
@@ -100,30 +99,29 @@ impl<'a> HasType for File<'a> {
         else if name.starts_with("README") || BUILD_TYPES.iter().any(|&s| s == name) {
             return Immediate;
         }
-        else if let Some(ref e) = self.ext {
-            let ext = e.as_slice().to_ascii_lowercase();
-            if IMAGE_TYPES.iter().any(|&s| s == ext) {
+        else if let Some(ref ext) = self.ext {
+            if IMAGE_TYPES.iter().any(|&s| s == *ext) {
                 return Image;
             }
-            else if VIDEO_TYPES.iter().any(|&s| s == ext) {
+            else if VIDEO_TYPES.iter().any(|&s| s == *ext) {
                 return Video;
             }
-            else if MUSIC_TYPES.iter().any(|&s| s == ext) {
+            else if MUSIC_TYPES.iter().any(|&s| s == *ext) {
                 return Music;
             }
-            else if MUSIC_LOSSLESS.iter().any(|&s| s == ext) {
+            else if MUSIC_LOSSLESS.iter().any(|&s| s == *ext) {
                 return Lossless;
             }
-            else if CRYPTO_TYPES.iter().any(|&s| s == ext) {
+            else if CRYPTO_TYPES.iter().any(|&s| s == *ext) {
                 return Crypto;
             }
-            else if DOCUMENT_TYPES.iter().any(|&s| s == ext) {
+            else if DOCUMENT_TYPES.iter().any(|&s| s == *ext) {
                 return Document;
             }
-            else if COMPRESSED_TYPES.iter().any(|&s| s == ext) {
+            else if COMPRESSED_TYPES.iter().any(|&s| s == *ext) {
                 return Compressed;
             }
-            else if self.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == ext) {
+            else if self.is_tmpfile() || TEMP_TYPES.iter().any(|&s| s == *ext) {
                 return Temp;
             }
 
@@ -135,7 +133,7 @@ impl<'a> HasType for File<'a> {
                 return Temp;
             }
             else {
-                if COMPILED_TYPES.iter().any(|&s| s == ext) {
+                if COMPILED_TYPES.iter().any(|&s| s == *ext) {
                     return Compiled;
                 }
                 else {
@@ -146,4 +144,36 @@ impl<'a> HasType for File<'a> {
 
         return Normal;  // no filetype
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use file::File;
+    use file::test::dummy_stat;
+
+    #[test]
+    fn lowercase() {
+        let file = File::with_stat(dummy_stat(), &Path::new("/barracks.wav"), None);
+        assert_eq!(FileType::Lossless, file.get_type())
+    }
+
+    #[test]
+    fn uppercase() {
+        let file = File::with_stat(dummy_stat(), &Path::new("/BARRACKS.WAV"), None);
+        assert_eq!(FileType::Lossless, file.get_type())
+    }
+
+    #[test]
+    fn cargo() {
+        let file = File::with_stat(dummy_stat(), &Path::new("/Cargo.toml"), None);
+        assert_eq!(FileType::Immediate, file.get_type())
+    }
+
+    #[test]
+    fn not_cargo() {
+        let file = File::with_stat(dummy_stat(), &Path::new("/cargo.toml"), None);
+        assert_eq!(FileType::Normal, file.get_type())
+    }
+
 }

@@ -1,5 +1,6 @@
 use std::io::{fs, IoResult};
 use std::io;
+use std::ascii::AsciiExt;
 
 use ansi_term::{ANSIString, Colour, Style};
 use ansi_term::Style::Plain;
@@ -370,16 +371,20 @@ impl<'a> File<'a> {
     }
 }
 
-/// Extract an extension from a string, if one is present.
+/// Extract an extension from a string, if one is present, in lowercase.
 ///
 /// The extension is the series of characters after the last dot. This
 /// deliberately counts dotfiles, so the ".git" folder has the extension "git".
+///
+/// ASCII lowercasing is used because these extensions are only compared
+/// against a pre-compiled list of extensions which are known to only exist
+/// within ASCII, so it's alright.
 fn ext<'a>(name: &'a str) -> Option<String> {
-    name.rfind('.').map(|p| name[p+1..].to_string())
+    name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     pub use super::*;
     pub use column::{Cell, Column};
     pub use std::io;

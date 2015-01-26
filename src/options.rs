@@ -8,8 +8,9 @@ use output::View;
 use term::dimensions;
 
 use std::ascii::AsciiExt;
-use std::slice::Iter;
+use std::cmp::Ordering;
 use std::fmt;
+use std::slice::Iter;
 
 use self::Misfire::*;
 
@@ -81,7 +82,7 @@ impl Options {
         self.view.view(files)
     }
 
-    /// Transform the files somehow before listing them.
+    /// Transform the files (sorting, reversing, filtering) before listing them.
     pub fn transform_files<'a>(&self, mut files: Vec<File<'a>>) -> Vec<File<'a>> {
 
         if !self.show_invisibles {
@@ -90,13 +91,16 @@ impl Options {
 
         match self.sort_field {
             SortField::Unsorted => {},
-            SortField::Name => files.sort_by(|a, b| natord::compare(a.name.as_slice(), b.name.as_slice())),
+            SortField::Name => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
             SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
             SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             SortField::Extension => files.sort_by(|a, b| {
-                let exts  = a.ext.clone().map(|e| e.to_ascii_lowercase()).cmp(&b.ext.clone().map(|e| e.to_ascii_lowercase()));
-                let names = a.name.to_ascii_lowercase().cmp(&b.name.to_ascii_lowercase());
-                exts.cmp(&names)
+                if a.ext.cmp(&b.ext) == Ordering::Equal {
+                    Ordering::Equal
+                }
+                else {
+                    a.name.to_ascii_lowercase().cmp(&b.name.to_ascii_lowercase())
+                }
             }),
         }
 
