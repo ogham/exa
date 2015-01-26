@@ -113,7 +113,7 @@ impl<'a> File<'a> {
 
         if let Ok(path) = fs::readlink(&self.path) {
             let target_path = match self.dir {
-                Some(dir) => dir.path.join(path),
+                Some(dir) => dir.join(path),
                 None => path,
             };
 

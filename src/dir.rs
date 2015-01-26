@@ -8,8 +8,8 @@ use file::File;
 /// check the existence of surrounding files, then highlight themselves
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
-    pub contents: Vec<Path>,
-    pub path: Path,
+    contents: Vec<Path>,
+    path: Path,
 }
 
 impl Dir {
@@ -41,5 +41,10 @@ impl Dir {
     /// Whether this directory contains a file with the given path.
     pub fn contains(&self, path: &Path) -> bool {
         self.contents.contains(path)
+    }
+
+    /// Append a path onto the path specified by this directory.
+    pub fn join(&self, child: Path) -> Path {
+        self.path.join(child)
     }
 }
