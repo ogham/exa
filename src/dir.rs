@@ -25,7 +25,7 @@ impl Dir {
         fs::readdir(&path).map(|paths| Dir {
             contents: paths,
             path: path.clone(),
-            git: Git::new(&path).ok(),
+            git: Git::scan(&path).ok(),
         })
     }
 
@@ -68,6 +68,7 @@ impl Dir {
     }
 }
 
+/// Container of Git statuses for all the files in this folder's Git repository.
 #[cfg(feature="git")]
 struct Git {
     statuses: Vec<(String, git2::Status)>,
@@ -75,7 +76,10 @@ struct Git {
 
 #[cfg(feature="git")]
 impl Git {
-    fn new(path: &Path) -> Result<Git, git2::Error> {
+
+    /// Discover a Git repository on or above this directory, scanning it for
+    /// the files' statuses if one is found.
+    fn scan(path: &Path) -> Result<Git, git2::Error> {
         let repo = try!(git2::Repository::discover(path));
         let statuses = try!(repo.statuses(None));
 
@@ -121,11 +125,13 @@ struct Git;
 
 #[cfg(not(feature="git"))]
 impl Git {
-    fn new(_: &Path) -> Result<Git, ()> {
+    fn scan(_: &Path) -> Result<Git, ()> {
+        // Don't do anything without Git support
         Err(())
     }
 
     fn status(&self, _: &Path) -> String {
+        // The Err above means that this should never happen
         panic!("Tried to access a Git repo without Git support!");
     }
 }
