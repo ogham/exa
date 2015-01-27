@@ -31,3 +31,5 @@ You can sort by **name**, **size**, **ext**, **inode**, or **none**.
 ## Installation
 
 exa is written in [Rust](http://www.rust-lang.org). You'll have to use the nightly -- I try to keep it up to date with the latest version when possible. Once you have it set up, a simple `cargo build` will pull in all the dependencies and compile exa.
+
+exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features. If you're unable to compile libgit2, you can opt out of Git support by passing `--no-default-features` to Cargo.
