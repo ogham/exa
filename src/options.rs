@@ -265,6 +265,7 @@ fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Misfire> {
         columns.push(Group);
     }
 
+    columns.push(GitStatus);
     columns.push(FileName);
     Ok(columns)
 }

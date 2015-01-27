@@ -12,3 +12,10 @@ getopts = "0.1.4"
 natord = "1.0.6"
 number_prefix = "0.2.1"
 users = "0.2.1"
+
+[features]
+git = [ "git2" ]
+
+[dependencies.git2]
+version = "0.1.12"
+optional = true

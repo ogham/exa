@@ -79,6 +79,7 @@ impl<'a> File<'a> {
             Blocks       => self.blocks(),
             User         => self.user(users_cache),
             Group        => self.group(users_cache),
+            GitStatus    => self.git_status(),
         }
     }
 
@@ -368,6 +369,11 @@ impl<'a> File<'a> {
         else {
             vec![]  // No source files if there's no extension, either!
         }
+    }
+
+    fn git_status(&self) -> Cell {
+        let status = self.dir.map(|d| d.git_status(&self.path)).unwrap_or("NO".to_string());
+        Cell { text: status, length: 2 }
     }
 }
 

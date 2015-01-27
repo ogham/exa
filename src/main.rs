@@ -5,6 +5,9 @@ extern crate number_prefix;
 extern crate unicode;
 extern crate users;
 
+#[cfg(feature="git")]
+extern crate git2;
+
 use std::io::FileType;
 use std::io::fs;
 use std::os::{args, set_exit_status};
