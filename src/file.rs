@@ -79,6 +79,7 @@ impl<'a> File<'a> {
             Blocks       => self.blocks(),
             User         => self.user(users_cache),
             Group        => self.group(users_cache),
+            GitStatus    => self.git_status(),
         }
     }
 
@@ -113,7 +114,7 @@ impl<'a> File<'a> {
 
         if let Ok(path) = fs::readlink(&self.path) {
             let target_path = match self.dir {
-                Some(dir) => dir.path.join(path),
+                Some(dir) => dir.join(path),
                 None => path,
             };
 
@@ -368,6 +369,15 @@ impl<'a> File<'a> {
         else {
             vec![]  // No source files if there's no extension, either!
         }
+    }
+
+    fn git_status(&self) -> Cell {
+        let status = match self.dir {
+            Some(d) => d.git_status(&self.path, self.stat.kind == io::FileType::Directory),
+            None    => GREY.paint("--").to_string(),
+        };
+
+        Cell { text: status, length: 2 }
     }
 }
 

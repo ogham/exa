@@ -12,6 +12,8 @@ pub enum Column {
     Group,
     HardLinks,
     Inode,
+
+    GitStatus,
 }
 
 #[derive(PartialEq, Debug, Copy)]
@@ -37,6 +39,7 @@ impl Column {
             Column::HardLinks   => Alignment::Right,
             Column::Inode       => Alignment::Right,
             Column::Blocks      => Alignment::Right,
+            Column::GitStatus   => Alignment::Right,
             _                   => Alignment::Left,
         }
     }
@@ -53,6 +56,7 @@ impl Column {
             Column::Group       => "Group",
             Column::HardLinks   => "Links",
             Column::Inode       => "inode",
+            Column::GitStatus   => "Git",
         }
     }
 }
