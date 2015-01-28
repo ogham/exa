@@ -372,7 +372,11 @@ impl<'a> File<'a> {
     }
 
     fn git_status(&self) -> Cell {
-        let status = self.dir.map(|d| d.git_status(&self.path)).unwrap_or("NO".to_string());
+        let status = match self.dir {
+            Some(d) => d.git_status(&self.path, self.stat.kind == io::FileType::Directory),
+            None    => GREY.paint("--").to_string(),
+        };
+
         Cell { text: status, length: 2 }
     }
 }

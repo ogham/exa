@@ -60,10 +60,11 @@ impl Dir {
     }
 
     /// Get a string describing the Git status of the given file.
-    pub fn git_status(&self, path: &Path) -> String {
-        match self.git {
-            Some(ref git) => git.status(path),
-            None => GREY.paint("--").to_string(),
+    pub fn git_status(&self, path: &Path, prefix_lookup: bool) -> String {
+        match (&self.git, prefix_lookup) {
+            (&Some(ref git), false) => git.status(path),
+            (&Some(ref git), true)  => git.dir_status(path),
+            (&None, _)              => GREY.paint("--").to_string(),
         }
     }
 }
@@ -88,9 +89,24 @@ impl Git {
 
     /// Get the status for the file at the given path, if present.
     fn status(&self, path: &Path) -> String {
-        match self.statuses.iter().find(|&&(ref p, _)| path.as_str().unwrap() == p.as_slice()) {
+        let status = self.statuses.iter()
+                                  .find(|p| p.0 == path.as_str().unwrap());
+
+        match status {
             Some(&(_, s)) => format!("{}{}", Git::index_status(s), Git::working_tree_status(s)),
             None => GREY.paint("--").to_string(),
+        }
+    }
+
+    /// Get the combined status for all the files whose paths begin with the
+    /// path that gets passed in. This is used for getting the status of
+    /// directories, which don't really have an 'official' status.
+    fn dir_status(&self, dir: &Path) -> String {
+        let status = self.statuses.iter()
+                                  .filter(|p| p.0.starts_with(dir.as_str().unwrap()))
+                                  .fold(git2::Status::empty(), |a, b| a | b.1);
+        match status {
+            s => format!("{}{}", Git::index_status(s), Git::working_tree_status(s)),
         }
     }
 
