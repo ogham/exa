@@ -1,7 +1,7 @@
 use file::{File, GREY};
 use self::FileType::*;
 
-use std::io;
+use std::old_io as io;
 
 use ansi_term::Style;
 use ansi_term::Style::Plain;

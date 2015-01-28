@@ -8,8 +8,7 @@ extern crate users;
 #[cfg(feature="git")]
 extern crate git2;
 
-use std::io::FileType;
-use std::io::fs;
+use std::old_io::{fs, FileType};
 use std::os::{args, set_exit_status};
 
 use dir::Dir;

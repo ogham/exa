@@ -1,4 +1,4 @@
-use std::io::{fs, IoResult};
+use std::old_io::{fs, IoResult};
 use file::{File, GREY};
 
 #[cfg(feature="git")] use ansi_term::ANSIString;

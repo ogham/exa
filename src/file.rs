@@ -1,5 +1,5 @@
-use std::io::{fs, IoResult};
-use std::io;
+use std::old_io::{fs, IoResult};
+use std::old_io as io;
 use std::ascii::AsciiExt;
 
 use ansi_term::{ANSIString, Colour, Style};
@@ -397,7 +397,7 @@ fn ext<'a>(name: &'a str) -> Option<String> {
 pub mod test {
     pub use super::*;
     pub use column::{Cell, Column};
-    pub use std::io;
+    pub use std::old_io as io;
     pub use users::{User, Group};
     pub use users::mock::MockUsers;
 
