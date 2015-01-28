@@ -150,4 +150,8 @@ impl Git {
         // The Err above means that this should never happen
         panic!("Tried to access a Git repo without Git support!");
     }
+
+    fn dir_status(&self, path: &Path) -> String {
+        self.status(path)
+    }
 }
