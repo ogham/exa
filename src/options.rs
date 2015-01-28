@@ -1,6 +1,7 @@
 extern crate getopts;
 extern crate natord;
 
+use dir::Dir;
 use file::File;
 use column::{Column, SizeFormat};
 use column::Column::*;
@@ -78,8 +79,8 @@ impl Options {
     }
 
     /// Display the files using this Option's View.
-    pub fn view(&self, files: Vec<File>) {
-        self.view.view(files)
+    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+        self.view.view(dir, files)
     }
 
     /// Transform the files (sorting, reversing, filtering) before listing them.
@@ -187,7 +188,7 @@ fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
             Err(Misfire::Useless("oneline", true, "long"))
         }
         else {
-            Ok(View::Details(try!(columns(matches)), matches.opt_present("header")))
+            Ok(View::Details(try!(Columns::new(matches)), matches.opt_present("header")))
         }
     }
     else if matches.opt_present("binary") {
@@ -237,40 +238,62 @@ fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
     }
 }
 
-/// Turns the Getopts results object into a list of columns for the columns
-/// view, depending on the passed-in command-line arguments.
-fn columns(matches: &getopts::Matches) -> Result<Vec<Column>, Misfire> {
-    let mut columns = vec![];
+#[derive(PartialEq, Copy, Debug)]
+pub struct Columns {
+    size_format: SizeFormat,
+    inode: bool,
+    links: bool,
+    blocks: bool,
+    group: bool,
+}
 
-    if matches.opt_present("inode") {
-        columns.push(Inode);
+impl Columns {
+    pub fn new(matches: &getopts::Matches) -> Result<Columns, Misfire> {
+        Ok(Columns {
+            size_format: try!(file_size(matches)),
+            inode:  matches.opt_present("inode"),
+            links:  matches.opt_present("links"),
+            blocks: matches.opt_present("blocks"),
+            group:  matches.opt_present("group"),
+        })
     }
 
-    columns.push(Permissions);
+    pub fn for_dir(&self, dir: Option<&Dir>) -> Vec<Column> {
+        let mut columns = vec![];
 
-    if matches.opt_present("links") {
-        columns.push(HardLinks);
+        if self.inode {
+            columns.push(Inode);
+        }
+
+        columns.push(Permissions);
+
+        if self.links {
+            columns.push(HardLinks);
+        }
+
+        columns.push(FileSize(self.size_format));
+
+        if self.blocks {
+            columns.push(Blocks);
+        }
+
+        columns.push(User);
+
+        if self.group {
+            columns.push(Group);
+        }
+
+        if cfg!(feature="git") {
+            if let Some(d) = dir {
+                if d.has_git_repo() {
+                    columns.push(GitStatus);
+                }
+            }
+        }
+
+        columns.push(FileName);
+        columns
     }
-
-    // Fail early here if two file size flags are given
-    columns.push(FileSize(try!(file_size(matches))));
-
-    if matches.opt_present("blocks") {
-        columns.push(Blocks);
-    }
-
-    columns.push(User);
-
-    if matches.opt_present("group") {
-        columns.push(Group);
-    }
-
-    if cfg!(feature="git") {
-        columns.push(GitStatus);
-    }
-
-    columns.push(FileName);
-    Ok(columns)
 }
 
 #[cfg(test)]
@@ -373,5 +396,4 @@ mod test {
         let opts = Options::getopts(&[ "--blocks".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
     }
-
 }

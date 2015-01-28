@@ -3,23 +3,25 @@ use std::iter::{AdditiveIterator, repeat};
 
 use column::{Column, Cell};
 use column::Alignment::Left;
+use dir::Dir;
 use file::File;
+use options::Columns;
 use users::OSUsers;
 
 use ansi_term::Style::Plain;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Copy, Debug)]
 pub enum View {
-    Details(Vec<Column>, bool),
+    Details(Columns, bool),
     Lines,
     Grid(bool, usize),
 }
 
 impl View {
-    pub fn view(&self, files: Vec<File>) {
+    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
         match *self {
             View::Grid(across, width)       => grid_view(across, width, files),
-            View::Details(ref cols, header) => details_view(cols, files, header),
+            View::Details(ref cols, header) => details_view(&*cols.for_dir(dir), files, header),
             View::Lines                     => lines_view(files),
         }
     }
@@ -120,7 +122,7 @@ fn grid_view(across: bool, console_width: usize, files: Vec<File>) {
     }
 }
 
-fn details_view(columns: &Vec<Column>, files: Vec<File>, header: bool) {
+fn details_view(columns: &[Column], files: Vec<File>, header: bool) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum

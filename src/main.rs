@@ -56,7 +56,7 @@ fn exa(options: &Options) {
     let mut first = files.is_empty();
 
     if !files.is_empty() {
-        options.view(files);
+        options.view(None, files);
     }
 
     for dir_name in dirs.iter() {
@@ -68,7 +68,7 @@ fn exa(options: &Options) {
         }
 
         match Dir::readdir(Path::new(dir_name.clone())) {
-            Ok(dir) => {
+            Ok(ref dir) => {
                 let unsorted_files = dir.files();
                 let files: Vec<File> = options.transform_files(unsorted_files);
 
@@ -76,7 +76,7 @@ fn exa(options: &Options) {
                     println!("{}:", dir_name);
                 }
 
-                options.view(files);
+                options.view(Some(dir), files);
             }
             Err(e) => {
                 println!("{}: {}", dir_name, e);
