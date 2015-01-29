@@ -1,8 +1,7 @@
-#![allow(unstable)]
+#![feature(collections, core, io, libc, os, path, std_misc)]
 
 extern crate ansi_term;
 extern crate number_prefix;
-extern crate unicode;
 extern crate users;
 
 #[cfg(feature="git")]
