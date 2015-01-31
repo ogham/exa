@@ -45,7 +45,7 @@ impl<'a> File<'a> {
 
     /// Create a new File object from the given Stat result, and other data.
     pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>) -> File<'a> {
-        let v = path.filename().unwrap();  // fails if / or . or ..
+        let v = path.filename().unwrap_or_else(|| panic!("Failed to get filename for {:?}", path));  // fails if / or . or ..
         let filename = String::from_utf8_lossy(v);
 
         File {

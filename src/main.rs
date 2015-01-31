@@ -1,6 +1,8 @@
 #![feature(collections, core, io, libc, os, path, std_misc)]
 
 extern crate ansi_term;
+extern crate getopts;
+extern crate natord;
 extern crate number_prefix;
 extern crate users;
 
@@ -12,7 +14,7 @@ use std::os::{args, set_exit_status};
 
 use dir::Dir;
 use file::File;
-use options::Options;
+use options::{Options, DirAction};
 
 pub mod column;
 pub mod dir;
@@ -30,15 +32,26 @@ fn exa(options: &Options) {
     // more than one of them.
     let mut count = 0;
 
+    let mut stack = options.path_strs.clone();
+
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
     // and listed second.
-    for file in options.path_strings() {
-        let path = Path::new(file);
+    loop {
+        let file = match stack.pop() {
+            None => break,
+            Some(f) => f,
+        };
+
+        let path = Path::new(file.clone());
         match fs::stat(&path) {
             Ok(stat) => {
-                if !options.list_dirs && stat.kind == FileType::Directory {
-                    dirs.push(file.clone());
+                if stat.kind == FileType::Directory {
+                    match options.dir_action {
+                        DirAction::AsFile  => files.push(File::with_stat(stat, &path, None)),
+                        DirAction::List    => dirs.push(file.clone()),
+                        DirAction::Recurse => { /* todo */ },
+                    }
                 }
                 else {
                     // May as well reuse the stat result from earlier
