@@ -8,7 +8,6 @@ use term::dimensions;
 use std::ascii::AsciiExt;
 use std::cmp::Ordering;
 use std::fmt;
-use std::slice::Iter;
 
 use getopts;
 use natord;
@@ -346,15 +345,15 @@ mod test {
     #[test]
     fn files() {
         let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]).unwrap();
-        let args: Vec<&String> = opts.path_strings().collect();
-        assert_eq!(args, vec![ &"this file".to_string(), &"that file".to_string() ])
+        let args: Vec<String> = opts.path_strs;
+        assert_eq!(args, vec![ "this file".to_string(), "that file".to_string() ])
     }
 
     #[test]
     fn no_args() {
         let opts = Options::getopts(&[]).unwrap();
-        let args: Vec<&String> = opts.path_strings().collect();
-        assert_eq!(args, vec![ &".".to_string() ])
+        let args: Vec<String> = opts.path_strs;
+        assert_eq!(args, vec![ ".".to_string() ])
     }
 
     #[test]
