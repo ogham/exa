@@ -21,11 +21,11 @@ impl Dir {
     /// Create a new Dir object filled with all the files in the directory
     /// pointed to by the given path. Fails if the directory can't be read, or
     /// isn't actually a directory.
-    pub fn readdir(path: Path) -> IoResult<Dir> {
-        fs::readdir(&path).map(|paths| Dir {
+    pub fn readdir(path: &Path) -> IoResult<Dir> {
+        fs::readdir(path).map(|paths| Dir {
             contents: paths,
             path: path.clone(),
-            git: Git::scan(&path).ok(),
+            git: Git::scan(path).ok(),
         })
     }
 

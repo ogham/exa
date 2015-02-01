@@ -18,7 +18,7 @@ pub enum View {
 }
 
 impl View {
-    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         match *self {
             View::Grid(across, width)       => grid_view(across, width, files),
             View::Details(ref cols, header) => details_view(&*cols.for_dir(dir), files, header),
@@ -28,13 +28,13 @@ impl View {
 }
 
 /// The lines view literally just displays each file, line-by-line.
-fn lines_view(files: Vec<File>) {
+fn lines_view(files: &[File]) {
     for file in files.iter() {
         println!("{}", file.file_name_view().text);
     }
 }
 
-fn fit_into_grid(across: bool, console_width: usize, files: &Vec<File>) -> Option<(usize, Vec<usize>)> {
+fn fit_into_grid(across: bool, console_width: usize, files: &[File]) -> Option<(usize, Vec<usize>)> {
     // TODO: this function could almost certainly be optimised...
     // surely not *all* of the numbers of lines are worth searching through!
 
@@ -86,8 +86,8 @@ fn fit_into_grid(across: bool, console_width: usize, files: &Vec<File>) -> Optio
     return None;
 }
 
-fn grid_view(across: bool, console_width: usize, files: Vec<File>) {
-    if let Some((num_lines, widths)) = fit_into_grid(across, console_width, &files) {
+fn grid_view(across: bool, console_width: usize, files: &[File]) {
+    if let Some((num_lines, widths)) = fit_into_grid(across, console_width, files) {
         for y in range(0, num_lines) {
             for x in range(0, widths.len()) {
                 let num = if across {
@@ -122,7 +122,7 @@ fn grid_view(across: bool, console_width: usize, files: Vec<File>) {
     }
 }
 
-fn details_view(columns: &[Column], files: Vec<File>, header: bool) {
+fn details_view(columns: &[Column], files: &[File], header: bool) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum

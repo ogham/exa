@@ -74,7 +74,7 @@ impl Options {
     }
 
     /// Display the files using this Option's View.
-    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         self.view.view(dir, files)
     }
 
