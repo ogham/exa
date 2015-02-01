@@ -1,6 +1,3 @@
-extern crate getopts;
-extern crate natord;
-
 use dir::Dir;
 use file::File;
 use column::{Column, SizeFormat};
@@ -11,7 +8,9 @@ use term::dimensions;
 use std::ascii::AsciiExt;
 use std::cmp::Ordering;
 use std::fmt;
-use std::slice::Iter;
+
+use getopts;
+use natord;
 
 use self::Misfire::*;
 
@@ -19,8 +18,8 @@ use self::Misfire::*;
 /// command-line options.
 #[derive(PartialEq, Debug)]
 pub struct Options {
-    pub list_dirs: bool,
-    path_strs: Vec<String>,
+    pub dir_action: DirAction,
+    pub path_strs: Vec<String>,
     reverse: bool,
     show_invisibles: bool,
     sort_field: SortField,
@@ -43,6 +42,7 @@ impl Options {
             getopts::optflag("l", "long",      "display extended details and attributes"),
             getopts::optflag("i", "inode",     "show each file's inode number"),
             getopts::optflag("r", "reverse",   "reverse order of files"),
+            getopts::optflag("R", "recurse",   "recurse into directories"),
             getopts::optopt ("s", "sort",      "field to sort by", "WORD"),
             getopts::optflag("S", "blocks",    "show number of file system blocks"),
             getopts::optflag("x", "across",    "sort multi-column view entries across"),
@@ -64,7 +64,7 @@ impl Options {
         };
 
         Ok(Options {
-            list_dirs:       matches.opt_present("list-dirs"),
+            dir_action:      try!(dir_action(&matches)),
             path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
             reverse:         matches.opt_present("reverse"),
             show_invisibles: matches.opt_present("all"),
@@ -73,13 +73,8 @@ impl Options {
         })
     }
 
-    /// Iterate over the non-option arguments left oven from getopts.
-    pub fn path_strings(&self) -> Iter<String> {
-        self.path_strs.iter()
-    }
-
     /// Display the files using this Option's View.
-    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         self.view.view(dir, files)
     }
 
@@ -113,7 +108,13 @@ impl Options {
     }
 }
 
-/// User-supplied field to sort by
+/// What to do when encountering a directory?
+#[derive(PartialEq, Debug, Copy)]
+pub enum DirAction {
+    AsFile, List, Recurse
+}
+
+/// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy)]
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode
@@ -228,13 +229,25 @@ fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
 /// Finds out which file size the user has asked for.
 fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
     let binary = matches.opt_present("binary");
-    let bytes = matches.opt_present("bytes");
+    let bytes  = matches.opt_present("bytes");
 
     match (binary, bytes) {
         (true,  true ) => Err(Misfire::Conflict("binary", "bytes")),
         (true,  false) => Ok(SizeFormat::BinaryBytes),
         (false, true ) => Ok(SizeFormat::JustBytes),
         (false, false) => Ok(SizeFormat::DecimalBytes),
+    }
+}
+
+fn dir_action(matches: &getopts::Matches) -> Result<DirAction, Misfire> {
+    let recurse = matches.opt_present("recurse");
+    let list    = matches.opt_present("list-dirs");
+
+    match (recurse, list) {
+        (true,  true ) => Err(Misfire::Conflict("recurse", "list-dirs")),
+        (true,  false) => Ok(DirAction::Recurse),
+        (false, true ) => Ok(DirAction::AsFile),
+        (false, false) => Ok(DirAction::List),
     }
 }
 
@@ -332,15 +345,15 @@ mod test {
     #[test]
     fn files() {
         let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]).unwrap();
-        let args: Vec<&String> = opts.path_strings().collect();
-        assert_eq!(args, vec![ &"this file".to_string(), &"that file".to_string() ])
+        let args: Vec<String> = opts.path_strs;
+        assert_eq!(args, vec![ "this file".to_string(), "that file".to_string() ])
     }
 
     #[test]
     fn no_args() {
         let opts = Options::getopts(&[]).unwrap();
-        let args: Vec<&String> = opts.path_strings().collect();
-        assert_eq!(args, vec![ &".".to_string() ])
+        let args: Vec<String> = opts.path_strs;
+        assert_eq!(args, vec![ ".".to_string() ])
     }
 
     #[test]

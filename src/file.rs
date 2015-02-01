@@ -45,8 +45,18 @@ impl<'a> File<'a> {
 
     /// Create a new File object from the given Stat result, and other data.
     pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>) -> File<'a> {
-        let v = path.filename().unwrap();  // fails if / or . or ..
-        let filename = String::from_utf8_lossy(v);
+
+        // The filename to display is the last component of the path. However,
+        // the path has no components for `.`, `..`, and `/`, so in these
+        // cases, the entire path is used.
+        let bytes = match path.components().last() {
+            Some(b) => b,
+            None => path.as_vec(),
+        };
+
+        // Convert the string to UTF-8, replacing any invalid characters with
+        // replacement characters.
+        let filename = String::from_utf8_lossy(bytes);
 
         File {
             path:  path.clone(),

@@ -21,6 +21,7 @@ exa is a replacement for `ls` written in Rust.
 - **-i**, **--inode**: show inode number column
 - **-l**, **--long**: display extended details and attributes
 - **-r**, **--reverse**: reverse sort order
+- **-R**, **--recurse**: recurse into subdirectories
 - **-s**, **--sort=(field)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
 - **-x**, **--across**: sort multi-column view entries across

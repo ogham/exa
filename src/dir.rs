@@ -21,11 +21,11 @@ impl Dir {
     /// Create a new Dir object filled with all the files in the directory
     /// pointed to by the given path. Fails if the directory can't be read, or
     /// isn't actually a directory.
-    pub fn readdir(path: Path) -> IoResult<Dir> {
-        fs::readdir(&path).map(|paths| Dir {
+    pub fn readdir(path: &Path) -> IoResult<Dir> {
+        fs::readdir(path).map(|paths| Dir {
             contents: paths,
             path: path.clone(),
-            git: Git::scan(&path).ok(),
+            git: Git::scan(path).ok(),
         })
     }
 
@@ -102,12 +102,11 @@ impl Git {
     /// path that gets passed in. This is used for getting the status of
     /// directories, which don't really have an 'official' status.
     fn dir_status(&self, dir: &Path) -> String {
-        let status = self.statuses.iter()
-                                  .filter(|p| p.0.starts_with(dir.as_vec()))
-                                  .fold(git2::Status::empty(), |a, b| a | b.1);
-        match status {
-            s => format!("{}{}", Git::index_status(s), Git::working_tree_status(s)),
-        }
+        let s = self.statuses.iter()
+                             .filter(|p| p.0.starts_with(dir.as_vec()))
+                             .fold(git2::Status::empty(), |a, b| a | b.1);
+
+        format!("{}{}", Git::index_status(s), Git::working_tree_status(s))
     }
 
     /// The character to display if the file has been modified, but not staged.

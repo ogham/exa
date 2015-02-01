@@ -1,6 +1,8 @@
 #![feature(collections, core, io, libc, os, path, std_misc)]
 
 extern crate ansi_term;
+extern crate getopts;
+extern crate natord;
 extern crate number_prefix;
 extern crate users;
 
@@ -12,7 +14,7 @@ use std::os::{args, set_exit_status};
 
 use dir::Dir;
 use file::File;
-use options::Options;
+use options::{Options, DirAction};
 
 pub mod column;
 pub mod dir;
@@ -23,7 +25,7 @@ pub mod output;
 pub mod term;
 
 fn exa(options: &Options) {
-    let mut dirs: Vec<String> = vec![];
+    let mut dirs: Vec<Path> = vec![];
     let mut files: Vec<File> = vec![];
 
     // It's only worth printing out directory names if the user supplied
@@ -33,16 +35,14 @@ fn exa(options: &Options) {
     // Separate the user-supplied paths into directories and files.
     // Files are shown first, and then each directory is expanded
     // and listed second.
-    for file in options.path_strings() {
+    for file in options.path_strs.iter() {
         let path = Path::new(file);
         match fs::stat(&path) {
             Ok(stat) => {
-                if !options.list_dirs && stat.kind == FileType::Directory {
-                    dirs.push(file.clone());
+                if stat.kind == FileType::Directory && options.dir_action != DirAction::AsFile {
+                    dirs.push(path);
                 }
                 else {
-                    // May as well reuse the stat result from earlier
-                    // instead of just using File::from_path().
                     files.push(File::with_stat(stat, &path, None));
                 }
             }
@@ -55,10 +55,19 @@ fn exa(options: &Options) {
     let mut first = files.is_empty();
 
     if !files.is_empty() {
-        options.view(None, files);
+        options.view(None, &files[]);
     }
 
-    for dir_name in dirs.iter() {
+    // Directories are put on a stack rather than just being iterated through,
+    // as the vector can change as more directories are added.
+    loop {
+        let dir_path = match dirs.pop() {
+            None => break,
+            Some(f) => f,
+        };
+
+        // Put a gap between directories, or between the list of files and the
+        // first directory.
         if first {
             first = false;
         }
@@ -66,19 +75,30 @@ fn exa(options: &Options) {
             print!("\n");
         }
 
-        match Dir::readdir(Path::new(dir_name.clone())) {
+        match Dir::readdir(&dir_path) {
             Ok(ref dir) => {
                 let unsorted_files = dir.files();
                 let files: Vec<File> = options.transform_files(unsorted_files);
 
-                if count > 1 {
-                    println!("{}:", dir_name);
+                // When recursing, add any directories to the dirs stack
+                // backwards: the *last* element of the stack is used each
+                // time, so by inserting them backwards, they get displayed in
+                // the correct sort order.
+                if options.dir_action == DirAction::Recurse {
+                    for dir in files.iter().filter(|f| f.stat.kind == FileType::Directory).rev() {
+                        dirs.push(dir.path.clone());
+                    }
                 }
 
-                options.view(Some(dir), files);
+                if count > 1 {
+                    println!("{}:", dir_path.display());
+                }
+                count += 1;
+
+                options.view(Some(dir), &files[]);
             }
             Err(e) => {
-                println!("{}: {}", dir_name, e);
+                println!("{}: {}", dir_path.display(), e);
                 return;
             }
         };
