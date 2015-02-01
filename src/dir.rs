@@ -102,12 +102,11 @@ impl Git {
     /// path that gets passed in. This is used for getting the status of
     /// directories, which don't really have an 'official' status.
     fn dir_status(&self, dir: &Path) -> String {
-        let status = self.statuses.iter()
-                                  .filter(|p| p.0.starts_with(dir.as_vec()))
-                                  .fold(git2::Status::empty(), |a, b| a | b.1);
-        match status {
-            s => format!("{}{}", Git::index_status(s), Git::working_tree_status(s)),
-        }
+        let s = self.statuses.iter()
+                             .filter(|p| p.0.starts_with(dir.as_vec()))
+                             .fold(git2::Status::empty(), |a, b| a | b.1);
+
+        format!("{}{}", Git::index_status(s), Git::working_tree_status(s))
     }
 
     /// The character to display if the file has been modified, but not staged.
