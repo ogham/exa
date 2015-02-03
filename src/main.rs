@@ -39,11 +39,14 @@ fn exa(options: &Options) {
         let path = Path::new(file);
         match fs::stat(&path) {
             Ok(stat) => {
-                if stat.kind == FileType::Directory && options.dir_action != DirAction::AsFile {
+                if stat.kind == FileType::Directory && options.dir_action == DirAction::Tree {
+                    files.push(File::with_stat(stat, &path, None, true));
+                }
+                else if stat.kind == FileType::Directory && options.dir_action != DirAction::AsFile {
                     dirs.push(path);
                 }
                 else {
-                    files.push(File::with_stat(stat, &path, None));
+                    files.push(File::with_stat(stat, &path, None, false));
                 }
             }
             Err(e) => println!("{}: {}", file, e),
@@ -77,7 +80,7 @@ fn exa(options: &Options) {
 
         match Dir::readdir(&dir_path) {
             Ok(ref dir) => {
-                let unsorted_files = dir.files();
+                let unsorted_files = dir.files(false);
                 let files: Vec<File> = options.transform_files(unsorted_files);
 
                 // When recursing, add any directories to the dirs stack

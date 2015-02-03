@@ -32,6 +32,7 @@ pub struct File<'a> {
     pub ext:   Option<String>,
     pub path:  Path,
     pub stat:  io::FileStat,
+    pub this:  Option<Dir>,
 }
 
 impl<'a> File<'a> {
@@ -39,12 +40,12 @@ impl<'a> File<'a> {
     /// appropriate. Paths specified directly on the command-line have no Dirs.
     ///
     /// This uses lstat instead of stat, which doesn't follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'a Dir>) -> IoResult<File<'a>> {
-        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent))
+    pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> IoResult<File<'a>> {
+        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent, recurse))
     }
 
     /// Create a new File object from the given Stat result, and other data.
-    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>) -> File<'a> {
+    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>, recurse: bool) -> File<'a> {
 
         // The filename to display is the last component of the path. However,
         // the path has no components for `.`, `..`, and `/`, so in these
@@ -58,12 +59,23 @@ impl<'a> File<'a> {
         // replacement characters.
         let filename = String::from_utf8_lossy(bytes);
 
+        // If we are recursing, then the `this` field contains a Dir object
+        // that represents the current File as a directory, if it is a
+        // directory. This is used for the --tree option.
+        let this = if recurse && stat.kind == io::FileType::Directory {
+            Dir::readdir(path).ok()
+        }
+        else {
+            None
+        };
+
         File {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
             name:  filename.to_string(),
             ext:   ext(filename.as_slice()),
+            this:  this,
         }
     }
 
@@ -184,6 +196,7 @@ impl<'a> File<'a> {
                 stat:  stat,
                 name:  filename.to_string(),
                 ext:   ext(filename.as_slice()),
+                this:  None,
             })
         }
         else {

@@ -12,7 +12,7 @@ use ansi_term::Style::Plain;
 
 #[derive(PartialEq, Copy, Debug)]
 pub enum View {
-    Details(Columns, bool),
+    Details(Columns, bool, bool),
     Lines,
     Grid(bool, usize),
 }
@@ -21,7 +21,7 @@ impl View {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         match *self {
             View::Grid(across, width)       => grid_view(across, width, files),
-            View::Details(ref cols, header) => details_view(&*cols.for_dir(dir), files, header),
+            View::Details(ref cols, header, tree) => details_view(&*cols.for_dir(dir), files, header, tree),
             View::Lines                     => lines_view(files),
         }
     }
@@ -122,7 +122,7 @@ fn grid_view(across: bool, console_width: usize, files: &[File]) {
     }
 }
 
-fn details_view(columns: &[Column], files: &[File], header: bool) {
+fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum
@@ -131,19 +131,22 @@ fn details_view(columns: &[Column], files: &[File], header: bool) {
 
     let mut cache = OSUsers::empty_cache();
 
-    let mut table: Vec<Vec<Cell>> = files.iter()
-        .map(|f| columns.iter().map(|c| f.display(c, &mut cache)).collect())
-        .collect();
+    let mut table = Vec::new();
+    get_files(columns, &mut cache, tree, &mut table, files, 0);
 
     if header {
-        table.insert(0, columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect());
+        table.insert(0, (0, columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect()));
     }
 
     let column_widths: Vec<usize> = range(0, columns.len())
-        .map(|n| table.iter().map(|row| row[n].length).max().unwrap_or(0))
+        .map(|n| table.iter().map(|row| row.1[n].length).max().unwrap_or(0))
         .collect();
 
-    for row in table.iter() {
+    for &(depth, ref row) in table.iter() {
+        for _ in range(0, depth) {
+            print!("#");
+        }
+
         for (num, column) in columns.iter().enumerate() {
             if num != 0 {
                 print!(" ");  // Separator
@@ -159,5 +162,18 @@ fn details_view(columns: &[Column], files: &[File], header: bool) {
             }
         }
         print!("\n");
+    }
+}
+
+fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<(usize, Vec<Cell>)>, src: &[File], depth: usize) {
+    for file in src.iter() {
+        let cols = columns.iter().map(|c| file.display(c, cache)).collect();
+        dest.push((depth, cols));
+
+        if recurse {
+            if let Some(ref dir) = file.this {
+                get_files(columns, cache, recurse, dest, dir.files(true).as_slice(), depth + 1);
+            }
+        }
     }
 }

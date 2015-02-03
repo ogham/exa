@@ -45,6 +45,7 @@ impl Options {
             getopts::optflag("R", "recurse",   "recurse into directories"),
             getopts::optopt ("s", "sort",      "field to sort by", "WORD"),
             getopts::optflag("S", "blocks",    "show number of file system blocks"),
+            getopts::optflag("T", "tree",      "recurse into subdirectories in a tree view"),
             getopts::optflag("x", "across",    "sort multi-column view entries across"),
             getopts::optflag("?", "help",      "show list of command-line options"),
         ];
@@ -111,7 +112,7 @@ impl Options {
 /// What to do when encountering a directory?
 #[derive(PartialEq, Debug, Copy)]
 pub enum DirAction {
-    AsFile, List, Recurse
+    AsFile, List, Recurse, Tree
 }
 
 /// User-supplied field to sort by.
@@ -189,7 +190,7 @@ fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
             Err(Misfire::Useless("oneline", true, "long"))
         }
         else {
-            Ok(View::Details(try!(Columns::new(matches)), matches.opt_present("header")))
+            Ok(View::Details(try!(Columns::new(matches)), matches.opt_present("header"), matches.opt_present("tree")))
         }
     }
     else if matches.opt_present("binary") {
@@ -242,12 +243,14 @@ fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
 fn dir_action(matches: &getopts::Matches) -> Result<DirAction, Misfire> {
     let recurse = matches.opt_present("recurse");
     let list    = matches.opt_present("list-dirs");
+    let tree    = matches.opt_present("tree");
 
-    match (recurse, list) {
-        (true,  true ) => Err(Misfire::Conflict("recurse", "list-dirs")),
-        (true,  false) => Ok(DirAction::Recurse),
-        (false, true ) => Ok(DirAction::AsFile),
-        (false, false) => Ok(DirAction::List),
+    match (recurse, list, tree) {
+        (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
+        (true,  false, false) => Ok(DirAction::Recurse),
+        (true,  false, true ) => Ok(DirAction::Tree),
+        (false, true,  _    ) => Ok(DirAction::AsFile),
+        (false, false, _    ) => Ok(DirAction::List),
     }
 }
 
