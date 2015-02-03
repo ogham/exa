@@ -80,8 +80,7 @@ fn exa(options: &Options) {
 
         match Dir::readdir(&dir_path) {
             Ok(ref dir) => {
-                let unsorted_files = dir.files(false);
-                let files: Vec<File> = options.transform_files(unsorted_files);
+                let files = options.transform_files(dir.files(false));
 
                 // When recursing, add any directories to the dirs stack
                 // backwards: the *last* element of the stack is used each

@@ -20,10 +20,15 @@ use self::Misfire::*;
 pub struct Options {
     pub dir_action: DirAction,
     pub path_strs: Vec<String>,
+    pub filter: FileFilter,
+    view: View,
+}
+
+#[derive(PartialEq, Debug, Copy)]
+pub struct FileFilter {
     reverse: bool,
     show_invisibles: bool,
     sort_field: SortField,
-    view: View,
 }
 
 impl Options {
@@ -65,20 +70,28 @@ impl Options {
         };
 
         Ok(Options {
-            dir_action:      try!(dir_action(&matches)),
-            path_strs:       if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
-            reverse:         matches.opt_present("reverse"),
-            show_invisibles: matches.opt_present("all"),
-            sort_field:      sort_field,
-            view:            try!(view(&matches)),
+            dir_action: try!(dir_action(&matches)),
+            path_strs:  if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
+            view:       try!(view(&matches)),
+            filter:     FileFilter {
+                reverse:         matches.opt_present("reverse"),
+                show_invisibles: matches.opt_present("all"),
+                sort_field:      sort_field,
+            },
         })
+    }
+
+    pub fn transform_files<'a>(&self, files: Vec<File<'a>>) -> Vec<File<'a>> {
+        self.filter.transform_files(files)
     }
 
     /// Display the files using this Option's View.
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         self.view.view(dir, files)
     }
+}
 
+impl FileFilter {
     /// Transform the files (sorting, reversing, filtering) before listing them.
     pub fn transform_files<'a>(&self, mut files: Vec<File<'a>>) -> Vec<File<'a>> {
 
