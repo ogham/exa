@@ -307,7 +307,6 @@ impl Columns {
             }
         }
 
-        columns.push(FileName);
         columns
     }
 }

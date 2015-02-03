@@ -30,7 +30,7 @@ impl View {
 /// The lines view literally just displays each file, line-by-line.
 fn lines_view(files: &[File]) {
     for file in files.iter() {
-        println!("{}", file.file_name_view().text);
+        println!("{}", file.file_name_view());
     }
 }
 
@@ -137,7 +137,8 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
     if header {
         let row = Row {
             depth: 0,
-            cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect()
+            cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect(),
+            name: Plain.underline().paint("Name").to_string()
         };
 
         table.insert(0, row);
@@ -148,25 +149,20 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
         .collect();
 
     for row in table.iter() {
-        for _ in range(0, row.depth) {
-            print!("#");
-        }
-
         for (num, column) in columns.iter().enumerate() {
-            if num != 0 {
-                print!(" ");  // Separator
+            let padding = column_widths[num] - row.cells[num].length;
+            print!("{} ", column.alignment().pad_string(&row.cells[num].text, padding));
+        }
+
+        if tree {
+            for _ in range(0, row.depth) {
+                print!("#");
             }
 
-            if num == columns.len() - 1 {
-                // The final column doesn't need to have trailing spaces
-                print!("{}", row.cells[num].text);
-            }
-            else {
-                let padding = column_widths[num] - row.cells[num].length;
-                print!("{}", column.alignment().pad_string(&row.cells[num].text, padding));
-            }
+            print!(" ");
         }
-        print!("\n");
+
+        print!("{}\n", row.name);
     }
 }
 
@@ -176,6 +172,7 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
         let row = Row {
             depth: depth,
             cells: columns.iter().map(|c| file.display(c, cache)).collect(),
+            name:  file.file_name_view(),
         };
 
         dest.push(row);
@@ -191,4 +188,5 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
 struct Row {
     pub depth: u8,
     pub cells: Vec<Cell>,
+    pub name: String,
 }

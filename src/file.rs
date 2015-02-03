@@ -94,7 +94,6 @@ impl<'a> File<'a> {
     pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
         match *column {
             Permissions  => self.permissions_string(),
-            FileName     => self.file_name_view(),
             FileSize(f)  => self.file_size(f),
             HardLinks    => self.hard_links(),
             Inode        => self.inode(),
@@ -110,15 +109,12 @@ impl<'a> File<'a> {
     ///
     /// It consists of the file name coloured in the appropriate style,
     /// with special formatting for a symlink.
-    pub fn file_name_view(&self) -> Cell {
+    pub fn file_name_view(&self) -> String {
         if self.stat.kind == io::FileType::Symlink {
             self.symlink_file_name_view()
         }
         else {
-            Cell {
-                length: 0,  // This length is ignored (rightmost column)
-                text: self.file_colour().paint(&*self.name).to_string(),
-            }
+            self.file_colour().paint(&*self.name).to_string()
         }
     }
 
@@ -130,7 +126,7 @@ impl<'a> File<'a> {
     /// an error, highlight the target and arrow in red. The error would
     /// be shown out of context, and it's almost always because the
     /// target doesn't exist.
-    fn symlink_file_name_view(&self) -> Cell {
+    fn symlink_file_name_view(&self) -> String {
         let name = &*self.name;
         let style = self.file_colour();
 
@@ -141,26 +137,20 @@ impl<'a> File<'a> {
             };
 
             match self.target_file(&target_path) {
-                Ok(file) => Cell {
-                    length: 0,  // These lengths are never actually used...
-                    text: format!("{} {} {}{}{}",
-                                  style.paint(name),
-                                  GREY.paint("=>"),
-                                  Cyan.paint(target_path.dirname_str().unwrap()),
-                                  Cyan.paint("/"),
-                                  file.file_colour().paint(file.name.as_slice())),
-                },
-                Err(filename) => Cell {
-                    length: 0,  // ...because the rightmost column lengths are ignored!
-                    text: format!("{} {} {}",
-                                  style.paint(name),
-                                  Red.paint("=>"),
-                                  Red.underline().paint(filename.as_slice())),
-                },
+                Ok(file) => format!("{} {} {}{}{}",
+                                   style.paint(name),
+                                   GREY.paint("=>"),
+                                   Cyan.paint(target_path.dirname_str().unwrap()),
+                                   Cyan.paint("/"),
+                                   file.file_colour().paint(file.name.as_slice())),
+                Err(filename) => format!("{} {} {}",
+                                         style.paint(name),
+                                         Red.paint("=>"),
+                                         Red.underline().paint(filename.as_slice())),
             }
         }
         else {
-            Cell::paint(style, name)
+            style.paint(name).to_string()
         }
     }
 
