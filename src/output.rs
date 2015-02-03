@@ -5,7 +5,7 @@ use column::{Column, Cell};
 use column::Alignment::Left;
 use dir::Dir;
 use file::File;
-use options::Columns;
+use options::{Columns, FileFilter};
 use users::OSUsers;
 
 use ansi_term::Style::Plain;
@@ -18,10 +18,10 @@ pub enum View {
 }
 
 impl View {
-    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
+    pub fn view(&self, dir: Option<&Dir>, files: &[File], filter: FileFilter) {
         match *self {
             View::Grid(across, width)       => grid_view(across, width, files),
-            View::Details(ref cols, header, tree) => details_view(&*cols.for_dir(dir), files, header, tree),
+            View::Details(ref cols, header, tree) => details_view(&*cols.for_dir(dir), files, header, tree, filter),
             View::Lines                     => lines_view(files),
         }
     }
@@ -122,7 +122,7 @@ fn grid_view(across: bool, console_width: usize, files: &[File]) {
     }
 }
 
-fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
+fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, filter: FileFilter) {
     // The output gets formatted into columns, which looks nicer. To
     // do this, we have to write the results into a table, instead of
     // displaying each file immediately, then calculating the maximum
@@ -132,7 +132,7 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
     let mut cache = OSUsers::empty_cache();
 
     let mut table = Vec::new();
-    get_files(columns, &mut cache, tree, &mut table, files, 0);
+    get_files(columns, &mut cache, tree, &mut table, files, 0, filter);
 
     if header {
         let row = Row {
@@ -166,7 +166,7 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
     }
 }
 
-fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<Row>, src: &[File], depth: u8) {
+fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<Row>, src: &[File], depth: u8, filter: FileFilter) {
     for file in src.iter() {
 
         let row = Row {
@@ -179,7 +179,8 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
 
         if recurse {
             if let Some(ref dir) = file.this {
-                get_files(columns, cache, recurse, dest, dir.files(true).as_slice(), depth + 1);
+                let files = filter.transform_files(dir.files(true));
+                get_files(columns, cache, recurse, dest, files.as_slice(), depth + 1, filter);
             }
         }
     }

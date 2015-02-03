@@ -58,7 +58,7 @@ fn exa(options: &Options) {
     let mut first = files.is_empty();
 
     if !files.is_empty() {
-        options.view(None, &files[]);
+        options.view(None, &files[], options.filter);
     }
 
     // Directories are put on a stack rather than just being iterated through,
@@ -97,7 +97,7 @@ fn exa(options: &Options) {
                 }
                 count += 1;
 
-                options.view(Some(dir), &files[]);
+                options.view(Some(dir), &files[], options.filter);
             }
             Err(e) => {
                 println!("{}: {}", dir_path.display(), e);
