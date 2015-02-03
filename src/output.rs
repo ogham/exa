@@ -135,15 +135,20 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
     get_files(columns, &mut cache, tree, &mut table, files, 0);
 
     if header {
-        table.insert(0, (0, columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect()));
+        let row = Row {
+            depth: 0,
+            cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect()
+        };
+
+        table.insert(0, row);
     }
 
     let column_widths: Vec<usize> = range(0, columns.len())
-        .map(|n| table.iter().map(|row| row.1[n].length).max().unwrap_or(0))
+        .map(|n| table.iter().map(|row| row.cells[n].length).max().unwrap_or(0))
         .collect();
 
-    for &(depth, ref row) in table.iter() {
-        for _ in range(0, depth) {
+    for row in table.iter() {
+        for _ in range(0, row.depth) {
             print!("#");
         }
 
@@ -154,21 +159,26 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool) {
 
             if num == columns.len() - 1 {
                 // The final column doesn't need to have trailing spaces
-                print!("{}", row[num].text);
+                print!("{}", row.cells[num].text);
             }
             else {
-                let padding = column_widths[num] - row[num].length;
-                print!("{}", column.alignment().pad_string(&row[num].text, padding));
+                let padding = column_widths[num] - row.cells[num].length;
+                print!("{}", column.alignment().pad_string(&row.cells[num].text, padding));
             }
         }
         print!("\n");
     }
 }
 
-fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<(usize, Vec<Cell>)>, src: &[File], depth: usize) {
+fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<Row>, src: &[File], depth: u8) {
     for file in src.iter() {
-        let cols = columns.iter().map(|c| file.display(c, cache)).collect();
-        dest.push((depth, cols));
+
+        let row = Row {
+            depth: depth,
+            cells: columns.iter().map(|c| file.display(c, cache)).collect(),
+        };
+
+        dest.push(row);
 
         if recurse {
             if let Some(ref dir) = file.this {
@@ -176,4 +186,9 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
             }
         }
     }
+}
+
+struct Row {
+    pub depth: u8,
+    pub cells: Vec<Cell>,
 }
