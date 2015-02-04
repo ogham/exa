@@ -35,33 +35,32 @@ impl Options {
 
     /// Call getopts on the given slice of command-line strings.
     pub fn getopts(args: &[String]) -> Result<Options, Misfire> {
-        let opts = &[
-            getopts::optflag("1", "oneline",   "display one entry per line"),
-            getopts::optflag("a", "all",       "show dot-files"),
-            getopts::optflag("b", "binary",    "use binary prefixes in file sizes"),
-            getopts::optflag("B", "bytes",     "list file sizes in bytes, without prefixes"),
-            getopts::optflag("d", "list-dirs", "list directories as regular files"),
-            getopts::optflag("g", "group",     "show group as well as user"),
-            getopts::optflag("h", "header",    "show a header row at the top"),
-            getopts::optflag("H", "links",     "show number of hard links"),
-            getopts::optflag("l", "long",      "display extended details and attributes"),
-            getopts::optflag("i", "inode",     "show each file's inode number"),
-            getopts::optflag("r", "reverse",   "reverse order of files"),
-            getopts::optflag("R", "recurse",   "recurse into directories"),
-            getopts::optopt ("s", "sort",      "field to sort by", "WORD"),
-            getopts::optflag("S", "blocks",    "show number of file system blocks"),
-            getopts::optflag("T", "tree",      "recurse into subdirectories in a tree view"),
-            getopts::optflag("x", "across",    "sort multi-column view entries across"),
-            getopts::optflag("?", "help",      "show list of command-line options"),
-        ];
+        let mut opts = getopts::Options::new();
+        opts.optflag("1", "oneline",   "display one entry per line");
+        opts.optflag("a", "all",       "show dot-files");
+        opts.optflag("b", "binary",    "use binary prefixes in file sizes");
+        opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
+        opts.optflag("d", "list-dirs", "list directories as regular files");
+        opts.optflag("g", "group",     "show group as well as user");
+        opts.optflag("h", "header",    "show a header row at the top");
+        opts.optflag("H", "links",     "show number of hard links");
+        opts.optflag("l", "long",      "display extended details and attributes");
+        opts.optflag("i", "inode",     "show each file's inode number");
+        opts.optflag("r", "reverse",   "reverse order of files");
+        opts.optflag("R", "recurse",   "recurse into directories");
+        opts.optopt ("s", "sort",      "field to sort by", "WORD");
+        opts.optflag("S", "blocks",    "show number of file system blocks");
+        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
+        opts.optflag("x", "across",    "sort multi-column view entries across");
+        opts.optflag("?", "help",      "show list of command-line options");
 
-        let matches = match getopts::getopts(args, opts) {
+        let matches = match opts.parse(args) {
             Ok(m) => m,
             Err(e) => return Err(Misfire::InvalidOptions(e)),
         };
 
         if matches.opt_present("help") {
-            return Err(Misfire::Help(getopts::usage("Usage:\n  exa [options] [files...]", opts)));
+            return Err(Misfire::Help(opts.usage("Usage:\n  exa [options] [files...]")));
         }
 
         let sort_field = match matches.opt_str("sort") {
