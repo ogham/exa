@@ -330,18 +330,10 @@ mod test {
     use super::Misfire;
     use super::Misfire::*;
 
-    use std::fmt;
-
     fn is_helpful(misfire: Result<Options, Misfire>) -> bool {
         match misfire {
             Err(Help(_)) => true,
             _            => false,
-        }
-    }
-
-    impl fmt::Display for Options {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "{:?}", self)
         }
     }
 
