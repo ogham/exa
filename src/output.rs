@@ -194,7 +194,8 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
 
         if recurse {
             if let Some(ref dir) = file.this {
-                let files = filter.transform_files(dir.files(true));
+                let mut files = dir.files(true);
+                filter.transform_files(&mut files);
                 get_files(columns, cache, recurse, dest, files.as_slice(), depth + 1, filter);
             }
         }

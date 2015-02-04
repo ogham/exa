@@ -80,7 +80,7 @@ impl Options {
         })
     }
 
-    pub fn transform_files<'a>(&self, files: Vec<File<'a>>) -> Vec<File<'a>> {
+    pub fn transform_files<'a>(&self, files: &mut Vec<File<'a>>) {
         self.filter.transform_files(files)
     }
 
@@ -92,10 +92,10 @@ impl Options {
 
 impl FileFilter {
     /// Transform the files (sorting, reversing, filtering) before listing them.
-    pub fn transform_files<'a>(&self, mut files: Vec<File<'a>>) -> Vec<File<'a>> {
+    pub fn transform_files<'a>(&self, files: &mut Vec<File<'a>>) {
 
         if !self.show_invisibles {
-            files = files.into_iter().filter(|f| !f.is_dotfile()).collect();
+            files.retain(|f| !f.is_dotfile());
         }
 
         match self.sort_field {
@@ -116,8 +116,6 @@ impl FileFilter {
         if self.reverse {
             files.reverse();
         }
-
-        files
     }
 }
 

@@ -80,7 +80,8 @@ fn exa(options: &Options) {
 
         match Dir::readdir(&dir_path) {
             Ok(ref dir) => {
-                let files = options.transform_files(dir.files(false));
+                let mut files = dir.files(false);
+                options.transform_files(&mut files);
 
                 // When recursing, add any directories to the dirs stack
                 // backwards: the *last* element of the stack is used each
