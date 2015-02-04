@@ -432,6 +432,10 @@ pub mod test {
         assert_eq!(None, super::ext("jarlsberg"))
     }
 
+    pub fn new_file(stat: io::FileStat, path: &'static str) -> File {
+        File::with_stat(stat, &Path::new(path), None, false)
+    }
+
 	pub fn dummy_stat() -> io::FileStat {
 	    io::FileStat {
             size: 0,
@@ -463,7 +467,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.uid = 1000;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(1000);
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
@@ -477,7 +481,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.uid = 1000;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(1000);
 
@@ -490,7 +494,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.uid = 1000;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
@@ -504,7 +508,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.uid = 1000;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 
@@ -521,7 +525,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.gid = 100;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
@@ -535,7 +539,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.gid = 100;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 
@@ -548,7 +552,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.gid = 100;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 100 });
@@ -563,7 +567,7 @@ pub mod test {
             let mut stat = dummy_stat();
             stat.unstable.gid = 100;
 
-            let file = File::with_stat(stat, &Path::new("/hi"), None);
+            let file = new_file(stat, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 12 });

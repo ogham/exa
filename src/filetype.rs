@@ -149,30 +149,29 @@ impl<'a> HasType for File<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use file::File;
-    use file::test::dummy_stat;
+    use file::test::{dummy_stat, new_file};
 
     #[test]
     fn lowercase() {
-        let file = File::with_stat(dummy_stat(), &Path::new("/barracks.wav"), None);
+        let file = new_file(dummy_stat(), "/barracks.wav");
         assert_eq!(FileType::Lossless, file.get_type())
     }
 
     #[test]
     fn uppercase() {
-        let file = File::with_stat(dummy_stat(), &Path::new("/BARRACKS.WAV"), None);
+        let file = new_file(dummy_stat(), "/BARRACKS.WAV");
         assert_eq!(FileType::Lossless, file.get_type())
     }
 
     #[test]
     fn cargo() {
-        let file = File::with_stat(dummy_stat(), &Path::new("/Cargo.toml"), None);
+        let file = new_file(dummy_stat(), "/Cargo.toml");
         assert_eq!(FileType::Immediate, file.get_type())
     }
 
     #[test]
     fn not_cargo() {
-        let file = File::with_stat(dummy_stat(), &Path::new("/cargo.toml"), None);
+        let file = new_file(dummy_stat(), "/cargo.toml");
         assert_eq!(FileType::Normal, file.get_type())
     }
 
