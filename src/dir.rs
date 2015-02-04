@@ -31,11 +31,14 @@ impl Dir {
 
     /// Produce a vector of File objects from an initialised directory,
     /// printing out an error if any of the Files fail to be created.
-    pub fn files(&self) -> Vec<File> {
+    ///
+    /// Passing in `recurse` means that any directories will be scanned for
+    /// their contents, as well.
+    pub fn files(&self, recurse: bool) -> Vec<File> {
         let mut files = vec![];
 
         for path in self.contents.iter() {
-            match File::from_path(path, Some(self)) {
+            match File::from_path(path, Some(self), recurse) {
                 Ok(file) => files.push(file),
                 Err(e)   => println!("{}: {}", path.display(), e),
             }

@@ -5,7 +5,6 @@ use ansi_term::Style;
 #[derive(PartialEq, Debug, Copy)]
 pub enum Column {
     Permissions,
-    FileName,
     FileSize(SizeFormat),
     Blocks,
     User,
@@ -49,7 +48,6 @@ impl Column {
     pub fn header(&self) -> &'static str {
         match *self {
             Column::Permissions => "Permissions",
-            Column::FileName    => "Name",
             Column::FileSize(_) => "Size",
             Column::Blocks      => "Blocks",
             Column::User        => "User",

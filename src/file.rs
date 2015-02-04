@@ -32,6 +32,7 @@ pub struct File<'a> {
     pub ext:   Option<String>,
     pub path:  Path,
     pub stat:  io::FileStat,
+    pub this:  Option<Dir>,
 }
 
 impl<'a> File<'a> {
@@ -39,12 +40,12 @@ impl<'a> File<'a> {
     /// appropriate. Paths specified directly on the command-line have no Dirs.
     ///
     /// This uses lstat instead of stat, which doesn't follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'a Dir>) -> IoResult<File<'a>> {
-        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent))
+    pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> IoResult<File<'a>> {
+        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent, recurse))
     }
 
     /// Create a new File object from the given Stat result, and other data.
-    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>) -> File<'a> {
+    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>, recurse: bool) -> File<'a> {
 
         // The filename to display is the last component of the path. However,
         // the path has no components for `.`, `..`, and `/`, so in these
@@ -58,12 +59,23 @@ impl<'a> File<'a> {
         // replacement characters.
         let filename = String::from_utf8_lossy(bytes);
 
+        // If we are recursing, then the `this` field contains a Dir object
+        // that represents the current File as a directory, if it is a
+        // directory. This is used for the --tree option.
+        let this = if recurse && stat.kind == io::FileType::Directory {
+            Dir::readdir(path).ok()
+        }
+        else {
+            None
+        };
+
         File {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
             name:  filename.to_string(),
             ext:   ext(filename.as_slice()),
+            this:  this,
         }
     }
 
@@ -82,7 +94,6 @@ impl<'a> File<'a> {
     pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
         match *column {
             Permissions  => self.permissions_string(),
-            FileName     => self.file_name_view(),
             FileSize(f)  => self.file_size(f),
             HardLinks    => self.hard_links(),
             Inode        => self.inode(),
@@ -98,15 +109,12 @@ impl<'a> File<'a> {
     ///
     /// It consists of the file name coloured in the appropriate style,
     /// with special formatting for a symlink.
-    pub fn file_name_view(&self) -> Cell {
+    pub fn file_name_view(&self) -> String {
         if self.stat.kind == io::FileType::Symlink {
             self.symlink_file_name_view()
         }
         else {
-            Cell {
-                length: 0,  // This length is ignored (rightmost column)
-                text: self.file_colour().paint(&*self.name).to_string(),
-            }
+            self.file_colour().paint(&*self.name).to_string()
         }
     }
 
@@ -118,7 +126,7 @@ impl<'a> File<'a> {
     /// an error, highlight the target and arrow in red. The error would
     /// be shown out of context, and it's almost always because the
     /// target doesn't exist.
-    fn symlink_file_name_view(&self) -> Cell {
+    fn symlink_file_name_view(&self) -> String {
         let name = &*self.name;
         let style = self.file_colour();
 
@@ -129,26 +137,20 @@ impl<'a> File<'a> {
             };
 
             match self.target_file(&target_path) {
-                Ok(file) => Cell {
-                    length: 0,  // These lengths are never actually used...
-                    text: format!("{} {} {}{}{}",
-                                  style.paint(name),
-                                  GREY.paint("=>"),
-                                  Cyan.paint(target_path.dirname_str().unwrap()),
-                                  Cyan.paint("/"),
-                                  file.file_colour().paint(file.name.as_slice())),
-                },
-                Err(filename) => Cell {
-                    length: 0,  // ...because the rightmost column lengths are ignored!
-                    text: format!("{} {} {}",
-                                  style.paint(name),
-                                  Red.paint("=>"),
-                                  Red.underline().paint(filename.as_slice())),
-                },
+                Ok(file) => format!("{} {} {}{}{}",
+                                   style.paint(name),
+                                   GREY.paint("=>"),
+                                   Cyan.paint(target_path.dirname_str().unwrap()),
+                                   Cyan.paint("/"),
+                                   file.file_colour().paint(file.name.as_slice())),
+                Err(filename) => format!("{} {} {}",
+                                         style.paint(name),
+                                         Red.paint("=>"),
+                                         Red.underline().paint(filename.as_slice())),
             }
         }
         else {
-            Cell::paint(style, name)
+            style.paint(name).to_string()
         }
     }
 
@@ -184,6 +186,7 @@ impl<'a> File<'a> {
                 stat:  stat,
                 name:  filename.to_string(),
                 ext:   ext(filename.as_slice()),
+                this:  None,
             })
         }
         else {
