@@ -4,7 +4,7 @@ use std::iter::{AdditiveIterator, repeat};
 use column::{Column, Cell};
 use column::Alignment::Left;
 use dir::Dir;
-use file::File;
+use file::{File, GREY};
 use options::{Columns, FileFilter};
 use users::OSUsers;
 
@@ -138,7 +138,9 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, fi
         let row = Row {
             depth: 0,
             cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect(),
-            name: Plain.underline().paint("Name").to_string()
+            name: Plain.underline().paint("Name").to_string(),
+            last: false,
+            children: false,
         };
 
         table.insert(0, row);
@@ -148,6 +150,8 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, fi
         .map(|n| table.iter().map(|row| row.cells[n].length).max().unwrap_or(0))
         .collect();
 
+    let mut stack = Vec::new();
+
     for row in table.iter() {
         for (num, column) in columns.iter().enumerate() {
             let padding = column_widths[num] - row.cells[num].length;
@@ -155,24 +159,35 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, fi
         }
 
         if tree {
-            for _ in range(0, row.depth) {
-                print!("#");
+            stack.resize(row.depth  + 1, "├──");
+            stack[row.depth ] = if row.last { "└──" } else { "├──" };
+
+            for i in range(1, row.depth + 1) {
+                print!("{}", GREY.paint(stack[i ]));
             }
 
-            print!(" ");
+            if row.children {
+                stack[row.depth ] = if row.last { "   " } else { "│  " };
+            }
+
+            if row.depth != 0 {
+                print!(" ");
+            }
         }
 
         print!("{}\n", row.name);
     }
 }
 
-fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<Row>, src: &[File], depth: u8, filter: FileFilter) {
-    for file in src.iter() {
+fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut Vec<Row>, src: &[File], depth: usize, filter: FileFilter) {
+    for (index, file) in src.iter().enumerate() {
 
         let row = Row {
             depth: depth,
             cells: columns.iter().map(|c| file.display(c, cache)).collect(),
             name:  file.file_name_view(),
+            last: index == src.len() - 1,
+            children: file.this.is_some(),
         };
 
         dest.push(row);
@@ -187,7 +202,9 @@ fn get_files(columns: &[Column], cache: &mut OSUsers, recurse: bool, dest: &mut 
 }
 
 struct Row {
-    pub depth: u8,
+    pub depth: usize,
     pub cells: Vec<Cell>,
     pub name: String,
+    pub last: bool,
+    pub children: bool,
 }
