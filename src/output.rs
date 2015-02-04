@@ -29,7 +29,7 @@ impl View {
 
 /// The lines view literally just displays each file, line-by-line.
 fn lines_view(files: &[File]) {
-    for file in files.iter() {
+    for file in files {
         println!("{}", file.file_name_view());
     }
 }
@@ -40,7 +40,7 @@ fn fit_into_grid(across: bool, console_width: usize, files: &[File]) -> Option<(
 
     // Instead of numbers of columns, try to find the fewest number of *lines*
     // that the output will fit in.
-    for num_lines in range(1, files.len()) {
+    for num_lines in 1 .. files.len() {
 
         // The number of columns is the number of files divided by the number
         // of lines, *rounded up*.
@@ -88,8 +88,8 @@ fn fit_into_grid(across: bool, console_width: usize, files: &[File]) -> Option<(
 
 fn grid_view(across: bool, console_width: usize, files: &[File]) {
     if let Some((num_lines, widths)) = fit_into_grid(across, console_width, files) {
-        for y in range(0, num_lines) {
-            for x in range(0, widths.len()) {
+        for y in 0 .. num_lines {
+            for x in 0 .. widths.len() {
                 let num = if across {
                     y * widths.len() + x
                 }
@@ -152,7 +152,7 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, fi
 
     let mut stack = Vec::new();
 
-    for row in table.iter() {
+    for row in table {
         for (num, column) in columns.iter().enumerate() {
             let padding = column_widths[num] - row.cells[num].length;
             print!("{} ", column.alignment().pad_string(&row.cells[num].text, padding));
@@ -162,7 +162,7 @@ fn details_view(columns: &[Column], files: &[File], header: bool, tree: bool, fi
             stack.resize(row.depth  + 1, "├──");
             stack[row.depth ] = if row.last { "└──" } else { "├──" };
 
-            for i in range(1, row.depth + 1) {
+            for i in 1 .. row.depth + 1 {
                 print!("{}", GREY.paint(stack[i ]));
             }
 
