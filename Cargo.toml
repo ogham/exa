@@ -7,16 +7,16 @@ authors = [ "ogham@bsago.me" ]
 name = "exa"
 
 [dependencies]
-ansi_term = "0.4.2"
-getopts = "0.2.0"
-natord = "1.0.6"
-number_prefix = "0.2.1"
-users = "0.2.1"
+ansi_term = "0.4.4"
+getopts = "0.2.1"
+natord = "1.0.7"
+number_prefix = "0.2.3"
+users = "0.2.3"
 
 [features]
 default = [ "git" ]
 git = [ "git2" ]
 
 [dependencies.git2]
-version = "0.1.12"
+version = "0.1.13"
 optional = true
