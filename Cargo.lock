@@ -2,7 +2,7 @@
 name = "exa"
 version = "0.1.0"
 dependencies = [
- "ansi_term 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ansi_term 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -12,7 +12,7 @@ dependencies = [
 
 [[package]]
 name = "ansi_term"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "regex 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)",
