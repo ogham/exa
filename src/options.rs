@@ -175,7 +175,7 @@ pub enum Misfire {
 
 impl Misfire {
     /// The OS return code this misfire should signify.
-    pub fn error_code(&self) -> isize {
+    pub fn error_code(&self) -> i32 {
         if let Help(_) = *self { 2 }
                           else { 3 }
     }

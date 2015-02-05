@@ -1,4 +1,4 @@
-#![feature(collections, core, io, libc, os, path, std_misc)]
+#![feature(collections, core, env, io, libc, os, path, std_misc)]
 
 extern crate ansi_term;
 extern crate getopts;
@@ -9,8 +9,8 @@ extern crate users;
 #[cfg(feature="git")]
 extern crate git2;
 
+use std::env;
 use std::old_io::{fs, FileType};
-use std::os::{args, set_exit_status};
 
 use dir::Dir;
 use file::File;
@@ -135,7 +135,7 @@ impl<'a> Exa<'a> {
 }
 
 fn main() {
-    let args: Vec<String> = args();
+    let args = args();
 
     match Options::getopts(args.tail()) {
         Ok((options, paths)) => {
@@ -146,7 +146,11 @@ fn main() {
         },
         Err(e) => {
             println!("{}", e);
-            set_exit_status(e.error_code());
+            env::set_exit_status(e.error_code());
         },
     };
+}
+
+fn args() -> Vec<String> {
+    env::args().map(|arg| arg.to_string_lossy().into_owned()).collect()
 }
