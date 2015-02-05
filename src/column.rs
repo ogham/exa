@@ -2,6 +2,8 @@ use std::iter::repeat;
 
 use ansi_term::Style;
 
+use options::SizeFormat;
+
 #[derive(PartialEq, Debug, Copy)]
 pub enum Column {
     Permissions,
@@ -13,13 +15,6 @@ pub enum Column {
     Inode,
 
     GitStatus,
-}
-
-#[derive(PartialEq, Debug, Copy)]
-pub enum SizeFormat {
-    DecimalBytes,
-    BinaryBytes,
-    JustBytes,
 }
 
 /// Each column can pick its own **Alignment**. Usually, numbers are

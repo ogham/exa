@@ -10,10 +10,11 @@ use users::Users;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
-use column::{Column, SizeFormat, Cell};
+use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
+use options::SizeFormat;
 
 /// This grey value is directly in between white and black, so it's guaranteed
 /// to show up on either backgrounded terminal.

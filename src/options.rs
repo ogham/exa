@@ -1,8 +1,8 @@
 use dir::Dir;
 use file::File;
-use column::{Column, SizeFormat};
+use column::Column;
 use column::Column::*;
-use output::View;
+use output::{Grid, Details};
 use term::dimensions;
 
 use std::ascii::AsciiExt;
@@ -16,12 +16,11 @@ use self::Misfire::*;
 
 /// The *Options* struct represents a parsed version of the user's
 /// command-line options.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy)]
 pub struct Options {
     pub dir_action: DirAction,
-    pub path_strs: Vec<String>,
     pub filter: FileFilter,
-    view: View,
+    pub view: View,
 }
 
 #[derive(PartialEq, Debug, Copy)]
@@ -31,10 +30,17 @@ pub struct FileFilter {
     sort_field: SortField,
 }
 
+#[derive(PartialEq, Copy, Debug)]
+pub enum View {
+    Details(Details),
+    Lines,
+    Grid(Grid),
+}
+
 impl Options {
 
     /// Call getopts on the given slice of command-line strings.
-    pub fn getopts(args: &[String]) -> Result<Options, Misfire> {
+    pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
         opts.optflag("1", "oneline",   "display one entry per line");
         opts.optflag("a", "all",       "show dot-files");
@@ -68,25 +74,28 @@ impl Options {
             None => SortField::Name,
         };
 
-        Ok(Options {
-            dir_action: try!(dir_action(&matches)),
-            path_strs:  if matches.free.is_empty() { vec![ ".".to_string() ] } else { matches.free.clone() },
-            view:       try!(view(&matches)),
-            filter:     FileFilter {
-                reverse:         matches.opt_present("reverse"),
-                show_invisibles: matches.opt_present("all"),
-                sort_field:      sort_field,
-            },
-        })
+        let filter = FileFilter {
+            reverse:         matches.opt_present("reverse"),
+            show_invisibles: matches.opt_present("all"),
+            sort_field:      sort_field,
+        };
+
+        let path_strs = if matches.free.is_empty() {
+            vec![ ".".to_string() ]
+        }
+        else {
+            matches.free.clone()
+        };
+
+        Ok((Options {
+            dir_action: try!(DirAction::deduce(&matches)),
+            view:       try!(View::deduce(&matches, filter)),
+            filter:     filter,
+        }, path_strs))
     }
 
     pub fn transform_files<'a>(&self, files: &mut Vec<File<'a>>) {
         self.filter.transform_files(files)
-    }
-
-    /// Display the files using this Option's View.
-    pub fn view(&self, dir: Option<&Dir>, files: &[File], filter: FileFilter) {
-        self.view.view(dir, files, filter)
     }
 }
 
@@ -117,12 +126,6 @@ impl FileFilter {
             files.reverse();
         }
     }
-}
-
-/// What to do when encountering a directory?
-#[derive(PartialEq, Debug, Copy)]
-pub enum DirAction {
-    AsFile, List, Recurse, Tree
 }
 
 /// User-supplied field to sort by.
@@ -190,77 +193,111 @@ impl fmt::Display for Misfire {
     }
 }
 
-/// Turns the Getopts results object into a View object.
-fn view(matches: &getopts::Matches) -> Result<View, Misfire> {
-    if matches.opt_present("long") {
-        if matches.opt_present("across") {
-            Err(Misfire::Useless("across", true, "long"))
+impl View {
+    pub fn deduce(matches: &getopts::Matches, filter: FileFilter) -> Result<View, Misfire> {
+        if matches.opt_present("long") {
+            if matches.opt_present("across") {
+                Err(Misfire::Useless("across", true, "long"))
+            }
+            else if matches.opt_present("oneline") {
+                Err(Misfire::Useless("oneline", true, "long"))
+            }
+            else {
+                let details = Details {
+                        columns: try!(Columns::deduce(matches)),
+                        header: matches.opt_present("tree"),
+                        tree: matches.opt_present("recurse"),
+                        filter: filter,
+                };
+
+                Ok(View::Details(details))
+            }
+        }
+        else if matches.opt_present("binary") {
+            Err(Misfire::Useless("binary", false, "long"))
+        }
+        else if matches.opt_present("bytes") {
+            Err(Misfire::Useless("bytes", false, "long"))
+        }
+        else if matches.opt_present("inode") {
+            Err(Misfire::Useless("inode", false, "long"))
+        }
+        else if matches.opt_present("links") {
+            Err(Misfire::Useless("links", false, "long"))
+        }
+        else if matches.opt_present("header") {
+            Err(Misfire::Useless("header", false, "long"))
+        }
+        else if matches.opt_present("blocks") {
+            Err(Misfire::Useless("blocks", false, "long"))
         }
         else if matches.opt_present("oneline") {
-            Err(Misfire::Useless("oneline", true, "long"))
+            if matches.opt_present("across") {
+                Err(Misfire::Useless("across", true, "oneline"))
+            }
+            else {
+                Ok(View::Lines)
+            }
         }
         else {
-            Ok(View::Details(try!(Columns::new(matches)), matches.opt_present("header"), matches.opt_present("tree")))
-        }
-    }
-    else if matches.opt_present("binary") {
-        Err(Misfire::Useless("binary", false, "long"))
-    }
-    else if matches.opt_present("bytes") {
-        Err(Misfire::Useless("bytes", false, "long"))
-    }
-    else if matches.opt_present("inode") {
-        Err(Misfire::Useless("inode", false, "long"))
-    }
-    else if matches.opt_present("links") {
-        Err(Misfire::Useless("links", false, "long"))
-    }
-    else if matches.opt_present("header") {
-        Err(Misfire::Useless("header", false, "long"))
-    }
-    else if matches.opt_present("blocks") {
-        Err(Misfire::Useless("blocks", false, "long"))
-    }
-    else if matches.opt_present("oneline") {
-        if matches.opt_present("across") {
-            Err(Misfire::Useless("across", true, "oneline"))
-        }
-        else {
-            Ok(View::Lines)
-        }
-    }
-    else {
-        match dimensions() {
-            None => Ok(View::Lines),
-            Some((width, _)) => Ok(View::Grid(matches.opt_present("across"), width)),
+            if let Some((width, _)) = dimensions() {
+                let grid = Grid {
+                    across: matches.opt_present("across"),
+                    console_width: width
+                };
+
+                Ok(View::Grid(grid))
+            }
+            else {
+                // If the terminal width couldn't be matched for some reason, such
+                // as the program's stdout being connected to a file, then
+                // fallback to the lines view.
+                Ok(View::Lines)
+            }
         }
     }
 }
 
-/// Finds out which file size the user has asked for.
-fn file_size(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
-    let binary = matches.opt_present("binary");
-    let bytes  = matches.opt_present("bytes");
+#[derive(PartialEq, Debug, Copy)]
+pub enum SizeFormat {
+    DecimalBytes,
+    BinaryBytes,
+    JustBytes,
+}
 
-    match (binary, bytes) {
-        (true,  true ) => Err(Misfire::Conflict("binary", "bytes")),
-        (true,  false) => Ok(SizeFormat::BinaryBytes),
-        (false, true ) => Ok(SizeFormat::JustBytes),
-        (false, false) => Ok(SizeFormat::DecimalBytes),
+impl SizeFormat {
+    pub fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
+        let binary = matches.opt_present("binary");
+        let bytes  = matches.opt_present("bytes");
+
+        match (binary, bytes) {
+            (true,  true ) => Err(Misfire::Conflict("binary", "bytes")),
+            (true,  false) => Ok(SizeFormat::BinaryBytes),
+            (false, true ) => Ok(SizeFormat::JustBytes),
+            (false, false) => Ok(SizeFormat::DecimalBytes),
+        }
     }
 }
 
-fn dir_action(matches: &getopts::Matches) -> Result<DirAction, Misfire> {
-    let recurse = matches.opt_present("recurse");
-    let list    = matches.opt_present("list-dirs");
-    let tree    = matches.opt_present("tree");
+/// What to do when encountering a directory?
+#[derive(PartialEq, Debug, Copy)]
+pub enum DirAction {
+    AsFile, List, Recurse, Tree
+}
 
-    match (recurse, list, tree) {
-        (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
-        (true,  false, false) => Ok(DirAction::Recurse),
-        (true,  false, true ) => Ok(DirAction::Tree),
-        (false, true,  _    ) => Ok(DirAction::AsFile),
-        (false, false, _    ) => Ok(DirAction::List),
+impl DirAction {
+    pub fn deduce(matches: &getopts::Matches) -> Result<DirAction, Misfire> {
+        let recurse = matches.opt_present("recurse");
+        let list    = matches.opt_present("list-dirs");
+        let tree    = matches.opt_present("tree");
+
+        match (recurse, list, tree) {
+            (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
+            (true,  false, false) => Ok(DirAction::Recurse),
+            (true,  false, true ) => Ok(DirAction::Tree),
+            (false, true,  _    ) => Ok(DirAction::AsFile),
+            (false, false, _    ) => Ok(DirAction::List),
+        }
     }
 }
 
@@ -274,9 +311,9 @@ pub struct Columns {
 }
 
 impl Columns {
-    pub fn new(matches: &getopts::Matches) -> Result<Columns, Misfire> {
+    pub fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
-            size_format: try!(file_size(matches)),
+            size_format: try!(SizeFormat::deduce(matches)),
             inode:  matches.opt_present("inode"),
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
@@ -327,7 +364,7 @@ mod test {
     use super::Misfire;
     use super::Misfire::*;
 
-    fn is_helpful(misfire: Result<Options, Misfire>) -> bool {
+    fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
             Err(Help(_)) => true,
             _            => false,
@@ -348,15 +385,13 @@ mod test {
 
     #[test]
     fn files() {
-        let opts = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]).unwrap();
-        let args: Vec<String> = opts.path_strs;
+        let args = Options::getopts(&[ "this file".to_string(), "that file".to_string() ]).unwrap().1;
         assert_eq!(args, vec![ "this file".to_string(), "that file".to_string() ])
     }
 
     #[test]
     fn no_args() {
-        let opts = Options::getopts(&[]).unwrap();
-        let args: Vec<String> = opts.path_strs;
+        let args = Options::getopts(&[]).unwrap().1;
         assert_eq!(args, vec![ ".".to_string() ])
     }
 
