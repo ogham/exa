@@ -3,8 +3,8 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "getopts 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "git2 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "getopts 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git2 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "number_prefix 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "users 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -26,7 +26,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "getopts"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "log 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -34,17 +34,17 @@ dependencies = [
 
 [[package]]
 name = "git2"
-version = "0.1.15"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libgit2-sys 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "url 0.2.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "libc"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -143,7 +143,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "url"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -155,6 +155,6 @@ name = "users"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
