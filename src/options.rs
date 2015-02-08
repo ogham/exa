@@ -205,7 +205,7 @@ impl View {
             else {
                 let details = Details {
                         columns: try!(Columns::deduce(matches)),
-                        header: matches.opt_present("tree"),
+                        header: matches.opt_present("header"),
                         tree: matches.opt_present("recurse"),
                         filter: filter,
                 };
