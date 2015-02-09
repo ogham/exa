@@ -3,8 +3,8 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "datetime 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "datetime_macros 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "datetime 0.1.2 (git+https://github.com/ogham/rust-datetime.git)",
+ "datetime_macros 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -29,7 +29,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "datetime"
-version = "0.1.1"
+version = "0.1.2"
+source = "git+https://github.com/ogham/rust-datetime.git#c108628eb3519535821bc7907f2305643465acf5"
+dependencies = [
+ "pad 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex_macros 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "datetime"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "pad 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -39,10 +49,10 @@ dependencies = [
 
 [[package]]
 name = "datetime_macros"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "datetime 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "datetime 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pad 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -56,7 +66,7 @@ name = "getopts"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "log 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -113,7 +123,7 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
