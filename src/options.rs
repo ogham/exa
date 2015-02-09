@@ -56,7 +56,7 @@ impl Options {
         opts.optflag("R", "recurse",   "recurse into directories");
         opts.optopt ("s", "sort",      "field to sort by", "WORD");
         opts.optflag("S", "blocks",    "show number of file system blocks");
-        opts.optopt ("t", "time",      "timestamp field to show", "WORD");
+        opts.optopt ("t", "time",      "which timestamp to show for a file", "WORD");
         opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
         opts.optflag("x", "across",    "sort multi-column view entries across");
         opts.optflag("?", "help",      "show list of command-line options");
