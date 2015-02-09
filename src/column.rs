@@ -8,7 +8,7 @@ use options::{SizeFormat, TimeType};
 pub enum Column {
     Permissions,
     FileSize(SizeFormat),
-    Timestamp(TimeType),
+    Timestamp(TimeType, i64),
     Blocks,
     User,
     Group,
@@ -43,15 +43,15 @@ impl Column {
     /// to have a header row printed.
     pub fn header(&self) -> &'static str {
         match *self {
-            Column::Permissions  => "Permissions",
-            Column::FileSize(_)  => "Size",
-            Column::Timestamp(t) => t.header(),
-            Column::Blocks       => "Blocks",
-            Column::User         => "User",
-            Column::Group        => "Group",
-            Column::HardLinks    => "Links",
-            Column::Inode        => "inode",
-            Column::GitStatus    => "Git",
+            Column::Permissions     => "Permissions",
+            Column::FileSize(_)     => "Size",
+            Column::Timestamp(t, _) => t.header(),
+            Column::Blocks          => "Blocks",
+            Column::User            => "User",
+            Column::Group           => "Group",
+            Column::HardLinks       => "Links",
+            Column::Inode           => "inode",
+            Column::GitStatus       => "Git",
         }
     }
 }
