@@ -56,6 +56,7 @@ impl Options {
         opts.optflag("R", "recurse",   "recurse into directories");
         opts.optopt ("s", "sort",      "field to sort by", "WORD");
         opts.optflag("S", "blocks",    "show number of file system blocks");
+        opts.optopt ("t", "time",      "timestamp field to show", "WORD");
         opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
         opts.optflag("x", "across",    "sort multi-column view entries across");
         opts.optflag("?", "help",      "show list of command-line options");
@@ -205,7 +206,7 @@ impl View {
             else {
                 let details = Details {
                         columns: try!(Columns::deduce(matches)),
-                        header: matches.opt_present("tree"),
+                        header: matches.opt_present("header"),
                         tree: matches.opt_present("recurse"),
                         filter: filter,
                 };
@@ -279,6 +280,45 @@ impl SizeFormat {
     }
 }
 
+#[derive(PartialEq, Debug, Copy)]
+pub enum TimeType {
+    FileAccessed,
+    FileModified,
+    FileCreated,
+}
+
+impl TimeType {
+
+    /// Find which field to use based on a user-supplied word.
+    fn deduce(matches: &getopts::Matches) -> Result<TimeType, Misfire> {
+        let possible_word = matches.opt_str("time");
+
+        if let Some(word) = possible_word {
+            match word.as_slice() {
+                "mod" | "modified"  => Ok(TimeType::FileModified),
+                "acc" | "accessed"  => Ok(TimeType::FileAccessed),
+                "cr"  | "created"   => Ok(TimeType::FileCreated),
+                field   => Err(TimeType::none(field)),
+            }
+        }
+        else {
+            Ok(TimeType::FileModified)
+        }
+    }
+
+    /// How to display an error when the word didn't match with anything.
+    fn none(field: &str) -> Misfire {
+        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--time {}", field)))
+    }
+
+    pub fn header(&self) -> &'static str {
+        match *self {
+            TimeType::FileAccessed => "Date Accessed",
+            TimeType::FileModified => "Date Modified",
+            TimeType::FileCreated  => "Date Created",
+        }
+    }
+}
 /// What to do when encountering a directory?
 #[derive(PartialEq, Debug, Copy)]
 pub enum DirAction {
@@ -304,6 +344,7 @@ impl DirAction {
 #[derive(PartialEq, Copy, Debug)]
 pub struct Columns {
     size_format: SizeFormat,
+    time_type: TimeType,
     inode: bool,
     links: bool,
     blocks: bool,
@@ -314,6 +355,7 @@ impl Columns {
     pub fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
             size_format: try!(SizeFormat::deduce(matches)),
+            time_type:   try!(TimeType::deduce(matches)),
             inode:  matches.opt_present("inode"),
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
@@ -345,6 +387,8 @@ impl Columns {
         if self.group {
             columns.push(Group);
         }
+
+        columns.push(Timestamp(self.time_type));
 
         if cfg!(feature="git") {
             if let Some(d) = dir {

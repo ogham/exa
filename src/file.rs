@@ -8,13 +8,18 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use users::Users;
 
+use pad::Alignment;
+
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
+use datetime;
+use datetime::local::LocalDateTime;
 
 use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
-use options::SizeFormat;
+use options::{SizeFormat, TimeType};
 
 /// This grey value is directly in between white and black, so it's guaranteed
 /// to show up on either backgrounded terminal.
@@ -96,6 +101,7 @@ impl<'a> File<'a> {
         match *column {
             Permissions  => self.permissions_string(),
             FileSize(f)  => self.file_size(f),
+            Timestamp(t) => self.timestamp(t),
             HardLinks    => self.hard_links(),
             Inode        => self.inode(),
             Blocks       => self.blocks(),
@@ -295,6 +301,20 @@ impl<'a> File<'a> {
                 }
             }
         }
+    }
+
+    fn timestamp(&self, time_type: TimeType) -> Cell {
+        let format = date_format!("{:Y} {10>:M} {2>:D}");
+
+        // Need to convert these values from milliseconds into seconds.
+        let time_in_seconds = match time_type {
+            TimeType::FileAccessed => self.stat.accessed,
+            TimeType::FileModified => self.stat.modified,
+            TimeType::FileCreated  => self.stat.created,
+        } as i64 / 1000;
+
+        let date = LocalDateTime::at(time_in_seconds).date();
+        Cell::paint(Blue.normal(), format.format(date).as_slice())
     }
 
     /// This file's type, represented by a coloured character.

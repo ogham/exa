@@ -1,9 +1,14 @@
-#![feature(collections, core, env, io, libc, os, path, std_misc)]
+#![feature(collections, core, env, io, libc, os, path, plugin, std_misc)]
+
+#[plugin] #[no_link]
+extern crate datetime_macros;
 
 extern crate ansi_term;
+extern crate datetime;
 extern crate getopts;
 extern crate natord;
 extern crate number_prefix;
+extern crate pad;
 extern crate users;
 
 #[cfg(feature="git")]
