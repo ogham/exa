@@ -304,7 +304,7 @@ impl<'a> File<'a> {
     }
 
     fn timestamp(&self, time_type: TimeType) -> Cell {
-        let format = date_format!("{:Y} {10>:M} {2>:D}");
+        let format = date_format!("{:Y} {:M} {2>:D}");
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
