@@ -50,8 +50,8 @@ impl Options {
         opts.optflag("g", "group",     "show group as well as user");
         opts.optflag("h", "header",    "show a header row at the top");
         opts.optflag("H", "links",     "show number of hard links");
-        opts.optflag("l", "long",      "display extended details and attributes");
         opts.optflag("i", "inode",     "show each file's inode number");
+        opts.optflag("l", "long",      "display extended details and attributes");
         opts.optflag("r", "reverse",   "reverse order of files");
         opts.optflag("R", "recurse",   "recurse into directories");
         opts.optopt ("s", "sort",      "field to sort by", "WORD");
