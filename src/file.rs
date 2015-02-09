@@ -304,7 +304,7 @@ impl<'a> File<'a> {
     }
 
     fn timestamp(&self, time_type: TimeType) -> Cell {
-        let format = date_format!("{:Y} {:M} {2>:D}");
+        let format = date_format!("{:Y} {:M} {2>:D} {2>:h}:{02>:m}");
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
@@ -313,7 +313,7 @@ impl<'a> File<'a> {
             TimeType::FileCreated  => self.stat.created,
         } as i64 / 1000;
 
-        let date = LocalDateTime::at(time_in_seconds).date();
+        let date = LocalDateTime::at(time_in_seconds);
         Cell::paint(Blue.normal(), format.format(date).as_slice())
     }
 
