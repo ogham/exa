@@ -240,6 +240,9 @@ impl View {
         else if matches.opt_present("time") {
             Err(Misfire::Useless("time", false, "long"))
         }
+        else if matches.opt_present("tree") {
+            Err(Misfire::Useless("tree", false, "long"))
+        }
         else if matches.opt_present("oneline") {
             if matches.opt_present("across") {
                 Err(Misfire::Useless("across", true, "oneline"))
