@@ -104,9 +104,9 @@ impl<'a> File<'a> {
             Permissions     => self.permissions_string(),
             FileSize(f)     => self.file_size(f, locale),
             Timestamp(t, y) => self.timestamp(t, y),
-            HardLinks       => self.hard_links(),
+            HardLinks       => self.hard_links(locale),
             Inode           => self.inode(),
-            Blocks          => self.blocks(),
+            Blocks          => self.blocks(locale),
             User            => self.user(users_cache),
             Group           => self.group(users_cache),
             GitStatus       => self.git_status(),
@@ -204,9 +204,9 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of hard links as a coloured string.
-    fn hard_links(&self) -> Cell {
+    fn hard_links(&self, locale: &locale::Numeric) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        Cell::paint(style, &*self.stat.unstable.nlink.to_string())
+        Cell::paint(style, &locale.format_int(self.stat.unstable.nlink as isize)[])
     }
 
     /// Whether this is a regular file with more than one link.
@@ -224,9 +224,9 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
-    fn blocks(&self) -> Cell {
+    fn blocks(&self, locale: &locale::Numeric) -> Cell {
         if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
-            Cell::paint(Cyan.normal(), &*self.stat.unstable.blocks.to_string())
+            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.unstable.blocks as isize)[])
         }
         else {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
