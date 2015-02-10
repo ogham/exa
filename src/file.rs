@@ -287,16 +287,13 @@ impl<'a> File<'a> {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => {
-                    return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[])
-                },
+                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[]),
             };
-
 
             match result {
                 Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),
                 Prefixed(prefix, n) => {
-                    let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
+                    let number = if n < 10f64 { locale.format_float(n, 1, false) } else { locale.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
                     Cell {
@@ -450,6 +447,8 @@ pub mod test {
     pub use ansi_term::Style::Plain;
     pub use ansi_term::Colour::Yellow;
 
+    pub use locale;
+
     #[test]
     fn extension() {
         assert_eq!(Some("dat".to_string()), super::ext("fester.dat"))
@@ -492,6 +491,10 @@ pub mod test {
         }
     }
 
+    pub fn dummy_locale() -> locale::Numeric {
+        locale::Numeric::default()
+    }
+
     mod users {
         use super::*;
 
@@ -506,7 +509,7 @@ pub mod test {
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
 
             let cell = Cell::paint(Yellow.bold(), "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -519,7 +522,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(1000);
 
             let cell = Cell::paint(Yellow.bold(), "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -533,7 +536,7 @@ pub mod test {
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
 
             let cell = Cell::paint(Plain, "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -546,7 +549,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(3);
 
             let cell = Cell::paint(Plain, "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
     }
 
@@ -564,7 +567,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
 
             let cell = Cell::paint(Plain, "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -577,7 +580,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(3);
 
             let cell = Cell::paint(Plain, "100");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -592,7 +595,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
 
             let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -607,7 +610,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
 
             let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
     }
 }
