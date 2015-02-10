@@ -10,6 +10,8 @@ use users::Users;
 
 use pad::Alignment;
 
+use locale;
+
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
 use datetime;
@@ -97,10 +99,10 @@ impl<'a> File<'a> {
     }
 
     /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
+    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U, locale: &locale::Numeric) -> Cell {
         match *column {
             Permissions     => self.permissions_string(),
-            FileSize(f)     => self.file_size(f),
+            FileSize(f)     => self.file_size(f, locale),
             Timestamp(t, y) => self.timestamp(t, y),
             HardLinks       => self.hard_links(),
             Inode           => self.inode(),
@@ -277,7 +279,7 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    fn file_size(&self, size_format: SizeFormat) -> Cell {
+    fn file_size(&self, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
         if self.stat.kind == io::FileType::Directory {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
         }
@@ -285,8 +287,11 @@ impl<'a> File<'a> {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &*self.stat.size.to_string())
+                SizeFormat::JustBytes    => {
+                    return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[])
+                },
             };
+
 
             match result {
                 Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),

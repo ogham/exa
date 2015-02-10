@@ -6,6 +6,7 @@ extern crate datetime_macros;
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
+extern crate locale;
 extern crate natord;
 extern crate number_prefix;
 extern crate pad;
