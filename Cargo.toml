@@ -8,9 +8,10 @@ name = "exa"
 
 [dependencies]
 ansi_term = "0.4.5"
-datetime_macros = "0.1.2"
+datetime = "0.1.3"
+#datetime_macros = "0.1.2"
 getopts = "0.2.1"
-locale = "0.1.1"
+locale = "0.1.2"
 natord = "1.0.7"
 number_prefix = "0.2.3"
 pad = "0.1.1"
@@ -23,6 +24,3 @@ git = [ "git2" ]
 [dependencies.git2]
 version = "0.1.13"
 optional = true
-
-[dependencies.datetime]
-git = "https://github.com/ogham/rust-datetime.git"

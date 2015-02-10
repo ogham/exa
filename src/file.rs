@@ -8,14 +8,13 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use users::Users;
 
-use pad::Alignment;
-
 use locale;
+use output::details::UserLocale;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
-use datetime;
 use datetime::local::{LocalDateTime, DatePiece};
+use datetime::format::{DateFormat};
 
 use column::{Column, Cell};
 use column::Column::*;
@@ -99,14 +98,14 @@ impl<'a> File<'a> {
     }
 
     /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U, locale: &locale::Numeric) -> Cell {
+    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U, locale: &UserLocale) -> Cell {
         match *column {
             Permissions     => self.permissions_string(),
-            FileSize(f)     => self.file_size(f, locale),
-            Timestamp(t, y) => self.timestamp(t, y),
-            HardLinks       => self.hard_links(locale),
+            FileSize(f)     => self.file_size(f, &locale.numeric),
+            Timestamp(t, y) => self.timestamp(t, y, &locale.time),
+            HardLinks       => self.hard_links(&locale.numeric),
             Inode           => self.inode(),
-            Blocks          => self.blocks(locale),
+            Blocks          => self.blocks(&locale.numeric),
             User            => self.user(users_cache),
             Group           => self.group(users_cache),
             GitStatus       => self.git_status(),
@@ -305,7 +304,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn timestamp(&self, time_type: TimeType, current_year: i64) -> Cell {
+    fn timestamp(&self, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
@@ -317,13 +316,13 @@ impl<'a> File<'a> {
         let date = LocalDateTime::at(time_in_seconds);
 
         let format = if date.year() == current_year {
-                date_format!("{2>:D} {:M} {2>:h}:{02>:m}")
+                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
             }
             else {
-                date_format!("{2>:D} {:M} {4>:Y}")
+                DateFormat::parse("{2>:D} {:M} {4>:Y}").unwrap()
             };
 
-        Cell::paint(Blue.normal(), format.format(date).as_slice())
+        Cell::paint(Blue.normal(), format.format(date, locale).as_slice())
     }
 
     /// This file's type, represented by a coloured character.
@@ -447,7 +446,7 @@ pub mod test {
     pub use ansi_term::Style::Plain;
     pub use ansi_term::Colour::Yellow;
 
-    pub use locale;
+    pub use output::details::UserLocale;
 
     #[test]
     fn extension() {
@@ -491,8 +490,8 @@ pub mod test {
         }
     }
 
-    pub fn dummy_locale() -> locale::Numeric {
-        locale::Numeric::default()
+    pub fn dummy_locale() -> UserLocale {
+        UserLocale::default()
     }
 
     mod users {

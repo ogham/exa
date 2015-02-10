@@ -1,5 +1,5 @@
 mod grid;
-mod details;
+pub mod details;
 mod lines;
 
 pub use self::grid::Grid;

@@ -25,7 +25,7 @@ impl Details {
         // padding the fields during output.
 
         let columns = self.columns.for_dir(dir);
-        let locale = locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::default());
+        let locale = UserLocale::new();
         let mut cache = OSUsers::empty_cache();
         let mut table = Vec::new();
         self.get_files(&columns[], &mut cache, &locale, &mut table, files, 0);
@@ -75,7 +75,7 @@ impl Details {
         }
     }
 
-    fn get_files(&self, columns: &[Column], cache: &mut OSUsers, locale: &locale::Numeric, dest: &mut Vec<Row>, src: &[File], depth: usize) {
+    fn get_files(&self, columns: &[Column], cache: &mut OSUsers, locale: &UserLocale, dest: &mut Vec<Row>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
 
             let row = Row {
@@ -105,4 +105,25 @@ struct Row {
     pub name: String,
     pub last: bool,
     pub children: bool,
+}
+
+pub struct UserLocale {
+    pub time: locale::Time,
+    pub numeric: locale::Numeric,
+}
+
+impl UserLocale {
+    pub fn new() -> UserLocale {
+        UserLocale {
+            time: locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::default()),
+            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::default()),
+        }
+    }
+
+    pub fn default() -> UserLocale {
+        UserLocale {
+            time: locale::Time::default(),
+            numeric: locale::Numeric::default(),
+        }
+    }
 }

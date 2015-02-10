@@ -1,8 +1,5 @@
 #![feature(collections, core, env, io, libc, os, path, plugin, std_misc)]
 
-#[plugin] #[no_link]
-extern crate datetime_macros;
-
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
