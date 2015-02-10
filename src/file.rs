@@ -8,13 +8,18 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use users::Users;
 
+use pad::Alignment;
+
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
+use datetime;
+use datetime::local::{LocalDateTime, DatePiece};
 
 use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
-use options::SizeFormat;
+use options::{SizeFormat, TimeType};
 
 /// This grey value is directly in between white and black, so it's guaranteed
 /// to show up on either backgrounded terminal.
@@ -94,14 +99,15 @@ impl<'a> File<'a> {
     /// Get the data for a column, formatted as a coloured string.
     pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
         match *column {
-            Permissions  => self.permissions_string(),
-            FileSize(f)  => self.file_size(f),
-            HardLinks    => self.hard_links(),
-            Inode        => self.inode(),
-            Blocks       => self.blocks(),
-            User         => self.user(users_cache),
-            Group        => self.group(users_cache),
-            GitStatus    => self.git_status(),
+            Permissions     => self.permissions_string(),
+            FileSize(f)     => self.file_size(f),
+            Timestamp(t, y) => self.timestamp(t, y),
+            HardLinks       => self.hard_links(),
+            Inode           => self.inode(),
+            Blocks          => self.blocks(),
+            User            => self.user(users_cache),
+            Group           => self.group(users_cache),
+            GitStatus       => self.git_status(),
         }
     }
 
@@ -295,6 +301,27 @@ impl<'a> File<'a> {
                 }
             }
         }
+    }
+
+    fn timestamp(&self, time_type: TimeType, current_year: i64) -> Cell {
+
+        // Need to convert these values from milliseconds into seconds.
+        let time_in_seconds = match time_type {
+            TimeType::FileAccessed => self.stat.accessed,
+            TimeType::FileModified => self.stat.modified,
+            TimeType::FileCreated  => self.stat.created,
+        } as i64 / 1000;
+
+        let date = LocalDateTime::at(time_in_seconds);
+
+        let format = if date.year() == current_year {
+                date_format!("{2>:D} {:M} {2>:h}:{02>:m}")
+            }
+            else {
+                date_format!("{2>:D} {:M} {4>:Y}")
+            };
+
+        Cell::paint(Blue.normal(), format.format(date).as_slice())
     }
 
     /// This file's type, represented by a coloured character.

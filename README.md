@@ -24,6 +24,8 @@ exa is a replacement for `ls` written in Rust.
 - **-R**, **--recurse**: recurse into subdirectories
 - **-s**, **--sort=(field)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
+- **-t**, **--time**: which timestamp to show for a file
+- **-T**, **--tree**: recurse into subdirectories in a tree view
 - **-x**, **--across**: sort multi-column view entries across
 
 You can sort by **name**, **size**, **ext**, **inode**, or **none**.

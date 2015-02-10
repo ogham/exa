@@ -12,6 +12,8 @@ use std::fmt;
 use getopts;
 use natord;
 
+use datetime::local::{LocalDateTime, DatePiece};
+
 use self::Misfire::*;
 
 /// The *Options* struct represents a parsed version of the user's
@@ -50,13 +52,17 @@ impl Options {
         opts.optflag("g", "group",     "show group as well as user");
         opts.optflag("h", "header",    "show a header row at the top");
         opts.optflag("H", "links",     "show number of hard links");
-        opts.optflag("l", "long",      "display extended details and attributes");
         opts.optflag("i", "inode",     "show each file's inode number");
+        opts.optflag("l", "long",      "display extended details and attributes");
+        opts.optflag("m", "modified",  "display timestamp of most recent modification");
         opts.optflag("r", "reverse",   "reverse order of files");
         opts.optflag("R", "recurse",   "recurse into directories");
         opts.optopt ("s", "sort",      "field to sort by", "WORD");
         opts.optflag("S", "blocks",    "show number of file system blocks");
+        opts.optopt ("t", "time",      "which timestamp to show for a file", "WORD");
         opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
+        opts.optflag("u", "accessed",  "display timestamp of last access for a file");
+        opts.optflag("U", "created",   "display timestamp of creation for a file");
         opts.optflag("x", "across",    "sort multi-column view entries across");
         opts.optflag("?", "help",      "show list of command-line options");
 
@@ -231,6 +237,9 @@ impl View {
         else if matches.opt_present("blocks") {
             Err(Misfire::Useless("blocks", false, "long"))
         }
+        else if matches.opt_present("time") {
+            Err(Misfire::Useless("time", false, "long"))
+        }
         else if matches.opt_present("oneline") {
             if matches.opt_present("across") {
                 Err(Misfire::Useless("across", true, "oneline"))
@@ -279,6 +288,73 @@ impl SizeFormat {
     }
 }
 
+#[derive(PartialEq, Debug, Copy)]
+pub enum TimeType {
+    FileAccessed,
+    FileModified,
+    FileCreated,
+}
+
+impl TimeType {
+    pub fn header(&self) -> &'static str {
+        match *self {
+            TimeType::FileAccessed => "Date Accessed",
+            TimeType::FileModified => "Date Modified",
+            TimeType::FileCreated  => "Date Created",
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Copy)]
+pub struct TimeTypes {
+    accessed: bool,
+    modified: bool,
+    created:  bool,
+}
+
+impl TimeTypes {
+
+    /// Find which field to use based on a user-supplied word.
+    fn deduce(matches: &getopts::Matches) -> Result<TimeTypes, Misfire> {
+        let possible_word = matches.opt_str("time");
+        let modified = matches.opt_present("modified");
+        let created  = matches.opt_present("created");
+        let accessed = matches.opt_present("accessed");
+
+        if let Some(word) = possible_word {
+            if modified {
+                return Err(Misfire::Useless("modified", true, "time"));
+            }
+            else if created {
+                return Err(Misfire::Useless("created", true, "time"));
+            }
+            else if accessed {
+                return Err(Misfire::Useless("accessed", true, "time"));
+            }
+
+            match word.as_slice() {
+                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true, created: false }),
+                "acc" | "accessed"  => Ok(TimeTypes { accessed: true, modified: false, created: false }),
+                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true }),
+                field   => Err(TimeTypes::none(field)),
+            }
+        }
+        else {
+            if modified || created || accessed {
+                Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
+            }
+            else {
+                Ok(TimeTypes { accessed: false, modified: true, created: false })
+            }
+        }
+    }
+
+    /// How to display an error when the word didn't match with anything.
+    fn none(field: &str) -> Misfire {
+        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--time {}", field)))
+    }
+}
+
 /// What to do when encountering a directory?
 #[derive(PartialEq, Debug, Copy)]
 pub enum DirAction {
@@ -304,6 +380,7 @@ impl DirAction {
 #[derive(PartialEq, Copy, Debug)]
 pub struct Columns {
     size_format: SizeFormat,
+    time_types: TimeTypes,
     inode: bool,
     links: bool,
     blocks: bool,
@@ -314,6 +391,7 @@ impl Columns {
     pub fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
             size_format: try!(SizeFormat::deduce(matches)),
+            time_types:  try!(TimeTypes::deduce(matches)),
             inode:  matches.opt_present("inode"),
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
@@ -344,6 +422,20 @@ impl Columns {
 
         if self.group {
             columns.push(Group);
+        }
+
+        let current_year = LocalDateTime::now().year();
+
+        if self.time_types.modified {
+            columns.push(Timestamp(TimeType::FileModified, current_year));
+        }
+
+        if self.time_types.created {
+            columns.push(Timestamp(TimeType::FileCreated, current_year));
+        }
+
+        if self.time_types.accessed {
+            columns.push(Timestamp(TimeType::FileAccessed, current_year));
         }
 
         if cfg!(feature="git") {
