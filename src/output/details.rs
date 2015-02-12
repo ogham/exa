@@ -115,15 +115,15 @@ pub struct UserLocale {
 impl UserLocale {
     pub fn new() -> UserLocale {
         UserLocale {
-            time: locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::default()),
-            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::default()),
+            time: locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
         }
     }
 
     pub fn default() -> UserLocale {
         UserLocale {
-            time: locale::Time::default(),
-            numeric: locale::Numeric::default(),
+            time: locale::Time::english(),
+            numeric: locale::Numeric::english(),
         }
     }
 }

@@ -292,7 +292,7 @@ impl<'a> File<'a> {
             match result {
                 Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),
                 Prefixed(prefix, n) => {
-                    let number = if n < 10f64 { locale.format_float(n, 1, false) } else { locale.format_int(n as isize) };
+                    let number = if n < 10f64 { locale.format_float(n, 1) } else { locale.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
                     Cell {
