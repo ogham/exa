@@ -1,7 +1,7 @@
 use std::old_io::{fs, IoResult};
 use file::{File, GREY};
 
-#[cfg(feature="git")] use ansi_term::ANSIString;
+#[cfg(feature="git")] use ansi_term::{ANSIString, ANSIStrings};
 #[cfg(feature="git")] use ansi_term::Colour::*;
 #[cfg(feature="git")] use git2;
 
@@ -96,7 +96,7 @@ impl Git {
         let status = self.statuses.iter()
                                   .find(|p| p.0 == path.as_vec());
         match status {
-            Some(&(_, s)) => format!("{}{}", Git::index_status(s), Git::working_tree_status(s)),
+            Some(&(_, s)) => ANSIStrings( &[Git::index_status(s), Git::working_tree_status(s) ]).to_string(),
             None => GREY.paint("--").to_string(),
         }
     }
@@ -109,7 +109,7 @@ impl Git {
                              .filter(|p| p.0.starts_with(dir.as_vec()))
                              .fold(git2::Status::empty(), |a, b| a | b.1);
 
-        format!("{}{}", Git::index_status(s), Git::working_tree_status(s))
+        ANSIStrings( &[Git::index_status(s), Git::working_tree_status(s)] ).to_string()
     }
 
     /// The character to display if the file has been modified, but not staged.

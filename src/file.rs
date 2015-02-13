@@ -2,7 +2,7 @@ use std::old_io::{fs, IoResult};
 use std::old_io as io;
 use std::ascii::AsciiExt;
 
-use ansi_term::{ANSIString, Colour, Style};
+use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
@@ -296,7 +296,7 @@ impl<'a> File<'a> {
                     let symbol = prefix.symbol();
 
                     Cell {
-                        text: format!("{}{}", Green.bold().paint(&*number), Green.paint(symbol)),
+                        text: ANSIStrings( &[ Green.bold().paint(&number[]), Green.paint(symbol) ]).to_string(),
                         length: number.len() + symbol.len(),
                     }
                 }
@@ -352,7 +352,7 @@ impl<'a> File<'a> {
             _ => Green.bold(),
         };
 
-        let string = format!("{}{}{}{}{}{}{}{}{}{}",
+        let string = ANSIStrings(&[
             self.type_char(),
             File::permission_bit(&bits, io::USER_READ,     "r", Yellow.bold()),
             File::permission_bit(&bits, io::USER_WRITE,    "w", Red.bold()),
@@ -363,7 +363,7 @@ impl<'a> File<'a> {
             File::permission_bit(&bits, io::OTHER_READ,    "r", Yellow.normal()),
             File::permission_bit(&bits, io::OTHER_WRITE,   "w", Red.normal()),
             File::permission_bit(&bits, io::OTHER_EXECUTE, "x", Green.normal()),
-       );
+        ]).to_string();
 
         Cell { text: string, length: 10 }
     }
