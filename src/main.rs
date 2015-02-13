@@ -1,11 +1,9 @@
-#![feature(collections, core, env, io, libc, os, path, plugin, std_misc)]
-
-#[plugin] #[no_link]
-extern crate datetime_macros;
+#![feature(collections, core, env, io, libc, path, plugin, std_misc)]
 
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
+extern crate locale;
 extern crate natord;
 extern crate number_prefix;
 extern crate pad;
@@ -140,7 +138,7 @@ impl<'a> Exa<'a> {
 }
 
 fn main() {
-    let args = args();
+    let args: Vec<String> = env::args().collect();
 
     match Options::getopts(args.tail()) {
         Ok((options, paths)) => {
@@ -154,8 +152,4 @@ fn main() {
             env::set_exit_status(e.error_code());
         },
     };
-}
-
-fn args() -> Vec<String> {
-    env::args().map(|arg| arg.to_string_lossy().into_owned()).collect()
 }

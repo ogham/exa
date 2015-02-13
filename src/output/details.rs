@@ -4,6 +4,7 @@ use file::{File, GREY};
 use options::{Columns, FileFilter};
 use users::OSUsers;
 
+use locale;
 use ansi_term::Style::Plain;
 
 #[derive(PartialEq, Debug, Copy)]
@@ -24,9 +25,10 @@ impl Details {
         // padding the fields during output.
 
         let columns = self.columns.for_dir(dir);
+        let locale = UserLocale::new();
         let mut cache = OSUsers::empty_cache();
         let mut table = Vec::new();
-        self.get_files(&columns[], &mut cache, &mut table, files, 0);
+        self.get_files(&columns[], &mut cache, &locale, &mut table, files, 0);
 
         if self.header {
             let row = Row {
@@ -73,12 +75,12 @@ impl Details {
         }
     }
 
-    fn get_files(&self, columns: &[Column], cache: &mut OSUsers, dest: &mut Vec<Row>, src: &[File], depth: usize) {
+    fn get_files(&self, columns: &[Column], cache: &mut OSUsers, locale: &UserLocale, dest: &mut Vec<Row>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
 
             let row = Row {
                 depth: depth,
-                cells: columns.iter().map(|c| file.display(c, cache)).collect(),
+                cells: columns.iter().map(|c| file.display(c, cache, locale)).collect(),
                 name:  file.file_name_view(),
                 last:  index == src.len() - 1,
                 children: file.this.is_some(),
@@ -90,7 +92,7 @@ impl Details {
                 if let Some(ref dir) = file.this {
                     let mut files = dir.files(true);
                     self.filter.transform_files(&mut files);
-                    self.get_files(columns, cache, dest, files.as_slice(), depth + 1);
+                    self.get_files(columns, cache, locale, dest, files.as_slice(), depth + 1);
                 }
             }
         }
@@ -103,4 +105,25 @@ struct Row {
     pub name: String,
     pub last: bool,
     pub children: bool,
+}
+
+pub struct UserLocale {
+    pub time: locale::Time,
+    pub numeric: locale::Numeric,
+}
+
+impl UserLocale {
+    pub fn new() -> UserLocale {
+        UserLocale {
+            time: locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+        }
+    }
+
+    pub fn default() -> UserLocale {
+        UserLocale {
+            time: locale::Time::english(),
+            numeric: locale::Numeric::english(),
+        }
+    }
 }

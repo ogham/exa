@@ -8,12 +8,13 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 
 use users::Users;
 
-use pad::Alignment;
+use locale;
+use output::details::UserLocale;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
-use datetime;
 use datetime::local::{LocalDateTime, DatePiece};
+use datetime::format::{DateFormat};
 
 use column::{Column, Cell};
 use column::Column::*;
@@ -97,14 +98,14 @@ impl<'a> File<'a> {
     }
 
     /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U) -> Cell {
+    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U, locale: &UserLocale) -> Cell {
         match *column {
             Permissions     => self.permissions_string(),
-            FileSize(f)     => self.file_size(f),
-            Timestamp(t, y) => self.timestamp(t, y),
-            HardLinks       => self.hard_links(),
+            FileSize(f)     => self.file_size(f, &locale.numeric),
+            Timestamp(t, y) => self.timestamp(t, y, &locale.time),
+            HardLinks       => self.hard_links(&locale.numeric),
             Inode           => self.inode(),
-            Blocks          => self.blocks(),
+            Blocks          => self.blocks(&locale.numeric),
             User            => self.user(users_cache),
             Group           => self.group(users_cache),
             GitStatus       => self.git_status(),
@@ -202,9 +203,9 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of hard links as a coloured string.
-    fn hard_links(&self) -> Cell {
+    fn hard_links(&self, locale: &locale::Numeric) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        Cell::paint(style, &*self.stat.unstable.nlink.to_string())
+        Cell::paint(style, &locale.format_int(self.stat.unstable.nlink as isize)[])
     }
 
     /// Whether this is a regular file with more than one link.
@@ -222,9 +223,9 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
-    fn blocks(&self) -> Cell {
+    fn blocks(&self, locale: &locale::Numeric) -> Cell {
         if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
-            Cell::paint(Cyan.normal(), &*self.stat.unstable.blocks.to_string())
+            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.unstable.blocks as isize)[])
         }
         else {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
@@ -277,7 +278,7 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    fn file_size(&self, size_format: SizeFormat) -> Cell {
+    fn file_size(&self, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
         if self.stat.kind == io::FileType::Directory {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
         }
@@ -285,13 +286,13 @@ impl<'a> File<'a> {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &*self.stat.size.to_string())
+                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[]),
             };
 
             match result {
                 Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),
                 Prefixed(prefix, n) => {
-                    let number = if n < 10f64 { format!("{:.1}", n) } else { format!("{:.0}", n) };
+                    let number = if n < 10f64 { locale.format_float(n, 1) } else { locale.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
                     Cell {
@@ -303,7 +304,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn timestamp(&self, time_type: TimeType, current_year: i64) -> Cell {
+    fn timestamp(&self, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
@@ -315,13 +316,13 @@ impl<'a> File<'a> {
         let date = LocalDateTime::at(time_in_seconds);
 
         let format = if date.year() == current_year {
-                date_format!("{2>:D} {:M} {2>:h}:{02>:m}")
+                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
             }
             else {
-                date_format!("{2>:D} {:M} {4>:Y}")
+                DateFormat::parse("{2>:D} {:M} {4>:Y}").unwrap()
             };
 
-        Cell::paint(Blue.normal(), format.format(date).as_slice())
+        Cell::paint(Blue.normal(), format.format(date, locale).as_slice())
     }
 
     /// This file's type, represented by a coloured character.
@@ -445,6 +446,8 @@ pub mod test {
     pub use ansi_term::Style::Plain;
     pub use ansi_term::Colour::Yellow;
 
+    pub use output::details::UserLocale;
+
     #[test]
     fn extension() {
         assert_eq!(Some("dat".to_string()), super::ext("fester.dat"))
@@ -487,6 +490,10 @@ pub mod test {
         }
     }
 
+    pub fn dummy_locale() -> UserLocale {
+        UserLocale::default()
+    }
+
     mod users {
         use super::*;
 
@@ -501,7 +508,7 @@ pub mod test {
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
 
             let cell = Cell::paint(Yellow.bold(), "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -514,7 +521,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(1000);
 
             let cell = Cell::paint(Yellow.bold(), "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -528,7 +535,7 @@ pub mod test {
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
 
             let cell = Cell::paint(Plain, "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -541,7 +548,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(3);
 
             let cell = Cell::paint(Plain, "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users))
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
     }
 
@@ -559,7 +566,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
 
             let cell = Cell::paint(Plain, "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -572,7 +579,7 @@ pub mod test {
             let mut users = MockUsers::with_current_uid(3);
 
             let cell = Cell::paint(Plain, "100");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -587,7 +594,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
 
             let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
 
         #[test]
@@ -602,7 +609,7 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
 
             let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users))
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
     }
 }

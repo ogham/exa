@@ -32,7 +32,7 @@ pub struct FileFilter {
     sort_field: SortField,
 }
 
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Debug, Copy)]
 pub enum View {
     Details(Details),
     Lines,
