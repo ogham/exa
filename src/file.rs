@@ -467,8 +467,8 @@ pub mod test {
         File::with_stat(stat, &Path::new(path), None, false)
     }
 
-	pub fn dummy_stat() -> io::FileStat {
-	    io::FileStat {
+    pub fn dummy_stat() -> io::FileStat {
+        io::FileStat {
             size: 0,
             kind: io::FileType::RegularFile,
             created: 0,
