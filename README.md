@@ -1,6 +1,6 @@
 # exa [![Build status](https://travis-ci.org/ogham/exa.svg)](https://travis-ci.org/ogham/exa)
 
-exa is a replacement for `ls` written in Rust.
+[exa](http://bsago.me/exa) is a replacement for `ls` written in Rust.
 
 
 ## Screenshot
