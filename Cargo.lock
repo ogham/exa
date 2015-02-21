@@ -3,6 +3,7 @@ name = "exa"
 version = "0.1.0"
 dependencies = [
  "ansi_term 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "datetime 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
