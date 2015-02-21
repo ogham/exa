@@ -371,6 +371,7 @@ impl DirAction {
         let tree    = matches.opt_present("tree");
 
         match (recurse, list, tree) {
+            (false, _,     true ) => Err(Misfire::Useless("tree", false, "recurse")),
             (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
             (true,  false, false) => Ok(DirAction::Recurse),
             (true,  false, true ) => Ok(DirAction::Tree),
@@ -543,4 +544,11 @@ mod test {
         let opts = Options::getopts(&[ "--blocks".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
     }
+
+    #[test]
+    fn tree_without_recurse() {
+        let opts = Options::getopts(&[ "--tree".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("tree", false, "recurse"))
+    }
+
 }
