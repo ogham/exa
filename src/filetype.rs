@@ -132,13 +132,8 @@ impl<'a> HasType for File<'a> {
             else if source_files.iter().any(|path| self.dir.map(|d| d.contains(path)).unwrap_or(false)) {
                 return Temp;
             }
-            else {
-                if COMPILED_TYPES.iter().any(|&s| s == *ext) {
-                    return Compiled;
-                }
-                else {
-                    return Normal;
-                }
+            else if COMPILED_TYPES.iter().any(|&s| s == *ext) {
+                return Compiled;
             }
         }
 
