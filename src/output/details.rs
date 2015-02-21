@@ -28,7 +28,7 @@ impl Details {
         let locale = UserLocale::new();
         let mut cache = OSUsers::empty_cache();
         let mut table = Vec::new();
-        self.get_files(&columns[], &mut cache, &locale, &mut table, files, 0);
+        self.get_files(&columns[..], &mut cache, &locale, &mut table, files, 0);
 
         if self.header {
             let row = Row {

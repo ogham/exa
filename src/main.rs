@@ -1,4 +1,4 @@
-#![feature(collections, core, env, io, libc, path, plugin, std_misc)]
+#![feature(collections, core, env, libc, old_io, old_path, plugin)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -74,7 +74,7 @@ impl<'a> Exa<'a> {
 
     fn print_files(&self) {
         if !self.files.is_empty() {
-            self.print(None, &self.files[]);
+            self.print(None, &self.files[..]);
         }
     }
 
@@ -118,7 +118,7 @@ impl<'a> Exa<'a> {
                     }
                     self.count += 1;
 
-                    self.print(Some(dir), &files[]);
+                    self.print(Some(dir), &files[..]);
                 }
                 Err(e) => {
                     println!("{}: {}", dir_path.display(), e);

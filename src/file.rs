@@ -205,7 +205,7 @@ impl<'a> File<'a> {
     /// This file's number of hard links as a coloured string.
     fn hard_links(&self, locale: &locale::Numeric) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        Cell::paint(style, &locale.format_int(self.stat.unstable.nlink as isize)[])
+        Cell::paint(style, &locale.format_int(self.stat.unstable.nlink as isize)[..])
     }
 
     /// Whether this is a regular file with more than one link.
@@ -225,7 +225,7 @@ impl<'a> File<'a> {
     /// This file's number of filesystem blocks (if available) as a coloured string.
     fn blocks(&self, locale: &locale::Numeric) -> Cell {
         if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
-            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.unstable.blocks as isize)[])
+            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.unstable.blocks as isize)[..])
         }
         else {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
@@ -286,7 +286,7 @@ impl<'a> File<'a> {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[]),
+                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[..]),
             };
 
             match result {
@@ -296,7 +296,7 @@ impl<'a> File<'a> {
                     let symbol = prefix.symbol();
 
                     Cell {
-                        text: ANSIStrings( &[ Green.bold().paint(&number[]), Green.paint(symbol) ]).to_string(),
+                        text: ANSIStrings( &[ Green.bold().paint(&number[..]), Green.paint(symbol) ]).to_string(),
                         length: number.len() + symbol.len(),
                     }
                 }
