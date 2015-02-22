@@ -126,6 +126,9 @@ impl FileFilter {
                     a.name.to_ascii_lowercase().cmp(&b.name.to_ascii_lowercase())
                 }
             }),
+            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.modified.cmp(&b.stat.modified)),
+            SortField::AccessedDate => files.sort_by(|a, b| a.stat.accessed.cmp(&b.stat.accessed)),
+            SortField::CreatedDate  => files.sort_by(|a, b| a.stat.created.cmp(&b.stat.created)),
         }
 
         if self.reverse {
@@ -137,7 +140,8 @@ impl FileFilter {
 /// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy)]
 pub enum SortField {
-    Unsorted, Name, Extension, Size, FileInode
+    Unsorted, Name, Extension, Size, FileInode,
+    ModifiedDate, AccessedDate, CreatedDate,
 }
 
 impl SortField {
@@ -145,12 +149,15 @@ impl SortField {
     /// Find which field to use based on a user-supplied word.
     fn from_word(word: String) -> Result<SortField, Misfire> {
         match word.as_slice() {
-            "name"  => Ok(SortField::Name),
-            "size"  => Ok(SortField::Size),
-            "ext"   => Ok(SortField::Extension),
-            "none"  => Ok(SortField::Unsorted),
-            "inode" => Ok(SortField::FileInode),
-            field   => Err(SortField::none(field))
+            "name" | "filename"  => Ok(SortField::Name),
+            "size" | "filesize"  => Ok(SortField::Size),
+            "ext"  | "extension" => Ok(SortField::Extension),
+            "mod"  | "modified"  => Ok(SortField::ModifiedDate),
+            "acc"  | "accessed"  => Ok(SortField::AccessedDate),
+            "cr"   | "created"   => Ok(SortField::CreatedDate),
+            "none"               => Ok(SortField::Unsorted),
+            "inode"              => Ok(SortField::FileInode),
+            field                => Err(SortField::none(field))
         }
     }
 

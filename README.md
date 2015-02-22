@@ -28,7 +28,7 @@
 - **-T**, **--tree**: recurse into subdirectories in a tree view
 - **-x**, **--across**: sort multi-column view entries across
 
-You can sort by **name**, **size**, **ext**, **inode**, or **none**.
+You can sort by **name**, **size**, **ext**, **inode**, **modified**, **created**, **accessed**, or **none**.
 
 
 ## Installation
