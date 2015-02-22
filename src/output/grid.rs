@@ -81,7 +81,7 @@ impl Grid {
                     }
 
                     let ref file = files[num];
-                    let styled_name = file.file_colour().paint(file.name.as_slice()).to_string();
+                    let styled_name = file.file_colour().paint(&file.name).to_string();
                     if x == widths.len() - 1 {
                         // The final column doesn't need to have trailing spaces
                         print!("{}", styled_name);
