@@ -319,7 +319,7 @@ impl<'a> File<'a> {
                 DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
             }
             else {
-                DateFormat::parse("{2>:D} {:M} {4>:Y}").unwrap()
+                DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
             };
 
         Cell::paint(Blue.normal(), format.format(date, locale).as_slice())
