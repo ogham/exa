@@ -30,7 +30,7 @@ pub mod filetype;
 pub mod options;
 pub mod output;
 pub mod term;
-pub mod attr;
+pub mod xattr;
 
 struct Exa<'a> {
     count:   usize,

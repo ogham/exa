@@ -4,7 +4,7 @@ use column::Column;
 use column::Column::*;
 use output::{Grid, Details};
 use term::dimensions;
-use attr;
+use xattr;
 
 use std::ascii::AsciiExt;
 use std::cmp::Ordering;
@@ -45,7 +45,7 @@ impl Options {
     /// Call getopts on the given slice of command-line strings.
     pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
-        if attr::feature_implemented() {
+        if xattr::feature_implemented() {
             opts.optflag("@", "extended",
                          "display extended attribute keys and sizes in long (-l) output"
             );  
@@ -226,7 +226,7 @@ impl View {
                         columns: try!(Columns::deduce(matches)),
                         header: matches.opt_present("header"),
                         tree: matches.opt_present("recurse"),
-                        ext_attr: attr::feature_implemented() && matches.opt_present("extended"),
+                        xattr: xattr::feature_implemented() && matches.opt_present("extended"),
                         filter: filter,
                 };
 
@@ -257,7 +257,7 @@ impl View {
         else if matches.opt_present("tree") {
             Err(Misfire::Useless("tree", false, "long"))
         }
-        else if attr::feature_implemented() && matches.opt_present("extended") {
+        else if xattr::feature_implemented() && matches.opt_present("extended") {
             Err(Misfire::Useless("extended", false, "long"))
         }
         else if matches.opt_present("oneline") {
@@ -564,8 +564,10 @@ mod test {
 
     #[test]
     fn extended_without_long() {
-        let opts = Options::getopts(&[ "--extended".to_string() ]);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
+        if xattr::feature_implemented() {
+            let opts = Options::getopts(&[ "--extended".to_string() ]);
+            assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
+        }
     }
 
     #[test]

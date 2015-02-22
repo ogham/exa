@@ -21,8 +21,8 @@ use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
 use options::{SizeFormat, TimeType};
-use attr;
-use attr::Attribute;
+use xattr;
+use xattr::Attribute;
 
 /// This grey value is directly in between white and black, so it's guaranteed
 /// to show up on either backgrounded terminal.
@@ -41,7 +41,7 @@ pub struct File<'a> {
     pub ext:   Option<String>,
     pub path:  Path,
     pub stat:  io::FileStat,
-    pub attrs: Vec<Attribute>,
+    pub xattrs: Vec<Attribute>,
     pub this:  Option<Dir>,
 }
 
@@ -83,7 +83,7 @@ impl<'a> File<'a> {
             path:  path.clone(),
             dir:   parent,
             stat:  stat,
-            attrs: attr::llist(path).unwrap_or(Vec::new()),
+            xattrs: xattr::llist(path).unwrap_or(Vec::new()),
             name:  filename.to_string(),
             ext:   ext(filename.as_slice()),
             this:  this,
@@ -196,7 +196,7 @@ impl<'a> File<'a> {
                 path:  target_path.clone(),
                 dir:   self.dir,
                 stat:  stat,
-                attrs: attr::list(target_path).unwrap_or(Vec::new()),
+                xattrs: xattr::list(target_path).unwrap_or(Vec::new()),
                 name:  filename.to_string(),
                 ext:   ext(filename.as_slice()),
                 this:  None,
@@ -351,7 +351,7 @@ impl<'a> File<'a> {
     /// attribute or not. Also returns “ ” in case the attributes cannot be read
     /// for some reason.
     fn attribute_marker(&self) -> ANSIString {
-        if self.attrs.len() > 0 { Plain.paint("@") } else { Plain.paint(" ") }
+        if self.xattrs.len() > 0 { Plain.paint("@") } else { Plain.paint(" ") }
     }
 
     /// Generate the "rwxrwxrwx" permissions string, like how ls does it.

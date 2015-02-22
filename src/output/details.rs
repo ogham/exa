@@ -1,5 +1,5 @@
 use column::{Alignment, Column, Cell};
-use attr::Attribute;
+use xattr::Attribute;
 use dir::Dir;
 use file::{File, GREY};
 use options::{Columns, FileFilter};
@@ -13,7 +13,7 @@ pub struct Details {
     pub columns: Columns,
     pub header: bool,
     pub tree: bool,
-    pub ext_attr: bool,
+    pub xattr: bool,
     pub filter: FileFilter,
 }
 
@@ -76,7 +76,7 @@ impl Details {
 
             print!("{}\n", row.name);
             
-            if self.ext_attr {
+            if self.xattr {
                 let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
                 for attr in row.attrs.iter() {
                     let name = attr.name();
@@ -97,7 +97,7 @@ impl Details {
                 cells: columns.iter().map(|c| file.display(c, cache, locale)).collect(),
                 name:  file.file_name_view(),
                 last:  index == src.len() - 1,
-                attrs: file.attrs.clone(),
+                attrs: file.xattrs.clone(),
                 children: file.this.is_some(),
             };
 
