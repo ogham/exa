@@ -2,6 +2,7 @@
 use std::old_io as io;
 
 /// Extended attribute
+#[derive(Clone)]
 pub struct Attribute;
 
 impl Attribute {
@@ -18,12 +19,12 @@ impl Attribute {
 }
 
 /// Lists the extended attributes. Follows symlinks like `stat`
-pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Vec::new()
+pub fn list(_: &Path) -> io::IoResult<Vec<Attribute>> {
+    Ok(Vec::new())
 }
 /// Lists the extended attributes. Does not follow symlinks like `lstat`
-pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Vec::new()
+pub fn llist(_: &Path) -> io::IoResult<Vec<Attribute>> {
+    Ok(Vec::new())
 }
 
 /// Returns true if the extended attribute feature is implemented on this platform.

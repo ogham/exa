@@ -226,7 +226,7 @@ impl View {
                         columns: try!(Columns::deduce(matches)),
                         header: matches.opt_present("header"),
                         tree: matches.opt_present("recurse"),
-                        ext_attr: matches.opt_present("extended"),
+                        ext_attr: attr::feature_implemented() && matches.opt_present("extended"),
                         filter: filter,
                 };
 
