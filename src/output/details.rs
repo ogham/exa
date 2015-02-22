@@ -1,4 +1,5 @@
-use column::{Column, Cell};
+use column::{Alignment, Column, Cell};
+use attr::Attribute;
 use dir::Dir;
 use file::{File, GREY};
 use options::{Columns, FileFilter};
@@ -12,6 +13,7 @@ pub struct Details {
     pub columns: Columns,
     pub header: bool,
     pub tree: bool,
+    pub ext_attr: bool,
     pub filter: FileFilter,
 }
 
@@ -36,6 +38,7 @@ impl Details {
                 cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect(),
                 name: Plain.underline().paint("Name").to_string(),
                 last: false,
+                attrs: Vec::new(),
                 children: false,
             };
 
@@ -72,6 +75,17 @@ impl Details {
             }
 
             print!("{}\n", row.name);
+            
+            if self.ext_attr {
+                let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
+                for attr in row.attrs.iter() {
+                    let name = attr.name();
+                    println!("{}\t{}",
+                        Alignment::Left.pad_string(name, width - name.len()),
+                        attr.size()
+                    )
+                }
+            }
         }
     }
 
@@ -83,6 +97,7 @@ impl Details {
                 cells: columns.iter().map(|c| file.display(c, cache, locale)).collect(),
                 name:  file.file_name_view(),
                 last:  index == src.len() - 1,
+                attrs: file.attrs.clone(),
                 children: file.this.is_some(),
             };
 
@@ -92,7 +107,7 @@ impl Details {
                 if let Some(ref dir) = file.this {
                     let mut files = dir.files(true);
                     self.filter.transform_files(&mut files);
-                    self.get_files(columns, cache, locale, dest, files.as_slice(), depth + 1);
+                    self.get_files(columns, cache, locale, dest, &files, depth + 1);
                 }
             }
         }
@@ -104,6 +119,7 @@ struct Row {
     pub cells: Vec<Cell>,
     pub name: String,
     pub last: bool,
+    pub attrs: Vec<Attribute>,
     pub children: bool,
 }
 

@@ -1,4 +1,4 @@
-#![feature(collections, core, env, libc, old_io, old_path, plugin)]
+#![feature(collections, core, env, libc, old_io, old_path, plugin, std_misc)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -27,6 +27,7 @@ pub mod filetype;
 pub mod options;
 pub mod output;
 pub mod term;
+pub mod attr;
 
 struct Exa<'a> {
     count:   usize,
