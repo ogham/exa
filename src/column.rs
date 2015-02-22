@@ -68,7 +68,7 @@ impl Alignment {
     /// of spaces to add: this is because the strings are usually full of
     /// invisible control characters, so getting the displayed width of the
     /// string is not as simple as just getting its length.
-    pub fn pad_string(&self, string: &String, padding: usize) -> String {
+    pub fn pad_string(&self, string: &str, padding: usize) -> String {
         match *self {
             Alignment::Left  => format!("{}{}", string, spaces(padding).as_slice()),
             Alignment::Right => format!("{}{}", spaces(padding), string.as_slice()),
