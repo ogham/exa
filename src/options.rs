@@ -148,7 +148,7 @@ impl SortField {
 
     /// Find which field to use based on a user-supplied word.
     fn from_word(word: String) -> Result<SortField, Misfire> {
-        match word.as_slice() {
+        match &word[..] {
             "name" | "filename"  => Ok(SortField::Name),
             "size" | "filesize"  => Ok(SortField::Size),
             "ext"  | "extension" => Ok(SortField::Extension),
@@ -342,7 +342,7 @@ impl TimeTypes {
                 return Err(Misfire::Useless("accessed", true, "time"));
             }
 
-            match word.as_slice() {
+            match &word[..] {
                 "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true, created: false }),
                 "acc" | "accessed"  => Ok(TimeTypes { accessed: true, modified: false, created: false }),
                 "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true }),

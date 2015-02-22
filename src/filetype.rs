@@ -83,7 +83,7 @@ pub trait HasType {
 
 impl<'a> HasType for File<'a> {
     fn get_type(&self) -> FileType {
-        let name = self.name.as_slice();
+        let name = &self.name[..];
         if self.stat.kind == io::FileType::Directory {
             return Directory;
         }

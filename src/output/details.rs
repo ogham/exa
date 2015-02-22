@@ -92,7 +92,7 @@ impl Details {
                 if let Some(ref dir) = file.this {
                     let mut files = dir.files(true);
                     self.filter.transform_files(&mut files);
-                    self.get_files(columns, cache, locale, dest, files.as_slice(), depth + 1);
+                    self.get_files(columns, cache, locale, dest, &files, depth + 1);
                 }
             }
         }

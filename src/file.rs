@@ -81,19 +81,19 @@ impl<'a> File<'a> {
             dir:   parent,
             stat:  stat,
             name:  filename.to_string(),
-            ext:   ext(filename.as_slice()),
+            ext:   ext(&filename),
             this:  this,
         }
     }
 
     /// Whether this file is a dotfile or not.
     pub fn is_dotfile(&self) -> bool {
-        self.name.as_slice().starts_with(".")
+        self.name.starts_with(".")
     }
 
     /// Whether this file is a temporary file or not.
     pub fn is_tmpfile(&self) -> bool {
-        let name = self.name.as_slice();
+        let name = &self.name;
         name.ends_with("~") || (name.starts_with("#") && name.ends_with("#"))
     }
 
@@ -150,11 +150,11 @@ impl<'a> File<'a> {
                                    GREY.paint("=>"),
                                    Cyan.paint(target_path.dirname_str().unwrap()),
                                    Cyan.paint("/"),
-                                   file.file_colour().paint(file.name.as_slice())),
+                                   file.file_colour().paint(&file.name)),
                 Err(filename) => format!("{} {} {}",
                                          style.paint(name),
                                          Red.paint("=>"),
-                                         Red.underline().paint(filename.as_slice())),
+                                         Red.underline().paint(&filename)),
             }
         }
         else {
@@ -173,7 +173,7 @@ impl<'a> File<'a> {
     /// characters are 1 columns wide, but in some contexts, certain
     /// characters are actually 2 columns wide.
     pub fn file_name_width(&self) -> usize {
-        self.name.as_slice().width(false)
+        self.name.width(false)
     }
 
     /// Assuming the current file is a symlink, follows the link and
@@ -193,7 +193,7 @@ impl<'a> File<'a> {
                 dir:   self.dir,
                 stat:  stat,
                 name:  filename.to_string(),
-                ext:   ext(filename.as_slice()),
+                ext:   ext(&filename),
                 this:  None,
             })
         }
@@ -322,7 +322,7 @@ impl<'a> File<'a> {
                 DateFormat::parse("{2>:D} {:M} {4>:Y}").unwrap()
             };
 
-        Cell::paint(Blue.normal(), format.format(date, locale).as_slice())
+        Cell::paint(Blue.normal(), &format.format(date, locale))
     }
 
     /// This file's type, represented by a coloured character.
@@ -388,7 +388,7 @@ impl<'a> File<'a> {
     /// valid without `foo.coffee`.
     pub fn get_source_files(&self) -> Vec<Path> {
         if let Some(ref ext) = self.ext {
-            match ext.as_slice() {
+            match &ext[..] {
                 "class" => vec![self.path.with_extension("java")],  // Java
                 "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
                 "elc"   => vec![self.path.with_extension("el")],    // Emacs Lisp
