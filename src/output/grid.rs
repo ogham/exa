@@ -51,7 +51,7 @@ impl Grid {
                 else {
                     index / num_lines
                 };
-                column_widths[index] = max(column_widths[index], file.name.len());
+                column_widths[index] = max(column_widths[index], file.file_name_width());
             }
 
             // If they all fit in the terminal, combined, then success!
@@ -87,8 +87,8 @@ impl Grid {
                         print!("{}", styled_name);
                     }
                     else {
-                        assert!(widths[x] >= file.name.len());
-                        print!("{}", Left.pad_string(&styled_name, widths[x] - file.name.len() + 2));
+                        assert!(widths[x] >= file.file_name_width());
+                        print!("{}", Left.pad_string(&styled_name, widths[x] - file.file_name_width() + 2));
                     }
                 }
                 print!("\n");
