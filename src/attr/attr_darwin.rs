@@ -85,7 +85,6 @@ impl Attribute {
                     }
                     start = end + 1;
                 }
-                println!("{:?}", names);
                 Ok(names)
             } else {
                 // Ignore error for now
