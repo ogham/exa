@@ -87,12 +87,18 @@ impl Attribute {
                 }
                 Ok(names)
             } else {
-                // Ignore error for now
-                Ok(Vec::new())
+                Err(io::IoError {
+                    kind: io::OtherIoError,
+                    desc: "could not read extended attributes",
+                    detail: None
+                })
             }
         } else {
-            // Ignore error for now
-            Ok(Vec::new())
+            Err(io::IoError {
+                kind: io::OtherIoError,
+                desc: "could not read extended attributes",
+                detail: None
+            })
         }
     }
     
