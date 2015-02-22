@@ -173,7 +173,7 @@ impl<'a> File<'a> {
     /// characters are 1 columns wide, but in some contexts, certain
     /// characters are actually 2 columns wide.
     pub fn file_name_width(&self) -> usize {
-        self.name.as_slice().width(true)
+        self.name.as_slice().width(false)
     }
 
     /// Assuming the current file is a symlink, follows the link and
