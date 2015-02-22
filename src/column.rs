@@ -86,7 +86,7 @@ impl Cell {
     pub fn paint(style: Style, string: &str) -> Cell {
         Cell {
             text: style.paint(string).to_string(),
-            length: string.graphemes(true).count(),
+            length: string.width(true),
         }
     }
 }
