@@ -476,6 +476,7 @@ mod test {
     use super::Options;
     use super::Misfire;
     use super::Misfire::*;
+    use xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
