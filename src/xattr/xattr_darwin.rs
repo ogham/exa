@@ -64,10 +64,11 @@ impl Attribute {
                 let mut names = Vec::new();
                 let mut start = 0;
                 for end in idx {
+                    let c_end = end + 1; // end of the c-string (including 0)
                     let size = unsafe {
                         getxattr(
                             c_path.as_ptr(),
-                            buf[start..end+1].as_ptr() as *const c_char,
+                            buf[start..c_end].as_ptr() as *const c_char,
                             ptr::null_mut(), 0, 0, c_flags
                         )
                     };
@@ -81,7 +82,7 @@ impl Attribute {
                             size: size as usize
                         });
                     }
-                    start = end + 1;
+                    start = c_end;
                 }
                 Ok(names)
             } else {
