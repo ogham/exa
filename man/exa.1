@@ -1,0 +1,112 @@
+.TH EXA "1" "February 2015" "exa 0.1.0" "User Commands"
+.SH NAME
+exa \- A replacement for ls with git integration
+.SH SYNOPSIS
+.B exa
+[\fIOPTIONS\fR] [\fIFILES...\fR]
+
+.SH DESCRIPTION
+exa is a replacement for ls, written in Rust. If built with libgit2, it includes git integration and can display relevant information when used in git repositories.
+
+.SH OPTIONS
+
+.TP
+\fB\-?\fR, \fB\-\-help\fR
+Display a help message
+
+.TP
+\fB\-@\fR, \fB\-\-extended\fR
+Display extended attribute keys and sizes in long (-l) output.
+
+.TP
+\fB\-1\fR, \fB\-\-oneline\fR
+Display one entry per line.
+
+.TP
+\fB\-a\fR, \fB\-\-all\fR
+Display entries whose names begin with a dot (.).
+
+.TP
+\fB\-b\fR, \fB\-\-binary\fR
+Use binary prefixes in file sizes.
+
+.TP
+\fB\-B\fR, \fB\-\-bytes\fR
+Display file sizes in bytes, without prefixes.
+
+.TP
+\fB\-d\fR, \fB\-\-list\-dirs\fR
+Display directories as regular files.
+
+.TP
+\fB\-g\fR, \fB\-\-group\fR
+Display each entry's group as well as user.
+
+.TP
+\fB\-h\fR, \fB\-\-header\fR
+Display a header row at the top of the output.
+
+.TP
+\fB\-H\fR, \fB\-\-links\fR
+Display each entry's number of hard links.
+
+.TP
+\fB\-i\fR, \fB\-\-inode\fR
+Display each entry's inode number.
+
+.TP
+\fB\-l\fR, \fB\-\-long\fR
+Display extended details and attributes.
+
+.TP
+\fB\-m\fR, \fB\-\-modified\fR
+Display timestamps for each entry's most recent modification.
+
+.TP
+\fB\-r\fR, \fB\-\-reverse\fR
+Reverse the order of output.
+
+.TP
+\fB\-R\fR, \fB\-\-recurse\fR
+Recurse into directories.
+
+.TP
+\fB\-s\fR, \fB\-\-sort\fR ATTRIBUTE
+Sort output by a given attribute (name, size, ext, inode, modified, created, accessed, or none).
+
+.TP
+\fB\-S\fR, \fB\-\-blocks\fR
+Display number of file system blocks.
+
+.TP
+\fB\-t\fR, \fB\-\-time\fR TIMESTAMP
+Change the timestamp displayed for each entry (created, modified, or accessed)
+
+.TP
+\fB\-T\fR, \fB\-\-tree\fR
+Recurse into directories in a tree view.
+
+.TP
+\fB\-u\fR, \fB\-\-accessed\fR
+Display each entry's time of last access.
+
+.TP
+\fB\-U\fR, \fB\-\-created\fR
+Display each entry's time of creation.
+
+.TP
+\fB\-x\fR, \fB\-\-across\fR
+Sort multi-column output horizontally instead of vertically.
+
+.SH "EXAMPLES"
+
+To organize a list of files with the largest files at the top:
+
+    $ exa -lrs size
+
+.SH "SEE ALSO"
+
+ls
+
+.SH "AUTHOR"
+exa is maintained by Benjamin Sago. A full list of contributors can be found at \fIhttps://github.com/ogham/exa/contributors\fR\.
