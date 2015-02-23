@@ -75,7 +75,7 @@ impl Dir {
 /// Container of Git statuses for all the files in this folder's Git repository.
 #[cfg(feature="git")]
 struct Git {
-    statuses: Vec<(Vec<u8>, git2::Status)>,
+    statuses: Vec<(Path, git2::Status)>,
 }
 
 #[cfg(feature="git")]
@@ -85,8 +85,9 @@ impl Git {
     /// the files' statuses if one is found.
     fn scan(path: &Path) -> Result<Git, git2::Error> {
         let repo = try!(git2::Repository::discover(path));
+        let workdir = repo.workdir().unwrap_or(Path::new("."));
         let statuses = try!(repo.statuses(None)).iter()
-                                                .map(|e| (e.path_bytes().to_vec(), e.status()))
+                                                .map(|e| (workdir.join(e.path_bytes()), e.status()))
                                                 .collect();
         Ok(Git { statuses: statuses })
     }
@@ -94,7 +95,7 @@ impl Git {
     /// Get the status for the file at the given path, if present.
     fn status(&self, path: &Path) -> String {
         let status = self.statuses.iter()
-                                  .find(|p| p.0 == path.as_vec());
+                                  .find(|p| &p.0 == path);
         match status {
             Some(&(_, s)) => ANSIStrings( &[Git::index_status(s), Git::working_tree_status(s) ]).to_string(),
             None => GREY.paint("--").to_string(),
@@ -106,7 +107,7 @@ impl Git {
     /// directories, which don't really have an 'official' status.
     fn dir_status(&self, dir: &Path) -> String {
         let s = self.statuses.iter()
-                             .filter(|p| p.0.starts_with(dir.as_vec()))
+                             .filter(|p| dir.is_ancestor_of(&p.0))
                              .fold(git2::Status::empty(), |a, b| a | b.1);
 
         ANSIStrings( &[Git::index_status(s), Git::working_tree_status(s)] ).to_string()
