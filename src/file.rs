@@ -263,7 +263,7 @@ impl<'a> File<'a> {
 
         let user_name = match users_cache.get_user_by_uid(uid) {
             Some(user) => user.name,
-            None => uid.to_string(),
+            None => self.stat.unstable.uid.to_string(),
         };
 
         let style = if users_cache.get_current_uid() == uid { Yellow.bold() } else { Plain };
@@ -287,7 +287,7 @@ impl<'a> File<'a> {
                 }
                 group.name
             },
-            None => gid.to_string(),
+            None => self.stat.unstable.gid.to_string(),
         };
 
         Cell::paint(style, &*group_name)
@@ -601,6 +601,19 @@ pub mod test {
             let cell = Cell::paint(Plain, "1000");
             assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
         }
+
+        #[test]
+        fn overflow() {
+            let mut stat = dummy_stat();
+            stat.unstable.uid = 2_147_483_648;
+
+            let file = new_file(stat, "/hi");
+
+            let mut users = MockUsers::with_current_uid(3);
+
+            let cell = Cell::paint(Plain, "2147483648");
+            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
+        }
     }
 
     mod groups {
@@ -660,6 +673,19 @@ pub mod test {
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
 
             let cell = Cell::paint(Yellow.bold(), "folk");
+            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
+        }
+
+        #[test]
+        fn overflow() {
+            let mut stat = dummy_stat();
+            stat.unstable.gid = 2_147_483_648;
+
+            let file = new_file(stat, "/hi");
+
+            let mut users = MockUsers::with_current_uid(3);
+
+            let cell = Cell::paint(Plain, "2147483648");
             assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
         }
     }
