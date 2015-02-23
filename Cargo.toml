@@ -22,6 +22,11 @@ bitflags = "0.1"
 default = [ "git" ]
 git = [ "git2" ]
 
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+
 [dependencies.git2]
 version = "0.1.13"
 optional = true
