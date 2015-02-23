@@ -3,30 +3,25 @@ extern crate libc;
 
 use std::ffi::CString;
 use std::ptr;
-use std::mem;
 use std::old_io as io;
-use self::libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
-
-/// Don't follow symbolic links
-const XATTR_NOFOLLOW: c_int = 0x0001; 
-/// Expose HFS Compression extended attributes
-const XATTR_SHOWCOMPRESSION: c_int = 0x0020; 
+use self::libc::{size_t, ssize_t, c_char, c_void};
 
 extern "C" {
-    fn listxattr(path: *const c_char, namebuf: *mut c_char,
-                 size: size_t, options: c_int) -> ssize_t;
-    fn getxattr(path: *const c_char, name: *const c_char,
-                value: *mut c_void, size: size_t, position: uint32_t,
-                options: c_int) -> ssize_t;
+    fn listxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
+    fn llistxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
+    fn getxattr(path: *const c_char, name: *const c_char, 
+                value: *mut c_void, size: size_t
+    ) -> ssize_t;
+    fn lgetxattr(path: *const c_char, name: *const c_char, 
+                value: *mut c_void, size: size_t
+    ) -> ssize_t;
 }
 
 /// Attributes which can be passed to `Attribute::list_with_flags`
 #[derive(Copy)]
-pub enum ListFlags {
-    /// Don't follow symbolic links
-    NoFollow = XATTR_NOFOLLOW as isize,
-    /// Expose HFS Compression extended attributes
-    ShowCompression = XATTR_SHOWCOMPRESSION as isize
+pub enum FollowSymlinks {
+    Yes,
+    No
 }
 
 /// Extended attribute
@@ -39,21 +34,21 @@ pub struct Attribute {
 impl Attribute {
     /// Lists the extended attribute of `path`.
     /// Does follow symlinks by default.
-    pub fn list(path: &Path, flags: &[ListFlags]) -> io::IoResult<Vec<Attribute>> {
-        let mut c_flags: c_int = 0;
-        for &flag in flags.iter() {
-            c_flags |= flag as c_int
-        }
+    pub fn list(path: &Path, do_follow: FollowSymlinks) -> io::IoResult<Vec<Attribute>> {
+        let (listxattr, getxattr) = match do_follow {
+            FollowSymlinks::Yes => (listxattr, getxattr),
+            FollowSymlinks::No => (llistxattr, lgetxattr),
+        };
         let c_path = try!(CString::new(path.as_vec()));
-        let bufsize = unsafe { 
-            listxattr(c_path.as_ptr(), ptr::null_mut(), 0, c_flags)
+        let bufsize = unsafe {
+            listxattr(c_path.as_ptr(), ptr::null_mut(), 0)
         };
         if bufsize > 0 {
             let mut buf = vec![0u8; bufsize as usize];
             let err = unsafe { listxattr(
                 c_path.as_ptr(),
                 buf.as_mut_ptr() as *mut c_char,
-                bufsize as size_t, c_flags
+                bufsize as size_t
             )};
             if err > 0 {
                 // End indicies of the attribute names
@@ -68,16 +63,12 @@ impl Attribute {
                         getxattr(
                             c_path.as_ptr(),
                             buf[start..end+1].as_ptr() as *const c_char,
-                            ptr::null_mut(), 0, 0, c_flags
+                            ptr::null_mut(), 0
                         )
                     };
                     if size > 0 {
                         names.push(Attribute { 
-                            name: unsafe {
-                                // buf is guaranteed to contain valid utf8 strings
-                                // see man listxattr
-                                mem::transmute::<&[u8], &str>(&buf[start..end]).to_string() 
-                            },
+                            name: String::from_utf8_lossy(&buf[start..end]).into_owned(),
                             size: size as usize
                         });
                     }
@@ -114,12 +105,12 @@ impl Attribute {
 /// Lists the extended attributes.
 /// Follows symlinks like `stat`
 pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, &[])
+    Attribute::list(path, FollowSymlinks::Yes)
 }
 /// Lists the extended attributes.
 /// Does not follow symlinks like `lstat`
 pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, &[ListFlags::NoFollow])
+    Attribute::list(path, FollowSymlinks::No)
 }
 
 /// Returns true if the extended attribute feature is implemented on this platform.
