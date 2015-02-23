@@ -1,4 +1,5 @@
-use column::{Column, Cell};
+use column::{Alignment, Column, Cell};
+use xattr::Attribute;
 use dir::Dir;
 use file::{File, GREY};
 use options::{Columns, FileFilter};
@@ -12,6 +13,7 @@ pub struct Details {
     pub columns: Columns,
     pub header: bool,
     pub tree: bool,
+    pub xattr: bool,
     pub filter: FileFilter,
 }
 
@@ -36,6 +38,7 @@ impl Details {
                 cells: columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect(),
                 name: Plain.underline().paint("Name").to_string(),
                 last: false,
+                attrs: Vec::new(),
                 children: false,
             };
 
@@ -72,6 +75,17 @@ impl Details {
             }
 
             print!("{}\n", row.name);
+            
+            if self.xattr {
+                let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
+                for attr in row.attrs.iter() {
+                    let name = attr.name();
+                    println!("{}\t{}",
+                        Alignment::Left.pad_string(name, width - name.len()),
+                        attr.size()
+                    )
+                }
+            }
         }
     }
 
@@ -83,6 +97,7 @@ impl Details {
                 cells: columns.iter().map(|c| file.display(c, cache, locale)).collect(),
                 name:  file.file_name_view(),
                 last:  index == src.len() - 1,
+                attrs: file.xattrs.clone(),
                 children: file.this.is_some(),
             };
 
@@ -104,6 +119,7 @@ struct Row {
     pub cells: Vec<Cell>,
     pub name: String,
     pub last: bool,
+    pub attrs: Vec<Attribute>,
     pub children: bool,
 }
 
