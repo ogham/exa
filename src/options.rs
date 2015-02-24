@@ -8,6 +8,7 @@ use xattr;
 
 use std::cmp::Ordering;
 use std::fmt;
+use std::num::ParseIntError;
 
 use getopts;
 use natord;
@@ -44,11 +45,6 @@ impl Options {
     /// Call getopts on the given slice of command-line strings.
     pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
-        if xattr::feature_implemented() {
-            opts.optflag("@", "extended",
-                         "display extended attribute keys and sizes in long (-l) output"
-            );
-        }
         opts.optflag("1", "oneline",   "display one entry per line");
         opts.optflag("a", "all",       "show dot-files");
         opts.optflag("b", "binary",    "use binary prefixes in file sizes");
@@ -59,6 +55,7 @@ impl Options {
         opts.optflag("H", "links",     "show number of hard links");
         opts.optflag("i", "inode",     "show each file's inode number");
         opts.optflag("l", "long",      "display extended details and attributes");
+        opts.optopt ("L", "level",     "maximum depth of recursion", "DEPTH");
         opts.optflag("m", "modified",  "display timestamp of most recent modification");
         opts.optflag("r", "reverse",   "reverse order of files");
         opts.optflag("R", "recurse",   "recurse into directories");
@@ -70,6 +67,10 @@ impl Options {
         opts.optflag("U", "created",   "display timestamp of creation for a file");
         opts.optflag("x", "across",    "sort multi-column view entries across");
         opts.optflag("?", "help",      "show list of command-line options");
+
+        if xattr::feature_implemented() {
+            opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
+        }
 
         let matches = match opts.parse(args) {
             Ok(m) => m,
@@ -98,9 +99,12 @@ impl Options {
             matches.free.clone()
         };
 
+        let dir_action = try!(DirAction::deduce(&matches));
+        let view = try!(View::deduce(&matches, filter, dir_action));
+
         Ok((Options {
-            dir_action: try!(DirAction::deduce(&matches)),
-            view:       try!(View::deduce(&matches, filter)),
+            dir_action: dir_action,
+            view:       view,
             filter:     filter,
         }, path_strs))
     }
@@ -179,12 +183,15 @@ pub enum Misfire {
     /// this enum isn't named Error!
     Help(String),
 
-    /// Two options were given that conflict with one another
+    /// Two options were given that conflict with one another.
     Conflict(&'static str, &'static str),
 
     /// An option was given that does nothing when another one either is or
     /// isn't present.
     Useless(&'static str, bool, &'static str),
+
+    /// A numeric option was given that failed to be parsed as a number.
+    FailedParse(ParseIntError),
 }
 
 impl Misfire {
@@ -203,12 +210,13 @@ impl fmt::Display for Misfire {
             Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}.", a, b),
             Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}.", a, b),
             Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}.", a, b),
+            FailedParse(ref e)    => write!(f, "Failed to parse number: {}", e),
         }
     }
 }
 
 impl View {
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter) -> Result<View, Misfire> {
+    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
         if matches.opt_present("long") {
             if matches.opt_present("across") {
                 Err(Misfire::Useless("across", true, "long"))
@@ -220,7 +228,7 @@ impl View {
                 let details = Details {
                         columns: try!(Columns::deduce(matches)),
                         header: matches.opt_present("header"),
-                        tree: matches.opt_present("recurse") || matches.opt_present("tree"),
+                        recurse: dir_action.recurse_options(),
                         xattr: xattr::feature_implemented() && matches.opt_present("extended"),
                         filter: filter,
                 };
@@ -373,7 +381,9 @@ impl TimeTypes {
 /// What to do when encountering a directory?
 #[derive(PartialEq, Debug, Copy)]
 pub enum DirAction {
-    AsFile, List, Recurse, Tree
+    AsFile,
+    List,
+    Recurse(RecurseOptions),
 }
 
 impl DirAction {
@@ -385,10 +395,66 @@ impl DirAction {
         match (recurse, list, tree) {
             (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
             (_,     true,  true ) => Err(Misfire::Conflict("tree", "list-dirs")),
-            (true,  false, false) => Ok(DirAction::Recurse),
-            (_   ,  _,     true ) => Ok(DirAction::Tree),
+            (true,  false, false) => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, false)))),
+            (_   ,  _,     true ) => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, true)))),
             (false, true,  _    ) => Ok(DirAction::AsFile),
             (false, false, _    ) => Ok(DirAction::List),
+        }
+    }
+
+    pub fn recurse_options(&self) -> Option<RecurseOptions> {
+        match *self {
+            DirAction::Recurse(opts) => Some(opts),
+            _ => None,
+        }
+    }
+
+    pub fn is_tree(&self) -> bool {
+        match *self {
+            DirAction::Recurse(RecurseOptions { max_depth: _, tree }) => tree,
+            _ => false,
+         }
+    }
+
+    pub fn is_recurse(&self) -> bool {
+        match *self {
+            DirAction::Recurse(RecurseOptions { max_depth: _, tree }) => !tree,
+            _ => false,
+         }
+    }
+}
+
+#[derive(PartialEq, Debug, Copy)]
+pub struct RecurseOptions {
+    pub tree:      bool,
+    pub max_depth: Option<usize>,
+}
+
+impl RecurseOptions {
+    pub fn deduce(matches: &getopts::Matches, tree: bool) -> Result<RecurseOptions, Misfire> {
+        let max_depth = if let Some(level) = matches.opt_str("level") {
+            match level.parse() {
+                Ok(l)  => Some(l),
+                Err(e) => return Err(Misfire::FailedParse(e)),
+            }
+        }
+        else {
+            None
+        };
+
+        Ok(RecurseOptions {
+            tree: tree,
+            max_depth: max_depth,
+        })
+    }
+
+    pub fn is_too_deep(&self, depth: usize) -> bool {
+        match self.max_depth {
+            None    => false,
+            Some(d) => {
+                println!("Comparing {} to {}", d, depth);
+                d <= depth
+            }
         }
     }
 }
