@@ -452,7 +452,6 @@ impl RecurseOptions {
         match self.max_depth {
             None    => false,
             Some(d) => {
-                println!("Comparing {} to {}", d, depth);
                 d <= depth
             }
         }
