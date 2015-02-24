@@ -1,7 +1,8 @@
 #![feature(collections, core, env, libc, old_io, old_path, plugin, std_misc)]
-// Other platforms then macos don’t need std_misc but you can’t 
+
+// Other platforms than macos don't need std_misc but you can't
 // use #[cfg] on features.
-#![allow(unused_features)] 
+#![allow(unused_features)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -20,7 +21,7 @@ use std::old_io::{fs, FileType};
 
 use dir::Dir;
 use file::File;
-use options::{Options, View, DirAction};
+use options::{Options, View};
 use output::lines_view;
 
 pub mod column;
@@ -58,7 +59,7 @@ impl<'a> Exa<'a> {
             match fs::stat(&path) {
                 Ok(stat) => {
                     if stat.kind == FileType::Directory {
-                        if self.options.dir_action == DirAction::Tree {
+                        if self.options.dir_action.is_tree() {
                             self.files.push(File::with_stat(stat, &path, None, true));
                         }
                         else {
@@ -111,9 +112,12 @@ impl<'a> Exa<'a> {
                     // backwards: the *last* element of the stack is used each
                     // time, so by inserting them backwards, they get displayed in
                     // the correct sort order.
-                    if self.options.dir_action == DirAction::Recurse {
-                        for dir in files.iter().filter(|f| f.stat.kind == FileType::Directory).rev() {
-                            self.dirs.push(dir.path.clone());
+                    if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
+                        let depth = dir_path.components().filter(|&c| c != b".").count() + 1;
+                        if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
+                            for dir in files.iter().filter(|f| f.stat.kind == FileType::Directory).rev() {
+                                self.dirs.push(dir.path.clone());
+                            }
                         }
                     }
 

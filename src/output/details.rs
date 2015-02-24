@@ -2,7 +2,7 @@ use column::{Alignment, Column, Cell};
 use xattr::Attribute;
 use dir::Dir;
 use file::{File, GREY};
-use options::{Columns, FileFilter};
+use options::{Columns, FileFilter, RecurseOptions};
 use users::OSUsers;
 
 use locale;
@@ -12,7 +12,7 @@ use ansi_term::Style::Plain;
 pub struct Details {
     pub columns: Columns,
     pub header: bool,
-    pub tree: bool,
+    pub recurse: Option<RecurseOptions>,
     pub xattr: bool,
     pub filter: FileFilter,
 }
@@ -57,7 +57,7 @@ impl Details {
                 print!("{} ", column.alignment().pad_string(&row.cells[num].text, padding));
             }
 
-            if self.tree {
+            if self.recurse.is_some() {
                 stack.resize(row.depth  + 1, "├──");
                 stack[row.depth] = if row.last { "└──" } else { "├──" };
 
@@ -75,7 +75,7 @@ impl Details {
             }
 
             print!("{}\n", row.name);
-            
+
             if self.xattr {
                 let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
                 for attr in row.attrs.iter() {
@@ -103,7 +103,11 @@ impl Details {
 
             dest.push(row);
 
-            if self.tree {
+            if let Some(r) = self.recurse {
+                if r.tree == false || r.is_too_deep(depth) {
+                    continue;
+                }
+
                 if let Some(ref dir) = file.this {
                     let mut files = dir.files(true);
                     self.filter.transform_files(&mut files);
