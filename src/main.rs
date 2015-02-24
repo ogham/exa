@@ -18,7 +18,6 @@ extern crate git2;
 
 use std::env;
 use std::old_io::{fs, FileType};
-use std::path::Component::CurDir;
 
 use dir::Dir;
 use file::File;
@@ -114,7 +113,8 @@ impl<'a> Exa<'a> {
                     // time, so by inserting them backwards, they get displayed in
                     // the correct sort order.
                     if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
-                        if !recurse_opts.tree && !recurse_opts.is_too_deep(dir_path.components().count() + 1) {
+                        let depth = dir_path.components().filter(|&c| c != b".").count() + 1;
+                        if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
                             for dir in files.iter().filter(|f| f.stat.kind == FileType::Directory).rev() {
                                 self.dirs.push(dir.path.clone());
                             }
