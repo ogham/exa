@@ -162,13 +162,8 @@ impl<'a> File<'a> {
                         for component in path_bytes.init().iter() {
                             let string = String::from_utf8_lossy(component).to_string();
                             path_prefix.push_str(&string);
+                            path_prefix.push_str("/");
                         }
-                    }
-
-                    // Only add a slash when there's something in the path
-                    // prefix so far.
-                    if path_bytes.len() > 1 {
-                        path_prefix.push_str("/");
                     }
 
                     format!("{} {} {}",
