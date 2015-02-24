@@ -190,6 +190,10 @@ pub enum Misfire {
     /// isn't present.
     Useless(&'static str, bool, &'static str),
 
+    /// An option was given that does nothing when either of two other options
+    /// are not present.
+    Useless2(&'static str, &'static str, &'static str),
+
     /// A numeric option was given that failed to be parsed as a number.
     FailedParse(ParseIntError),
 }
@@ -210,6 +214,7 @@ impl fmt::Display for Misfire {
             Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}.", a, b),
             Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}.", a, b),
             Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}.", a, b),
+            Useless2(a, b1, b2)   => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
             FailedParse(ref e)    => write!(f, "Failed to parse number: {}", e),
         }
     }
@@ -259,6 +264,9 @@ impl View {
         }
         else if matches.opt_present("tree") {
             Err(Misfire::Useless("tree", false, "long"))
+        }
+        else if matches.opt_present("level") && !matches.opt_present("recurse") {
+            Err(Misfire::Useless2("level", "recurse", "tree"))
         }
         else if xattr::feature_implemented() && matches.opt_present("extended") {
             Err(Misfire::Useless("extended", false, "long"))
@@ -630,4 +638,11 @@ mod test {
             assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
         }
     }
+
+    #[test]
+    fn level_without_recurse_or_tree() {
+        let opts = Options::getopts(&[ "--level".to_string(), "69105".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
+    }
+
 }
