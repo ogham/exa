@@ -1,12 +1,13 @@
 # Maintainer: tuftedocelot@fastmail.fm
 _pkgname=exa
 pkgname=${_pkgname}-git
-pkgver=257
+pkgver=270
 pkgrel=1
 pkgdesc='Replacement for ls written in Rust.'
 arch=('i686' 'x86_64')
 url="https://github.com/ogham/exa"
-license='GPLv3'
+license='MIT'
+depends=('libssh2')
 makedepends=('cmake' 'rust-nightly-bin' 'libgit2')
 source=("git+https://github.com/ogham/exa.git")
 md5sums=('SKIP')
@@ -18,6 +19,6 @@ pkgver() {
 
 package() {
     cd "$srcdir/$_pkgname"
-    cargo build
-    install -Dm755 "$srcdir/$_pkgname/target/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
+    cargo build --release
+    install -Dm755 "$srcdir/$_pkgname/target/release/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
 }
