@@ -56,12 +56,12 @@ impl Details {
 }
 
 struct Row {
-    pub depth: usize,
-    pub cells: Vec<Cell>,
-    pub name: String,
-    pub last: bool,
-    pub attrs: Vec<Attribute>,
-    pub children: bool,
+    depth: usize,
+    cells: Vec<Cell>,
+    name: String,
+    last: bool,
+    attrs: Vec<Attribute>,
+    children: bool,
 }
 
 type ColumnInfo = (usize, Alignment);
