@@ -1,7 +1,7 @@
 # Maintainer: tuftedocelot@fastmail.fm
 _pkgname=exa
 pkgname=${_pkgname}-git
-pkgver=270
+pkgver=303
 pkgrel=1
 pkgdesc='Replacement for ls written in Rust.'
 arch=('i686' 'x86_64')
@@ -19,6 +19,7 @@ pkgver() {
 
 package() {
     cd "$srcdir/$_pkgname"
-    cargo build --release
+    make
     install -Dm755 "$srcdir/$_pkgname/target/release/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
+    install -Dm644 "$srcdir/$_pkgname/man/$_pkgname.1" "$pkgdir/usr/share/man/man1/$_pkgname.1"
 }
