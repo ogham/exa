@@ -298,7 +298,7 @@ impl View {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
     DecimalBytes,
     BinaryBytes,
@@ -319,7 +319,7 @@ impl SizeFormat {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeType {
     FileAccessed,
     FileModified,
