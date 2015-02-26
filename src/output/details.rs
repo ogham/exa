@@ -12,9 +12,8 @@ use ansi_term::Style::Plain;
 pub struct Details {
     pub columns: Columns,
     pub header: bool,
-    pub recurse: Option<RecurseOptions>,
+    pub recurse: Option<(RecurseOptions, FileFilter)>,
     pub xattr: bool,
-    pub filter: FileFilter,
 }
 
 impl Details {
@@ -41,14 +40,14 @@ impl Details {
         for (index, file) in src.iter().enumerate() {
             table.add_row(file, depth, index == src.len() - 1);
 
-            if let Some(r) = self.recurse {
+            if let Some((r, filter)) = self.recurse {
                 if r.tree == false || r.is_too_deep(depth) {
                     continue;
                 }
 
                 if let Some(ref dir) = file.this {
                     let mut files = dir.files(true);
-                    self.filter.transform_files(&mut files);
+                    filter.transform_files(&mut files);
                     self.add_files_to_table(table, &files, depth + 1);
                 }
             }
