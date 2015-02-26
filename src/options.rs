@@ -233,9 +233,8 @@ impl View {
                 let details = Details {
                         columns: try!(Columns::deduce(matches)),
                         header: matches.opt_present("header"),
-                        recurse: dir_action.recurse_options(),
+                        recurse: dir_action.recurse_options().map(|o| (o, filter)),
                         xattr: xattr::feature_implemented() && matches.opt_present("extended"),
-                        filter: filter,
                 };
 
                 Ok(View::Details(details))
@@ -298,7 +297,7 @@ impl View {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
     DecimalBytes,
     BinaryBytes,
@@ -319,7 +318,7 @@ impl SizeFormat {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeType {
     FileAccessed,
     FileModified,
