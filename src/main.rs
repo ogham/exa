@@ -1,4 +1,4 @@
-#![feature(collections, core, env, io, libc, old_io, old_path, std_misc)]
+#![feature(collections, core, env, io, libc, old_io, old_path, os, std_misc)]
 
 // Other platforms than macos don't need std_misc but you can't
 // use #[cfg] on features.
