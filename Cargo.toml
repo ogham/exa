@@ -9,7 +9,6 @@ name = "exa"
 [dependencies]
 ansi_term = "0.5.0"
 datetime = "0.1.3"
-#datetime_macros = "0.1.2"
 getopts = "0.2.1"
 locale = "0.1.2"
 natord = "1.0.7"
@@ -28,5 +27,5 @@ debug = false
 lto = true
 
 [dependencies.git2]
-version = "0.1.13"
+git = "https://github.com/alexcrichton/git2-rs.git"
 optional = true
