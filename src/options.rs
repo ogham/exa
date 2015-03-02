@@ -68,6 +68,8 @@ impl Options {
         opts.optflag("u", "accessed",  "display timestamp of last access for a file");
         opts.optflag("U", "created",   "display timestamp of creation for a file");
         opts.optflag("x", "across",    "sort multi-column view entries across");
+
+        opts.optflag("",  "version",   "display version of exa");
         opts.optflag("?", "help",      "show list of command-line options");
 
         if xattr::feature_implemented() {
@@ -81,6 +83,9 @@ impl Options {
 
         if matches.opt_present("help") {
             return Err(Misfire::Help(opts.usage("Usage:\n  exa [options] [files...]")));
+        }
+        else if matches.opt_present("version") {
+            return Err(Misfire::Version);
         }
 
         let sort_field = match matches.opt_str("sort") {
@@ -191,6 +196,9 @@ pub enum Misfire {
     /// this enum isn't named Error!
     Help(String),
 
+    /// The user wanted the version number.
+    Version,
+
     /// Two options were given that conflict with one another.
     Conflict(&'static str, &'static str),
 
@@ -219,6 +227,7 @@ impl fmt::Display for Misfire {
         match *self {
             InvalidOptions(ref e) => write!(f, "{}", e),
             Help(ref text)        => write!(f, "{}", text),
+            Version               => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
             Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}.", a, b),
             Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}.", a, b),
             Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}.", a, b),
