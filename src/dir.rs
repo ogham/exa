@@ -84,8 +84,19 @@ impl Git {
     /// Discover a Git repository on or above this directory, scanning it for
     /// the files' statuses if one is found.
     fn scan(path: &Path) -> Result<Git, git2::Error> {
+        use std::os::unix::OsStrExt;
+        use std::ffi::AsOsStr;
+
+        // TODO: libgit2-rs uses the new Path module, but exa still uses the
+        // old_path one, and will have to continue to do so until the new IO
+        // module gets a bit more developed. So we have to turn Paths into
+        // old_path::Paths. Yes, this is hacky, but hopefully temporary.
         let repo = try!(git2::Repository::discover(path));
-        let workdir = repo.workdir().unwrap_or(Path::new("."));
+        let workdir = match repo.workdir() {
+            Some(w) => Path::new(w.as_os_str().as_bytes()),
+            None => return Ok(Git { statuses: vec![] }),  // bare repo
+        };
+
         let statuses = try!(repo.statuses(None)).iter()
                                                 .map(|e| (workdir.join(e.path_bytes()), e.status()))
                                                 .collect();
