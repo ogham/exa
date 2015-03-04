@@ -69,7 +69,8 @@ impl<'a> Exa<'a> {
         // Communication between consumer thread and producer threads
         enum StatResult<'a> {
             File(File<'a>),
-            Path(Path)
+            Path(Path),
+            Error
         }
         let (results_tx, results_rx) = channel();
 
@@ -84,7 +85,8 @@ impl<'a> Exa<'a> {
                 match results_rx.recv() {
                     Ok(result) => match result {
                         StatResult::File(file) => self.files.push(file),
-                        StatResult::Path(path) => self.dirs.push(path)
+                        StatResult::Path(path) => self.dirs.push(path),
+                        StatResult::Error      => ()
                     },
                     Err(_) => unreachable!()
                 }
@@ -116,7 +118,10 @@ impl<'a> Exa<'a> {
                             let _ = results_tx.send(StatResult::File(File::with_stat(stat, &path, None, false)));
                         }
                     }
-                    Err(e) => println!("{}: {}", file, e),
+                    Err(e) => {
+                        println!("{}: {}", file, e);
+                        let _ = results_tx.send(StatResult::Error);
+                    }
                 }
             });
         }
