@@ -104,25 +104,23 @@ impl<'a> Exa<'a> {
             // Spawn producer thread
             thread::spawn(move || {
                 let path = Path::new(file.clone());
-                match fs::stat(&path) {
+                let _ = results_tx.send(match fs::stat(&path) {
                     Ok(stat) => {
-                        if stat.kind == FileType::Directory {
-                            if is_tree {
-                                let _ = results_tx.send(StatResult::File(File::with_stat(stat, &path, None, true)));
-                            }
-                            else {
-                                let _ = results_tx.send(StatResult::Path(path));
-                            }
+                        if stat.kind != FileType::Directory {
+                            StatResult::File(File::with_stat(stat, &path, None, false))
+                        }
+                        else if is_tree {
+                            StatResult::File(File::with_stat(stat, &path, None, true))
                         }
                         else {
-                            let _ = results_tx.send(StatResult::File(File::with_stat(stat, &path, None, false)));
+                            StatResult::Path(path)
                         }
                     }
                     Err(e) => {
                         println!("{}: {}", file, e);
-                        let _ = results_tx.send(StatResult::Error);
+                        StatResult::Error
                     }
-                }
+                });
             });
         }
 
