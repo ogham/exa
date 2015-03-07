@@ -126,8 +126,10 @@ impl<'a> HasType for File<'a> {
             if source_files.is_empty() {
                 return Normal;
             }
-            else if source_files.iter().any(|path| self.dir.map(|d| d.contains(path)).unwrap_or(false)) {
-                return Temp;
+            else if let Some(dir) = self.dir {
+                if source_files.iter().any(|path| dir.contains(path)) {
+                    return Temp;
+                }
             }
             else if COMPILED_TYPES.contains(&&ext[..]) {
                 return Compiled;
