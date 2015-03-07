@@ -1,4 +1,5 @@
-#![feature(collections, core, exit_status, io, libc, old_io, old_path, os, std_misc)]
+#![feature(collections, core, exit_status, io, libc, old_fs, old_io, old_path, os, std_misc)]
+#![allow(deprecated)]
 
 // Other platforms than macos don't need std_misc but you can't
 // use #[cfg] on features.
