@@ -279,6 +279,9 @@ impl View {
         else if matches.opt_present("blocks") {
             Err(Misfire::Useless("blocks", false, "long"))
         }
+        else if cfg!(feature="git") && matches.opt_present("git") {
+            Err(Misfire::Useless("git", false, "long"))
+        }
         else if matches.opt_present("time") {
             Err(Misfire::Useless("time", false, "long"))
         }
@@ -651,6 +654,13 @@ mod test {
     fn just_blocks() {
         let opts = Options::getopts(&[ "--blocks".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
+    }
+
+    #[test]
+    #[cfg(feature="git")]
+    fn just_git() {
+        let opts = Options::getopts(&[ "--git".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("git", false, "long"))
     }
 
     #[test]
