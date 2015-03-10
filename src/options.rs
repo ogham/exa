@@ -72,6 +72,10 @@ impl Options {
         opts.optflag("",  "version",   "display version of exa");
         opts.optflag("?", "help",      "show list of command-line options");
 
+        if cfg!(feature="git") {
+            opts.optflag("", "git", "show git status");
+        }
+
         if xattr::feature_implemented() {
             opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
         }
@@ -490,6 +494,7 @@ pub struct Columns {
     links: bool,
     blocks: bool,
     group: bool,
+    git: bool
 }
 
 impl Columns {
@@ -501,6 +506,7 @@ impl Columns {
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
             group:  matches.opt_present("group"),
+            git:    matches.opt_present("git"),
         })
     }
 
@@ -545,7 +551,7 @@ impl Columns {
 
         if cfg!(feature="git") {
             if let Some(d) = dir {
-                if d.has_git_repo() {
+                if self.git && d.has_git_repo() {
                     columns.push(GitStatus);
                 }
             }
