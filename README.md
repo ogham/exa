@@ -16,6 +16,7 @@
 - **-B**, **--bytes**: list file sizes in bytes, without prefixes
 - **-d**, **--list-dirs**: list directories as regular files
 - **-g**, **--group**: show group as well as user
+- **--git**: show git status (depends on libgit2, see below)
 - **-h**, **--header**: show a header row
 - **-H**, **--links**: show number of hard links column
 - **-i**, **--inode**: show inode number column
