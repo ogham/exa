@@ -72,6 +72,10 @@ impl Options {
         opts.optflag("",  "version",   "display version of exa");
         opts.optflag("?", "help",      "show list of command-line options");
 
+        if cfg!(feature="git") {
+            opts.optflag("", "git", "show git status");
+        }
+
         if xattr::feature_implemented() {
             opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
         }
@@ -275,11 +279,17 @@ impl View {
         else if matches.opt_present("blocks") {
             Err(Misfire::Useless("blocks", false, "long"))
         }
+        else if cfg!(feature="git") && matches.opt_present("git") {
+            Err(Misfire::Useless("git", false, "long"))
+        }
         else if matches.opt_present("time") {
             Err(Misfire::Useless("time", false, "long"))
         }
         else if matches.opt_present("tree") {
             Err(Misfire::Useless("tree", false, "long"))
+        }
+        else if matches.opt_present("group") {
+            Err(Misfire::Useless("group", false, "long"))
         }
         else if matches.opt_present("level") && !matches.opt_present("recurse") {
             Err(Misfire::Useless2("level", "recurse", "tree"))
@@ -490,6 +500,7 @@ pub struct Columns {
     links: bool,
     blocks: bool,
     group: bool,
+    git: bool
 }
 
 impl Columns {
@@ -501,6 +512,7 @@ impl Columns {
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
             group:  matches.opt_present("group"),
+            git:    matches.opt_present("git"),
         })
     }
 
@@ -545,7 +557,7 @@ impl Columns {
 
         if cfg!(feature="git") {
             if let Some(d) = dir {
-                if d.has_git_repo() {
+                if self.git && d.has_git_repo() {
                     columns.push(GitStatus);
                 }
             }
@@ -630,6 +642,12 @@ mod test {
     }
 
     #[test]
+    fn just_group() {
+        let opts = Options::getopts(&[ "--group".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("group", false, "long"))
+    }
+
+    #[test]
     fn just_inode() {
         let opts = Options::getopts(&[ "--inode".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("inode", false, "long"))
@@ -645,6 +663,13 @@ mod test {
     fn just_blocks() {
         let opts = Options::getopts(&[ "--blocks".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
+    }
+
+    #[test]
+    #[cfg(feature="git")]
+    fn just_git() {
+        let opts = Options::getopts(&[ "--git".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("git", false, "long"))
     }
 
     #[test]
