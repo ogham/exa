@@ -288,6 +288,9 @@ impl View {
         else if matches.opt_present("tree") {
             Err(Misfire::Useless("tree", false, "long"))
         }
+        else if matches.opt_present("group") {
+            Err(Misfire::Useless("group", false, "long"))
+        }
         else if matches.opt_present("level") && !matches.opt_present("recurse") {
             Err(Misfire::Useless2("level", "recurse", "tree"))
         }
@@ -636,6 +639,12 @@ mod test {
     fn just_header() {
         let opts = Options::getopts(&[ "--header".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("header", false, "long"))
+    }
+
+    #[test]
+    fn just_group() {
+        let opts = Options::getopts(&[ "--group".to_string() ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("group", false, "long"))
     }
 
     #[test]
