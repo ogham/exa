@@ -8,7 +8,7 @@ dependencies = [
  "getopts 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.2.1 (git+https://github.com/alexcrichton/git2-rs.git)",
  "locale 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "natord 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "natord 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "number_prefix 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "pad 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "users 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -31,8 +31,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "locale 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "pad 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex_macros 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex_macros 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -51,7 +51,7 @@ dependencies = [
 [[package]]
 name = "git2"
 version = "0.2.1"
-source = "git+https://github.com/alexcrichton/git2-rs.git#216d7628fc51682fade44dd5a861ff85207ffe4b"
+source = "git+https://github.com/alexcrichton/git2-rs.git#adc779fefca3df11fadfb550f48d6a58ad46f7e6"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -67,13 +67,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "libgit2-sys"
 version = "0.2.2"
-source = "git+https://github.com/alexcrichton/git2-rs.git#216d7628fc51682fade44dd5a861ff85207ffe4b"
+source = "git+https://github.com/alexcrichton/git2-rs.git#adc779fefca3df11fadfb550f48d6a58ad46f7e6"
 dependencies = [
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libssh2-sys 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -92,7 +92,7 @@ dependencies = [
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-sys 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -100,7 +100,7 @@ name = "libz-sys"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "pkg-config 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -120,7 +120,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "natord"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -136,7 +136,7 @@ dependencies = [
  "gcc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libressl-pnacl-sys 2.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -146,7 +146,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -156,15 +156,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "regex"
-version = "0.1.17"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "regex_macros"
-version = "0.1.10"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "regex 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
