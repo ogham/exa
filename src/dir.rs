@@ -84,7 +84,7 @@ impl Git {
     /// Discover a Git repository on or above this directory, scanning it for
     /// the files' statuses if one is found.
     fn scan(path: &Path) -> Result<Git, git2::Error> {
-        use std::os::unix::OsStrExt;
+        use std::os::unix::ffi::OsStrExt;
         use std::ffi::AsOsStr;
 
         // TODO: libgit2-rs uses the new Path module, but exa still uses the
