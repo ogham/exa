@@ -490,7 +490,7 @@ fn ext<'a>(name: &'a str) -> Option<String> {
 #[cfg(test)]
 pub mod test {
     pub use super::*;
-    pub use super::path_filename;
+    use super::path_filename;
 
     pub use column::{Cell, Column};
     pub use std::old_io as io;
