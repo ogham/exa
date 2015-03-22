@@ -1,5 +1,13 @@
+// Yeah, we still have to use the old path and IO libraries, until they sprout
+// the ability to inspect file types and stat times and other such things.
+//
+// There's a tracking issue for it:
+// https://github.com/rust-lang/rfcs/issues/939
+
 use std::old_io::{fs, IoResult};
 use std::old_io as io;
+use std::old_path::GenericPath;
+use std::old_path::posix::Path;
 use std::ascii::AsciiExt;
 use std::os::getcwd;
 
@@ -494,6 +502,8 @@ pub mod test {
 
     pub use column::{Cell, Column};
     pub use std::old_io as io;
+    pub use std::old_path::GenericPath;
+    pub use std::old_path::posix::Path;
     pub use output::details::UserLocale;
 
     pub use users::{User, Group};

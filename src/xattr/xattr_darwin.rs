@@ -5,12 +5,14 @@ use std::ffi::CString;
 use std::ptr;
 use std::mem;
 use std::old_io as io;
+use std::old_path::GenericPath;
+use std::old_path::posix::Path;
 use self::libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
 
 /// Don't follow symbolic links
-const XATTR_NOFOLLOW: c_int = 0x0001; 
+const XATTR_NOFOLLOW: c_int = 0x0001;
 /// Expose HFS Compression extended attributes
-const XATTR_SHOWCOMPRESSION: c_int = 0x0020; 
+const XATTR_SHOWCOMPRESSION: c_int = 0x0020;
 
 extern "C" {
     fn listxattr(path: *const c_char, namebuf: *mut c_char,
@@ -45,7 +47,7 @@ impl Attribute {
             c_flags |= flag as c_int
         }
         let c_path = try!(CString::new(path.as_vec()));
-        let bufsize = unsafe { 
+        let bufsize = unsafe {
             listxattr(c_path.as_ptr(), ptr::null_mut(), 0, c_flags)
         };
         if bufsize > 0 {
@@ -73,11 +75,11 @@ impl Attribute {
                         )
                     };
                     if size > 0 {
-                        names.push(Attribute { 
+                        names.push(Attribute {
                             name: unsafe {
                                 // buf is guaranteed to contain valid utf8 strings
                                 // see man listxattr
-                                mem::transmute::<&[u8], &str>(&buf[start..end]).to_string() 
+                                mem::transmute::<&[u8], &str>(&buf[start..end]).to_string()
                             },
                             size: size as usize
                         });
@@ -100,7 +102,7 @@ impl Attribute {
             })
         }
     }
-    
+
     /// Getter for name
     pub fn name(&self) -> &str {
         &self.name

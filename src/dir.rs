@@ -1,4 +1,6 @@
 use std::old_io::{fs, IoResult};
+use std::old_path::GenericPath;
+use std::old_path::posix::Path;
 use file::{File, GREY};
 
 #[cfg(feature="git")] use ansi_term::{ANSIString, ANSIStrings};

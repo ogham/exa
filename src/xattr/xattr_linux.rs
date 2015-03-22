@@ -4,15 +4,17 @@ extern crate libc;
 use std::ffi::CString;
 use std::ptr;
 use std::old_io as io;
+use std::old_path::GenericPath;
+use std::old_path::posix::Path;
 use self::libc::{size_t, ssize_t, c_char, c_void};
 
 extern "C" {
     fn listxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
     fn llistxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
-    fn getxattr(path: *const c_char, name: *const c_char, 
+    fn getxattr(path: *const c_char, name: *const c_char,
                 value: *mut c_void, size: size_t
     ) -> ssize_t;
-    fn lgetxattr(path: *const c_char, name: *const c_char, 
+    fn lgetxattr(path: *const c_char, name: *const c_char,
                 value: *mut c_void, size: size_t
     ) -> ssize_t;
 }
@@ -68,7 +70,7 @@ impl Attribute {
                         )
                     };
                     if size > 0 {
-                        names.push(Attribute { 
+                        names.push(Attribute {
                             name: String::from_utf8_lossy(&buf[start..end]).into_owned(),
                             size: size as usize
                         });
@@ -91,7 +93,7 @@ impl Attribute {
             })
         }
     }
-    
+
     /// Getter for name
     pub fn name(&self) -> &str {
         &self.name

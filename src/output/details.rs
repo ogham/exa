@@ -170,7 +170,7 @@ impl Table {
         // Work out the list of column widths by finding the longest cell for
         // each column, then formatting each cell in that column to be the
         // width of that one.
-        let column_widths: Vec<usize> = range(0, self.columns.len())
+        let column_widths: Vec<usize> = (0 .. self.columns.len())
             .map(|n| self.rows.iter().map(|row| row.cells[n].length).max().unwrap_or(0))
             .collect();
 

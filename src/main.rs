@@ -19,6 +19,8 @@ extern crate git2;
 
 use std::env;
 use std::old_io::{fs, FileType};
+use std::old_path::GenericPath;
+use std::old_path::posix::Path;
 use std::os::num_cpus;
 use std::sync::mpsc::{channel, sync_channel};
 use std::thread;
