@@ -10,6 +10,7 @@ use std::old_path::GenericPath;
 use std::old_path::posix::Path;
 use std::ascii::AsciiExt;
 use std::os::getcwd;
+use unicode::str::UnicodeStr;
 
 use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
 use ansi_term::Style::Plain;

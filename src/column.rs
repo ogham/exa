@@ -1,4 +1,5 @@
 use std::iter::repeat;
+use unicode::str::UnicodeStr;
 
 use ansi_term::Style;
 
