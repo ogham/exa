@@ -14,7 +14,7 @@ locale = "0.1.2"
 natord = "1.0.7"
 number_prefix = "0.2.3"
 pad = "0.1.1"
-users = "0.2.3"
+users = "0.3.1"
 bitflags = "0.1"
 
 [features]
