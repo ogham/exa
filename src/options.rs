@@ -2,9 +2,9 @@ use dir::Dir;
 use file::File;
 use column::Column;
 use column::Column::*;
+use feature::Attribute;
 use output::{Grid, Details};
 use term::dimensions;
-use xattr;
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -76,7 +76,7 @@ impl Options {
             opts.optflag("", "git", "show git status");
         }
 
-        if xattr::feature_implemented() {
+        if Attribute::feature_implemented() {
             opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
         }
 
@@ -255,7 +255,7 @@ impl View {
                         columns: try!(Columns::deduce(matches)),
                         header: matches.opt_present("header"),
                         recurse: dir_action.recurse_options().map(|o| (o, filter)),
-                        xattr: xattr::feature_implemented() && matches.opt_present("extended"),
+                        xattr: Attribute::feature_implemented() && matches.opt_present("extended"),
                 };
 
                 Ok(View::Details(details))
@@ -294,7 +294,7 @@ impl View {
         else if matches.opt_present("level") && !matches.opt_present("recurse") {
             Err(Misfire::Useless2("level", "recurse", "tree"))
         }
-        else if xattr::feature_implemented() && matches.opt_present("extended") {
+        else if Attribute::feature_implemented() && matches.opt_present("extended") {
             Err(Misfire::Useless("extended", false, "long"))
         }
         else if matches.opt_present("oneline") {
@@ -572,7 +572,7 @@ mod test {
     use super::Options;
     use super::Misfire;
     use super::Misfire::*;
-    use xattr;
+    use feature::Attribute;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
@@ -674,7 +674,7 @@ mod test {
 
     #[test]
     fn extended_without_long() {
-        if xattr::feature_implemented() {
+        if Attribute::feature_implemented() {
             let opts = Options::getopts(&[ "--extended".to_string() ]);
             assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
         }

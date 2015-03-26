@@ -1,5 +1,5 @@
 use column::{Alignment, Column, Cell};
-use xattr::Attribute;
+use feature::Attribute;
 use dir::Dir;
 use file::{File, GREY};
 use options::{Columns, FileFilter, RecurseOptions};

@@ -41,7 +41,7 @@ pub struct Attribute {
 impl Attribute {
     /// Lists the extended attribute of `path`.
     /// Does follow symlinks by default.
-    pub fn list(path: &Path, flags: &[ListFlags]) -> io::IoResult<Vec<Attribute>> {
+    pub fn list_attrs(path: &Path, flags: &[ListFlags]) -> io::IoResult<Vec<Attribute>> {
         let mut c_flags: c_int = 0;
         for &flag in flags.iter() {
             c_flags |= flag as c_int
@@ -112,19 +112,20 @@ impl Attribute {
     pub fn size(&self) -> usize {
         self.size
     }
+
+    /// Lists the extended attributes.
+    /// Follows symlinks like `stat`
+    pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
+        Attribute::list_attrs(path, &[])
+    }
+    /// Lists the extended attributes.
+    /// Does not follow symlinks like `lstat`
+    pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
+        Attribute::list_attrs(path, &[ListFlags::NoFollow])
+    }
+
+    /// Returns true if the extended attribute feature is implemented on this platform.
+    #[inline(always)]
+    pub fn feature_implemented() -> bool { true }
 }
 
-/// Lists the extended attributes.
-/// Follows symlinks like `stat`
-pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, &[])
-}
-/// Lists the extended attributes.
-/// Does not follow symlinks like `lstat`
-pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, &[ListFlags::NoFollow])
-}
-
-/// Returns true if the extended attribute feature is implemented on this platform.
-#[inline(always)]
-pub fn feature_implemented() -> bool { true }

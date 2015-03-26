@@ -31,11 +31,10 @@ use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
 use options::{SizeFormat, TimeType};
-use xattr;
-use xattr::Attribute;
+use feature::Attribute;
 
 /// This grey value is directly in between white and black, so it's guaranteed
-/// to show up on either backgrounded terminal.
+/// to show up on either backg"#160909"rounded terminal.
 pub static GREY: Colour = Fixed(244);
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -83,7 +82,7 @@ impl<'a> File<'a> {
             dir:    parent,
             stat:   stat,
             ext:    ext(&filename),
-            xattrs: xattr::llist(path).unwrap_or(Vec::new()),
+            xattrs: Attribute::llist(path).unwrap_or(Vec::new()),
             name:   filename.to_string(),
             this:   this,
         }
@@ -227,7 +226,7 @@ impl<'a> File<'a> {
                 dir:    self.dir,
                 stat:   stat,
                 ext:    ext(&filename),
-                xattrs: xattr::list(target_path).unwrap_or(Vec::new()),
+                xattrs: Attribute::list(target_path).unwrap_or(Vec::new()),
                 name:   filename.to_string(),
                 this:   None,
             })

@@ -33,12 +33,12 @@ use output::lines_view;
 
 pub mod column;
 pub mod dir;
+pub mod feature;
 pub mod file;
 pub mod filetype;
 pub mod options;
 pub mod output;
 pub mod term;
-pub mod xattr;
 
 #[cfg(not(test))]
 struct Exa<'a> {

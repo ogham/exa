@@ -36,7 +36,7 @@ pub struct Attribute {
 impl Attribute {
     /// Lists the extended attribute of `path`.
     /// Does follow symlinks by default.
-    pub fn list(path: &Path, do_follow: FollowSymlinks) -> io::IoResult<Vec<Attribute>> {
+    pub fn list_attrs(path: &Path, do_follow: FollowSymlinks) -> io::IoResult<Vec<Attribute>> {
         let (listxattr, getxattr) = match do_follow {
             FollowSymlinks::Yes => (listxattr, getxattr),
             FollowSymlinks::No => (llistxattr, lgetxattr),
@@ -103,19 +103,19 @@ impl Attribute {
     pub fn size(&self) -> usize {
         self.size
     }
-}
 
-/// Lists the extended attributes.
-/// Follows symlinks like `stat`
-pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, FollowSymlinks::Yes)
-}
-/// Lists the extended attributes.
-/// Does not follow symlinks like `lstat`
-pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
-    Attribute::list(path, FollowSymlinks::No)
-}
+    /// Lists the extended attributes.
+    /// Follows symlinks like `stat`
+    pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
+        Attribute::list_attrs(path, FollowSymlinks::Yes)
+    }
+    /// Lists the extended attributes.
+    /// Does not follow symlinks like `lstat`
+    pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
+        Attribute::list_attrs(path, FollowSymlinks::No)
+    }
 
-/// Returns true if the extended attribute feature is implemented on this platform.
-#[inline(always)]
-pub fn feature_implemented() -> bool { true }
+    /// Returns true if the extended attribute feature is implemented on this platform.
+    #[inline(always)]
+    pub fn feature_implemented() -> bool { true }
+}
