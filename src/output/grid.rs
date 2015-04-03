@@ -5,7 +5,7 @@ use super::lines::lines_view;
 use std::cmp::max;
 use std::iter::{AdditiveIterator, repeat};
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Grid {
     pub across: bool,
     pub console_width: usize,

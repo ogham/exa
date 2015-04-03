@@ -19,14 +19,14 @@ use self::Misfire::*;
 
 /// The *Options* struct represents a parsed version of the user's
 /// command-line options.
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Options {
     pub dir_action: DirAction,
     pub filter: FileFilter,
     pub view: View,
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct FileFilter {
     list_dirs_first: bool,
     reverse: bool,
@@ -34,7 +34,7 @@ pub struct FileFilter {
     sort_field: SortField,
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum View {
     Details(Details),
     Lines,
@@ -160,7 +160,7 @@ impl FileFilter {
 }
 
 /// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode,
     ModifiedDate, AccessedDate, CreatedDate,
@@ -362,7 +362,7 @@ impl TimeType {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct TimeTypes {
     accessed: bool,
     modified: bool,
@@ -413,7 +413,7 @@ impl TimeTypes {
 }
 
 /// What to do when encountering a directory?
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum DirAction {
     AsFile,
     List,
@@ -458,7 +458,7 @@ impl DirAction {
     }
 }
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct RecurseOptions {
     pub tree:      bool,
     pub max_depth: Option<usize>,
@@ -492,7 +492,7 @@ impl RecurseOptions {
     }
 }
 
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Columns {
     size_format: SizeFormat,
     time_types: TimeTypes,

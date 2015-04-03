@@ -7,7 +7,7 @@ use ansi_term::Style;
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug)]
 pub enum FileType {
     Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
     Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,

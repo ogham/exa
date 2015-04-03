@@ -9,7 +9,7 @@ use std::old_io as io;
 use std::old_path::GenericPath;
 use std::old_path::posix::Path;
 use std::ascii::AsciiExt;
-use std::os::getcwd;
+use std::env::current_dir;
 use unicode::str::UnicodeStr;
 
 use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
@@ -458,10 +458,19 @@ impl<'a> File<'a> {
     }
 
     fn git_status(&self) -> Cell {
+        use std::os::unix::ffi::OsStrExt;
+        use std::ffi::AsOsStr;
+
         let status = match self.dir {
-            Some(d) => d.git_status(&getcwd().unwrap_or(Path::new(".")).join(&self.path),
-                                    self.is_directory()),
             None    => GREY.paint("--").to_string(),
+            Some(d) => {
+                let cwd = match current_dir() {
+                    Err(_)  => Path::new(".").join(&self.path),
+                    Ok(dir) => Path::new(dir.as_os_str().as_bytes()).join(&self.path),
+                };
+
+                d.git_status(&cwd, self.is_directory())
+            },
         };
 
         Cell { text: status, length: 2 }

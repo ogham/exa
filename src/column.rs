@@ -21,7 +21,7 @@ pub enum Column {
 
 /// Each column can pick its own **Alignment**. Usually, numbers are
 /// right-aligned, and text is left-aligned.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum Alignment {
     Left, Right,
 }

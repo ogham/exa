@@ -19,7 +19,7 @@ use ansi_term::Style::Plain;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the

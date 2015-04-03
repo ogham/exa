@@ -20,7 +20,7 @@ extern "C" {
 }
 
 /// Attributes which can be passed to `Attribute::list_with_flags`
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum FollowSymlinks {
     Yes,
     No

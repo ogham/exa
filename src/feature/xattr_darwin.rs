@@ -23,7 +23,7 @@ extern "C" {
 }
 
 /// Attributes which can be passed to `Attribute::list_with_flags`
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum ListFlags {
     /// Don't follow symbolic links
     NoFollow = XATTR_NOFOLLOW as isize,

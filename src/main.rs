@@ -10,6 +10,7 @@ extern crate datetime;
 extern crate getopts;
 extern crate locale;
 extern crate natord;
+extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
 extern crate unicode;
@@ -22,7 +23,6 @@ use std::env;
 use std::old_io::{fs, FileType};
 use std::old_path::GenericPath;
 use std::old_path::posix::Path;
-use std::os::num_cpus;
 use std::sync::mpsc::{channel, sync_channel};
 use std::thread;
 
@@ -68,7 +68,7 @@ impl<'a> Exa<'a> {
         let total_files = files.len();
 
         // Denotes the maxinum number of concurrent threads
-        let (thread_capacity_tx, thread_capacity_rs) = sync_channel(8 * num_cpus());
+        let (thread_capacity_tx, thread_capacity_rs) = sync_channel(8 * num_cpus::get());
 
         // Communication between consumer thread and producer threads
         enum StatResult<'a> {
