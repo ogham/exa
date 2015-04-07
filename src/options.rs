@@ -512,7 +512,7 @@ impl Columns {
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),
             group:  matches.opt_present("group"),
-            git:    matches.opt_present("git"),
+            git:    cfg!(feature="git") && matches.opt_present("git"),
         })
     }
 
