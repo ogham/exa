@@ -18,18 +18,24 @@
 - **-B**, **--bytes**: list file sizes in bytes, without prefixes
 - **-d**, **--list-dirs**: list directories as regular files
 - **-g**, **--group**: show group as well as user
+- **--group-directories-first**: list directories before other files
 - **--git**: show git status (depends on libgit2, see below)
 - **-h**, **--header**: show a header row
 - **-H**, **--links**: show number of hard links column
 - **-i**, **--inode**: show inode number column
 - **-l**, **--long**: display extended details and attributes
+- **-L**, **--level=(depth)**: maximum depth of recursion
+- **-m**, **--modified**: display timestamp of most recent modification
 - **-r**, **--reverse**: reverse sort order
 - **-R**, **--recurse**: recurse into subdirectories
 - **-s**, **--sort=(field)**: field to sort by
 - **-S**, **--blocks**: show number of file system blocks
-- **-t**, **--time**: which timestamp to show for a file
+- **-t**, **--time=(field)**: which timestamp to show for a file
 - **-T**, **--tree**: recurse into subdirectories in a tree view
+- **-u**, **--accessed**: display timestamp of last access for a file
+- **-U**, **--created**: display timestamp of creation of a file
 - **-x**, **--across**: sort multi-column view entries across
+- **-@**, **--extended**: display extended attribute keys and sizes
 
 You can sort by **name**, **size**, **ext**, **inode**, **modified**, **created**, **accessed**, or **none**.
 
