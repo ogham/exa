@@ -3,7 +3,7 @@ use file::File;
 use super::lines::lines_view;
 
 use std::cmp::max;
-use std::iter::{AdditiveIterator, repeat};
+use std::iter::repeat;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Grid {
@@ -55,7 +55,7 @@ impl Grid {
             }
 
             // If they all fit in the terminal, combined, then success!
-            if column_widths.iter().map(|&x| x).sum() < adjusted_width {
+            if column_widths.iter().map(|&x| x).sum::<usize>() < adjusted_width {
                 return Some((num_lines, column_widths));
             }
         }
