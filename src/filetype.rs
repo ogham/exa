@@ -139,7 +139,7 @@ impl<'a> HasType for File<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(broken_test)]
 mod test {
     use super::*;
     use file::test::{dummy_stat, new_file};

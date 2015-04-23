@@ -530,14 +530,11 @@ enum Permission {
     OtherExecute = 0o001,
 }
 
-#[cfg(test)]
+#[cfg(broken_test)]
 pub mod test {
     pub use super::*;
 
     pub use column::{Cell, Column};
-    pub use std::old_io as io;
-    pub use std::old_path::GenericPath;
-    pub use std::old_path::posix::Path;
     pub use output::details::UserLocale;
 
     pub use users::{User, Group};
