@@ -137,15 +137,15 @@ impl FileFilter {
         match self.sort_field {
             SortField::Unsorted => {},
             SortField::Name => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
-            SortField::Size => files.sort_by(|a, b| a.stat.size.cmp(&b.stat.size)),
-            SortField::FileInode => files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
+            SortField::Size => files.sort_by(|a, b| a.stat.len().cmp(&b.stat.len())),
+            SortField::FileInode => {}, // files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
             SortField::Extension => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
                 Ordering::Equal => natord::compare(&*a.name, &*b.name),
                 order => order
             }),
-            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.modified.cmp(&b.stat.modified)),
-            SortField::AccessedDate => files.sort_by(|a, b| a.stat.accessed.cmp(&b.stat.accessed)),
-            SortField::CreatedDate  => files.sort_by(|a, b| a.stat.created.cmp(&b.stat.created)),
+            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.modified().cmp(&b.stat.modified())),
+            SortField::AccessedDate => files.sort_by(|a, b| a.stat.accessed().cmp(&b.stat.accessed())),
+            SortField::CreatedDate  => {}, // files.sort_by(|a, b| a.stat.created().cmp(&b.stat.created())),
         }
 
         if self.reverse {
@@ -440,6 +440,13 @@ impl DirAction {
         match *self {
             DirAction::Recurse(opts) => Some(opts),
             _ => None,
+        }
+    }
+
+    pub fn is_as_file(&self) -> bool {
+        match *self {
+            DirAction::AsFile => true,
+            _ => false,
         }
     }
 

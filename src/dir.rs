@@ -1,9 +1,9 @@
-use std::old_io::{fs, IoResult};
-use std::old_path::GenericPath;
-use std::old_path::posix::Path;
-
 use feature::Git;
 use file::{File, GREY};
+
+use std::io;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
 /// being listed.
@@ -12,8 +12,8 @@ use file::{File, GREY};
 /// check the existence of surrounding files, then highlight themselves
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
-    contents: Vec<Path>,
-    path: Path,
+    contents: Vec<PathBuf>,
+    path: PathBuf,
     git: Option<Git>,
 }
 
@@ -22,10 +22,10 @@ impl Dir {
     /// Create a new Dir object filled with all the files in the directory
     /// pointed to by the given path. Fails if the directory can't be read, or
     /// isn't actually a directory.
-    pub fn readdir(path: &Path) -> IoResult<Dir> {
-        fs::readdir(path).map(|paths| Dir {
-            contents: paths,
-            path: path.clone(),
+    pub fn readdir(path: &Path) -> io::Result<Dir> {
+        fs::read_dir(path).map(|dir_obj| Dir {
+            contents: dir_obj.map(|entry| entry.unwrap().path()).collect(),
+            path: path.to_path_buf(),
             git: Git::scan(path).ok(),
         })
     }
@@ -50,11 +50,11 @@ impl Dir {
 
     /// Whether this directory contains a file with the given path.
     pub fn contains(&self, path: &Path) -> bool {
-        self.contents.contains(path)
+        self.contents.iter().any(|ref p| p.as_path() == path)
     }
 
     /// Append a path onto the path specified by this directory.
-    pub fn join(&self, child: Path) -> Path {
+    pub fn join(&self, child: &Path) -> PathBuf {
         self.path.join(child)
     }
 
