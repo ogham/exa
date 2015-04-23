@@ -18,7 +18,8 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use users::Users;
 
 use locale;
-use output::details::UserLocale;
+
+use unicode_width::UnicodeWidthStr;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
@@ -30,6 +31,7 @@ use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
 use options::{SizeFormat, TimeType};
+use output::details::UserLocale;
 use feature::Attribute;
 
 /// This grey value is directly in between white and black, so it's guaranteed
@@ -216,7 +218,7 @@ impl<'a> File<'a> {
     /// characters are 1 columns wide, but in some contexts, certain
     /// characters are actually 2 columns wide.
     pub fn file_name_width(&self) -> usize {
-        self.name.width(false)
+        UnicodeWidthStr::width(&self.name[..])
     }
 
     /// Assuming the current file is a symlink, follows the link and

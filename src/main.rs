@@ -1,4 +1,4 @@
-#![feature(convert, core, exit_status, fs_ext, fs_time, io, libc, os, scoped, std_misc, unicode)]
+#![feature(collections, convert, core, exit_status, fs_ext, fs_time, io, libc, os, scoped, std_misc)]
 #![allow(deprecated)]
 
 // Other platforms than macos don't need std_misc but you can't
@@ -14,6 +14,8 @@ extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
 extern crate users;
+extern crate unicode_width;
+
 
 #[cfg(feature="git")]
 extern crate git2;

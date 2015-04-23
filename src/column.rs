@@ -1,8 +1,11 @@
 use std::iter::repeat;
 
-use ansi_term::Style;
-
 use options::{SizeFormat, TimeType};
+
+use ansi_term::Style;
+use unicode_width::UnicodeWidthStr;
+
+
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Column {
@@ -86,7 +89,7 @@ impl Cell {
     pub fn paint(style: Style, string: &str) -> Cell {
         Cell {
             text: style.paint(string).to_string(),
-            length: string.width(false),
+            length: UnicodeWidthStr::width(string),
         }
     }
 }
