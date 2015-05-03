@@ -2,6 +2,7 @@ use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
 use std::io;
+use std::os::unix;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Component, Path, PathBuf};
 
@@ -409,15 +410,15 @@ impl<'a> File<'a> {
 
         let string = ANSIStrings(&[
             self.type_char(),
-            File::permission_bit(bits, Permission::UserRead,     "r", Yellow.bold()),
-            File::permission_bit(bits, Permission::UserWrite,    "w", Red.bold()),
-            File::permission_bit(bits, Permission::UserExecute,  "x", executable_colour),
-            File::permission_bit(bits, Permission::GroupRead,    "r", Yellow.normal()),
-            File::permission_bit(bits, Permission::GroupWrite,   "w", Red.normal()),
-            File::permission_bit(bits, Permission::GroupExecute, "x", Green.normal()),
-            File::permission_bit(bits, Permission::OtherRead,    "r", Yellow.normal()),
-            File::permission_bit(bits, Permission::OtherWrite,   "w", Red.normal()),
-            File::permission_bit(bits, Permission::OtherExecute, "x", Green.normal()),
+            File::permission_bit(bits, unix::fs::USER_READ,     "r", Yellow.bold()),
+            File::permission_bit(bits, unix::fs::USER_WRITE,    "w", Red.bold()),
+            File::permission_bit(bits, unix::fs::USER_EXECUTE,  "x", executable_colour),
+            File::permission_bit(bits, unix::fs::GROUP_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, unix::fs::GROUP_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, unix::fs::GROUP_EXECUTE, "x", Green.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_EXECUTE, "x", Green.normal()),
             self.attribute_marker()
         ]).to_string();
 
@@ -425,7 +426,7 @@ impl<'a> File<'a> {
     }
 
     /// Helper method for the permissions string.
-    fn permission_bit(bits: u16, bit: Permission, character: &'static str, style: Style) -> ANSIString<'static> {
+    fn permission_bit(bits: u16, bit: u16, character: &'static str, style: Style) -> ANSIString<'static> {
         let bi32 = bit as u16;
         if bits & bi32 == bi32 {
             style.paint(character)
@@ -510,18 +511,6 @@ fn path_filename(path: &Path) -> String {
 /// within ASCII, so it's alright.
 fn ext<'a>(name: &'a str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
-}
-
-enum Permission {
-    UserRead     = 0o400,
-    UserWrite    = 0o200,
-    UserExecute  = 0o100,
-    GroupRead    = 0o040,
-    GroupWrite   = 0o020,
-    GroupExecute = 0o010,
-    OtherRead    = 0o004,
-    OtherWrite   = 0o002,
-    OtherExecute = 0o001,
 }
 
 #[cfg(broken_test)]
