@@ -346,9 +346,9 @@ impl<'a> File<'a> {
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
-            TimeType::FileAccessed => self.stat.accessed(),
-            TimeType::FileModified => self.stat.modified(),
-            TimeType::FileCreated  => 0 // self.stat.created(),
+            TimeType::FileAccessed => self.stat.as_raw().atime(),
+            TimeType::FileModified => self.stat.as_raw().mtime(),
+            TimeType::FileCreated  => self.stat.as_raw().ctime(),
         } as i64 / 1000;
 
         let date = LocalDateTime::at(time_in_seconds);

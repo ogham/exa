@@ -9,6 +9,7 @@ use term::dimensions;
 use std::cmp::Ordering;
 use std::fmt;
 use std::num::ParseIntError;
+use std::os::unix::fs::MetadataExt;
 
 use getopts;
 use natord;
@@ -138,14 +139,14 @@ impl FileFilter {
             SortField::Unsorted => {},
             SortField::Name => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
             SortField::Size => files.sort_by(|a, b| a.stat.len().cmp(&b.stat.len())),
-            SortField::FileInode => {}, // files.sort_by(|a, b| a.stat.unstable.inode.cmp(&b.stat.unstable.inode)),
+            SortField::FileInode => files.sort_by(|a, b| a.stat.as_raw().ino().cmp(&b.stat.as_raw().ino())),
             SortField::Extension => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
                 Ordering::Equal => natord::compare(&*a.name, &*b.name),
                 order => order
             }),
-            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.modified().cmp(&b.stat.modified())),
-            SortField::AccessedDate => files.sort_by(|a, b| a.stat.accessed().cmp(&b.stat.accessed())),
-            SortField::CreatedDate  => {}, // files.sort_by(|a, b| a.stat.created().cmp(&b.stat.created())),
+            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.as_raw().mtime().cmp(&b.stat.as_raw().mtime())),
+            SortField::AccessedDate => files.sort_by(|a, b| a.stat.as_raw().atime().cmp(&b.stat.as_raw().atime())),
+            SortField::CreatedDate  => files.sort_by(|a, b| a.stat.as_raw().ctime().cmp(&b.stat.as_raw().ctime())),
         }
 
         if self.reverse {
