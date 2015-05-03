@@ -3,7 +3,7 @@ use std::env::current_dir;
 use std::fs;
 use std::io;
 use std::os::unix;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
 use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
@@ -245,7 +245,7 @@ impl<'a> File<'a> {
     /// This file's number of hard links as a coloured string.
     fn hard_links(&self, locale: &locale::Numeric) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        Cell::paint(style, &locale.format_int(0 /*self.stat.unstable.nlink*/ as isize)[..])
+        Cell::paint(style, &locale.format_int(self.stat.as_raw().nlink())[..])
     }
 
     /// Whether this is a regular file with more than one link.
@@ -254,19 +254,19 @@ impl<'a> File<'a> {
     /// while you can come across directories and other types with multiple
     /// links much more often.
     fn has_multiple_links(&self) -> bool {
-        self.is_file() && (0 /*self.stat.unstable.nlink*/) > 1
+        self.is_file() && self.stat.as_raw().nlink() > 1
     }
 
     /// This file's inode as a coloured string.
     fn inode(&self) -> Cell {
-        let inode = 0i32; /* self.stat.unstable.inode */
+        let inode = self.stat.as_raw().ino();
         Cell::paint(Purple.normal(), &inode.to_string()[..])
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
     fn blocks(&self, locale: &locale::Numeric) -> Cell {
         if self.is_file() || self.is_link() {
-            Cell::paint(Cyan.normal(), &locale.format_int(0 /*self.stat.unstable.blocks*/)[..])
+            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.as_raw().blocks())[..])
         }
         else {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
@@ -279,7 +279,7 @@ impl<'a> File<'a> {
     /// instead. This usually happens when a user is deleted, but still owns
     /// files.
     fn user<U: Users>(&self, users_cache: &mut U) -> Cell {
-        let uid = 0; // self.stat.unstable.uid as u32
+        let uid = self.stat.as_raw().uid();
 
         let user_name = match users_cache.get_user_by_uid(uid) {
             Some(user) => user.name,
@@ -294,7 +294,7 @@ impl<'a> File<'a> {
     ///
     /// As above, if not present, it formats the gid as a number instead.
     fn group<U: Users>(&self, users_cache: &mut U) -> Cell {
-        let gid = 0; // self.stat.unstable.gid as u32;
+        let gid = self.stat.as_raw().gid();
         let mut style = Plain;
 
         let group_name = match users_cache.get_group_by_gid(gid as u32) {
