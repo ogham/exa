@@ -1,9 +1,3 @@
-// Yeah, we still have to use the old path and IO libraries, until they sprout
-// the ability to inspect file types and stat times and other such things.
-//
-// There's a tracking issue for it:
-// https://github.com/rust-lang/rfcs/issues/939
-
 use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
@@ -35,7 +29,7 @@ use output::details::UserLocale;
 use feature::Attribute;
 
 /// This grey value is directly in between white and black, so it's guaranteed
-/// to show up on either backg"#160909"rounded terminal.
+/// to show up on either backgrounded terminal.
 pub static GREY: Colour = Fixed(244);
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
