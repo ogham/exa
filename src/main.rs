@@ -1,5 +1,5 @@
 #![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode)]
-#![feature(libc, metadata_ext, scoped, symlink_metadata)]
+#![feature(libc, metadata_ext, raw_ext, scoped, symlink_metadata)]
 
 extern crate ansi_term;
 extern crate datetime;

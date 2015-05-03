@@ -3,6 +3,7 @@ use std::env::current_dir;
 use std::fs;
 use std::io;
 use std::os::unix;
+use std::os::unix::raw::mode_t;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
@@ -423,7 +424,7 @@ impl<'a> File<'a> {
     }
 
     /// Helper method for the permissions string.
-    fn permission_bit(bits: u16, bit: u16, character: &'static str, style: Style) -> ANSIString<'static> {
+    fn permission_bit(bits: mode_t, bit: mode_t, character: &'static str, style: Style) -> ANSIString<'static> {
         let bi32 = bit as u16;
         if bits & bi32 == bi32 {
             style.paint(character)
