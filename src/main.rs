@@ -1,9 +1,6 @@
-#![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode, fs_time, io, libc, metadata_ext, os, scoped, std_misc, symlink_metadata)]
+#![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode, fs_time)]
+#![feature(libc, metadata_ext, scoped, symlink_metadata)]
 #![allow(deprecated)]
-
-// Other platforms than macos don't need std_misc but you can't
-// use #[cfg] on features.
-#![allow(unused_features)]
 
 extern crate ansi_term;
 extern crate datetime;
