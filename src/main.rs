@@ -1,4 +1,4 @@
-#![feature(collections, convert, core, exit_status, fs_ext, fs_mode, fs_time, io, libc, metadata_ext, os, scoped, std_misc)]
+#![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode, fs_time, io, libc, metadata_ext, os, scoped, std_misc, symlink_metadata)]
 #![allow(deprecated)]
 
 // Other platforms than macos don't need std_misc but you can't

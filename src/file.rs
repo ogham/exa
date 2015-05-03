@@ -54,9 +54,10 @@ impl<'a> File<'a> {
     /// Create a new File object from the given Path, inside the given Dir, if
     /// appropriate. Paths specified directly on the command-line have no Dirs.
     ///
-    /// This uses lstat instead of stat, which doesn't follow symbolic links.
+    /// This uses `symlink_metadata` instead of `metadata`, which doesn't
+    /// follow symbolic links.
     pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> io::Result<File<'a>> {
-        fs::metadata(path).map(|stat| File::with_stat(stat, path, parent, recurse))  // todo: lstat
+        fs::symlink_metadata(path).map(|stat| File::with_stat(stat, path, parent, recurse))
     }
 
     /// Create a new File object from the given Stat result, and other data.
@@ -93,11 +94,11 @@ impl<'a> File<'a> {
     }
 
     pub fn is_link(&self) -> bool {
-        false
+        self.stat.file_type().is_symlink()
     }
 
     pub fn is_pipe(&self) -> bool {
-        false
+        false  // TODO: Still waiting on this one...
     }
 
     /// Whether this file is a dotfile or not.
@@ -167,13 +168,6 @@ impl<'a> File<'a> {
                     // the target file, colourised in the appropriate style.
                     let mut path_prefix = String::new();
 
-                    // The root directory has the name "/", which has to be
-                    // catered for separately, otherwise there'll be two
-                    // slashes in the resulting output.
-                    if file.path.is_absolute() && file.name != "/" {
-                        path_prefix.push_str("/");
-                    }
-
                     let path_bytes: Vec<Component> = file.path.components().collect();
                     if !path_bytes.is_empty() {
                         // Use init() to add all but the last component of the
@@ -181,7 +175,10 @@ impl<'a> File<'a> {
                         // empty list, hence the check.
                         for component in path_bytes.init().iter() {
                             path_prefix.push_str(&*component.as_os_str().to_string_lossy());
-                            path_prefix.push_str("/");
+
+                            if component != &Component::RootDir {
+                                path_prefix.push_str("/");
+                            }
                         }
                     }
 
@@ -225,7 +222,7 @@ impl<'a> File<'a> {
     fn target_file(&self, target_path: &Path) -> Result<File, String> {
         let filename = path_filename(target_path);
 
-        // Use stat instead of lstat - we *want* to follow links.
+        // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
         if let Ok(stat) = fs::metadata(target_path) {
             Ok(File {
                 path:   target_path.to_path_buf(),
