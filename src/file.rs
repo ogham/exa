@@ -431,8 +431,8 @@ impl<'a> File<'a> {
     }
 
     /// Helper method for the permissions string.
-    fn permission_bit(bits: i32, bit: Permission, character: &'static str, style: Style) -> ANSIString<'static> {
-        let bi32 = bit as i32;
+    fn permission_bit(bits: u16, bit: Permission, character: &'static str, style: Style) -> ANSIString<'static> {
+        let bi32 = bit as u16;
         if bits & bi32 == bi32 {
             style.paint(character)
         }
