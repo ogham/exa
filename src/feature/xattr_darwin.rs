@@ -1,13 +1,12 @@
 //! Extended attribute support for darwin
 extern crate libc;
 
-use std::ffi::CString;
+use std::io;
+use std::path::Path;
 use std::ptr;
 use std::mem;
-use std::old_io as io;
-use std::old_path::GenericPath;
-use std::old_path::posix::Path;
 use self::libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
+
 
 /// Don't follow symbolic links
 const XATTR_NOFOLLOW: c_int = 0x0001;
@@ -41,15 +40,21 @@ pub struct Attribute {
 impl Attribute {
     /// Lists the extended attribute of `path`.
     /// Does follow symlinks by default.
-    pub fn list_attrs(path: &Path, flags: &[ListFlags]) -> io::IoResult<Vec<Attribute>> {
+    pub fn list_attrs(path: &Path, flags: &[ListFlags]) -> io::Result<Vec<Attribute>> {
         let mut c_flags: c_int = 0;
         for &flag in flags.iter() {
             c_flags |= flag as c_int
         }
-        let c_path = try!(CString::new(path.as_vec()));
+
+        let c_path = match path.as_os_str().to_cstring() {
+            Some(cstring) => cstring,
+            None => return Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes")),
+        };
+
         let bufsize = unsafe {
             listxattr(c_path.as_ptr(), ptr::null_mut(), 0, c_flags)
         };
+
         if bufsize > 0 {
             let mut buf = vec![0u8; bufsize as usize];
             let err = unsafe { listxattr(
@@ -88,18 +93,10 @@ impl Attribute {
                 }
                 Ok(names)
             } else {
-                Err(io::IoError {
-                    kind: io::OtherIoError,
-                    desc: "could not read extended attributes",
-                    detail: None
-                })
+                Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes"))
             }
         } else {
-            Err(io::IoError {
-                kind: io::OtherIoError,
-                desc: "could not read extended attributes",
-                detail: None
-            })
+            Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes"))
         }
     }
 
@@ -115,12 +112,12 @@ impl Attribute {
 
     /// Lists the extended attributes.
     /// Follows symlinks like `stat`
-    pub fn list(path: &Path) -> io::IoResult<Vec<Attribute>> {
+    pub fn list(path: &Path) -> io::Result<Vec<Attribute>> {
         Attribute::list_attrs(path, &[])
     }
     /// Lists the extended attributes.
     /// Does not follow symlinks like `lstat`
-    pub fn llist(path: &Path) -> io::IoResult<Vec<Attribute>> {
+    pub fn llist(path: &Path) -> io::Result<Vec<Attribute>> {
         Attribute::list_attrs(path, &[ListFlags::NoFollow])
     }
 

@@ -1,16 +1,10 @@
-// Yeah, we still have to use the old path and IO libraries, until they sprout
-// the ability to inspect file types and stat times and other such things.
-//
-// There's a tracking issue for it:
-// https://github.com/rust-lang/rfcs/issues/939
-
-use std::old_io::{fs, IoResult};
-use std::old_io as io;
-use std::old_path::GenericPath;
-use std::old_path::posix::Path;
 use std::ascii::AsciiExt;
 use std::env::current_dir;
-use unicode::str::UnicodeStr;
+use std::fs;
+use std::io;
+use std::os::unix;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::path::{Component, Path, PathBuf};
 
 use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
 use ansi_term::Style::Plain;
@@ -19,7 +13,8 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use users::Users;
 
 use locale;
-use output::details::UserLocale;
+
+use unicode_width::UnicodeWidthStr;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
@@ -31,10 +26,11 @@ use column::Column::*;
 use dir::Dir;
 use filetype::HasType;
 use options::{SizeFormat, TimeType};
+use output::details::UserLocale;
 use feature::Attribute;
 
 /// This grey value is directly in between white and black, so it's guaranteed
-/// to show up on either backg"#160909"rounded terminal.
+/// to show up on either backgrounded terminal.
 pub static GREY: Colour = Fixed(244);
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -48,8 +44,8 @@ pub struct File<'a> {
     pub name:  String,
     pub dir:   Option<&'a Dir>,
     pub ext:   Option<String>,
-    pub path:  Path,
-    pub stat:  io::FileStat,
+    pub path:  PathBuf,
+    pub stat:  fs::Metadata,
     pub xattrs: Vec<Attribute>,
     pub this:  Option<Dir>,
 }
@@ -58,19 +54,20 @@ impl<'a> File<'a> {
     /// Create a new File object from the given Path, inside the given Dir, if
     /// appropriate. Paths specified directly on the command-line have no Dirs.
     ///
-    /// This uses lstat instead of stat, which doesn't follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> IoResult<File<'a>> {
-        fs::lstat(path).map(|stat| File::with_stat(stat, path, parent, recurse))
+    /// This uses `symlink_metadata` instead of `metadata`, which doesn't
+    /// follow symbolic links.
+    pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> io::Result<File<'a>> {
+        fs::symlink_metadata(path).map(|stat| File::with_stat(stat, path, parent, recurse))
     }
 
     /// Create a new File object from the given Stat result, and other data.
-    pub fn with_stat(stat: io::FileStat, path: &Path, parent: Option<&'a Dir>, recurse: bool) -> File<'a> {
+    pub fn with_stat(stat: fs::Metadata, path: &Path, parent: Option<&'a Dir>, recurse: bool) -> File<'a> {
         let filename = path_filename(path);
 
         // If we are recursing, then the `this` field contains a Dir object
         // that represents the current File as a directory, if it is a
         // directory. This is used for the --tree option.
-        let this = if recurse && stat.kind == io::FileType::Directory {
+        let this = if recurse && stat.is_dir() {
             Dir::readdir(path).ok()
         }
         else {
@@ -78,7 +75,7 @@ impl<'a> File<'a> {
         };
 
         File {
-            path:   path.clone(),
+            path:   path.to_path_buf(),
             dir:    parent,
             stat:   stat,
             ext:    ext(&filename),
@@ -86,6 +83,22 @@ impl<'a> File<'a> {
             name:   filename.to_string(),
             this:   this,
         }
+    }
+
+    pub fn is_directory(&self) -> bool {
+        self.stat.is_dir()
+    }
+
+    pub fn is_file(&self) -> bool {
+        self.stat.is_file()
+    }
+
+    pub fn is_link(&self) -> bool {
+        self.stat.file_type().is_symlink()
+    }
+
+    pub fn is_pipe(&self) -> bool {
+        false  // TODO: Still waiting on this one...
     }
 
     /// Whether this file is a dotfile or not.
@@ -97,11 +110,6 @@ impl<'a> File<'a> {
     pub fn is_tmpfile(&self) -> bool {
         let name = &self.name;
         name.ends_with("~") || (name.starts_with("#") && name.ends_with("#"))
-    }
-
-    /// Whether this file is a directory or not.
-    pub fn is_directory(&self) -> bool {
-        self.stat.kind == io::FileType::Directory
     }
 
     /// Get the data for a column, formatted as a coloured string.
@@ -125,7 +133,7 @@ impl<'a> File<'a> {
     /// It consists of the file name coloured in the appropriate style,
     /// with special formatting for a symlink.
     pub fn file_name_view(&self) -> String {
-        if self.stat.kind == io::FileType::Symlink {
+        if self.is_link() {
             self.symlink_file_name_view()
         }
         else {
@@ -145,9 +153,9 @@ impl<'a> File<'a> {
         let name = &*self.name;
         let style = self.file_colour();
 
-        if let Ok(path) = fs::readlink(&self.path) {
+        if let Ok(path) = fs::read_link(&self.path) {
             let target_path = match self.dir {
-                Some(dir) => dir.join(path),
+                Some(dir) => dir.join(&*path),
                 None => path,
             };
 
@@ -160,22 +168,17 @@ impl<'a> File<'a> {
                     // the target file, colourised in the appropriate style.
                     let mut path_prefix = String::new();
 
-                    // The root directory has the name "/", which has to be
-                    // catered for separately, otherwise there'll be two
-                    // slashes in the resulting output.
-                    if file.path.is_absolute() && file.name != "/" {
-                        path_prefix.push_str("/");
-                    }
-
-                    let path_bytes: Vec<&[u8]> = file.path.components().collect();
+                    let path_bytes: Vec<Component> = file.path.components().collect();
                     if !path_bytes.is_empty() {
                         // Use init() to add all but the last component of the
                         // path to the prefix. init() panics when given an
                         // empty list, hence the check.
                         for component in path_bytes.init().iter() {
-                            let string = String::from_utf8_lossy(component).to_string();
-                            path_prefix.push_str(&string);
-                            path_prefix.push_str("/");
+                            path_prefix.push_str(&*component.as_os_str().to_string_lossy());
+
+                            if component != &Component::RootDir {
+                                path_prefix.push_str("/");
+                            }
                         }
                     }
 
@@ -207,7 +210,7 @@ impl<'a> File<'a> {
     /// characters are 1 columns wide, but in some contexts, certain
     /// characters are actually 2 columns wide.
     pub fn file_name_width(&self) -> usize {
-        self.name.width(false)
+        UnicodeWidthStr::width(&self.name[..])
     }
 
     /// Assuming the current file is a symlink, follows the link and
@@ -219,10 +222,10 @@ impl<'a> File<'a> {
     fn target_file(&self, target_path: &Path) -> Result<File, String> {
         let filename = path_filename(target_path);
 
-        // Use stat instead of lstat - we *want* to follow links.
-        if let Ok(stat) = fs::stat(target_path) {
+        // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
+        if let Ok(stat) = fs::metadata(target_path) {
             Ok(File {
-                path:   target_path.clone(),
+                path:   target_path.to_path_buf(),
                 dir:    self.dir,
                 stat:   stat,
                 ext:    ext(&filename),
@@ -239,7 +242,7 @@ impl<'a> File<'a> {
     /// This file's number of hard links as a coloured string.
     fn hard_links(&self, locale: &locale::Numeric) -> Cell {
         let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
-        Cell::paint(style, &locale.format_int(self.stat.unstable.nlink as isize)[..])
+        Cell::paint(style, &locale.format_int(self.stat.as_raw().nlink())[..])
     }
 
     /// Whether this is a regular file with more than one link.
@@ -248,18 +251,19 @@ impl<'a> File<'a> {
     /// while you can come across directories and other types with multiple
     /// links much more often.
     fn has_multiple_links(&self) -> bool {
-        self.stat.kind == io::FileType::RegularFile && self.stat.unstable.nlink > 1
+        self.is_file() && self.stat.as_raw().nlink() > 1
     }
 
     /// This file's inode as a coloured string.
     fn inode(&self) -> Cell {
-        Cell::paint(Purple.normal(), &*self.stat.unstable.inode.to_string())
+        let inode = self.stat.as_raw().ino();
+        Cell::paint(Purple.normal(), &inode.to_string()[..])
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
     fn blocks(&self, locale: &locale::Numeric) -> Cell {
-        if self.stat.kind == io::FileType::RegularFile || self.stat.kind == io::FileType::Symlink {
-            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.unstable.blocks as isize)[..])
+        if self.is_file() || self.is_link() {
+            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.as_raw().blocks())[..])
         }
         else {
             Cell { text: GREY.paint("-").to_string(), length: 1 }
@@ -272,11 +276,11 @@ impl<'a> File<'a> {
     /// instead. This usually happens when a user is deleted, but still owns
     /// files.
     fn user<U: Users>(&self, users_cache: &mut U) -> Cell {
-        let uid = self.stat.unstable.uid as i32;
+        let uid = self.stat.as_raw().uid();
 
         let user_name = match users_cache.get_user_by_uid(uid) {
             Some(user) => user.name,
-            None => self.stat.unstable.uid.to_string(),
+            None => uid.to_string(),
         };
 
         let style = if users_cache.get_current_uid() == uid { Yellow.bold() } else { Plain };
@@ -287,10 +291,10 @@ impl<'a> File<'a> {
     ///
     /// As above, if not present, it formats the gid as a number instead.
     fn group<U: Users>(&self, users_cache: &mut U) -> Cell {
-        let gid = self.stat.unstable.gid as u32;
+        let gid = self.stat.as_raw().gid();
         let mut style = Plain;
 
-        let group_name = match users_cache.get_group_by_gid(gid) {
+        let group_name = match users_cache.get_group_by_gid(gid as u32) {
             Some(group) => {
                 let current_uid = users_cache.get_current_uid();
                 if let Some(current_user) = users_cache.get_user_by_uid(current_uid) {
@@ -300,7 +304,7 @@ impl<'a> File<'a> {
                 }
                 group.name
             },
-            None => self.stat.unstable.gid.to_string(),
+            None => gid.to_string(),
         };
 
         Cell::paint(style, &*group_name)
@@ -318,9 +322,9 @@ impl<'a> File<'a> {
         }
         else {
             let result = match size_format {
-                SizeFormat::DecimalBytes => decimal_prefix(self.stat.size as f64),
-                SizeFormat::BinaryBytes  => binary_prefix(self.stat.size as f64),
-                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.size as isize)[..]),
+                SizeFormat::DecimalBytes => decimal_prefix(self.stat.len() as f64),
+                SizeFormat::BinaryBytes  => binary_prefix(self.stat.len() as f64),
+                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.len())[..]),
             };
 
             match result {
@@ -342,9 +346,9 @@ impl<'a> File<'a> {
 
         // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
-            TimeType::FileAccessed => self.stat.accessed,
-            TimeType::FileModified => self.stat.modified,
-            TimeType::FileCreated  => self.stat.created,
+            TimeType::FileAccessed => self.stat.as_raw().atime(),
+            TimeType::FileModified => self.stat.as_raw().mtime(),
+            TimeType::FileCreated  => self.stat.as_raw().ctime(),
         } as i64 / 1000;
 
         let date = LocalDateTime::at(time_in_seconds);
@@ -364,19 +368,26 @@ impl<'a> File<'a> {
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
     fn type_char(&self) -> ANSIString {
-        return match self.stat.kind {
-            io::FileType::RegularFile   => Plain.paint("."),
-            io::FileType::Directory     => Blue.paint("d"),
-            io::FileType::NamedPipe     => Yellow.paint("|"),
-            io::FileType::BlockSpecial  => Purple.paint("s"),
-            io::FileType::Symlink       => Cyan.paint("l"),
-            io::FileType::Unknown       => Plain.paint("?"),
+        if self.is_file() {
+            Plain.paint(".")
+        }
+        else if self.is_directory() {
+            Blue.paint("d")
+        }
+        else if self.is_pipe() {
+            Yellow.paint("|")
+        }
+        else if self.is_link() {
+            Cyan.paint("l")
+        }
+        else {
+            Purple.paint("?")
         }
     }
 
     /// Marker indicating that the file contains extended attributes
     ///
-    /// Returns “@” or  “ ” depending on wheter the file contains an extented
+    /// Returns "@" or  " ” depending on wheter the file contains an extented
     /// attribute or not. Also returns “ ” in case the attributes cannot be read
     /// for some reason.
     fn attribute_marker(&self) -> ANSIString {
@@ -389,23 +400,22 @@ impl<'a> File<'a> {
     /// bits are bold because they're the ones used most often, and executable
     /// files are underlined to make them stand out more.
     fn permissions_string(&self) -> Cell {
-        let bits = self.stat.perm;
-        let executable_colour = match self.stat.kind {
-            io::FileType::RegularFile => Green.bold().underline(),
-            _ => Green.bold(),
-        };
+
+        let bits = self.stat.permissions().mode();
+        let executable_colour = if self.is_file() { Green.bold().underline() }
+                                                         else { Green.bold() };
 
         let string = ANSIStrings(&[
             self.type_char(),
-            File::permission_bit(&bits, io::USER_READ,     "r", Yellow.bold()),
-            File::permission_bit(&bits, io::USER_WRITE,    "w", Red.bold()),
-            File::permission_bit(&bits, io::USER_EXECUTE,  "x", executable_colour),
-            File::permission_bit(&bits, io::GROUP_READ,    "r", Yellow.normal()),
-            File::permission_bit(&bits, io::GROUP_WRITE,   "w", Red.normal()),
-            File::permission_bit(&bits, io::GROUP_EXECUTE, "x", Green.normal()),
-            File::permission_bit(&bits, io::OTHER_READ,    "r", Yellow.normal()),
-            File::permission_bit(&bits, io::OTHER_WRITE,   "w", Red.normal()),
-            File::permission_bit(&bits, io::OTHER_EXECUTE, "x", Green.normal()),
+            File::permission_bit(bits, unix::fs::USER_READ,     "r", Yellow.bold()),
+            File::permission_bit(bits, unix::fs::USER_WRITE,    "w", Red.bold()),
+            File::permission_bit(bits, unix::fs::USER_EXECUTE,  "x", executable_colour),
+            File::permission_bit(bits, unix::fs::GROUP_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, unix::fs::GROUP_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, unix::fs::GROUP_EXECUTE, "x", Green.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_READ,    "r", Yellow.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_WRITE,   "w", Red.normal()),
+            File::permission_bit(bits, unix::fs::OTHER_EXECUTE, "x", Green.normal()),
             self.attribute_marker()
         ]).to_string();
 
@@ -413,8 +423,9 @@ impl<'a> File<'a> {
     }
 
     /// Helper method for the permissions string.
-    fn permission_bit(bits: &io::FilePermission, bit: io::FilePermission, character: &'static str, style: Style) -> ANSIString<'static> {
-        if bits.contains(bit) {
+    fn permission_bit(bits: u16, bit: u16, character: &'static str, style: Style) -> ANSIString<'static> {
+        let bi32 = bit as u16;
+        if bits & bi32 == bi32 {
             style.paint(character)
         }
         else {
@@ -430,7 +441,7 @@ impl<'a> File<'a> {
     /// dangerous to highlight *all* compiled, so the paths in this vector
     /// are checked for existence first: for example, `foo.js` is perfectly
     /// valid without `foo.coffee`.
-    pub fn get_source_files(&self) -> Vec<Path> {
+    pub fn get_source_files(&self) -> Vec<PathBuf> {
         if let Some(ref ext) = self.ext {
             match &ext[..] {
                 "class" => vec![self.path.with_extension("java")],  // Java
@@ -458,15 +469,12 @@ impl<'a> File<'a> {
     }
 
     fn git_status(&self) -> Cell {
-        use std::os::unix::ffi::OsStrExt;
-        use std::ffi::AsOsStr;
-
         let status = match self.dir {
             None    => GREY.paint("--").to_string(),
             Some(d) => {
                 let cwd = match current_dir() {
                     Err(_)  => Path::new(".").join(&self.path),
-                    Ok(dir) => Path::new(dir.as_os_str().as_bytes()).join(&self.path),
+                    Ok(dir) => dir.join(&self.path),
                 };
 
                 d.git_status(&cwd, self.is_directory())
@@ -484,12 +492,10 @@ impl<'a> File<'a> {
 /// the path has no components for `.`, `..`, and `/`, so in these
 /// cases, the entire path is used.
 fn path_filename(path: &Path) -> String {
-    let bytes = match path.components().last() {
-        Some(b) => b,
-        None => path.as_vec(),
-    };
-
-    String::from_utf8_lossy(bytes).to_string()
+    match path.iter().last() {
+        Some(os_str) => os_str.to_string_lossy().to_string(),
+        None => ".".to_string(),  // can this even be reached?
+    }
 }
 
 /// Extract an extension from a string, if one is present, in lowercase.
@@ -504,15 +510,11 @@ fn ext<'a>(name: &'a str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
-#[cfg(test)]
+#[cfg(broken_test)]
 pub mod test {
     pub use super::*;
-    use super::path_filename;
 
     pub use column::{Cell, Column};
-    pub use std::old_io as io;
-    pub use std::old_path::GenericPath;
-    pub use std::old_path::posix::Path;
     pub use output::details::UserLocale;
 
     pub use users::{User, Group};
@@ -520,18 +522,6 @@ pub mod test {
 
     pub use ansi_term::Style::Plain;
     pub use ansi_term::Colour::Yellow;
-
-    #[test]
-    fn current_filename() {
-        let filename = path_filename(&Path::new("."));
-        assert_eq!(&filename[..], ".")
-    }
-
-    #[test]
-    fn parent_filename() {
-        let filename = path_filename(&Path::new(".."));
-        assert_eq!(&filename[..], "..")
-    }
 
     #[test]
     fn extension() {

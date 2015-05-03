@@ -1,9 +1,5 @@
-#![feature(collections, core, exit_status, io, libc, old_fs, old_io, old_path, os, std_misc, unicode)]
-#![allow(deprecated)]
-
-// Other platforms than macos don't need std_misc but you can't
-// use #[cfg] on features.
-#![allow(unused_features)]
+#![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode)]
+#![feature(libc, metadata_ext, scoped, symlink_metadata)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -13,16 +9,16 @@ extern crate natord;
 extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
-extern crate unicode;
 extern crate users;
+extern crate unicode_width;
+
 
 #[cfg(feature="git")]
 extern crate git2;
 
 use std::env;
-use std::old_io::{fs, FileType};
-use std::old_path::GenericPath;
-use std::old_path::posix::Path;
+use std::fs;
+use std::path::{Component, Path, PathBuf};
 use std::sync::mpsc::{channel, sync_channel};
 use std::thread;
 
@@ -44,7 +40,7 @@ pub mod term;
 struct Exa<'a> {
     count:   usize,
     options: Options,
-    dirs:    Vec<Path>,
+    dirs:    Vec<PathBuf>,
     files:   Vec<File<'a>>,
 }
 
@@ -64,7 +60,7 @@ impl<'a> Exa<'a> {
         // Files are shown first, and then each directory is expanded
         // and listed second.
 
-        let is_tree = self.options.dir_action.is_tree();
+        let is_tree = self.options.dir_action.is_tree() || self.options.dir_action.is_as_file();
         let total_files = files.len();
 
         // Denotes the maxinum number of concurrent threads
@@ -73,9 +69,10 @@ impl<'a> Exa<'a> {
         // Communication between consumer thread and producer threads
         enum StatResult<'a> {
             File(File<'a>),
-            Path(Path),
+            Path(PathBuf),
             Error
         }
+
         let (results_tx, results_rx) = channel();
 
         // Spawn consumer thread
@@ -92,7 +89,7 @@ impl<'a> Exa<'a> {
                         StatResult::Path(path) => self.dirs.push(path),
                         StatResult::Error      => ()
                     },
-                    Err(_) => unreachable!()
+                    Err(_) => unreachable!(),
                 }
                 self.count += 1;
             }
@@ -107,17 +104,17 @@ impl<'a> Exa<'a> {
 
             // Spawn producer thread
             thread::spawn(move || {
-                let path = Path::new(file.clone());
-                let _ = results_tx.send(match fs::stat(&path) {
+                let path = Path::new(&*file);
+                let _ = results_tx.send(match fs::metadata(&path) {
                     Ok(stat) => {
-                        if stat.kind != FileType::Directory {
+                        if !stat.is_dir() {
                             StatResult::File(File::with_stat(stat, &path, None, false))
                         }
                         else if is_tree {
                             StatResult::File(File::with_stat(stat, &path, None, true))
                         }
                         else {
-                            StatResult::Path(path)
+                            StatResult::Path(path.to_path_buf())
                         }
                     }
                     Err(e) => {
@@ -127,7 +124,6 @@ impl<'a> Exa<'a> {
                 });
             });
         }
-
     }
 
     fn print_files(&self) {
@@ -166,9 +162,9 @@ impl<'a> Exa<'a> {
                     // time, so by inserting them backwards, they get displayed in
                     // the correct sort order.
                     if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
-                        let depth = dir_path.components().filter(|&c| c != b".").count() + 1;
+                        let depth = dir_path.components().filter(|&c| c != Component::CurDir).count() + 1;
                         if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
-                            for dir in files.iter().filter(|f| f.stat.kind == FileType::Directory).rev() {
+                            for dir in files.iter().filter(|f| f.is_directory()).rev() {
                                 self.dirs.push(dir.path.clone());
                             }
                         }

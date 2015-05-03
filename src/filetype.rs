@@ -1,8 +1,6 @@
 use file::{File, GREY};
 use self::FileType::*;
 
-use std::old_io as io;
-
 use ansi_term::Style;
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
@@ -84,13 +82,14 @@ pub trait HasType {
 impl<'a> HasType for File<'a> {
     fn get_type(&self) -> FileType {
 
-        match self.stat.kind {
-            io::FileType::Directory    => return Directory,
-            io::FileType::Symlink      => return Symlink,
-            io::FileType::BlockSpecial => return Special,
-            io::FileType::NamedPipe    => return Special,
-            io::FileType::Unknown      => return Special,
-            _ => {}
+        if self.is_directory() {
+            return Directory;
+        }
+        else if self.is_link() {
+            return Symlink;
+        }
+        else if !self.is_file() {
+            return Special;
         }
 
         if self.name.starts_with("README") || BUILD_TYPES.contains(&&self.name[..]) {
@@ -140,7 +139,7 @@ impl<'a> HasType for File<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(broken_test)]
 mod test {
     use super::*;
     use file::test::{dummy_stat, new_file};
