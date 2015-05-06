@@ -345,12 +345,11 @@ impl<'a> File<'a> {
 
     fn timestamp(&self, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
 
-        // Need to convert these values from milliseconds into seconds.
         let time_in_seconds = match time_type {
             TimeType::FileAccessed => self.stat.as_raw().atime(),
             TimeType::FileModified => self.stat.as_raw().mtime(),
             TimeType::FileCreated  => self.stat.as_raw().ctime(),
-        } as i64 / 1000;
+        } as i64;
 
         let date = LocalDateTime::at(time_in_seconds);
 
