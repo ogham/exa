@@ -94,6 +94,11 @@ impl<'a> File<'a> {
         self.stat.is_file()
     }
 
+    pub fn is_executable_file(&self) -> bool {
+        let bit = unix::fs::USER_EXECUTE;
+        self.is_file() && (self.stat.permissions().mode() & bit) == bit
+    }
+
     pub fn is_link(&self) -> bool {
         self.stat.file_type().is_symlink()
     }

@@ -85,6 +85,9 @@ impl<'a> HasType for File<'a> {
         if self.is_directory() {
             return Directory;
         }
+        else if self.is_executable_file() {
+            return Executable;
+        }
         else if self.is_link() {
             return Symlink;
         }
