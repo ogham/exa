@@ -259,11 +259,4 @@ impl UserLocale {
             numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
         }
     }
-
-    pub fn default() -> UserLocale {
-        UserLocale {
-            time:    locale::Time::english(),
-            numeric: locale::Numeric::english(),
-        }
-    }
 }

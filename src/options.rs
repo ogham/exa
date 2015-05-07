@@ -457,13 +457,6 @@ impl DirAction {
             _ => false,
          }
     }
-
-    pub fn is_recurse(&self) -> bool {
-        match *self {
-            DirAction::Recurse(RecurseOptions { max_depth: _, tree }) => !tree,
-            _ => false,
-         }
-    }
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
