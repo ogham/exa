@@ -8,6 +8,11 @@ use std::default::Default;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Colours {
+    pub filetypes: FileTypes,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct FileTypes {
     pub normal: Style,
     pub directory: Style,
 	pub symlink: Style,
@@ -32,21 +37,23 @@ impl Colours {
 
     pub fn colourful() -> Colours {
         Colours {
-            normal:      Plain,
-            directory:   Blue.bold(),
-            symlink:     Cyan.normal(),
-            special:     Yellow.normal(),
-            executable:  Green.bold(),
-            image:       Fixed(133).normal(),
-            video:       Fixed(135).normal(),
-            music:       Fixed(92).normal(),
-            lossless:    Fixed(93).normal(),
-            crypto:      Fixed(109).normal(),
-            document:    Fixed(105).normal(),
-            compressed:  Red.normal(),
-            temp:        GREY.normal(),
-            immediate:   Yellow.bold().underline(),
-            compiled:    Fixed(137).normal(),
+            filetypes: FileTypes {
+                normal:      Plain,
+                directory:   Blue.bold(),
+                symlink:     Cyan.normal(),
+                special:     Yellow.normal(),
+                executable:  Green.bold(),
+                image:       Fixed(133).normal(),
+                video:       Fixed(135).normal(),
+                music:       Fixed(92).normal(),
+                lossless:    Fixed(93).normal(),
+                crypto:      Fixed(109).normal(),
+                document:    Fixed(105).normal(),
+                compressed:  Red.normal(),
+                temp:        GREY.normal(),
+                immediate:   Yellow.bold().underline(),
+                compiled:    Fixed(137).normal(),
+            }
         }
     }
 }

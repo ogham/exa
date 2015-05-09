@@ -5,21 +5,21 @@ use colours::Colours;
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
     match file {
-        f if f.is_directory()        => colours.directory,
-        f if f.is_executable_file()  => colours.executable,
-        f if f.is_link()             => colours.symlink,
-        f if !f.is_file()            => colours.special,
-        f if f.is_immediate()        => colours.immediate,
-        f if f.is_image()            => colours.image,
-        f if f.is_video()            => colours.video,
-        f if f.is_music()            => colours.music,
-        f if f.is_lossless()         => colours.lossless,
-        f if f.is_crypto()           => colours.crypto,
-        f if f.is_document()         => colours.document,
-        f if f.is_compressed()       => colours.compressed,
-        f if f.is_temp()             => colours.temp,
-        f if f.is_compiled()         => colours.compiled,
-        _                            => colours.normal,
+        f if f.is_directory()        => colours.filetypes.directory,
+        f if f.is_executable_file()  => colours.filetypes.executable,
+        f if f.is_link()             => colours.filetypes.symlink,
+        f if !f.is_file()            => colours.filetypes.special,
+        f if f.is_immediate()        => colours.filetypes.immediate,
+        f if f.is_image()            => colours.filetypes.image,
+        f if f.is_video()            => colours.filetypes.video,
+        f if f.is_music()            => colours.filetypes.music,
+        f if f.is_lossless()         => colours.filetypes.lossless,
+        f if f.is_crypto()           => colours.filetypes.crypto,
+        f if f.is_document()         => colours.filetypes.document,
+        f if f.is_compressed()       => colours.filetypes.compressed,
+        f if f.is_temp()             => colours.filetypes.temp,
+        f if f.is_compiled()         => colours.filetypes.compiled,
+        _                            => colours.filetypes.normal,
     }
 }
 
