@@ -1,55 +1,25 @@
-use file::{File, GREY};
-use self::FileType::*;
-
 use ansi_term::Style;
-use ansi_term::Style::Plain;
-use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
-#[derive(Debug)]
-pub enum FileType {
-    Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
-    Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
-}
+use file::File;
+use colours::Colours;
 
-impl FileType {
-    pub fn style(&self) -> Style {
-        match *self {
-            Normal     => Plain,
-            Directory  => Blue.bold(),
-            Symlink    => Cyan.normal(),
-            Special    => Yellow.normal(),
-            Executable => Green.bold(),
-            Image      => Fixed(133).normal(),
-            Video      => Fixed(135).normal(),
-            Music      => Fixed(92).normal(),
-            Lossless   => Fixed(93).normal(),
-            Crypto     => Fixed(109).normal(),
-            Document   => Fixed(105).normal(),
-            Compressed => Red.normal(),
-            Temp       => GREY.normal(),
-            Immediate  => Yellow.bold().underline(),
-            Compiled   => Fixed(137).normal(),
-        }
-    }
-}
-
-pub fn file_type(file: &File) -> FileType {
+pub fn file_colour(colours: &Colours, file: &File) -> Style {
     match file {
-        f if f.is_directory()        => Directory,
-        f if f.is_executable_file()  => Executable,
-        f if f.is_link()             => Symlink,
-        f if !f.is_file()            => Special,
-        f if f.is_immediate()        => Immediate,
-        f if f.is_image()            => Image,
-        f if f.is_video()            => Video,
-        f if f.is_music()            => Music,
-        f if f.is_lossless()         => Lossless,
-        f if f.is_crypto()           => Crypto,
-        f if f.is_document()         => Document,
-        f if f.is_compressed()       => Compressed,
-        f if f.is_temp()             => Temp,
-        f if f.is_compiled()         => Compiled,
-        _                            => Normal,
+        f if f.is_directory()        => colours.directory,
+        f if f.is_executable_file()  => colours.executable,
+        f if f.is_link()             => colours.symlink,
+        f if !f.is_file()            => colours.special,
+        f if f.is_immediate()        => colours.immediate,
+        f if f.is_image()            => colours.image,
+        f if f.is_video()            => colours.video,
+        f if f.is_music()            => colours.music,
+        f if f.is_lossless()         => colours.lossless,
+        f if f.is_crypto()           => colours.crypto,
+        f if f.is_document()         => colours.document,
+        f if f.is_compressed()       => colours.compressed,
+        f if f.is_temp()             => colours.temp,
+        f if f.is_compiled()         => colours.compiled,
+        _                            => colours.normal,
     }
 }
 

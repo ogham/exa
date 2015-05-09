@@ -1,6 +1,8 @@
+use colours::Colours;
 use column::Alignment::Left;
 use file::File;
-use super::lines::lines_view;
+use filetype::file_colour;
+use super::lines::Lines;
 
 use std::cmp::max;
 use std::iter::repeat;
@@ -9,6 +11,7 @@ use std::iter::repeat;
 pub struct Grid {
     pub across: bool,
     pub console_width: usize,
+    pub colours: Colours,
 }
 
 impl Grid {
@@ -81,7 +84,7 @@ impl Grid {
                     }
 
                     let ref file = files[num];
-                    let styled_name = file.file_colour().paint(&file.name).to_string();
+                    let styled_name = file_colour(&self.colours, file).paint(&file.name).to_string();
                     if x == widths.len() - 1 {
                         // The final column doesn't need to have trailing spaces
                         print!("{}", styled_name);
@@ -96,7 +99,7 @@ impl Grid {
         }
         else {
             // Drop down to lines view if the file names are too big for a grid
-            lines_view(files);
+            Lines { colours: self.colours }.view(files);
         }
     }
 }

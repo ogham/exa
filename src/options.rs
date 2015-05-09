@@ -1,9 +1,10 @@
+use colours::Colours;
 use dir::Dir;
 use file::File;
 use column::Column;
 use column::Column::*;
 use feature::Attribute;
-use output::{Grid, Details};
+use output::{Grid, Details, Lines};
 use term::dimensions;
 
 use std::cmp::Ordering;
@@ -38,7 +39,7 @@ pub struct FileFilter {
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum View {
     Details(Details),
-    Lines,
+    Lines(Lines),
     Grid(Grid),
 }
 
@@ -257,6 +258,7 @@ impl View {
                         header: matches.opt_present("header"),
                         recurse: dir_action.recurse_options().map(|o| (o, filter)),
                         xattr: Attribute::feature_implemented() && matches.opt_present("extended"),
+                        colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
                 };
 
                 Ok(View::Details(details))
@@ -298,32 +300,43 @@ impl View {
         else if Attribute::feature_implemented() && matches.opt_present("extended") {
             Err(Misfire::Useless("extended", false, "long"))
         }
-        else if matches.opt_present("oneline") {
-            if matches.opt_present("across") {
-                Err(Misfire::Useless("across", true, "oneline"))
+        else if let Some((width, _)) = dimensions() {
+            if matches.opt_present("oneline") {
+                if matches.opt_present("across") {
+                    Err(Misfire::Useless("across", true, "oneline"))
+                }
+                else {
+                    let lines = Lines {
+                         colours: Colours::colourful(),
+                    };
+
+                    Ok(View::Lines(lines))
+                }
             }
             else {
-                Ok(View::Lines)
-            }
-        }
-        else {
-            if let Some((width, _)) = dimensions() {
                 let grid = Grid {
                     across: matches.opt_present("across"),
-                    console_width: width
+                    console_width: width,
+                    colours: Colours::colourful(),
                 };
 
                 Ok(View::Grid(grid))
             }
-            else {
-                // If the terminal width couldn't be matched for some reason, such
-                // as the program's stdout being connected to a file, then
-                // fallback to the lines view.
-                Ok(View::Lines)
-            }
+        }
+        else {
+            // If the terminal width couldn't be matched for some reason, such
+            // as the program's stdout being connected to a file, then
+            // fallback to the lines view.
+            let lines = Lines {
+                 colours: Colours::plain(),
+            };
+
+            Ok(View::Lines(lines))
         }
     }
 }
+
+
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {

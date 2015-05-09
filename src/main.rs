@@ -25,8 +25,8 @@ use std::thread;
 use dir::Dir;
 use file::File;
 use options::{Options, View};
-use output::lines_view;
 
+mod colours;
 mod column;
 mod dir;
 mod feature;
@@ -189,7 +189,7 @@ impl<'a> Exa<'a> {
         match self.options.view {
             View::Grid(g)     => g.view(files),
             View::Details(d)  => d.view(dir, files),
-            View::Lines       => lines_view(files),
+            View::Lines(l)    => l.view(files),
         }
     }
 }

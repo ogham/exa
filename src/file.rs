@@ -22,10 +22,11 @@ use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixN
 use datetime::local::{LocalDateTime, DatePiece};
 use datetime::format::{DateFormat};
 
+use colours::Colours;
 use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
-use filetype::file_type;
+use filetype::file_colour;
 use options::{SizeFormat, TimeType};
 use output::details::UserLocale;
 use feature::Attribute;
@@ -132,12 +133,12 @@ impl<'a> File<'a> {
     ///
     /// It consists of the file name coloured in the appropriate style,
     /// with special formatting for a symlink.
-    pub fn file_name_view(&self) -> String {
+    pub fn file_name_view(&self, colours: &Colours) -> String {
         if self.is_link() {
-            self.symlink_file_name_view()
+            self.symlink_file_name_view(colours)
         }
         else {
-            self.file_colour().paint(&*self.name).to_string()
+            file_colour(colours, self).paint(&*self.name).to_string()
         }
     }
 
@@ -149,9 +150,9 @@ impl<'a> File<'a> {
     /// an error, highlight the target and arrow in red. The error would
     /// be shown out of context, and it's almost always because the
     /// target doesn't exist.
-    fn symlink_file_name_view(&self) -> String {
+    fn symlink_file_name_view(&self, colours: &Colours) -> String {
         let name = &*self.name;
-        let style = self.file_colour();
+        let style = file_colour(colours, self);
 
         if let Ok(path) = fs::read_link(&self.path) {
             let target_path = match self.dir {
@@ -186,7 +187,7 @@ impl<'a> File<'a> {
                             style.paint(name),
                             GREY.paint("=>"),
                             ANSIStrings(&[ Cyan.paint(&path_prefix),
-                                           file.file_colour().paint(&file.name) ]))
+                                           file_colour(colours, &file).paint(&file.name) ]))
                 },
                 Err(filename) => format!("{} {} {}",
                                          style.paint(name),
@@ -197,11 +198,6 @@ impl<'a> File<'a> {
         else {
             style.paint(name).to_string()
         }
-    }
-
-    /// The `ansi_term::Style` that this file's name should be painted.
-    pub fn file_colour(&self) -> Style {
-        file_type(&self).style()
     }
 
     /// The Unicode 'display width' of the filename.

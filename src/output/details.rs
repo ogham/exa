@@ -1,3 +1,4 @@
+use colours::Colours;
 use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
@@ -37,6 +38,8 @@ pub struct Details {
 
     /// Whether to show each file's extended attributes.
     pub xattr: bool,
+
+    pub colours: Colours,
 }
 
 impl Details {
@@ -55,7 +58,7 @@ impl Details {
     /// is present.
     fn add_files_to_table(&self, table: &mut Table, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
-            table.add_file(file, depth, index == src.len() - 1);
+            table.add_file(file, depth, index == src.len() - 1, &self.colours);
 
             // There are two types of recursion that exa supports: a tree
             // view, which is dealt with here, and multiple listings, which is
@@ -150,11 +153,11 @@ impl Table {
     }
 
     /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool) {
+    fn add_file(&mut self, file: &File, depth: usize, last: bool, colours: &Colours) {
         let row = Row {
             depth:    depth,
             cells:    self.cells_for_file(file),
-            name:     file.file_name_view(),
+            name:     file.file_name_view(colours),
             last:     last,
             attrs:    file.xattrs.clone(),
             children: file.this.is_some(),
