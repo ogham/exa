@@ -382,8 +382,8 @@ impl<'a> File<'a> {
 
     /// Marker indicating that the file contains extended attributes
     ///
-    /// Returns "@" or  " ” depending on wheter the file contains an extented
-    /// attribute or not. Also returns “ ” in case the attributes cannot be read
+    /// Returns "@" or  " " depending on wheter the file contains an extented
+    /// attribute or not. Also returns " " in case the attributes cannot be read
     /// for some reason.
     fn attribute_marker(&self) -> ANSIString {
         if self.xattrs.len() > 0 { Plain.paint("@") } else { Plain.paint(" ") }
