@@ -25,7 +25,7 @@ use datetime::format::{DateFormat};
 use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
-use filetype::HasType;
+use filetype::file_type;
 use options::{SizeFormat, TimeType};
 use output::details::UserLocale;
 use feature::Attribute;
@@ -110,12 +110,6 @@ impl<'a> File<'a> {
     /// Whether this file is a dotfile or not.
     pub fn is_dotfile(&self) -> bool {
         self.name.starts_with(".")
-    }
-
-    /// Whether this file is a temporary file or not.
-    pub fn is_tmpfile(&self) -> bool {
-        let name = &self.name;
-        name.ends_with("~") || (name.starts_with("#") && name.ends_with("#"))
     }
 
     /// Get the data for a column, formatted as a coloured string.
@@ -207,7 +201,7 @@ impl<'a> File<'a> {
 
     /// The `ansi_term::Style` that this file's name should be painted.
     pub fn file_colour(&self) -> Style {
-        self.get_type().style()
+        file_type(&self).style()
     }
 
     /// The Unicode 'display width' of the filename.
@@ -470,6 +464,17 @@ impl<'a> File<'a> {
         else {
             vec![]  // No source files if there's no extension, either!
         }
+    }
+
+    pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
+        match self.ext {
+            Some(ref ext)  => choices.contains(&&ext[..]),
+            None           => false,
+        }
+    }
+
+    pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
+        choices.contains(&&self.name[..])
     }
 
     fn git_status(&self) -> Cell {
