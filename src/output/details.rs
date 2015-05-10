@@ -7,7 +7,6 @@ use options::{Columns, FileFilter, RecurseOptions};
 use users::OSUsers;
 
 use locale;
-use ansi_term::Style::Plain;
 
 /// With the **Details** view, the output gets formatted into columns, with
 /// each `Column` object showing some piece of information about the file,
@@ -46,7 +45,7 @@ impl Details {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-        let mut table = Table::with_columns(self.columns.for_dir(dir));
+        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir));
         if self.header { table.add_header() }
 
         // Then add files to the table and print it out.
@@ -58,7 +57,7 @@ impl Details {
     /// is present.
     fn add_files_to_table(&self, table: &mut Table, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
-            table.add_file(file, depth, index == src.len() - 1, &self.colours);
+            table.add_file(file, depth, index == src.len() - 1);
 
             // There are two types of recursion that exa supports: a tree
             // view, which is dealt with here, and multiple listings, which is
@@ -114,17 +113,19 @@ struct Table {
     users:   OSUsers,
     locale:  UserLocale,
     rows:    Vec<Row>,
+    colours: Colours,
 }
 
 impl Table {
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
-    fn with_columns(columns: Vec<Column>) -> Table {
+    fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
         Table {
             columns: columns,
             users: OSUsers::empty_cache(),
             locale: UserLocale::new(),
             rows: Vec::new(),
+            colours: colours,
         }
     }
 
@@ -134,8 +135,8 @@ impl Table {
     fn add_header(&mut self) {
         let row = Row {
             depth:    0,
-            cells:    self.columns.iter().map(|c| Cell::paint(Plain.underline(), c.header())).collect(),
-            name:     Plain.underline().paint("Name").to_string(),
+            cells:    self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect(),
+            name:     self.colours.header.paint("Name").to_string(),
             last:     false,
             attrs:    Vec::new(),
             children: false,
@@ -148,16 +149,16 @@ impl Table {
     /// this file, per-column.
     fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
         self.columns.clone().iter()
-                    .map(|c| file.display(c, &mut self.users, &self.locale))
+                    .map(|c| file.display(c, &self.colours, &mut self.users, &self.locale))
                     .collect()
     }
 
     /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool, colours: &Colours) {
+    fn add_file(&mut self, file: &File, depth: usize, last: bool) {
         let row = Row {
             depth:    depth,
             cells:    self.cells_for_file(file),
-            name:     file.file_name_view(colours),
+            name:     file.file_name_view(&self.colours),
             last:     last,
             attrs:    file.xattrs.clone(),
             children: file.this.is_some(),

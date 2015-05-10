@@ -1,6 +1,6 @@
 use ansi_term::Style;
 use ansi_term::Style::Plain;
-use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
+use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
 use file::GREY;
 
@@ -8,7 +8,21 @@ use std::default::Default;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Colours {
-    pub filetypes: FileTypes,
+    pub filetypes:  FileTypes,
+    pub perms:      Permissions,
+    pub size:       Size,
+    pub users:      Users,
+    pub links:      Links,
+
+    pub punctuation:  Style,
+    pub date:         Style,
+    pub inode:        Style,
+    pub blocks:       Style,
+    pub header:       Style,
+
+    pub symlink_path:     Style,
+    pub broken_arrow:     Style,
+    pub broken_filename:  Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -28,6 +42,44 @@ pub struct FileTypes {
 	pub temp: Style,
 	pub immediate: Style,
 	pub compiled: Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Permissions {
+    pub user_read:          Style,
+    pub user_write:         Style,
+    pub user_execute_file:  Style,
+    pub user_execute_other: Style,
+
+    pub group_read:    Style,
+    pub group_write:   Style,
+    pub group_execute: Style,
+
+    pub other_read:    Style,
+    pub other_write:   Style,
+    pub other_execute: Style,
+
+    pub attribute:  Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Size {
+    pub numbers: Style,
+    pub unit: Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Users {
+    pub user_you: Style,
+    pub user_someone_else: Style,
+    pub group_yours: Style,
+    pub group_not_yours: Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Links {
+    pub normal: Style,
+    pub multi_link_file: Style,
 }
 
 impl Colours {
@@ -53,7 +105,48 @@ impl Colours {
                 temp:        GREY.normal(),
                 immediate:   Yellow.bold().underline(),
                 compiled:    Fixed(137).normal(),
-            }
+            },
+
+            perms: Permissions {
+                user_read:           Yellow.bold(),
+                user_write:          Red.bold(),
+                user_execute_file:   Green.bold().underline(),
+                user_execute_other:  Green.bold(),
+                group_read:          Yellow.normal(),
+                group_write:         Red.normal(),
+                group_execute:       Green.normal(),
+                other_read:          Yellow.normal(),
+                other_write:         Red.normal(),
+                other_execute:       Green.normal(),
+                attribute:           Plain,
+            },
+
+            size: Size {
+                numbers:  Green.bold(),
+                unit:     Green.normal(),
+            },
+
+            users: Users {
+                user_you:           Yellow.bold(),
+                user_someone_else:  Plain,
+                group_yours:        Yellow.bold(),
+                group_not_yours:    Plain,
+            },
+
+            links: Links {
+                normal:          Red.bold(),
+                multi_link_file: Red.on(Yellow),
+            },
+
+            punctuation:  Fixed(244).normal(),
+            date:         Blue.normal(),
+            inode:        Purple.normal(),
+            blocks:       Cyan.normal(),
+            header:       Plain.underline(),
+
+            symlink_path:     Cyan.normal(),
+            broken_arrow:     Red.normal(),
+            broken_filename:  Red.underline()
         }
     }
 }
