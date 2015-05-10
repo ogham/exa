@@ -2,7 +2,7 @@ use colours::Colours;
 use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
-use file::{File, GREY};
+use file::File;
 use options::{Columns, FileFilter, RecurseOptions};
 use users::OSUsers;
 
@@ -193,7 +193,7 @@ impl Table {
                 stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
                 for i in 1 .. row.depth + 1 {
-                    print!("{}", GREY.paint(stack[i].ascii_art()));
+                    print!("{}", self.colours.punctuation.paint(stack[i].ascii_art()));
                 }
 
                 if row.children {

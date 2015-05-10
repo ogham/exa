@@ -7,7 +7,7 @@ use std::os::unix::raw::mode_t;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
-use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
+use ansi_term::{ANSIString, ANSIStrings, Style};
 use ansi_term::Style::Plain;
 use ansi_term::Colour::Fixed;
 
@@ -30,10 +30,6 @@ use filetype::file_colour;
 use options::{SizeFormat, TimeType};
 use output::details::UserLocale;
 use feature::Attribute;
-
-/// This grey value is directly in between white and black, so it's guaranteed
-/// to show up on either backgrounded terminal.
-pub static GREY: Colour = Fixed(244);
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -316,7 +312,7 @@ impl<'a> File<'a> {
     /// cluttered with numbers.
     fn file_size(&self, colours: &Colours, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
         if self.is_directory() {
-            Cell { text: GREY.paint("-").to_string(), length: 1 }
+            Cell { text: colours.punctuation.paint("-").to_string(), length: 1 }
         }
         else {
             let result = match size_format {
@@ -425,7 +421,7 @@ impl<'a> File<'a> {
             style.paint(character)
         }
         else {
-            GREY.paint("-")
+            Fixed(244).paint("-")
         }
     }
 
@@ -477,7 +473,7 @@ impl<'a> File<'a> {
 
     fn git_status(&self, colours: &Colours) -> Cell {
         let status = match self.dir {
-            None    => GREY.paint("--").to_string(),
+            None    => colours.punctuation.paint("--").to_string(),
             Some(d) => {
                 let cwd = match current_dir() {
                     Err(_)  => Path::new(".").join(&self.path),

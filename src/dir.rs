@@ -1,6 +1,6 @@
 use colours::Colours;
 use feature::Git;
-use file::{File, GREY};
+use file::File;
 
 use std::io;
 use std::fs;
@@ -69,7 +69,7 @@ impl Dir {
         match (&self.git, prefix_lookup) {
             (&Some(ref git), false)  => git.status(colours, path),
             (&Some(ref git), true)   => git.dir_status(colours, path),
-            (&None, _)               => GREY.paint("--").to_string(),
+            (&None, _)               => colours.punctuation.paint("--").to_string(),
         }
     }
 }

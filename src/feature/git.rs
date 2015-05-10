@@ -4,7 +4,6 @@ use ansi_term::{ANSIString, ANSIStrings};
 use git2;
 
 use colours::Colours;
-use file::GREY;
 
 /// Container of Git statuses for all the files in this folder's Git repository.
 pub struct Git {
@@ -35,7 +34,7 @@ impl Git {
                                   .find(|p| p.0.as_path() == path);
         match status {
             Some(&(_, s)) => ANSIStrings( &[Git::index_status(c, s), Git::working_tree_status(c, s) ]).to_string(),
-            None => GREY.paint("--").to_string(),
+            None => c.punctuation.paint("--").to_string(),
         }
     }
 
@@ -58,7 +57,7 @@ impl Git {
             s if s.contains(git2::STATUS_WT_DELETED) => colours.git.deleted.paint("D"),
             s if s.contains(git2::STATUS_WT_RENAMED) => colours.git.renamed.paint("R"),
             s if s.contains(git2::STATUS_WT_TYPECHANGE) => colours.git.typechange.paint("T"),
-            _ => GREY.paint("-"),
+            _ => colours.punctuation.paint("-"),
         }
     }
 
@@ -71,7 +70,7 @@ impl Git {
             s if s.contains(git2::STATUS_INDEX_DELETED) => colours.git.deleted.paint("D"),
             s if s.contains(git2::STATUS_INDEX_RENAMED) => colours.git.renamed.paint("R"),
             s if s.contains(git2::STATUS_INDEX_TYPECHANGE) => colours.git.typechange.paint("T"),
-            _ => GREY.paint("-"),
+            _ => colours.punctuation.paint("-"),
         }
     }
 }

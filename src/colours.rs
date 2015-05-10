@@ -2,8 +2,6 @@ use ansi_term::Style;
 use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
-use file::GREY;
-
 use std::default::Default;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -112,7 +110,7 @@ impl Colours {
                 crypto:      Fixed(109).normal(),
                 document:    Fixed(105).normal(),
                 compressed:  Red.normal(),
-                temp:        GREY.normal(),
+                temp:        Fixed(244).normal(),
                 immediate:   Yellow.bold().underline(),
                 compiled:    Fixed(137).normal(),
             },
