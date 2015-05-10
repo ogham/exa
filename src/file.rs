@@ -124,7 +124,7 @@ impl<'a> File<'a> {
             Blocks          => self.blocks(colours, &locale.numeric),
             User            => self.user(colours, users_cache),
             Group           => self.group(colours, users_cache),
-            GitStatus       => self.git_status(),
+            GitStatus       => self.git_status(colours),
         }
     }
 
@@ -475,7 +475,7 @@ impl<'a> File<'a> {
         choices.contains(&&self.name[..])
     }
 
-    fn git_status(&self) -> Cell {
+    fn git_status(&self, colours: &Colours) -> Cell {
         let status = match self.dir {
             None    => GREY.paint("--").to_string(),
             Some(d) => {
@@ -484,7 +484,7 @@ impl<'a> File<'a> {
                     Ok(dir) => dir.join(&self.path),
                 };
 
-                d.git_status(&cwd, self.is_directory())
+                d.git_status(&cwd, colours, self.is_directory())
             },
         };
 

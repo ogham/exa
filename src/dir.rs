@@ -1,3 +1,4 @@
+use colours::Colours;
 use feature::Git;
 use file::{File, GREY};
 
@@ -64,10 +65,10 @@ impl Dir {
     }
 
     /// Get a string describing the Git status of the given file.
-    pub fn git_status(&self, path: &Path, prefix_lookup: bool) -> String {
+    pub fn git_status(&self, path: &Path, colours: &Colours, prefix_lookup: bool) -> String {
         match (&self.git, prefix_lookup) {
-            (&Some(ref git), false)  => git.status(path),
-            (&Some(ref git), true)   => git.dir_status(path),
+            (&Some(ref git), false)  => git.status(colours, path),
+            (&Some(ref git), true)   => git.dir_status(colours, path),
             (&None, _)               => GREY.paint("--").to_string(),
         }
     }

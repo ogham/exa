@@ -13,6 +13,7 @@ pub struct Colours {
     pub size:       Size,
     pub users:      Users,
     pub links:      Links,
+    pub git:        Git,
 
     pub punctuation:  Style,
     pub date:         Style,
@@ -82,6 +83,15 @@ pub struct Links {
     pub multi_link_file: Style,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Git {
+    pub new: Style,
+    pub modified: Style,
+    pub deleted: Style,
+    pub renamed: Style,
+    pub typechange: Style,
+}
+
 impl Colours {
     pub fn plain() -> Colours {
         Colours::default()
@@ -136,6 +146,14 @@ impl Colours {
             links: Links {
                 normal:          Red.bold(),
                 multi_link_file: Red.on(Yellow),
+            },
+
+            git: Git {
+                new:         Green.normal(),
+                modified:    Blue.normal(),
+                deleted:     Red.normal(),
+                renamed:     Yellow.normal(),
+                typechange:  Purple.normal(),
             },
 
             punctuation:  Fixed(244).normal(),
