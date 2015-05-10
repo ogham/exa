@@ -7,9 +7,9 @@ use std::os::unix::raw::mode_t;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
-use ansi_term::{ANSIString, ANSIStrings, Colour, Style};
+use ansi_term::{ANSIString, ANSIStrings, Style};
 use ansi_term::Style::Plain;
-use ansi_term::Colour::{Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::Colour::Fixed;
 
 use users::Users;
 
@@ -22,17 +22,14 @@ use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixN
 use datetime::local::{LocalDateTime, DatePiece};
 use datetime::format::{DateFormat};
 
+use colours::Colours;
 use column::{Column, Cell};
 use column::Column::*;
 use dir::Dir;
-use filetype::HasType;
+use filetype::file_colour;
 use options::{SizeFormat, TimeType};
 use output::details::UserLocale;
 use feature::Attribute;
-
-/// This grey value is directly in between white and black, so it's guaranteed
-/// to show up on either backgrounded terminal.
-pub static GREY: Colour = Fixed(244);
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -112,24 +109,18 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
-    /// Whether this file is a temporary file or not.
-    pub fn is_tmpfile(&self) -> bool {
-        let name = &self.name;
-        name.ends_with("~") || (name.starts_with("#") && name.ends_with("#"))
-    }
-
     /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, users_cache: &mut U, locale: &UserLocale) -> Cell {
+    pub fn display<U: Users>(&self, column: &Column, colours: &Colours, users_cache: &mut U, locale: &UserLocale) -> Cell {
         match *column {
-            Permissions     => self.permissions_string(),
-            FileSize(f)     => self.file_size(f, &locale.numeric),
-            Timestamp(t, y) => self.timestamp(t, y, &locale.time),
-            HardLinks       => self.hard_links(&locale.numeric),
-            Inode           => self.inode(),
-            Blocks          => self.blocks(&locale.numeric),
-            User            => self.user(users_cache),
-            Group           => self.group(users_cache),
-            GitStatus       => self.git_status(),
+            Permissions     => self.permissions_string(colours),
+            FileSize(f)     => self.file_size(colours, f, &locale.numeric),
+            Timestamp(t, y) => self.timestamp(colours, t, y, &locale.time),
+            HardLinks       => self.hard_links(colours, &locale.numeric),
+            Inode           => self.inode(colours),
+            Blocks          => self.blocks(colours, &locale.numeric),
+            User            => self.user(colours, users_cache),
+            Group           => self.group(colours, users_cache),
+            GitStatus       => self.git_status(colours),
         }
     }
 
@@ -138,12 +129,12 @@ impl<'a> File<'a> {
     ///
     /// It consists of the file name coloured in the appropriate style,
     /// with special formatting for a symlink.
-    pub fn file_name_view(&self) -> String {
+    pub fn file_name_view(&self, colours: &Colours) -> String {
         if self.is_link() {
-            self.symlink_file_name_view()
+            self.symlink_file_name_view(colours)
         }
         else {
-            self.file_colour().paint(&*self.name).to_string()
+            file_colour(colours, self).paint(&*self.name).to_string()
         }
     }
 
@@ -155,9 +146,9 @@ impl<'a> File<'a> {
     /// an error, highlight the target and arrow in red. The error would
     /// be shown out of context, and it's almost always because the
     /// target doesn't exist.
-    fn symlink_file_name_view(&self) -> String {
+    fn symlink_file_name_view(&self, colours: &Colours) -> String {
         let name = &*self.name;
-        let style = self.file_colour();
+        let style = file_colour(colours, self);
 
         if let Ok(path) = fs::read_link(&self.path) {
             let target_path = match self.dir {
@@ -190,24 +181,19 @@ impl<'a> File<'a> {
 
                     format!("{} {} {}",
                             style.paint(name),
-                            GREY.paint("=>"),
-                            ANSIStrings(&[ Cyan.paint(&path_prefix),
-                                           file.file_colour().paint(&file.name) ]))
+                            colours.punctuation.paint("=>"),
+                            ANSIStrings(&[ colours.symlink_path.paint(&path_prefix),
+                                           file_colour(colours, &file).paint(&file.name) ]))
                 },
                 Err(filename) => format!("{} {} {}",
                                          style.paint(name),
-                                         Red.paint("=>"),
-                                         Red.underline().paint(&filename)),
+                                         colours.broken_arrow.paint("=>"),
+                                         colours.broken_filename.paint(&filename)),
             }
         }
         else {
             style.paint(name).to_string()
         }
-    }
-
-    /// The `ansi_term::Style` that this file's name should be painted.
-    pub fn file_colour(&self) -> Style {
-        self.get_type().style()
     }
 
     /// The Unicode 'display width' of the filename.
@@ -246,8 +232,10 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of hard links as a coloured string.
-    fn hard_links(&self, locale: &locale::Numeric) -> Cell {
-        let style = if self.has_multiple_links() { Red.on(Yellow) } else { Red.normal() };
+    fn hard_links(&self, colours: &Colours, locale: &locale::Numeric) -> Cell {
+        let style = if self.has_multiple_links() { colours.links.multi_link_file }
+                                            else { colours.links.normal };
+
         Cell::paint(style, &locale.format_int(self.stat.as_raw().nlink())[..])
     }
 
@@ -261,18 +249,18 @@ impl<'a> File<'a> {
     }
 
     /// This file's inode as a coloured string.
-    fn inode(&self) -> Cell {
+    fn inode(&self, colours: &Colours) -> Cell {
         let inode = self.stat.as_raw().ino();
-        Cell::paint(Purple.normal(), &inode.to_string()[..])
+        Cell::paint(colours.inode, &inode.to_string()[..])
     }
 
     /// This file's number of filesystem blocks (if available) as a coloured string.
-    fn blocks(&self, locale: &locale::Numeric) -> Cell {
+    fn blocks(&self, colours: &Colours, locale: &locale::Numeric) -> Cell {
         if self.is_file() || self.is_link() {
-            Cell::paint(Cyan.normal(), &locale.format_int(self.stat.as_raw().blocks())[..])
+            Cell::paint(colours.blocks, &locale.format_int(self.stat.as_raw().blocks())[..])
         }
         else {
-            Cell { text: GREY.paint("-").to_string(), length: 1 }
+            Cell { text: colours.punctuation.paint("-").to_string(), length: 1 }
         }
     }
 
@@ -281,7 +269,7 @@ impl<'a> File<'a> {
     /// If the user is not present, then it formats the uid as a number
     /// instead. This usually happens when a user is deleted, but still owns
     /// files.
-    fn user<U: Users>(&self, users_cache: &mut U) -> Cell {
+    fn user<U: Users>(&self, colours: &Colours, users_cache: &mut U) -> Cell {
         let uid = self.stat.as_raw().uid();
 
         let user_name = match users_cache.get_user_by_uid(uid) {
@@ -289,23 +277,23 @@ impl<'a> File<'a> {
             None => uid.to_string(),
         };
 
-        let style = if users_cache.get_current_uid() == uid { Yellow.bold() } else { Plain };
+        let style = if users_cache.get_current_uid() == uid { colours.users.user_you } else { colours.users.user_someone_else };
         Cell::paint(style, &*user_name)
     }
 
     /// This file's group name as a coloured string.
     ///
     /// As above, if not present, it formats the gid as a number instead.
-    fn group<U: Users>(&self, users_cache: &mut U) -> Cell {
+    fn group<U: Users>(&self, colours: &Colours, users_cache: &mut U) -> Cell {
         let gid = self.stat.as_raw().gid();
-        let mut style = Plain;
+        let mut style = colours.users.group_not_yours;
 
         let group_name = match users_cache.get_group_by_gid(gid as u32) {
             Some(group) => {
                 let current_uid = users_cache.get_current_uid();
                 if let Some(current_user) = users_cache.get_user_by_uid(current_uid) {
                     if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
-                        style = Yellow.bold();
+                        style = colours.users.group_yours;
                     }
                 }
                 group.name
@@ -322,25 +310,25 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    fn file_size(&self, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
+    fn file_size(&self, colours: &Colours, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
         if self.is_directory() {
-            Cell { text: GREY.paint("-").to_string(), length: 1 }
+            Cell { text: colours.punctuation.paint("-").to_string(), length: 1 }
         }
         else {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(self.stat.len() as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(self.stat.len() as f64),
-                SizeFormat::JustBytes    => return Cell::paint(Green.bold(), &locale.format_int(self.stat.len())[..]),
+                SizeFormat::JustBytes    => return Cell::paint(colours.size.numbers, &locale.format_int(self.stat.len())[..]),
             };
 
             match result {
-                Standalone(bytes) => Cell::paint(Green.bold(), &*bytes.to_string()),
+                Standalone(bytes) => Cell::paint(colours.size.numbers, &*bytes.to_string()),
                 Prefixed(prefix, n) => {
                     let number = if n < 10f64 { locale.format_float(n, 1) } else { locale.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
                     Cell {
-                        text: ANSIStrings( &[ Green.bold().paint(&number[..]), Green.paint(symbol) ]).to_string(),
+                        text: ANSIStrings( &[ colours.size.unit.paint(&number[..]), colours.size.unit.paint(symbol) ]).to_string(),
                         length: number.len() + symbol.len(),
                     }
                 }
@@ -348,7 +336,7 @@ impl<'a> File<'a> {
         }
     }
 
-    fn timestamp(&self, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
+    fn timestamp(&self, colours: &Colours, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
 
         let time_in_seconds = match time_type {
             TimeType::FileAccessed => self.stat.as_raw().atime(),
@@ -365,38 +353,38 @@ impl<'a> File<'a> {
                 DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
             };
 
-        Cell::paint(Blue.normal(), &format.format(date, locale))
+        Cell::paint(colours.date, &format.format(date, locale))
     }
 
     /// This file's type, represented by a coloured character.
     ///
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
-    fn type_char(&self) -> ANSIString {
+    fn type_char(&self, colours: &Colours) -> ANSIString {
         if self.is_file() {
-            Plain.paint(".")
+            colours.filetypes.normal.paint(".")
         }
         else if self.is_directory() {
-            Blue.paint("d")
+            colours.filetypes.directory.paint("d")
         }
         else if self.is_pipe() {
-            Yellow.paint("|")
+            colours.filetypes.special.paint("|")
         }
         else if self.is_link() {
-            Cyan.paint("l")
+            colours.filetypes.symlink.paint("l")
         }
         else {
-            Purple.paint("?")
+            colours.filetypes.special.paint("?")
         }
     }
 
     /// Marker indicating that the file contains extended attributes
     ///
-    /// Returns "@" or  " ” depending on wheter the file contains an extented
-    /// attribute or not. Also returns “ ” in case the attributes cannot be read
+    /// Returns "@" or  " " depending on wheter the file contains an extented
+    /// attribute or not. Also returns " " in case the attributes cannot be read
     /// for some reason.
-    fn attribute_marker(&self) -> ANSIString {
-        if self.xattrs.len() > 0 { Plain.paint("@") } else { Plain.paint(" ") }
+    fn attribute_marker(&self, colours: &Colours) -> ANSIString {
+        if self.xattrs.len() > 0 { colours.perms.attribute.paint("@") } else { Plain.paint(" ") }
     }
 
     /// Generate the "rwxrwxrwx" permissions string, like how ls does it.
@@ -404,24 +392,24 @@ impl<'a> File<'a> {
     /// Each character is given its own colour. The first three permission
     /// bits are bold because they're the ones used most often, and executable
     /// files are underlined to make them stand out more.
-    fn permissions_string(&self) -> Cell {
+    fn permissions_string(&self, colours: &Colours) -> Cell {
 
         let bits = self.stat.permissions().mode();
-        let executable_colour = if self.is_file() { Green.bold().underline() }
-                                                         else { Green.bold() };
+        let executable_colour = if self.is_file() { colours.perms.user_execute_file }
+                                             else { colours.perms.user_execute_other };
 
         let string = ANSIStrings(&[
-            self.type_char(),
-            File::permission_bit(bits, unix::fs::USER_READ,     "r", Yellow.bold()),
-            File::permission_bit(bits, unix::fs::USER_WRITE,    "w", Red.bold()),
+            self.type_char(colours),
+            File::permission_bit(bits, unix::fs::USER_READ,     "r", colours.perms.user_read),
+            File::permission_bit(bits, unix::fs::USER_WRITE,    "w", colours.perms.user_write),
             File::permission_bit(bits, unix::fs::USER_EXECUTE,  "x", executable_colour),
-            File::permission_bit(bits, unix::fs::GROUP_READ,    "r", Yellow.normal()),
-            File::permission_bit(bits, unix::fs::GROUP_WRITE,   "w", Red.normal()),
-            File::permission_bit(bits, unix::fs::GROUP_EXECUTE, "x", Green.normal()),
-            File::permission_bit(bits, unix::fs::OTHER_READ,    "r", Yellow.normal()),
-            File::permission_bit(bits, unix::fs::OTHER_WRITE,   "w", Red.normal()),
-            File::permission_bit(bits, unix::fs::OTHER_EXECUTE, "x", Green.normal()),
-            self.attribute_marker()
+            File::permission_bit(bits, unix::fs::GROUP_READ,    "r", colours.perms.group_read),
+            File::permission_bit(bits, unix::fs::GROUP_WRITE,   "w", colours.perms.group_write),
+            File::permission_bit(bits, unix::fs::GROUP_EXECUTE, "x", colours.perms.group_execute),
+            File::permission_bit(bits, unix::fs::OTHER_READ,    "r", colours.perms.other_read),
+            File::permission_bit(bits, unix::fs::OTHER_WRITE,   "w", colours.perms.other_write),
+            File::permission_bit(bits, unix::fs::OTHER_EXECUTE, "x", colours.perms.other_execute),
+            self.attribute_marker(colours)
         ]).to_string();
 
         Cell { text: string, length: 11 }
@@ -433,7 +421,7 @@ impl<'a> File<'a> {
             style.paint(character)
         }
         else {
-            GREY.paint("-")
+            Fixed(244).paint("-")
         }
     }
 
@@ -472,16 +460,27 @@ impl<'a> File<'a> {
         }
     }
 
-    fn git_status(&self) -> Cell {
+    pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
+        match self.ext {
+            Some(ref ext)  => choices.contains(&&ext[..]),
+            None           => false,
+        }
+    }
+
+    pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
+        choices.contains(&&self.name[..])
+    }
+
+    fn git_status(&self, colours: &Colours) -> Cell {
         let status = match self.dir {
-            None    => GREY.paint("--").to_string(),
+            None    => colours.punctuation.paint("--").to_string(),
             Some(d) => {
                 let cwd = match current_dir() {
                     Err(_)  => Path::new(".").join(&self.path),
                     Ok(dir) => dir.join(&self.path),
                 };
 
-                d.git_status(&cwd, self.is_directory())
+                d.git_status(&cwd, colours, self.is_directory())
             },
         };
 

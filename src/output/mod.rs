@@ -4,4 +4,4 @@ mod lines;
 
 pub use self::grid::Grid;
 pub use self::details::Details;
-pub use self::lines::lines_view;
+pub use self::lines::Lines;

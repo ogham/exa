@@ -1,145 +1,117 @@
-use file::{File, GREY};
-use self::FileType::*;
-
 use ansi_term::Style;
-use ansi_term::Style::Plain;
-use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Fixed};
 
-#[derive(PartialEq, Debug)]
-pub enum FileType {
-    Normal, Directory, Executable, Immediate, Compiled, Symlink, Special,
-    Image, Video, Music, Lossless, Compressed, Document, Temp, Crypto,
-}
+use file::File;
+use colours::Colours;
 
-static IMAGE_TYPES: &'static [&'static str] = &[
-    "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
-    "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-    "svg", "stl", "eps", "dvi", "ps", "cbr",
-    "cbz", "xpm", "ico" ];
-
-static VIDEO_TYPES: &'static [&'static str] = &[
-    "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
-    "mpg", "ogm", "ogv", "vob", "wmv" ];
-
-static MUSIC_TYPES: &'static [&'static str] = &[
-    "aac", "m4a", "mp3", "ogg", "wma" ];
-
-static MUSIC_LOSSLESS: &'static [&'static str] = &[
-    "alac", "ape", "flac", "wav" ];
-
-static COMPRESSED_TYPES: &'static [&'static str] = &[
-    "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
-    "iso", "dmg", "tc", "rar", "par" ];
-
-static DOCUMENT_TYPES: &'static [&'static str] = &[
-    "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd",
-    "odp", "odt", "pdf", "ppt", "pptx", "rtf",
-    "xls", "xlsx" ];
-
-static TEMP_TYPES: &'static [&'static str] = &[
-    "tmp", "swp", "swo", "swn", "bak" ];
-
-static CRYPTO_TYPES: &'static [&'static str] = &[
-    "asc", "gpg", "sig", "signature", "pgp" ];
-
-static COMPILED_TYPES: &'static [&'static str] = &[
-    "class", "elc", "hi", "o", "pyc" ];
-
-static BUILD_TYPES: &'static [&'static str] = &[
-    "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
-    "build.gradle", "Rakefile", "Gruntfile.js",
-    "Gruntfile.coffee" ];
-
-impl FileType {
-
-    /// Get the `ansi_term::Style` that a file of this type should use.
-    pub fn style(&self) -> Style {
-        match *self {
-            Normal     => Plain,
-            Directory  => Blue.bold(),
-            Symlink    => Cyan.normal(),
-            Special    => Yellow.normal(),
-            Executable => Green.bold(),
-            Image      => Fixed(133).normal(),
-            Video      => Fixed(135).normal(),
-            Music      => Fixed(92).normal(),
-            Lossless   => Fixed(93).normal(),
-            Crypto     => Fixed(109).normal(),
-            Document   => Fixed(105).normal(),
-            Compressed => Red.normal(),
-            Temp       => GREY.normal(),
-            Immediate  => Yellow.bold().underline(),
-            Compiled   => Fixed(137).normal(),
-        }
+pub fn file_colour(colours: &Colours, file: &File) -> Style {
+    match file {
+        f if f.is_directory()        => colours.filetypes.directory,
+        f if f.is_executable_file()  => colours.filetypes.executable,
+        f if f.is_link()             => colours.filetypes.symlink,
+        f if !f.is_file()            => colours.filetypes.special,
+        f if f.is_immediate()        => colours.filetypes.immediate,
+        f if f.is_image()            => colours.filetypes.image,
+        f if f.is_video()            => colours.filetypes.video,
+        f if f.is_music()            => colours.filetypes.music,
+        f if f.is_lossless()         => colours.filetypes.lossless,
+        f if f.is_crypto()           => colours.filetypes.crypto,
+        f if f.is_document()         => colours.filetypes.document,
+        f if f.is_compressed()       => colours.filetypes.compressed,
+        f if f.is_temp()             => colours.filetypes.temp,
+        f if f.is_compiled()         => colours.filetypes.compiled,
+        _                            => colours.filetypes.normal,
     }
 }
 
-pub trait HasType {
-    /// For a given file, find out what type it has.
-    fn get_type(&self) -> FileType;
+trait FileTypes {
+    fn is_immediate(&self) -> bool;
+    fn is_image(&self) -> bool;
+    fn is_video(&self) -> bool;
+    fn is_music(&self) -> bool;
+    fn is_lossless(&self) -> bool;
+    fn is_crypto(&self) -> bool;
+    fn is_document(&self) -> bool;
+    fn is_compressed(&self) -> bool;
+    fn is_temp(&self) -> bool;
+    fn is_compiled(&self) -> bool;
 }
 
-impl<'a> HasType for File<'a> {
-    fn get_type(&self) -> FileType {
+impl<'_> FileTypes for File<'_> {
+    fn is_immediate(&self) -> bool {
+        self.name.starts_with("README") || self.name_is_one_of( &[
+            "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
+            "build.gradle", "Rakefile", "Gruntfile.js",
+            "Gruntfile.coffee",
+        ])
+	}
 
-        if self.is_directory() {
-            return Directory;
-        }
-        else if self.is_executable_file() {
-            return Executable;
-        }
-        else if self.is_link() {
-            return Symlink;
-        }
-        else if !self.is_file() {
-            return Special;
-        }
+    fn is_image(&self) -> bool {
+        self.extension_is_one_of( &[
+            "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
+            "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
+            "svg", "stl", "eps", "dvi", "ps", "cbr",
+            "cbz", "xpm", "ico",
+        ])
+	}
 
-        if self.name.starts_with("README") || BUILD_TYPES.contains(&&self.name[..]) {
-            return Immediate;
-        }
-        else if let Some(ref ext) = self.ext {
-            if IMAGE_TYPES.contains(&&ext[..]) {
-                return Image;
-            }
-            else if VIDEO_TYPES.contains(&&ext[..]) {
-                return Video;
-            }
-            else if MUSIC_TYPES.contains(&&ext[..]) {
-                return Music;
-            }
-            else if MUSIC_LOSSLESS.contains(&&ext[..]) {
-                return Lossless;
-            }
-            else if CRYPTO_TYPES.contains(&&ext[..]) {
-                return Crypto;
-            }
-            else if DOCUMENT_TYPES.contains(&&ext[..]) {
-                return Document;
-            }
-            else if COMPRESSED_TYPES.contains(&&ext[..]) {
-                return Compressed;
-            }
-            else if self.is_tmpfile() || TEMP_TYPES.contains(&&ext[..]) {
-                return Temp;
-            }
+    fn is_video(&self) -> bool {
+        self.extension_is_one_of( &[
+            "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
+            "mpg", "ogm", "ogv", "vob", "wmv",
+        ])
+	}
 
-            let source_files = self.get_source_files();
-            if source_files.is_empty() {
-                return Normal;
-            }
-            else if let Some(dir) = self.dir {
-                if source_files.iter().any(|path| dir.contains(path)) {
-                    return Temp;
-                }
-            }
-            else if COMPILED_TYPES.contains(&&ext[..]) {
-                return Compiled;
-            }
-        }
+    fn is_music(&self) -> bool {
+        self.extension_is_one_of( &[
+            "aac", "m4a", "mp3", "ogg", "wma",
+        ])
+	}
 
-        return Normal;  // no filetype
-    }
+    fn is_lossless(&self) -> bool {
+        self.extension_is_one_of( &[
+            "alac", "ape", "flac", "wav",
+        ])
+	}
+
+    fn is_crypto(&self) -> bool {
+        self.extension_is_one_of( &[
+            "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
+            "iso", "dmg", "tc", "rar", "par",
+        ])
+	}
+
+    fn is_document(&self) -> bool {
+        self.extension_is_one_of( &[
+            "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd",
+            "odp", "odt", "pdf", "ppt", "pptx", "rtf",
+            "xls", "xlsx",
+        ])
+	}
+
+    fn is_compressed(&self) -> bool {
+        self.extension_is_one_of( &[
+            "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
+            "iso", "dmg", "tc", "rar", "par"
+        ])
+	}
+
+    fn is_temp(&self) -> bool {
+        self.name.ends_with("~")
+            || (self.name.starts_with("#") && self.name.ends_with("#"))
+            || self.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak" ])
+	}
+
+    fn is_compiled(&self) -> bool {
+        if self.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
+            true
+        }
+        else if let Some(dir) = self.dir {
+            self.get_source_files().iter().any(|path| dir.contains(path))
+        }
+        else {
+            false
+        }
+	}
 }
 
 #[cfg(broken_test)]
@@ -170,5 +142,4 @@ mod test {
         let file = new_file(dummy_stat(), "/cargo.toml");
         assert_eq!(FileType::Normal, file.get_type())
     }
-
 }
