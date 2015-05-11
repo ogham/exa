@@ -3,33 +3,76 @@ use std::env::current_dir;
 use std::fs;
 use std::io;
 use std::os::unix;
-use std::os::unix::raw::mode_t;
+use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, mode_t, nlink_t, time_t, uid_t};
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
-use ansi_term::{ANSIString, ANSIStrings, Style};
-use ansi_term::Style::Plain;
-use ansi_term::Colour::Fixed;
-
-use users::Users;
-
-use locale;
-
 use unicode_width::UnicodeWidthStr;
 
-use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
-
-use datetime::local::{LocalDateTime, DatePiece};
-use datetime::format::{DateFormat};
-
-use colours::Colours;
-use column::{Column, Cell};
-use column::Column::*;
 use dir::Dir;
-use filetype::file_colour;
-use options::{SizeFormat, TimeType};
-use output::details::UserLocale;
+use options::TimeType;
 use feature::Attribute;
+
+pub enum Type {
+    File, Directory, Pipe, Link, Special,
+}
+
+pub struct Permissions {
+    pub file_type:      Type,
+    pub user_read:      bool,
+    pub user_write:     bool,
+    pub user_execute:   bool,
+    pub group_read:     bool,
+    pub group_write:    bool,
+    pub group_execute:  bool,
+    pub other_read:     bool,
+    pub other_write:    bool,
+    pub other_execute:  bool,
+    pub attribute:      bool,
+}
+
+pub struct Links {
+    pub count: nlink_t,
+    pub multiple: bool,
+}
+
+pub struct Inode(pub ino_t);
+
+pub enum Blocks {
+    Some(blkcnt_t),
+    None,
+}
+
+pub struct User(pub uid_t);
+
+pub struct Group(pub gid_t);
+
+pub enum Size {
+    Some(u64),
+    None,
+}
+
+pub struct Time(pub time_t);
+
+pub enum GitStatus {
+    NotModified,
+    New,
+    Modified,
+    Deleted,
+    Renamed,
+    TypeChange,
+}
+
+pub struct Git {
+    pub staged:   GitStatus,
+    pub unstaged: GitStatus,
+}
+
+impl Git {
+    pub fn empty() -> Git {
+        Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+    }
+}
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -109,91 +152,24 @@ impl<'a> File<'a> {
         self.name.starts_with(".")
     }
 
-    /// Get the data for a column, formatted as a coloured string.
-    pub fn display<U: Users>(&self, column: &Column, colours: &Colours, users_cache: &mut U, locale: &UserLocale) -> Cell {
-        match *column {
-            Permissions     => self.permissions_string(colours),
-            FileSize(f)     => self.file_size(colours, f, &locale.numeric),
-            Timestamp(t, y) => self.timestamp(colours, t, y, &locale.time),
-            HardLinks       => self.hard_links(colours, &locale.numeric),
-            Inode           => self.inode(colours),
-            Blocks          => self.blocks(colours, &locale.numeric),
-            User            => self.user(colours, users_cache),
-            Group           => self.group(colours, users_cache),
-            GitStatus       => self.git_status(colours),
-        }
-    }
+    pub fn path_prefix(&self) -> String {
+        let path_bytes: Vec<Component> = self.path.components().collect();
+        let mut path_prefix = String::new();
 
-    /// The "file name view" is what's displayed in the column and lines
-    /// views, but *not* in the grid view.
-    ///
-    /// It consists of the file name coloured in the appropriate style,
-    /// with special formatting for a symlink.
-    pub fn file_name_view(&self, colours: &Colours) -> String {
-        if self.is_link() {
-            self.symlink_file_name_view(colours)
-        }
-        else {
-            file_colour(colours, self).paint(&*self.name).to_string()
-        }
-    }
+        if !path_bytes.is_empty() {
+            // Use init() to add all but the last component of the
+            // path to the prefix. init() panics when given an
+            // empty list, hence the check.
+            for component in path_bytes.init().iter() {
+                path_prefix.push_str(&*component.as_os_str().to_string_lossy());
 
-    /// If this file is a symlink, returns a string displaying its name,
-    /// and an arrow pointing to the file it links to, which is also
-    /// coloured in the appropriate style.
-    ///
-    /// If the symlink target doesn't exist, then instead of displaying
-    /// an error, highlight the target and arrow in red. The error would
-    /// be shown out of context, and it's almost always because the
-    /// target doesn't exist.
-    fn symlink_file_name_view(&self, colours: &Colours) -> String {
-        let name = &*self.name;
-        let style = file_colour(colours, self);
-
-        if let Ok(path) = fs::read_link(&self.path) {
-            let target_path = match self.dir {
-                Some(dir) => dir.join(&*path),
-                None => path,
-            };
-
-            match self.target_file(&target_path) {
-                Ok(file) => {
-
-                    // Generate a preview for the path this symlink links to.
-                    // The preview should consist of the directory of the file
-                    // (if present) in cyan, an extra slash if necessary, then
-                    // the target file, colourised in the appropriate style.
-                    let mut path_prefix = String::new();
-
-                    let path_bytes: Vec<Component> = file.path.components().collect();
-                    if !path_bytes.is_empty() {
-                        // Use init() to add all but the last component of the
-                        // path to the prefix. init() panics when given an
-                        // empty list, hence the check.
-                        for component in path_bytes.init().iter() {
-                            path_prefix.push_str(&*component.as_os_str().to_string_lossy());
-
-                            if component != &Component::RootDir {
-                                path_prefix.push_str("/");
-                            }
-                        }
-                    }
-
-                    format!("{} {} {}",
-                            style.paint(name),
-                            colours.punctuation.paint("=>"),
-                            ANSIStrings(&[ colours.symlink_path.paint(&path_prefix),
-                                           file_colour(colours, &file).paint(&file.name) ]))
-                },
-                Err(filename) => format!("{} {} {}",
-                                         style.paint(name),
-                                         colours.broken_arrow.paint("=>"),
-                                         colours.broken_filename.paint(&filename)),
+                if component != &Component::RootDir {
+                    path_prefix.push_str("/");
+                }
             }
         }
-        else {
-            style.paint(name).to_string()
-        }
+
+        path_prefix
     }
 
     /// The Unicode 'display width' of the filename.
@@ -211,17 +187,27 @@ impl<'a> File<'a> {
     /// If statting the file fails (usually because the file on the
     /// other end doesn't exist), returns the *filename* of the file
     /// that should be there.
-    fn target_file(&self, target_path: &Path) -> Result<File, String> {
-        let filename = path_filename(target_path);
+    pub fn link_target(&self) -> Result<File, String> {
+        let path = match fs::read_link(&self.path) {
+            Ok(path)  => path,
+            Err(_)    => return Err(self.name.clone()),
+        };
+
+        let target_path = match self.dir {
+            Some(dir)  => dir.join(&*path),
+            None       => path
+        };
+
+        let filename = path_filename(&target_path);
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
-        if let Ok(stat) = fs::metadata(target_path) {
+        if let Ok(stat) = fs::metadata(&target_path) {
             Ok(File {
                 path:   target_path.to_path_buf(),
                 dir:    self.dir,
                 stat:   stat,
                 ext:    ext(&filename),
-                xattrs: Attribute::list(target_path).unwrap_or(Vec::new()),
+                xattrs: Attribute::list(&target_path).unwrap_or(Vec::new()),
                 name:   filename.to_string(),
                 this:   None,
             })
@@ -232,76 +218,38 @@ impl<'a> File<'a> {
     }
 
     /// This file's number of hard links as a coloured string.
-    fn hard_links(&self, colours: &Colours, locale: &locale::Numeric) -> Cell {
-        let style = if self.has_multiple_links() { colours.links.multi_link_file }
-                                            else { colours.links.normal };
-
-        Cell::paint(style, &locale.format_int(self.stat.as_raw().nlink())[..])
-    }
-
-    /// Whether this is a regular file with more than one link.
     ///
     /// This is important, because a file with multiple links is uncommon,
     /// while you can come across directories and other types with multiple
     /// links much more often.
-    fn has_multiple_links(&self) -> bool {
-        self.is_file() && self.stat.as_raw().nlink() > 1
+    pub fn links(&self) -> Links {
+        let count = self.stat.as_raw().nlink();
+
+        Links {
+            count: count,
+            multiple: self.is_file() && count > 1,
+        }
     }
 
-    /// This file's inode as a coloured string.
-    fn inode(&self, colours: &Colours) -> Cell {
-        let inode = self.stat.as_raw().ino();
-        Cell::paint(colours.inode, &inode.to_string()[..])
+    pub fn inode(&self) -> Inode {
+        Inode(self.stat.as_raw().ino())
     }
 
-    /// This file's number of filesystem blocks (if available) as a coloured string.
-    fn blocks(&self, colours: &Colours, locale: &locale::Numeric) -> Cell {
+    pub fn blocks(&self) -> Blocks {
         if self.is_file() || self.is_link() {
-            Cell::paint(colours.blocks, &locale.format_int(self.stat.as_raw().blocks())[..])
+            Blocks::Some(self.stat.as_raw().blocks())
         }
         else {
-            Cell { text: colours.punctuation.paint("-").to_string(), length: 1 }
+            Blocks::None
         }
     }
 
-    /// This file's owner's username as a coloured string.
-    ///
-    /// If the user is not present, then it formats the uid as a number
-    /// instead. This usually happens when a user is deleted, but still owns
-    /// files.
-    fn user<U: Users>(&self, colours: &Colours, users_cache: &mut U) -> Cell {
-        let uid = self.stat.as_raw().uid();
-
-        let user_name = match users_cache.get_user_by_uid(uid) {
-            Some(user) => user.name,
-            None => uid.to_string(),
-        };
-
-        let style = if users_cache.get_current_uid() == uid { colours.users.user_you } else { colours.users.user_someone_else };
-        Cell::paint(style, &*user_name)
+    pub fn user(&self) -> User {
+        User(self.stat.as_raw().uid())
     }
 
-    /// This file's group name as a coloured string.
-    ///
-    /// As above, if not present, it formats the gid as a number instead.
-    fn group<U: Users>(&self, colours: &Colours, users_cache: &mut U) -> Cell {
-        let gid = self.stat.as_raw().gid();
-        let mut style = colours.users.group_not_yours;
-
-        let group_name = match users_cache.get_group_by_gid(gid as u32) {
-            Some(group) => {
-                let current_uid = users_cache.get_current_uid();
-                if let Some(current_user) = users_cache.get_user_by_uid(current_uid) {
-                    if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
-                        style = colours.users.group_yours;
-                    }
-                }
-                group.name
-            },
-            None => gid.to_string(),
-        };
-
-        Cell::paint(style, &*group_name)
+    pub fn group(&self) -> Group {
+        Group(self.stat.as_raw().gid())
     }
 
     /// This file's size, formatted using the given way, as a coloured string.
@@ -310,118 +258,63 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    fn file_size(&self, colours: &Colours, size_format: SizeFormat, locale: &locale::Numeric) -> Cell {
+    pub fn size(&self) -> Size {
         if self.is_directory() {
-            Cell { text: colours.punctuation.paint("-").to_string(), length: 1 }
+            Size::None
         }
         else {
-            let result = match size_format {
-                SizeFormat::DecimalBytes => decimal_prefix(self.stat.len() as f64),
-                SizeFormat::BinaryBytes  => binary_prefix(self.stat.len() as f64),
-                SizeFormat::JustBytes    => return Cell::paint(colours.size.numbers, &locale.format_int(self.stat.len())[..]),
-            };
-
-            match result {
-                Standalone(bytes) => Cell::paint(colours.size.numbers, &*bytes.to_string()),
-                Prefixed(prefix, n) => {
-                    let number = if n < 10f64 { locale.format_float(n, 1) } else { locale.format_int(n as isize) };
-                    let symbol = prefix.symbol();
-
-                    Cell {
-                        text: ANSIStrings( &[ colours.size.unit.paint(&number[..]), colours.size.unit.paint(symbol) ]).to_string(),
-                        length: number.len() + symbol.len(),
-                    }
-                }
-            }
+            Size::Some(self.stat.len())
         }
     }
 
-    fn timestamp(&self, colours: &Colours, time_type: TimeType, current_year: i64, locale: &locale::Time) -> Cell {
-
+    pub fn timestamp(&self, time_type: TimeType) -> Time {
         let time_in_seconds = match time_type {
             TimeType::FileAccessed => self.stat.as_raw().atime(),
             TimeType::FileModified => self.stat.as_raw().mtime(),
             TimeType::FileCreated  => self.stat.as_raw().ctime(),
-        } as i64;
+        };
 
-        let date = LocalDateTime::at(time_in_seconds);
-
-        let format = if date.year() == current_year {
-                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
-            }
-            else {
-                DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
-            };
-
-        Cell::paint(colours.date, &format.format(date, locale))
+        Time(time_in_seconds)
     }
 
     /// This file's type, represented by a coloured character.
     ///
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
-    fn type_char(&self, colours: &Colours) -> ANSIString {
+    fn type_char(&self) -> Type {
         if self.is_file() {
-            colours.filetypes.normal.paint(".")
+            Type::File
         }
         else if self.is_directory() {
-            colours.filetypes.directory.paint("d")
+            Type::Directory
         }
         else if self.is_pipe() {
-            colours.filetypes.special.paint("|")
+            Type::Pipe
         }
         else if self.is_link() {
-            colours.filetypes.symlink.paint("l")
+            Type::Link
         }
         else {
-            colours.filetypes.special.paint("?")
+            Type::Special
         }
     }
 
-    /// Marker indicating that the file contains extended attributes
-    ///
-    /// Returns "@" or  " " depending on wheter the file contains an extented
-    /// attribute or not. Also returns " " in case the attributes cannot be read
-    /// for some reason.
-    fn attribute_marker(&self, colours: &Colours) -> ANSIString {
-        if self.xattrs.len() > 0 { colours.perms.attribute.paint("@") } else { Plain.paint(" ") }
-    }
-
-    /// Generate the "rwxrwxrwx" permissions string, like how ls does it.
-    ///
-    /// Each character is given its own colour. The first three permission
-    /// bits are bold because they're the ones used most often, and executable
-    /// files are underlined to make them stand out more.
-    fn permissions_string(&self, colours: &Colours) -> Cell {
-
+    pub fn permissions(&self) -> Permissions {
         let bits = self.stat.permissions().mode();
-        let executable_colour = if self.is_file() { colours.perms.user_execute_file }
-                                             else { colours.perms.user_execute_other };
+        let has_bit = |bit| { bits & bit == bit };
 
-        let string = ANSIStrings(&[
-            self.type_char(colours),
-            File::permission_bit(bits, unix::fs::USER_READ,     "r", colours.perms.user_read),
-            File::permission_bit(bits, unix::fs::USER_WRITE,    "w", colours.perms.user_write),
-            File::permission_bit(bits, unix::fs::USER_EXECUTE,  "x", executable_colour),
-            File::permission_bit(bits, unix::fs::GROUP_READ,    "r", colours.perms.group_read),
-            File::permission_bit(bits, unix::fs::GROUP_WRITE,   "w", colours.perms.group_write),
-            File::permission_bit(bits, unix::fs::GROUP_EXECUTE, "x", colours.perms.group_execute),
-            File::permission_bit(bits, unix::fs::OTHER_READ,    "r", colours.perms.other_read),
-            File::permission_bit(bits, unix::fs::OTHER_WRITE,   "w", colours.perms.other_write),
-            File::permission_bit(bits, unix::fs::OTHER_EXECUTE, "x", colours.perms.other_execute),
-            self.attribute_marker(colours)
-        ]).to_string();
-
-        Cell { text: string, length: 11 }
-    }
-
-    /// Helper method for the permissions string.
-    fn permission_bit(bits: mode_t, bit: mode_t, character: &'static str, style: Style) -> ANSIString<'static> {
-        if bits & bit == bit {
-            style.paint(character)
-        }
-        else {
-            Fixed(244).paint("-")
+        Permissions {
+            file_type:      self.type_char(),
+            user_read:      has_bit(unix::fs::USER_READ),
+            user_write:     has_bit(unix::fs::USER_WRITE),
+            user_execute:   has_bit(unix::fs::USER_EXECUTE),
+            group_read:     has_bit(unix::fs::GROUP_READ),
+            group_write:    has_bit(unix::fs::GROUP_WRITE),
+            group_execute:  has_bit(unix::fs::GROUP_EXECUTE),
+            other_read:     has_bit(unix::fs::OTHER_READ),
+            other_write:    has_bit(unix::fs::OTHER_WRITE),
+            other_execute:  has_bit(unix::fs::OTHER_EXECUTE),
+            attribute:      !self.xattrs.is_empty()
         }
     }
 
@@ -471,20 +364,18 @@ impl<'a> File<'a> {
         choices.contains(&&self.name[..])
     }
 
-    fn git_status(&self, colours: &Colours) -> Cell {
-        let status = match self.dir {
-            None    => colours.punctuation.paint("--").to_string(),
+    pub fn git_status(&self) -> Git {
+        match self.dir {
+            None    => Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified },
             Some(d) => {
                 let cwd = match current_dir() {
                     Err(_)  => Path::new(".").join(&self.path),
                     Ok(dir) => dir.join(&self.path),
                 };
 
-                d.git_status(&cwd, colours, self.is_directory())
+                d.git_status(&cwd, self.is_directory())
             },
-        };
-
-        Cell { text: status, length: 2 }
+        }
     }
 }
 

@@ -2,11 +2,22 @@ use colours::Colours;
 use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
-use file::File;
-use options::{Columns, FileFilter, RecurseOptions};
-use users::OSUsers;
+use file::{Blocks, File, Git, GitStatus, Group, Inode, Links, Permissions, Size, Time, User};
+use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
+use users::{OSUsers, Users};
+
+use super::filename;
+
+use ansi_term::{ANSIString, ANSIStrings, Style};
+use ansi_term::Style::Plain;
+use ansi_term::Colour::Fixed;
 
 use locale;
+
+use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
+use datetime::local::{LocalDateTime, DatePiece};
+use datetime::format::{DateFormat};
 
 /// With the **Details** view, the output gets formatted into columns, with
 /// each `Column` object showing some piece of information about the file,
@@ -45,7 +56,7 @@ impl Details {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir));
+        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir), self.columns.size_format);
         if self.header { table.add_header() }
 
         // Then add files to the table and print it out.
@@ -109,21 +120,26 @@ struct Row {
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
 struct Table {
-    columns: Vec<Column>,
-    users:   OSUsers,
-    locale:  UserLocale,
-    rows:    Vec<Row>,
-    colours: Colours,
+    columns:  Vec<Column>,
+    rows:     Vec<Row>,
+
+    local:    Locals,
+    colours:  Colours,
 }
 
 impl Table {
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
-    fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
+    fn with_options(colours: Colours, columns: Vec<Column>, size: SizeFormat) -> Table {
         Table {
             columns: columns,
-            users: OSUsers::empty_cache(),
-            locale: UserLocale::new(),
+            local: Locals {
+                time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+                numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+                users:        OSUsers::empty_cache(),
+                current_year: LocalDateTime::now().year(),
+                size_format:  size,
+            },
             rows: Vec::new(),
             colours: colours,
         }
@@ -149,8 +165,22 @@ impl Table {
     /// this file, per-column.
     fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
         self.columns.clone().iter()
-                    .map(|c| file.display(c, &self.colours, &mut self.users, &self.locale))
+                    .map(|c| self.display(file, c))
                     .collect()
+    }
+
+    fn display(&mut self, file: &File, column: &Column) -> Cell {
+        match *column {
+            Column::Permissions     => file.permissions().render(&self.colours, &mut self.local),
+            Column::FileSize(f)     => file.size().render(&self.colours, &mut self.local),
+            Column::Timestamp(t, y) => file.timestamp(t).render(&self.colours, &mut self.local),
+            Column::HardLinks       => file.links().render(&self.colours, &mut self.local),
+            Column::Inode           => file.inode().render(&self.colours, &mut self.local),
+            Column::Blocks          => file.blocks().render(&self.colours, &mut self.local),
+            Column::User            => file.user().render(&self.colours, &mut self.local),
+            Column::Group           => file.group().render(&self.colours, &mut self.local),
+            Column::GitStatus       => file.git_status().render(&self.colours, &mut self.local),
+        }
     }
 
     /// Get the cells for the given file, and add the result to the table.
@@ -158,7 +188,7 @@ impl Table {
         let row = Row {
             depth:    depth,
             cells:    self.cells_for_file(file),
-            name:     file.file_name_view(&self.colours),
+            name:     filename(file, &self.colours),
             last:     last,
             attrs:    file.xattrs.clone(),
             children: file.this.is_some(),
@@ -251,16 +281,162 @@ impl TreePart {
     }
 }
 
-pub struct UserLocale {
-    pub time:    locale::Time,
-    pub numeric: locale::Numeric,
+pub trait Render {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell;
 }
 
-impl UserLocale {
-    pub fn new() -> UserLocale {
-        UserLocale {
-            time:    locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+impl Render for Permissions {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let c = colours.perms;
+        let bit = |bit, chr: &'static str, style: Style| {
+            if bit { style.paint(chr) } else { colours.punctuation.paint("-") }
+        };
+
+        let string = ANSIStrings( &[
+            //self.file_type.render(colours, local),
+            bit(self.user_read,     "r", c.user_read),
+            bit(self.user_write,    "w", c.user_write),
+            bit(self.user_execute,  "x", c.user_execute_file),
+            bit(self.group_read,    "r", c.group_read),
+            bit(self.group_write,   "w", c.group_write),
+            bit(self.group_execute, "x", c.group_execute),
+            bit(self.other_read,    "r", c.other_read),
+            bit(self.other_write,   "w", c.other_write),
+            bit(self.other_execute, "x", c.other_execute),
+            if self.attribute { c.attribute.paint("@") } else { Plain.paint(" ") },
+        ]).to_string();
+
+        Cell {
+            text: string,
+            length: 11,
         }
     }
+}
+
+impl Render for Links {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let style = if self.multiple { colours.links.multi_link_file }
+                                else { colours.links.normal };
+        Cell::paint(style, &local.numeric.format_int(self.count))
+    }
+}
+
+impl Render for Blocks {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        match self {
+            Blocks::Some(blocks) => Cell::paint(colours.blocks, &blocks.to_string()),
+            Blocks::None         => Cell::paint(colours.punctuation, "-"),
+        }
+    }
+}
+
+impl Render for Inode {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        Cell::paint(colours.inode, &self.0.to_string())
+    }
+}
+
+impl Render for Size {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        if let Size::Some(offset) = self {
+            let result = match local.size_format {
+                SizeFormat::DecimalBytes => decimal_prefix(offset as f64),
+                SizeFormat::BinaryBytes  => binary_prefix(offset as f64),
+                SizeFormat::JustBytes    => return Cell::paint(colours.size.numbers, &local.numeric.format_int(offset)),
+            };
+
+            match result {
+                Standalone(bytes) => Cell::paint(colours.size.numbers, &*bytes.to_string()),
+                Prefixed(prefix, n) => {
+                    let number = if n < 10f64 { local.numeric.format_float(n, 1) } else { local.numeric.format_int(n as isize) };
+                    let symbol = prefix.symbol();
+
+                    Cell {
+                        text: ANSIStrings( &[ colours.size.unit.paint(&number[..]), colours.size.unit.paint(symbol) ]).to_string(),
+                        length: number.len() + symbol.len(),
+                    }
+                }
+            }
+        }
+        else {
+            Cell::paint(colours.punctuation, "-")
+        }
+    }
+}
+
+impl Render for Time {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let date = LocalDateTime::at(self.0);
+
+        let format = if date.year() == local.current_year {
+                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
+            }
+            else {
+                DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
+            };
+
+        Cell::paint(colours.date, &format.format(date, &local.time))
+    }
+}
+
+impl Render for Git {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let render_char = |chr| {
+            match chr {
+                GitStatus::NotModified => colours.punctuation.paint("-"),
+                GitStatus::New         => colours.git.renamed.paint("N"),
+                GitStatus::Modified    => colours.git.renamed.paint("M"),
+                GitStatus::Deleted     => colours.git.renamed.paint("D"),
+                GitStatus::Renamed     => colours.git.renamed.paint("R"),
+                GitStatus::TypeChange  => colours.git.renamed.paint("T"),
+            }
+        };
+
+        Cell {
+            text: ANSIStrings(&[ render_char(self.staged), render_char(self.unstaged) ]).to_string(),
+            length: 2,
+        }
+    }
+}
+
+impl Render for User {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let user_name = match local.users.get_user_by_uid(self.0) {
+            Some(user) => user.name,
+            None => self.0.to_string(),
+        };
+
+        let style = if local.users.get_current_uid() == self.0 { colours.users.user_you }
+                                                          else { colours.users.user_someone_else };
+        Cell::paint(style, &*user_name)
+    }
+}
+
+impl Render for Group {
+    fn render(self, colours: &Colours, local: &mut Locals) -> Cell {
+        let mut style = colours.users.group_not_yours;
+
+        let group_name = match local.users.get_group_by_gid(self.0) {
+            Some(group) => {
+                let current_uid = local.users.get_current_uid();
+                if let Some(current_user) = local.users.get_user_by_uid(current_uid) {
+                    if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
+                        style = colours.users.group_yours;
+                    }
+                }
+                group.name
+            },
+            None => self.0.to_string(),
+        };
+
+        Cell::paint(style, &*group_name)
+    }
+}
+
+pub struct Locals {
+    pub time:    locale::Time,
+    pub numeric: locale::Numeric,
+    pub users:   OSUsers,
+    pub size_format: SizeFormat,
+    pub current_year: i64,
 }

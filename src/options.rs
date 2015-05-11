@@ -508,7 +508,7 @@ impl RecurseOptions {
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Columns {
-    size_format: SizeFormat,
+    pub size_format: SizeFormat,
     time_types: TimeTypes,
     inode: bool,
     links: bool,
