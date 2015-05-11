@@ -2,7 +2,7 @@ use colours::Colours;
 use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
-use file::{Blocks, File, Git, GitStatus, Group, Inode, Links, Permissions, Size, Time, User};
+use file::{Blocks, File, Git, GitStatus, Group, Inode, Links, Permissions, Size, Time, Type, User};
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
 use users::{OSUsers, Users};
 
@@ -292,8 +292,16 @@ impl Render for Permissions {
             if bit { style.paint(chr) } else { colours.punctuation.paint("-") }
         };
 
+        let file_type = match self.file_type {
+            Type::File      => colours.filetypes.normal.paint("."),
+            Type::Directory => colours.filetypes.directory.paint("d"),
+            Type::Pipe      => colours.filetypes.special.paint("|"),
+            Type::Link      => colours.filetypes.symlink.paint("l"),
+            Type::Special   => colours.filetypes.special.paint("?"),
+        };
+
         let string = ANSIStrings( &[
-            //self.file_type.render(colours, local),
+            file_type,
             bit(self.user_read,     "r", c.user_read),
             bit(self.user_write,    "w", c.user_write),
             bit(self.user_execute,  "x", c.user_execute_file),
