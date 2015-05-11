@@ -363,7 +363,7 @@ impl Render for Size {
                     let symbol = prefix.symbol();
 
                     Cell {
-                        text: ANSIStrings( &[ colours.size.unit.paint(&number[..]), colours.size.unit.paint(symbol) ]).to_string(),
+                        text: ANSIStrings( &[ colours.size.numbers.paint(&number[..]), colours.size.unit.paint(symbol) ]).to_string(),
                         length: number.len() + symbol.len(),
                     }
                 }
