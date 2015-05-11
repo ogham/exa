@@ -300,11 +300,14 @@ impl Render for Permissions {
             Type::Special   => colours.filetypes.special.paint("?"),
         };
 
+        let x_colour = if let Type::File = self.file_type { c.user_execute_file }
+                                                     else { c.user_execute_other};
+
         let string = ANSIStrings( &[
             file_type,
             bit(self.user_read,     "r", c.user_read),
             bit(self.user_write,    "w", c.user_write),
-            bit(self.user_execute,  "x", c.user_execute_file),
+            bit(self.user_execute,  "x", x_colour),
             bit(self.group_read,    "r", c.group_read),
             bit(self.group_write,   "w", c.group_write),
             bit(self.group_execute, "x", c.group_execute),
