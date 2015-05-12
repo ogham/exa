@@ -9,7 +9,7 @@ use users::{OSUsers, Users};
 
 use super::filename;
 
-use ansi_term::{ANSIStrings, Style};
+use ansi_term::{ANSIString, ANSIStrings, Style};
 use ansi_term::Style::Plain;
 
 use locale;
@@ -293,20 +293,21 @@ impl Table {
     }
 
     fn render_git_status(&self, git: f::Git) -> Cell {
-        let render_char = |chr| {
-            match chr {
-                f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
-                f::GitStatus::New          => self.colours.git.new.paint("N"),
-                f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
-                f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
-                f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
-                f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
-            }
-        };
-
         Cell {
-            text: ANSIStrings(&[ render_char(git.staged), render_char(git.unstaged) ]).to_string(),
+            text: ANSIStrings(&[ self.render_git_char(git.staged),
+                                 self.render_git_char(git.unstaged) ]).to_string(),
             length: 2,
+        }
+    }
+
+    fn render_git_char(&self, status: f::GitStatus) -> ANSIString {
+        match status {
+            f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
+            f::GitStatus::New          => self.colours.git.new.paint("N"),
+            f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
+            f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
+            f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
+            f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
         }
     }
 
