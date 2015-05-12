@@ -122,8 +122,11 @@ struct Table {
     columns:  Vec<Column>,
     rows:     Vec<Row>,
 
-    local:    Locals,
-    colours:  Colours,
+    time:         locale::Time,
+    numeric:      locale::Numeric,
+    users:        OSUsers,
+    colours:      Colours,
+    current_year: i64,
 }
 
 impl Table {
@@ -132,14 +135,14 @@ impl Table {
     fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
         Table {
             columns: columns,
-            local: Locals {
-                time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-                numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
-                users:        OSUsers::empty_cache(),
-                current_year: LocalDateTime::now().year(),
-            },
-            rows: Vec::new(),
-            colours: colours,
+            rows:    Vec::new(),
+
+            time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+            numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+            users:        OSUsers::empty_cache(),
+            colours:      colours,
+            current_year: LocalDateTime::now().year(),
+
         }
     }
 
@@ -236,7 +239,7 @@ impl Table {
         let style = if links.multiple { self.colours.links.multi_link_file }
                                  else { self.colours.links.normal };
 
-        Cell::paint(style, &self.local.numeric.format_int(links.count))
+        Cell::paint(style, &self.numeric.format_int(links.count))
     }
 
     fn render_blocks(&self, blocks: Blocks) -> Cell {
@@ -255,13 +258,13 @@ impl Table {
             let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(offset as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(offset as f64),
-                SizeFormat::JustBytes    => return Cell::paint(self.colours.size.numbers, &self.local.numeric.format_int(offset)),
+                SizeFormat::JustBytes    => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
             };
 
             match result {
                 Standalone(bytes) => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
                 Prefixed(prefix, n) => {
-                    let number = if n < 10f64 { self.local.numeric.format_float(n, 1) } else { self.local.numeric.format_int(n as isize) };
+                    let number = if n < 10f64 { self.numeric.format_float(n, 1) } else { self.numeric.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
                     Cell {
@@ -279,14 +282,14 @@ impl Table {
     fn render_time(&self, timestamp: Time) -> Cell {
         let date = LocalDateTime::at(timestamp.0);
 
-        let format = if date.year() == self.local.current_year {
+        let format = if date.year() == self.current_year {
                 DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
             }
             else {
                 DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
             };
 
-        Cell::paint(self.colours.date, &format.format(date, &self.local.time))
+        Cell::paint(self.colours.date, &format.format(date, &self.time))
     }
 
     fn render_git_status(&self, git: Git) -> Cell {
@@ -308,12 +311,12 @@ impl Table {
     }
 
     fn render_user(&mut self, user: User) -> Cell {
-        let user_name = match self.local.users.get_user_by_uid(user.0) {
+        let user_name = match self.users.get_user_by_uid(user.0) {
             Some(user) => user.name,
             None => user.0.to_string(),
         };
 
-        let style = if self.local.users.get_current_uid() == user.0 { self.colours.users.user_you }
+        let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
                                                                else { self.colours.users.user_someone_else };
         Cell::paint(style, &*user_name)
     }
@@ -321,10 +324,10 @@ impl Table {
     fn render_group(&mut self, group: Group) -> Cell {
         let mut style = self.colours.users.group_not_yours;
 
-        let group_name = match self.local.users.get_group_by_gid(group.0) {
+        let group_name = match self.users.get_group_by_gid(group.0) {
             Some(group) => {
-                let current_uid = self.local.users.get_current_uid();
-                if let Some(current_user) = self.local.users.get_user_by_uid(current_uid) {
+                let current_uid = self.users.get_current_uid();
+                if let Some(current_user) = self.users.get_user_by_uid(current_uid) {
                     if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
                         style = self.colours.users.group_yours;
                     }
@@ -419,11 +422,4 @@ impl TreePart {
             TreePart::Blank  => "   ",
         }
     }
-}
-
-pub struct Locals {
-    pub time:    locale::Time,
-    pub numeric: locale::Numeric,
-    pub users:   OSUsers,
-    pub current_year: i64,
 }
