@@ -2,7 +2,8 @@ use colours::Colours;
 use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
-use file::{Blocks, File, Git, GitStatus, Group, Inode, Links, Permissions, Size, Time, Type, User};
+use file::File;
+use file::fields as f;
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
 use users::{OSUsers, Users};
 
@@ -197,21 +198,21 @@ impl Table {
         }
     }
 
-    fn render_permissions(&self, permissions: Permissions) -> Cell {
+    fn render_permissions(&self, permissions: f::Permissions) -> Cell {
         let c = self.colours.perms;
         let bit = |bit, chr: &'static str, style: Style| {
             if bit { style.paint(chr) } else { self.colours.punctuation.paint("-") }
         };
 
         let file_type = match permissions.file_type {
-            Type::File       => self.colours.filetypes.normal.paint("."),
-            Type::Directory  => self.colours.filetypes.directory.paint("d"),
-            Type::Pipe       => self.colours.filetypes.special.paint("|"),
-            Type::Link       => self.colours.filetypes.symlink.paint("l"),
-            Type::Special    => self.colours.filetypes.special.paint("?"),
+            f::Type::File       => self.colours.filetypes.normal.paint("."),
+            f::Type::Directory  => self.colours.filetypes.directory.paint("d"),
+            f::Type::Pipe       => self.colours.filetypes.special.paint("|"),
+            f::Type::Link       => self.colours.filetypes.symlink.paint("l"),
+            f::Type::Special    => self.colours.filetypes.special.paint("?"),
         };
 
-        let x_colour = if let Type::File = permissions.file_type { c.user_execute_file }
+        let x_colour = if let f::Type::File = permissions.file_type { c.user_execute_file }
                                                             else { c.user_execute_other };
 
         let string = ANSIStrings( &[
@@ -234,26 +235,26 @@ impl Table {
         }
     }
 
-    fn render_links(&self, links: Links) -> Cell {
+    fn render_links(&self, links: f::Links) -> Cell {
         let style = if links.multiple { self.colours.links.multi_link_file }
                                  else { self.colours.links.normal };
 
         Cell::paint(style, &self.numeric.format_int(links.count))
     }
 
-    fn render_blocks(&self, blocks: Blocks) -> Cell {
+    fn render_blocks(&self, blocks: f::Blocks) -> Cell {
         match blocks {
-            Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
-            Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
+            f::Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
+            f::Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
         }
     }
 
-    fn render_inode(&self, inode: Inode) -> Cell {
+    fn render_inode(&self, inode: f::Inode) -> Cell {
         Cell::paint(self.colours.inode, &inode.0.to_string())
     }
 
-    fn render_size(&self, size: Size, size_format: SizeFormat) -> Cell {
-        if let Size::Some(offset) = size {
+    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> Cell {
+        if let f::Size::Some(offset) = size {
             let result = match size_format {
                 SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
                 SizeFormat::BinaryBytes   => binary_prefix(offset as f64),
@@ -278,7 +279,7 @@ impl Table {
         }
     }
 
-    fn render_time(&self, timestamp: Time) -> Cell {
+    fn render_time(&self, timestamp: f::Time) -> Cell {
         let date = LocalDateTime::at(timestamp.0);
 
         let format = if date.year() == self.current_year {
@@ -291,15 +292,15 @@ impl Table {
         Cell::paint(self.colours.date, &format.format(date, &self.time))
     }
 
-    fn render_git_status(&self, git: Git) -> Cell {
+    fn render_git_status(&self, git: f::Git) -> Cell {
         let render_char = |chr| {
             match chr {
-                GitStatus::NotModified  => self.colours.punctuation.paint("-"),
-                GitStatus::New          => self.colours.git.renamed.paint("N"),
-                GitStatus::Modified     => self.colours.git.renamed.paint("M"),
-                GitStatus::Deleted      => self.colours.git.renamed.paint("D"),
-                GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
-                GitStatus::TypeChange   => self.colours.git.renamed.paint("T"),
+                f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
+                f::GitStatus::New          => self.colours.git.renamed.paint("N"),
+                f::GitStatus::Modified     => self.colours.git.renamed.paint("M"),
+                f::GitStatus::Deleted      => self.colours.git.renamed.paint("D"),
+                f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
+                f::GitStatus::TypeChange   => self.colours.git.renamed.paint("T"),
             }
         };
 
@@ -309,7 +310,7 @@ impl Table {
         }
     }
 
-    fn render_user(&mut self, user: User) -> Cell {
+    fn render_user(&mut self, user: f::User) -> Cell {
         let user_name = match self.users.get_user_by_uid(user.0) {
             Some(user)  => user.name,
             None        => user.0.to_string(),
@@ -320,7 +321,7 @@ impl Table {
         Cell::paint(style, &*user_name)
     }
 
-    fn render_group(&mut self, group: Group) -> Cell {
+    fn render_group(&mut self, group: f::Group) -> Cell {
         let mut style = self.colours.users.group_not_yours;
 
         let group_name = match self.users.get_group_by_gid(group.0) {

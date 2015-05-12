@@ -3,7 +3,6 @@ use std::env::current_dir;
 use std::fs;
 use std::io;
 use std::os::unix;
-use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, nlink_t, time_t, uid_t};
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
@@ -13,66 +12,7 @@ use dir::Dir;
 use options::TimeType;
 use feature::Attribute;
 
-pub enum Type {
-    File, Directory, Pipe, Link, Special,
-}
-
-pub struct Permissions {
-    pub file_type:      Type,
-    pub user_read:      bool,
-    pub user_write:     bool,
-    pub user_execute:   bool,
-    pub group_read:     bool,
-    pub group_write:    bool,
-    pub group_execute:  bool,
-    pub other_read:     bool,
-    pub other_write:    bool,
-    pub other_execute:  bool,
-    pub attribute:      bool,
-}
-
-pub struct Links {
-    pub count: nlink_t,
-    pub multiple: bool,
-}
-
-pub struct Inode(pub ino_t);
-
-pub enum Blocks {
-    Some(blkcnt_t),
-    None,
-}
-
-pub struct User(pub uid_t);
-
-pub struct Group(pub gid_t);
-
-pub enum Size {
-    Some(u64),
-    None,
-}
-
-pub struct Time(pub time_t);
-
-pub enum GitStatus {
-    NotModified,
-    New,
-    Modified,
-    Deleted,
-    Renamed,
-    TypeChange,
-}
-
-pub struct Git {
-    pub staged:   GitStatus,
-    pub unstaged: GitStatus,
-}
-
-impl Git {
-    pub fn empty() -> Git {
-        Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
-    }
-}
+use self::fields as f;
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -222,34 +162,34 @@ impl<'a> File<'a> {
     /// This is important, because a file with multiple links is uncommon,
     /// while you can come across directories and other types with multiple
     /// links much more often.
-    pub fn links(&self) -> Links {
+    pub fn links(&self) -> f::Links {
         let count = self.stat.as_raw().nlink();
 
-        Links {
+        f::Links {
             count: count,
             multiple: self.is_file() && count > 1,
         }
     }
 
-    pub fn inode(&self) -> Inode {
-        Inode(self.stat.as_raw().ino())
+    pub fn inode(&self) -> f::Inode {
+        f::Inode(self.stat.as_raw().ino())
     }
 
-    pub fn blocks(&self) -> Blocks {
+    pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
-            Blocks::Some(self.stat.as_raw().blocks())
+            f::Blocks::Some(self.stat.as_raw().blocks())
         }
         else {
-            Blocks::None
+            f::Blocks::None
         }
     }
 
-    pub fn user(&self) -> User {
-        User(self.stat.as_raw().uid())
+    pub fn user(&self) -> f::User {
+        f::User(self.stat.as_raw().uid())
     }
 
-    pub fn group(&self) -> Group {
-        Group(self.stat.as_raw().gid())
+    pub fn group(&self) -> f::Group {
+        f::Group(self.stat.as_raw().gid())
     }
 
     /// This file's size, formatted using the given way, as a coloured string.
@@ -258,52 +198,52 @@ impl<'a> File<'a> {
     /// some filesystems, I've never looked at one of those numbers and gained
     /// any information from it, so by emitting "-" instead, the table is less
     /// cluttered with numbers.
-    pub fn size(&self) -> Size {
+    pub fn size(&self) -> f::Size {
         if self.is_directory() {
-            Size::None
+            f::Size::None
         }
         else {
-            Size::Some(self.stat.len())
+            f::Size::Some(self.stat.len())
         }
     }
 
-    pub fn timestamp(&self, time_type: TimeType) -> Time {
+    pub fn timestamp(&self, time_type: TimeType) -> f::Time {
         let time_in_seconds = match time_type {
             TimeType::FileAccessed => self.stat.as_raw().atime(),
             TimeType::FileModified => self.stat.as_raw().mtime(),
             TimeType::FileCreated  => self.stat.as_raw().ctime(),
         };
 
-        Time(time_in_seconds)
+        f::Time(time_in_seconds)
     }
 
     /// This file's type, represented by a coloured character.
     ///
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
-    fn type_char(&self) -> Type {
+    fn type_char(&self) -> f::Type {
         if self.is_file() {
-            Type::File
+            f::Type::File
         }
         else if self.is_directory() {
-            Type::Directory
+            f::Type::Directory
         }
         else if self.is_pipe() {
-            Type::Pipe
+            f::Type::Pipe
         }
         else if self.is_link() {
-            Type::Link
+            f::Type::Link
         }
         else {
-            Type::Special
+            f::Type::Special
         }
     }
 
-    pub fn permissions(&self) -> Permissions {
+    pub fn permissions(&self) -> f::Permissions {
         let bits = self.stat.permissions().mode();
         let has_bit = |bit| { bits & bit == bit };
 
-        Permissions {
+        f::Permissions {
             file_type:      self.type_char(),
             user_read:      has_bit(unix::fs::USER_READ),
             user_write:     has_bit(unix::fs::USER_WRITE),
@@ -364,9 +304,9 @@ impl<'a> File<'a> {
         choices.contains(&&self.name[..])
     }
 
-    pub fn git_status(&self) -> Git {
+    pub fn git_status(&self) -> f::Git {
         match self.dir {
-            None    => Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified },
+            None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
             Some(d) => {
                 let cwd = match current_dir() {
                     Err(_)  => Path::new(".").join(&self.path),
@@ -402,6 +342,71 @@ fn path_filename(path: &Path) -> String {
 /// within ASCII, so it's alright.
 fn ext<'a>(name: &'a str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
+}
+
+pub mod fields {
+    use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, nlink_t, time_t, uid_t};
+
+    pub enum Type {
+        File, Directory, Pipe, Link, Special,
+    }
+
+    pub struct Permissions {
+        pub file_type:      Type,
+        pub user_read:      bool,
+        pub user_write:     bool,
+        pub user_execute:   bool,
+        pub group_read:     bool,
+        pub group_write:    bool,
+        pub group_execute:  bool,
+        pub other_read:     bool,
+        pub other_write:    bool,
+        pub other_execute:  bool,
+        pub attribute:      bool,
+    }
+
+    pub struct Links {
+        pub count: nlink_t,
+        pub multiple: bool,
+    }
+
+    pub struct Inode(pub ino_t);
+
+    pub enum Blocks {
+        Some(blkcnt_t),
+        None,
+    }
+
+    pub struct User(pub uid_t);
+
+    pub struct Group(pub gid_t);
+
+    pub enum Size {
+        Some(u64),
+        None,
+    }
+
+    pub struct Time(pub time_t);
+
+    pub enum GitStatus {
+        NotModified,
+        New,
+        Modified,
+        Deleted,
+        Renamed,
+        TypeChange,
+    }
+
+    pub struct Git {
+        pub staged:   GitStatus,
+        pub unstaged: GitStatus,
+    }
+
+    impl Git {
+        pub fn empty() -> Git {
+            Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+        }
+    }
 }
 
 #[cfg(broken_test)]
