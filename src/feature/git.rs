@@ -52,12 +52,12 @@ impl Git {
 /// The character to display if the file has been modified, but not staged.
 fn working_tree_status(status: git2::Status) -> file::GitStatus {
     match status {
-        s if s.contains(git2::STATUS_WT_NEW)        => file::GitStatus::New,
-        s if s.contains(git2::STATUS_WT_MODIFIED)   => file::GitStatus::Modified,
-        s if s.contains(git2::STATUS_WT_DELETED)    => file::GitStatus::Deleted,
-        s if s.contains(git2::STATUS_WT_RENAMED)    => file::GitStatus::Renamed,
-        s if s.contains(git2::STATUS_WT_TYPECHANGE) => file::GitStatus::TypeChange,
-        _                                           => file::GitStatus::NotModified,
+        s if s.contains(git2::STATUS_WT_NEW)         => file::GitStatus::New,
+        s if s.contains(git2::STATUS_WT_MODIFIED)    => file::GitStatus::Modified,
+        s if s.contains(git2::STATUS_WT_DELETED)     => file::GitStatus::Deleted,
+        s if s.contains(git2::STATUS_WT_RENAMED)     => file::GitStatus::Renamed,
+        s if s.contains(git2::STATUS_WT_TYPECHANGE)  => file::GitStatus::TypeChange,
+        _                                            => file::GitStatus::NotModified,
     }
 }
 
@@ -65,11 +65,11 @@ fn working_tree_status(status: git2::Status) -> file::GitStatus {
 /// has been staged.
 fn index_status(status: git2::Status) -> file::GitStatus {
     match status {
-        s if s.contains(git2::STATUS_INDEX_NEW)        => file::GitStatus::New,
-        s if s.contains(git2::STATUS_INDEX_MODIFIED)   => file::GitStatus::Modified,
-        s if s.contains(git2::STATUS_INDEX_DELETED)    => file::GitStatus::Deleted,
-        s if s.contains(git2::STATUS_INDEX_RENAMED)    => file::GitStatus::Renamed,
-        s if s.contains(git2::STATUS_INDEX_TYPECHANGE) => file::GitStatus::TypeChange,
-        _                                              => file::GitStatus::NotModified,
+        s if s.contains(git2::STATUS_INDEX_NEW)         => file::GitStatus::New,
+        s if s.contains(git2::STATUS_INDEX_MODIFIED)    => file::GitStatus::Modified,
+        s if s.contains(git2::STATUS_INDEX_DELETED)     => file::GitStatus::Deleted,
+        s if s.contains(git2::STATUS_INDEX_RENAMED)     => file::GitStatus::Renamed,
+        s if s.contains(git2::STATUS_INDEX_TYPECHANGE)  => file::GitStatus::TypeChange,
+        _                                               => file::GitStatus::NotModified,
     }
 }

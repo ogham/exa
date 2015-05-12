@@ -142,7 +142,6 @@ impl Table {
             users:        OSUsers::empty_cache(),
             colours:      colours,
             current_year: LocalDateTime::now().year(),
-
         }
     }
 
@@ -173,7 +172,7 @@ impl Table {
             children: file.this.is_some(),
         };
 
-        self.rows.push(row)
+        self.rows.push(row);
     }
 
     /// Use the list of columns to find which cells should be produced for
@@ -205,11 +204,11 @@ impl Table {
         };
 
         let file_type = match permissions.file_type {
-            Type::File      => self.colours.filetypes.normal.paint("."),
-            Type::Directory => self.colours.filetypes.directory.paint("d"),
-            Type::Pipe      => self.colours.filetypes.special.paint("|"),
-            Type::Link      => self.colours.filetypes.symlink.paint("l"),
-            Type::Special   => self.colours.filetypes.special.paint("?"),
+            Type::File       => self.colours.filetypes.normal.paint("."),
+            Type::Directory  => self.colours.filetypes.directory.paint("d"),
+            Type::Pipe       => self.colours.filetypes.special.paint("|"),
+            Type::Link       => self.colours.filetypes.symlink.paint("l"),
+            Type::Special    => self.colours.filetypes.special.paint("?"),
         };
 
         let x_colour = if let Type::File = permissions.file_type { c.user_execute_file }
@@ -244,8 +243,8 @@ impl Table {
 
     fn render_blocks(&self, blocks: Blocks) -> Cell {
         match blocks {
-            Blocks::Some(blocks) => Cell::paint(self.colours.blocks, &blocks.to_string()),
-            Blocks::None         => Cell::paint(self.colours.punctuation, "-"),
+            Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
+            Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
         }
     }
 
@@ -256,14 +255,14 @@ impl Table {
     fn render_size(&self, size: Size, size_format: SizeFormat) -> Cell {
         if let Size::Some(offset) = size {
             let result = match size_format {
-                SizeFormat::DecimalBytes => decimal_prefix(offset as f64),
-                SizeFormat::BinaryBytes  => binary_prefix(offset as f64),
-                SizeFormat::JustBytes    => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
+                SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
+                SizeFormat::BinaryBytes   => binary_prefix(offset as f64),
+                SizeFormat::JustBytes     => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
             };
 
             match result {
-                Standalone(bytes) => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
-                Prefixed(prefix, n) => {
+                Standalone(bytes)    => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
+                Prefixed(prefix, n)  => {
                     let number = if n < 10f64 { self.numeric.format_float(n, 1) } else { self.numeric.format_int(n as isize) };
                     let symbol = prefix.symbol();
 
@@ -295,12 +294,12 @@ impl Table {
     fn render_git_status(&self, git: Git) -> Cell {
         let render_char = |chr| {
             match chr {
-                GitStatus::NotModified => self.colours.punctuation.paint("-"),
-                GitStatus::New         => self.colours.git.renamed.paint("N"),
-                GitStatus::Modified    => self.colours.git.renamed.paint("M"),
-                GitStatus::Deleted     => self.colours.git.renamed.paint("D"),
-                GitStatus::Renamed     => self.colours.git.renamed.paint("R"),
-                GitStatus::TypeChange  => self.colours.git.renamed.paint("T"),
+                GitStatus::NotModified  => self.colours.punctuation.paint("-"),
+                GitStatus::New          => self.colours.git.renamed.paint("N"),
+                GitStatus::Modified     => self.colours.git.renamed.paint("M"),
+                GitStatus::Deleted      => self.colours.git.renamed.paint("D"),
+                GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
+                GitStatus::TypeChange   => self.colours.git.renamed.paint("T"),
             }
         };
 
@@ -312,8 +311,8 @@ impl Table {
 
     fn render_user(&mut self, user: User) -> Cell {
         let user_name = match self.users.get_user_by_uid(user.0) {
-            Some(user) => user.name,
-            None => user.0.to_string(),
+            Some(user)  => user.name,
+            None        => user.0.to_string(),
         };
 
         let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
@@ -416,10 +415,10 @@ enum TreePart {
 impl TreePart {
     fn ascii_art(&self) -> &'static str {
         match *self {
-            TreePart::Edge   => "├──",
-            TreePart::Line   => "│  ",
-            TreePart::Corner => "└──",
-            TreePart::Blank  => "   ",
+            TreePart::Edge    => "├──",
+            TreePart::Line    => "│  ",
+            TreePart::Corner  => "└──",
+            TreePart::Blank   => "   ",
         }
     }
 }

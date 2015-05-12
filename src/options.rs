@@ -135,17 +135,17 @@ impl FileFilter {
         }
 
         match self.sort_field {
-            SortField::Unsorted => {},
-            SortField::Name => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
-            SortField::Size => files.sort_by(|a, b| a.stat.len().cmp(&b.stat.len())),
-            SortField::FileInode => files.sort_by(|a, b| a.stat.as_raw().ino().cmp(&b.stat.as_raw().ino())),
-            SortField::Extension => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
-                Ordering::Equal => natord::compare(&*a.name, &*b.name),
-                order => order
+            SortField::Unsorted      => {},
+            SortField::Name          => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
+            SortField::Size          => files.sort_by(|a, b| a.stat.len().cmp(&b.stat.len())),
+            SortField::FileInode     => files.sort_by(|a, b| a.stat.as_raw().ino().cmp(&b.stat.as_raw().ino())),
+            SortField::ModifiedDate  => files.sort_by(|a, b| a.stat.as_raw().mtime().cmp(&b.stat.as_raw().mtime())),
+            SortField::AccessedDate  => files.sort_by(|a, b| a.stat.as_raw().atime().cmp(&b.stat.as_raw().atime())),
+            SortField::CreatedDate   => files.sort_by(|a, b| a.stat.as_raw().ctime().cmp(&b.stat.as_raw().ctime())),
+            SortField::Extension     => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
+                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
+                order            => order,
             }),
-            SortField::ModifiedDate => files.sort_by(|a, b| a.stat.as_raw().mtime().cmp(&b.stat.as_raw().mtime())),
-            SortField::AccessedDate => files.sort_by(|a, b| a.stat.as_raw().atime().cmp(&b.stat.as_raw().atime())),
-            SortField::CreatedDate  => files.sort_by(|a, b| a.stat.as_raw().ctime().cmp(&b.stat.as_raw().ctime())),
         }
 
         if self.reverse {
@@ -171,15 +171,15 @@ impl SortField {
     /// Find which field to use based on a user-supplied word.
     fn from_word(word: String) -> Result<SortField, Misfire> {
         match &word[..] {
-            "name" | "filename"  => Ok(SortField::Name),
-            "size" | "filesize"  => Ok(SortField::Size),
-            "ext"  | "extension" => Ok(SortField::Extension),
-            "mod"  | "modified"  => Ok(SortField::ModifiedDate),
-            "acc"  | "accessed"  => Ok(SortField::AccessedDate),
-            "cr"   | "created"   => Ok(SortField::CreatedDate),
-            "none"               => Ok(SortField::Unsorted),
-            "inode"              => Ok(SortField::FileInode),
-            field                => Err(SortField::none(field))
+            "name" | "filename"   => Ok(SortField::Name),
+            "size" | "filesize"   => Ok(SortField::Size),
+            "ext"  | "extension"  => Ok(SortField::Extension),
+            "mod"  | "modified"   => Ok(SortField::ModifiedDate),
+            "acc"  | "accessed"   => Ok(SortField::AccessedDate),
+            "cr"   | "created"    => Ok(SortField::CreatedDate),
+            "none"                => Ok(SortField::Unsorted),
+            "inode"               => Ok(SortField::FileInode),
+            field                 => Err(SortField::none(field))
         }
     }
 
@@ -229,14 +229,14 @@ impl Misfire {
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            InvalidOptions(ref e) => write!(f, "{}", e),
-            Help(ref text)        => write!(f, "{}", text),
-            Version               => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
-            Conflict(a, b)        => write!(f, "Option --{} conflicts with option {}.", a, b),
-            Useless(a, false, b)  => write!(f, "Option --{} is useless without option --{}.", a, b),
-            Useless(a, true, b)   => write!(f, "Option --{} is useless given option --{}.", a, b),
-            Useless2(a, b1, b2)   => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
-            FailedParse(ref e)    => write!(f, "Failed to parse number: {}", e),
+            InvalidOptions(ref e)  => write!(f, "{}", e),
+            Help(ref text)         => write!(f, "{}", text),
+            Version                => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
+            Conflict(a, b)         => write!(f, "Option --{} conflicts with option {}.", a, b),
+            Useless(a, false, b)   => write!(f, "Option --{} is useless without option --{}.", a, b),
+            Useless(a, true, b)    => write!(f, "Option --{} is useless given option --{}.", a, b),
+            Useless2(a, b1, b2)    => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
+            FailedParse(ref e)     => write!(f, "Failed to parse number: {}", e),
         }
     }
 }
@@ -349,10 +349,10 @@ impl SizeFormat {
         let bytes  = matches.opt_present("bytes");
 
         match (binary, bytes) {
-            (true,  true ) => Err(Misfire::Conflict("binary", "bytes")),
-            (true,  false) => Ok(SizeFormat::BinaryBytes),
-            (false, true ) => Ok(SizeFormat::JustBytes),
-            (false, false) => Ok(SizeFormat::DecimalBytes),
+            (true,  true )  => Err(Misfire::Conflict("binary", "bytes")),
+            (true,  false)  => Ok(SizeFormat::BinaryBytes),
+            (false, true )  => Ok(SizeFormat::JustBytes),
+            (false, false)  => Ok(SizeFormat::DecimalBytes),
         }
     }
 }
@@ -367,9 +367,9 @@ pub enum TimeType {
 impl TimeType {
     pub fn header(&self) -> &'static str {
         match *self {
-            TimeType::FileAccessed => "Date Accessed",
-            TimeType::FileModified => "Date Modified",
-            TimeType::FileCreated  => "Date Created",
+            TimeType::FileAccessed  => "Date Accessed",
+            TimeType::FileModified  => "Date Modified",
+            TimeType::FileCreated   => "Date Created",
         }
     }
 }
@@ -439,12 +439,12 @@ impl DirAction {
         let tree    = matches.opt_present("tree");
 
         match (recurse, list, tree) {
-            (true,  true,  _    ) => Err(Misfire::Conflict("recurse", "list-dirs")),
-            (_,     true,  true ) => Err(Misfire::Conflict("tree", "list-dirs")),
-            (true,  false, false) => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, false)))),
-            (_   ,  _,     true ) => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, true)))),
-            (false, true,  _    ) => Ok(DirAction::AsFile),
-            (false, false, _    ) => Ok(DirAction::List),
+            (true,  true,  _    )  => Err(Misfire::Conflict("recurse", "list-dirs")),
+            (_,     true,  true )  => Err(Misfire::Conflict("tree", "list-dirs")),
+            (true,  false, false)  => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, false)))),
+            (_   ,  _,     true )  => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, true)))),
+            (false, true,  _    )  => Ok(DirAction::AsFile),
+            (false, false, _    )  => Ok(DirAction::List),
         }
     }
 
