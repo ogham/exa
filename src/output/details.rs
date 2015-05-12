@@ -296,11 +296,11 @@ impl Table {
         let render_char = |chr| {
             match chr {
                 f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
-                f::GitStatus::New          => self.colours.git.renamed.paint("N"),
-                f::GitStatus::Modified     => self.colours.git.renamed.paint("M"),
-                f::GitStatus::Deleted      => self.colours.git.renamed.paint("D"),
+                f::GitStatus::New          => self.colours.git.new.paint("N"),
+                f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
+                f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
                 f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
-                f::GitStatus::TypeChange   => self.colours.git.renamed.paint("T"),
+                f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
             }
         };
 
