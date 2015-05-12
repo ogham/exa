@@ -37,16 +37,16 @@ mod output;
 mod term;
 
 #[cfg(not(test))]
-struct Exa<'a> {
+struct Exa<'dir> {
     count:   usize,
     options: Options,
     dirs:    Vec<PathBuf>,
-    files:   Vec<File<'a>>,
+    files:   Vec<File<'dir>>,
 }
 
 #[cfg(not(test))]
-impl<'a> Exa<'a> {
-    fn new(options: Options) -> Exa<'a> {
+impl<'dir> Exa<'dir> {
+    fn new(options: Options) -> Exa<'dir> {
         Exa {
             count: 0,
             options: options,
@@ -67,8 +67,8 @@ impl<'a> Exa<'a> {
         let (thread_capacity_tx, thread_capacity_rs) = sync_channel(8 * num_cpus::get());
 
         // Communication between consumer thread and producer threads
-        enum StatResult<'a> {
-            File(File<'a>),
+        enum StatResult<'dir> {
+            File(File<'dir>),
             Path(PathBuf),
             Error
         }

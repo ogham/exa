@@ -21,9 +21,9 @@ use self::fields as f;
 /// once, have its file extension extracted at least once, and have its stat
 /// information queried at least once, so it makes sense to do all this at the
 /// start and hold on to all the information.
-pub struct File<'a> {
+pub struct File<'dir> {
     pub name:  String,
-    pub dir:   Option<&'a Dir>,
+    pub dir:   Option<&'dir Dir>,
     pub ext:   Option<String>,
     pub path:  PathBuf,
     pub stat:  fs::Metadata,
@@ -31,18 +31,18 @@ pub struct File<'a> {
     pub this:  Option<Dir>,
 }
 
-impl<'a> File<'a> {
+impl<'dir> File<'dir> {
     /// Create a new File object from the given Path, inside the given Dir, if
     /// appropriate. Paths specified directly on the command-line have no Dirs.
     ///
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'a Dir>, recurse: bool) -> io::Result<File<'a>> {
+    pub fn from_path(path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> io::Result<File<'dir>> {
         fs::symlink_metadata(path).map(|stat| File::with_stat(stat, path, parent, recurse))
     }
 
     /// Create a new File object from the given Stat result, and other data.
-    pub fn with_stat(stat: fs::Metadata, path: &Path, parent: Option<&'a Dir>, recurse: bool) -> File<'a> {
+    pub fn with_stat(stat: fs::Metadata, path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> File<'dir> {
         let filename = path_filename(path);
 
         // If we are recursing, then the `this` field contains a Dir object
@@ -340,7 +340,7 @@ fn path_filename(path: &Path) -> String {
 /// ASCII lowercasing is used because these extensions are only compared
 /// against a pre-compiled list of extensions which are known to only exist
 /// within ASCII, so it's alright.
-fn ext<'a>(name: &'a str) -> Option<String> {
+fn ext(name: &str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
