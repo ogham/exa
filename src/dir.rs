@@ -1,4 +1,3 @@
-use colours::Colours;
 use feature::Git;
 use file::File;
 use file;

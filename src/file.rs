@@ -3,7 +3,7 @@ use std::env::current_dir;
 use std::fs;
 use std::io;
 use std::os::unix;
-use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, mode_t, nlink_t, time_t, uid_t};
+use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, nlink_t, time_t, uid_t};
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 

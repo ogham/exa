@@ -8,9 +8,8 @@ use users::{OSUsers, Users};
 
 use super::filename;
 
-use ansi_term::{ANSIString, ANSIStrings, Style};
+use ansi_term::{ANSIStrings, Style};
 use ansi_term::Style::Plain;
-use ansi_term::Colour::Fixed;
 
 use locale;
 
