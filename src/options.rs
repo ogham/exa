@@ -121,14 +121,14 @@ impl Options {
         }, path_strs))
     }
 
-    pub fn transform_files<'a>(&self, files: &mut Vec<File<'a>>) {
+    pub fn transform_files(&self, files: &mut Vec<File>) {
         self.filter.transform_files(files)
     }
 }
 
 impl FileFilter {
     /// Transform the files (sorting, reversing, filtering) before listing them.
-    pub fn transform_files<'a>(&self, files: &mut Vec<File<'a>>) {
+    pub fn transform_files(&self, files: &mut Vec<File>) {
 
         if !self.show_invisibles {
             files.retain(|f| !f.is_dotfile());
