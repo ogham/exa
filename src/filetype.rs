@@ -43,7 +43,7 @@ impl<'_> FileTypes for File<'_> {
             "build.gradle", "Rakefile", "Gruntfile.js",
             "Gruntfile.coffee",
         ])
-	}
+    }
 
     fn is_image(&self) -> bool {
         self.extension_is_one_of( &[
@@ -52,33 +52,33 @@ impl<'_> FileTypes for File<'_> {
             "svg", "stl", "eps", "dvi", "ps", "cbr",
             "cbz", "xpm", "ico",
         ])
-	}
+    }
 
     fn is_video(&self) -> bool {
         self.extension_is_one_of( &[
             "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
             "mpg", "ogm", "ogv", "vob", "wmv",
         ])
-	}
+    }
 
     fn is_music(&self) -> bool {
         self.extension_is_one_of( &[
             "aac", "m4a", "mp3", "ogg", "wma",
         ])
-	}
+    }
 
     fn is_lossless(&self) -> bool {
         self.extension_is_one_of( &[
             "alac", "ape", "flac", "wav",
         ])
-	}
+    }
 
     fn is_crypto(&self) -> bool {
         self.extension_is_one_of( &[
             "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par",
         ])
-	}
+    }
 
     fn is_document(&self) -> bool {
         self.extension_is_one_of( &[
@@ -86,20 +86,20 @@ impl<'_> FileTypes for File<'_> {
             "odp", "odt", "pdf", "ppt", "pptx", "rtf",
             "xls", "xlsx",
         ])
-	}
+    }
 
     fn is_compressed(&self) -> bool {
         self.extension_is_one_of( &[
             "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par"
         ])
-	}
+    }
 
     fn is_temp(&self) -> bool {
         self.name.ends_with("~")
             || (self.name.starts_with("#") && self.name.ends_with("#"))
             || self.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak" ])
-	}
+    }
 
     fn is_compiled(&self) -> bool {
         if self.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
@@ -111,7 +111,7 @@ impl<'_> FileTypes for File<'_> {
         else {
             false
         }
-	}
+    }
 }
 
 #[cfg(broken_test)]
