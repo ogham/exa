@@ -55,7 +55,7 @@ impl Details {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir), self.columns.size_format);
+        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir));
         if self.header { table.add_header() }
 
         // Then add files to the table and print it out.
@@ -129,7 +129,7 @@ struct Table {
 impl Table {
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
-    fn with_options(colours: Colours, columns: Vec<Column>, size: SizeFormat) -> Table {
+    fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
         Table {
             columns: columns,
             local: Locals {
@@ -137,7 +137,6 @@ impl Table {
                 numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
                 users:        OSUsers::empty_cache(),
                 current_year: LocalDateTime::now().year(),
-                size_format:  size,
             },
             rows: Vec::new(),
             colours: colours,
@@ -185,8 +184,8 @@ impl Table {
     fn display(&mut self, file: &File, column: &Column) -> Cell {
         match *column {
             Column::Permissions     => self.render_permissions(file.permissions()),
-            Column::FileSize(f)     => self.render_size(file.size()),
-            Column::Timestamp(t, y) => self.render_time(file.timestamp(t)),
+            Column::FileSize(fmt)   => self.render_size(file.size(), fmt),
+            Column::Timestamp(t, _) => self.render_time(file.timestamp(t)),
             Column::HardLinks       => self.render_links(file.links()),
             Column::Inode           => self.render_inode(file.inode()),
             Column::Blocks          => self.render_blocks(file.blocks()),
@@ -251,9 +250,9 @@ impl Table {
         Cell::paint(self.colours.inode, &inode.0.to_string())
     }
 
-    fn render_size(&self, size: Size) -> Cell {
+    fn render_size(&self, size: Size, size_format: SizeFormat) -> Cell {
         if let Size::Some(offset) = size {
-            let result = match self.local.size_format {
+            let result = match size_format {
                 SizeFormat::DecimalBytes => decimal_prefix(offset as f64),
                 SizeFormat::BinaryBytes  => binary_prefix(offset as f64),
                 SizeFormat::JustBytes    => return Cell::paint(self.colours.size.numbers, &self.local.numeric.format_int(offset)),
@@ -426,6 +425,5 @@ pub struct Locals {
     pub time:    locale::Time,
     pub numeric: locale::Numeric,
     pub users:   OSUsers,
-    pub size_format: SizeFormat,
     pub current_year: i64,
 }
