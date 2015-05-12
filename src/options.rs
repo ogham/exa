@@ -15,8 +15,6 @@ use std::os::unix::fs::MetadataExt;
 use getopts;
 use natord;
 
-use datetime::local::{LocalDateTime, DatePiece};
-
 use self::Misfire::*;
 
 /// The *Options* struct represents a parsed version of the user's
@@ -555,18 +553,16 @@ impl Columns {
             columns.push(Group);
         }
 
-        let current_year = LocalDateTime::now().year();
-
         if self.time_types.modified {
-            columns.push(Timestamp(TimeType::FileModified, current_year));
+            columns.push(Timestamp(TimeType::FileModified));
         }
 
         if self.time_types.created {
-            columns.push(Timestamp(TimeType::FileCreated, current_year));
+            columns.push(Timestamp(TimeType::FileCreated));
         }
 
         if self.time_types.accessed {
-            columns.push(Timestamp(TimeType::FileAccessed, current_year));
+            columns.push(Timestamp(TimeType::FileAccessed));
         }
 
         if cfg!(feature="git") {

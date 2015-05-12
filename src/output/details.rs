@@ -183,15 +183,15 @@ impl Table {
 
     fn display(&mut self, file: &File, column: &Column) -> Cell {
         match *column {
-            Column::Permissions     => self.render_permissions(file.permissions()),
-            Column::FileSize(fmt)   => self.render_size(file.size(), fmt),
-            Column::Timestamp(t, _) => self.render_time(file.timestamp(t)),
-            Column::HardLinks       => self.render_links(file.links()),
-            Column::Inode           => self.render_inode(file.inode()),
-            Column::Blocks          => self.render_blocks(file.blocks()),
-            Column::User            => self.render_user(file.user()),
-            Column::Group           => self.render_group(file.group()),
-            Column::GitStatus       => self.render_git_status(file.git_status()),
+            Column::Permissions    => self.render_permissions(file.permissions()),
+            Column::FileSize(fmt)  => self.render_size(file.size(), fmt),
+            Column::Timestamp(t)   => self.render_time(file.timestamp(t)),
+            Column::HardLinks      => self.render_links(file.links()),
+            Column::Inode          => self.render_inode(file.inode()),
+            Column::Blocks         => self.render_blocks(file.blocks()),
+            Column::User           => self.render_user(file.user()),
+            Column::Group          => self.render_group(file.group()),
+            Column::GitStatus      => self.render_git_status(file.git_status()),
         }
     }
 
