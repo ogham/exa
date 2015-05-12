@@ -3,10 +3,21 @@ use column::{Alignment, Column, Cell};
 use feature::Attribute;
 use dir::Dir;
 use file::File;
-use options::{Columns, FileFilter, RecurseOptions};
-use users::OSUsers;
+use file::fields as f;
+use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
+use users::{OSUsers, Users};
+
+use super::filename;
+
+use ansi_term::{ANSIString, ANSIStrings, Style};
+use ansi_term::Style::Plain;
 
 use locale;
+
+use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
+use datetime::local::{LocalDateTime, DatePiece};
+use datetime::format::{DateFormat};
 
 /// With the **Details** view, the output gets formatted into columns, with
 /// each `Column` object showing some piece of information about the file,
@@ -109,11 +120,14 @@ struct Row {
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
 struct Table {
-    columns: Vec<Column>,
-    users:   OSUsers,
-    locale:  UserLocale,
-    rows:    Vec<Row>,
-    colours: Colours,
+    columns:  Vec<Column>,
+    rows:     Vec<Row>,
+
+    time:         locale::Time,
+    numeric:      locale::Numeric,
+    users:        OSUsers,
+    colours:      Colours,
+    current_year: i64,
 }
 
 impl Table {
@@ -122,10 +136,13 @@ impl Table {
     fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
         Table {
             columns: columns,
-            users: OSUsers::empty_cache(),
-            locale: UserLocale::new(),
-            rows: Vec::new(),
-            colours: colours,
+            rows:    Vec::new(),
+
+            time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+            numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+            users:        OSUsers::empty_cache(),
+            colours:      colours,
+            current_year: LocalDateTime::now().year(),
         }
     }
 
@@ -145,26 +162,183 @@ impl Table {
         self.rows.push(row);
     }
 
-    /// Use the list of columns to find which cells should be produced for
-    /// this file, per-column.
-    fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
-        self.columns.clone().iter()
-                    .map(|c| file.display(c, &self.colours, &mut self.users, &self.locale))
-                    .collect()
-    }
-
     /// Get the cells for the given file, and add the result to the table.
     fn add_file(&mut self, file: &File, depth: usize, last: bool) {
         let row = Row {
             depth:    depth,
             cells:    self.cells_for_file(file),
-            name:     file.file_name_view(&self.colours),
+            name:     filename(file, &self.colours),
             last:     last,
             attrs:    file.xattrs.clone(),
             children: file.this.is_some(),
         };
 
-        self.rows.push(row)
+        self.rows.push(row);
+    }
+
+    /// Use the list of columns to find which cells should be produced for
+    /// this file, per-column.
+    fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
+        self.columns.clone().iter()
+                    .map(|c| self.display(file, c))
+                    .collect()
+    }
+
+    fn display(&mut self, file: &File, column: &Column) -> Cell {
+        match *column {
+            Column::Permissions    => self.render_permissions(file.permissions()),
+            Column::FileSize(fmt)  => self.render_size(file.size(), fmt),
+            Column::Timestamp(t)   => self.render_time(file.timestamp(t)),
+            Column::HardLinks      => self.render_links(file.links()),
+            Column::Inode          => self.render_inode(file.inode()),
+            Column::Blocks         => self.render_blocks(file.blocks()),
+            Column::User           => self.render_user(file.user()),
+            Column::Group          => self.render_group(file.group()),
+            Column::GitStatus      => self.render_git_status(file.git_status()),
+        }
+    }
+
+    fn render_permissions(&self, permissions: f::Permissions) -> Cell {
+        let c = self.colours.perms;
+        let bit = |bit, chr: &'static str, style: Style| {
+            if bit { style.paint(chr) } else { self.colours.punctuation.paint("-") }
+        };
+
+        let file_type = match permissions.file_type {
+            f::Type::File       => self.colours.filetypes.normal.paint("."),
+            f::Type::Directory  => self.colours.filetypes.directory.paint("d"),
+            f::Type::Pipe       => self.colours.filetypes.special.paint("|"),
+            f::Type::Link       => self.colours.filetypes.symlink.paint("l"),
+            f::Type::Special    => self.colours.filetypes.special.paint("?"),
+        };
+
+        let x_colour = if let f::Type::File = permissions.file_type { c.user_execute_file }
+                                                            else { c.user_execute_other };
+
+        let string = ANSIStrings( &[
+            file_type,
+            bit(permissions.user_read,     "r", c.user_read),
+            bit(permissions.user_write,    "w", c.user_write),
+            bit(permissions.user_execute,  "x", x_colour),
+            bit(permissions.group_read,    "r", c.group_read),
+            bit(permissions.group_write,   "w", c.group_write),
+            bit(permissions.group_execute, "x", c.group_execute),
+            bit(permissions.other_read,    "r", c.other_read),
+            bit(permissions.other_write,   "w", c.other_write),
+            bit(permissions.other_execute, "x", c.other_execute),
+            if permissions.attribute { c.attribute.paint("@") } else { Plain.paint(" ") },
+        ]).to_string();
+
+        Cell {
+            text: string,
+            length: 11,
+        }
+    }
+
+    fn render_links(&self, links: f::Links) -> Cell {
+        let style = if links.multiple { self.colours.links.multi_link_file }
+                                 else { self.colours.links.normal };
+
+        Cell::paint(style, &self.numeric.format_int(links.count))
+    }
+
+    fn render_blocks(&self, blocks: f::Blocks) -> Cell {
+        match blocks {
+            f::Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
+            f::Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
+        }
+    }
+
+    fn render_inode(&self, inode: f::Inode) -> Cell {
+        Cell::paint(self.colours.inode, &inode.0.to_string())
+    }
+
+    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> Cell {
+        if let f::Size::Some(offset) = size {
+            let result = match size_format {
+                SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
+                SizeFormat::BinaryBytes   => binary_prefix(offset as f64),
+                SizeFormat::JustBytes     => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
+            };
+
+            match result {
+                Standalone(bytes)    => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
+                Prefixed(prefix, n)  => {
+                    let number = if n < 10f64 { self.numeric.format_float(n, 1) } else { self.numeric.format_int(n as isize) };
+                    let symbol = prefix.symbol();
+
+                    Cell {
+                        text: ANSIStrings( &[ self.colours.size.numbers.paint(&number[..]), self.colours.size.unit.paint(symbol) ]).to_string(),
+                        length: number.len() + symbol.len(),
+                    }
+                }
+            }
+        }
+        else {
+            Cell::paint(self.colours.punctuation, "-")
+        }
+    }
+
+    fn render_time(&self, timestamp: f::Time) -> Cell {
+        let date = LocalDateTime::at(timestamp.0);
+
+        let format = if date.year() == self.current_year {
+                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
+            }
+            else {
+                DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
+            };
+
+        Cell::paint(self.colours.date, &format.format(date, &self.time))
+    }
+
+    fn render_git_status(&self, git: f::Git) -> Cell {
+        Cell {
+            text: ANSIStrings(&[ self.render_git_char(git.staged),
+                                 self.render_git_char(git.unstaged) ]).to_string(),
+            length: 2,
+        }
+    }
+
+    fn render_git_char(&self, status: f::GitStatus) -> ANSIString {
+        match status {
+            f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
+            f::GitStatus::New          => self.colours.git.new.paint("N"),
+            f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
+            f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
+            f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
+            f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
+        }
+    }
+
+    fn render_user(&mut self, user: f::User) -> Cell {
+        let user_name = match self.users.get_user_by_uid(user.0) {
+            Some(user)  => user.name,
+            None        => user.0.to_string(),
+        };
+
+        let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
+                                                               else { self.colours.users.user_someone_else };
+        Cell::paint(style, &*user_name)
+    }
+
+    fn render_group(&mut self, group: f::Group) -> Cell {
+        let mut style = self.colours.users.group_not_yours;
+
+        let group_name = match self.users.get_group_by_gid(group.0) {
+            Some(group) => {
+                let current_uid = self.users.get_current_uid();
+                if let Some(current_user) = self.users.get_user_by_uid(current_uid) {
+                    if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
+                        style = self.colours.users.group_yours;
+                    }
+                }
+                group.name
+            },
+            None => group.0.to_string(),
+        };
+
+        Cell::paint(style, &*group_name)
     }
 
     /// Print the table to standard output, consuming it in the process.
@@ -243,24 +417,10 @@ enum TreePart {
 impl TreePart {
     fn ascii_art(&self) -> &'static str {
         match *self {
-            TreePart::Edge   => "├──",
-            TreePart::Line   => "│  ",
-            TreePart::Corner => "└──",
-            TreePart::Blank  => "   ",
-        }
-    }
-}
-
-pub struct UserLocale {
-    pub time:    locale::Time,
-    pub numeric: locale::Numeric,
-}
-
-impl UserLocale {
-    pub fn new() -> UserLocale {
-        UserLocale {
-            time:    locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            numeric: locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+            TreePart::Edge    => "├──",
+            TreePart::Line    => "│  ",
+            TreePart::Corner  => "└──",
+            TreePart::Blank   => "   ",
         }
     }
 }
