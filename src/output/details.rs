@@ -5,7 +5,9 @@ use dir::Dir;
 use file::File;
 use file::fields as f;
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
+
 use users::{OSUsers, Users};
+use users::mock::MockUsers;
 
 use super::filename;
 
@@ -29,7 +31,7 @@ use datetime::format::{DateFormat};
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the
@@ -67,7 +69,7 @@ impl Details {
 
     /// Adds files to the table - recursively, if the `recurse` option
     /// is present.
-    fn add_files_to_table(&self, table: &mut Table, src: &[File], depth: usize) {
+    fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
             table.add_file(file, depth, index == src.len() - 1);
 
@@ -120,22 +122,36 @@ struct Row {
 
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
-struct Table {
+pub struct Table<U> {
     columns:  Vec<Column>,
     rows:     Vec<Row>,
 
     time:         locale::Time,
     numeric:      locale::Numeric,
-    users:        OSUsers,
+    users:        U,
     colours:      Colours,
     current_year: i64,
 }
 
-impl Table {
+impl Default for Table<MockUsers> {
+    fn default() -> Table<MockUsers> {
+        Table {
+            columns: Columns::default().for_dir(None),
+            rows:    Vec::new(),
+            time:    locale::Time::english(),
+            numeric: locale::Numeric::english(),
+            users:   MockUsers::with_current_uid(0),
+            colours: Colours::default(),
+            current_year: 1234,
+        }
+    }
+}
+
+impl Table<OSUsers> {
 
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
-    fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
+    fn with_options(colours: Colours, columns: Vec<Column>) -> Table<OSUsers> {
         Table {
             columns: columns,
             rows:    Vec::new(),
@@ -147,6 +163,9 @@ impl Table {
             current_year: LocalDateTime::now().year(),
         }
     }
+}
+
+impl<U> Table<U> where U: Users {
 
     /// Add a dummy "header" row to the table, which contains the names of all
     /// the columns, underlined. This has dummy data for the cases that aren't
@@ -426,6 +445,172 @@ impl TreePart {
             TreePart::Line    => "│  ",
             TreePart::Corner  => "└──",
             TreePart::Blank   => "   ",
+        }
+    }
+}
+
+
+#[cfg(test)]
+pub mod test {
+    pub use super::Table;
+    pub use file::File;
+    pub use file::fields as f;
+
+    pub use column::{Cell, Column};
+
+    pub use users::{User, Group, uid_t, gid_t};
+    pub use users::mock::MockUsers;
+
+    pub use ansi_term::Style::Plain;
+    pub use ansi_term::Colour::*;
+
+    pub fn newser(uid: uid_t, name: &str, group: gid_t) -> User {
+        User {
+            uid: uid,
+            name: name.to_string(),
+            primary_group: group,
+            home_dir: String::new(),
+            shell: String::new(),
+        }
+    }
+
+    // These tests create a new, default Table object, then fill in the
+    // expected style in a certain way. This means we can check that the
+    // right style is being used, as otherwise, it would just be `Plain`.
+    //
+    // Doing things with fields is way easier than having to fake the entire
+    // Metadata struct, which is what I was doing before!
+
+    mod users {
+        use super::*;
+
+        #[test]
+        fn named() {
+            let mut table = Table::default();
+            table.colours.users.user_you = Red.bold();
+
+            let mut users = MockUsers::with_current_uid(1000);
+            users.add_user(newser(1000, "enoch", 100));
+            table.users = users;
+
+            let user = f::User(1000);
+            let expected = Cell::paint(Red.bold(), "enoch");
+            assert_eq!(expected, table.render_user(user))
+        }
+
+        #[test]
+        fn unnamed() {
+            let mut table = Table::default();
+            table.colours.users.user_you = Cyan.bold();
+
+            let users = MockUsers::with_current_uid(1000);
+            table.users = users;
+
+            let user = f::User(1000);
+            let expected = Cell::paint(Cyan.bold(), "1000");
+            assert_eq!(expected, table.render_user(user));
+        }
+
+        #[test]
+        fn different_named() {
+            let mut table = Table::default();
+            table.colours.users.user_someone_else = Green.bold();
+            table.users.add_user(newser(1000, "enoch", 100));
+
+            let user = f::User(1000);
+            let expected = Cell::paint(Green.bold(), "enoch");
+            assert_eq!(expected, table.render_user(user));
+        }
+
+        #[test]
+        fn different_unnamed() {
+            let mut table = Table::default();
+            table.colours.users.user_someone_else = Red.normal();
+
+            let user = f::User(1000);
+            let expected = Cell::paint(Red.normal(), "1000");
+            assert_eq!(expected, table.render_user(user));
+        }
+
+        #[test]
+        fn overflow() {
+            let mut table = Table::default();
+            table.colours.users.user_someone_else = Blue.underline();
+
+            let user = f::User(2_147_483_648);
+            let expected = Cell::paint(Blue.underline(), "2147483648");
+            assert_eq!(expected, table.render_user(user));
+        }
+    }
+
+    mod groups {
+        use super::*;
+
+        #[test]
+        fn named() {
+            let mut table = Table::default();
+            table.colours.users.group_not_yours = Fixed(101).normal();
+
+            let mut users = MockUsers::with_current_uid(1000);
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
+            table.users = users;
+
+            let group = f::Group(100);
+            let expected = Cell::paint(Fixed(101).normal(), "folk");
+            assert_eq!(expected, table.render_group(group))
+        }
+
+        #[test]
+        fn unnamed() {
+            let mut table = Table::default();
+            table.colours.users.group_not_yours = Fixed(87).normal();
+
+            let users = MockUsers::with_current_uid(1000);
+            table.users = users;
+
+            let group = f::Group(100);
+            let expected = Cell::paint(Fixed(87).normal(), "100");
+            assert_eq!(expected, table.render_group(group));
+        }
+
+        #[test]
+        fn primary() {
+            let mut table = Table::default();
+            table.colours.users.group_yours = Fixed(64).normal();
+
+            let mut users = MockUsers::with_current_uid(2);
+            users.add_user(newser(2, "eve", 100));
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
+            table.users = users;
+
+            let group = f::Group(100);
+            let expected = Cell::paint(Fixed(64).normal(), "folk");
+            assert_eq!(expected, table.render_group(group))
+        }
+
+        #[test]
+        fn secondary() {
+            let mut table = Table::default();
+            table.colours.users.group_yours = Fixed(31).normal();
+
+            let mut users = MockUsers::with_current_uid(2);
+            users.add_user(newser(2, "eve", 666));
+            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
+            table.users = users;
+
+            let group = f::Group(100);
+            let expected = Cell::paint(Fixed(31).normal(), "folk");
+            assert_eq!(expected, table.render_group(group))
+        }
+
+        #[test]
+        fn overflow() {
+            let mut table = Table::default();
+            table.colours.users.group_not_yours = Blue.underline();
+
+            let group = f::Group(2_147_483_648);
+            let expected = Cell::paint(Blue.underline(), "2147483648");
+            assert_eq!(expected, table.render_group(group));
         }
     }
 }
