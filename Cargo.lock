@@ -6,7 +6,8 @@ dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "datetime 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "git2 0.2.9 (git+https://github.com/alexcrichton/git2-rs.git)",
+ "git2 0.2.10 (git+https://github.com/alexcrichton/git2-rs.git)",
+ "libc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "locale 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -53,13 +54,13 @@ dependencies = [
 
 [[package]]
 name = "git2"
-version = "0.2.9"
-source = "git+https://github.com/alexcrichton/git2-rs.git#3a5f0b5698c5203fa48e33094158990a2c53c979"
+version = "0.2.10"
+source = "git+https://github.com/alexcrichton/git2-rs.git#f820ef645e2275c80c3009da770a5b6a9b5ce0f0"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "libgit2-sys 0.2.12 (git+https://github.com/alexcrichton/git2-rs.git)",
- "url 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libgit2-sys 0.2.13 (git+https://github.com/alexcrichton/git2-rs.git)",
+ "url 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -69,8 +70,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libgit2-sys"
-version = "0.2.12"
-source = "git+https://github.com/alexcrichton/git2-rs.git#3a5f0b5698c5203fa48e33094158990a2c53c979"
+version = "0.2.13"
+source = "git+https://github.com/alexcrichton/git2-rs.git#f820ef645e2275c80c3009da770a5b6a9b5ce0f0"
 dependencies = [
  "libc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "libssh2-sys 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -232,7 +233,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "url"
-version = "0.2.33"
+version = "0.2.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",

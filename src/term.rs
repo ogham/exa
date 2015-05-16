@@ -1,19 +1,12 @@
 mod c {
-    #![allow(non_camel_case_types)]
-    extern crate libc;
-    pub use self::libc::{
-        c_int,
-        c_ushort,
-        c_ulong,
-        STDOUT_FILENO,
-    };
+    pub use libc::{c_int, c_ushort, c_ulong, STDOUT_FILENO};
     use std::mem::zeroed;
 
     // Getting the terminal size is done using an ioctl command that
     // takes the file handle to the terminal (which in our case is
     // stdout), and populates a structure with the values.
 
-    pub struct winsize {
+    pub struct Winsize {
         pub ws_row: c_ushort,
         pub ws_col: c_ushort,
     }
@@ -30,9 +23,9 @@ mod c {
         pub fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int;
     }
 
-    pub unsafe fn dimensions() -> winsize {
-        let mut window: winsize = zeroed();
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut winsize);
+    pub unsafe fn dimensions() -> Winsize {
+        let mut window: Winsize = zeroed();
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut Winsize);
         window
     }
 }

@@ -1,9 +1,10 @@
 #![feature(collections, convert, core, exit_status, file_type, fs_ext, fs_mode)]
-#![feature(libc, metadata_ext, raw_ext, scoped, symlink_metadata)]
+#![feature(metadata_ext, raw_ext, scoped, symlink_metadata)]
 
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
+extern crate libc;
 extern crate locale;
 extern crate natord;
 extern crate num_cpus;
@@ -11,7 +12,6 @@ extern crate number_prefix;
 extern crate pad;
 extern crate users;
 extern crate unicode_width;
-
 
 #[cfg(feature="git")]
 extern crate git2;
