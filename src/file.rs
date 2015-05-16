@@ -21,7 +21,7 @@ use self::fields as f;
 /// associated data about the file.
 ///
 /// Each file is definitely going to have its filename displayed at least
-/// once, have its file extension extracted at least once, and have its stat
+/// once, have its file extension extracted at least once, and have its metadata
 /// information queried at least once, so it makes sense to do all this at the
 /// start and hold on to all the information.
 pub struct File<'dir> {
@@ -43,7 +43,7 @@ pub struct File<'dir> {
     /// times, and is *not* cached by the OS, as it could easily change
     /// between invocations - but exa is so short-lived it's better to just
     /// cache it.
-    pub stat:  fs::Metadata,
+    pub metadata:  fs::Metadata,
 
     /// List of this file's extended attributes. These are only loaded if the
     /// `xattr` feature is in use.
@@ -71,17 +71,17 @@ impl<'dir> File<'dir> {
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
     pub fn from_path(path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> io::Result<File<'dir>> {
-        fs::symlink_metadata(path).map(|stat| File::with_stat(stat, path, parent, recurse))
+        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent, recurse))
     }
 
-    /// Create a new File object from the given Stat result, and other data.
-    pub fn with_stat(stat: fs::Metadata, path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> File<'dir> {
+    /// Create a new File object from the given metadata result, and other data.
+    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> File<'dir> {
         let filename = path_filename(path);
 
         // If we are recursing, then the `this` field contains a Dir object
         // that represents the current File as a directory, if it is a
         // directory. This is used for the --tree option.
-        let this = if recurse && stat.is_dir() {
+        let this = if recurse && metadata.is_dir() {
             Dir::readdir(path).ok()
         }
         else {
@@ -91,7 +91,7 @@ impl<'dir> File<'dir> {
         File {
             path:   path.to_path_buf(),
             dir:    parent,
-            stat:   stat,
+            metadata:   metadata,
             ext:    ext(&filename),
             xattrs: Attribute::llist(path).unwrap_or(Vec::new()),
             name:   filename.to_string(),
@@ -101,13 +101,13 @@ impl<'dir> File<'dir> {
 
     /// Whether this file is a directory on the filesystem.
     pub fn is_directory(&self) -> bool {
-        self.stat.is_dir()
+        self.metadata.is_dir()
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
     /// directory, a link, or anything else treated specially.
     pub fn is_file(&self) -> bool {
-        self.stat.is_file()
+        self.metadata.is_file()
     }
 
     /// Whether this file is both a regular file *and* executable for the
@@ -115,12 +115,12 @@ impl<'dir> File<'dir> {
     /// executable directories, and so should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
         let bit = unix::fs::USER_EXECUTE;
-        self.is_file() && (self.stat.permissions().mode() & bit) == bit
+        self.is_file() && (self.metadata.permissions().mode() & bit) == bit
     }
 
     /// Whether this file is a symlink on the filesystem.
     pub fn is_link(&self) -> bool {
-        self.stat.file_type().is_symlink()
+        self.metadata.file_type().is_symlink()
     }
 
     /// Whether this file is a named pipe on the filesystem.
@@ -199,11 +199,11 @@ impl<'dir> File<'dir> {
         let filename = path_filename(&target_path);
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
-        if let Ok(stat) = fs::metadata(&target_path) {
+        if let Ok(metadata) = fs::metadata(&target_path) {
             Ok(File {
                 path:   target_path.to_path_buf(),
                 dir:    self.dir,
-                stat:   stat,
+                metadata:   metadata,
                 ext:    ext(&filename),
                 xattrs: Attribute::list(&target_path).unwrap_or(Vec::new()),
                 name:   filename.to_string(),
@@ -223,7 +223,7 @@ impl<'dir> File<'dir> {
     /// with multiple links much more often. Thus, it should get highlighted
     /// more attentively.
     pub fn links(&self) -> f::Links {
-        let count = self.stat.as_raw().nlink();
+        let count = self.metadata.as_raw().nlink();
 
         f::Links {
             count: count,
@@ -233,7 +233,7 @@ impl<'dir> File<'dir> {
 
     /// This file's inode.
     pub fn inode(&self) -> f::Inode {
-        f::Inode(self.stat.as_raw().ino())
+        f::Inode(self.metadata.as_raw().ino())
     }
 
     /// This file's number of filesystem blocks.
@@ -241,7 +241,7 @@ impl<'dir> File<'dir> {
     /// (Not the size of each block, which we don't actually report on)
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
-            f::Blocks::Some(self.stat.as_raw().blocks())
+            f::Blocks::Some(self.metadata.as_raw().blocks())
         }
         else {
             f::Blocks::None
@@ -250,12 +250,12 @@ impl<'dir> File<'dir> {
 
     /// The ID of the user that own this file.
     pub fn user(&self) -> f::User {
-        f::User(self.stat.as_raw().uid())
+        f::User(self.metadata.as_raw().uid())
     }
 
     /// The ID of the group that owns this file.
     pub fn group(&self) -> f::Group {
-        f::Group(self.stat.as_raw().gid())
+        f::Group(self.metadata.as_raw().gid())
     }
 
     /// This file's size, if it's a regular file.
@@ -268,16 +268,16 @@ impl<'dir> File<'dir> {
             f::Size::None
         }
         else {
-            f::Size::Some(self.stat.len())
+            f::Size::Some(self.metadata.len())
         }
     }
 
     /// One of this file's timestamps, as a number in seconds.
     pub fn timestamp(&self, time_type: TimeType) -> f::Time {
         let time_in_seconds = match time_type {
-            TimeType::FileAccessed => self.stat.as_raw().atime(),
-            TimeType::FileModified => self.stat.as_raw().mtime(),
-            TimeType::FileCreated  => self.stat.as_raw().ctime(),
+            TimeType::FileAccessed => self.metadata.as_raw().atime(),
+            TimeType::FileModified => self.metadata.as_raw().mtime(),
+            TimeType::FileCreated  => self.metadata.as_raw().ctime(),
         };
 
         f::Time(time_in_seconds)
@@ -308,7 +308,7 @@ impl<'dir> File<'dir> {
 
     /// This file's permissions, with flags for each bit.
     pub fn permissions(&self) -> f::Permissions {
-        let bits = self.stat.permissions().mode();
+        let bits = self.metadata.permissions().mode();
         let has_bit = |bit| { bits & bit == bit };
 
         f::Permissions {
@@ -522,8 +522,8 @@ pub mod test {
         assert_eq!(None, super::ext("jarlsberg"))
     }
 
-    pub fn new_file(stat: io::FileStat, path: &'static str) -> File {
-        File::with_stat(stat, &Path::new(path), None, false)
+    pub fn new_file(metadata: io::FileStat, path: &'static str) -> File {
+        File::with_metadata(metadata, &Path::new(path), None, false)
     }
 
     pub fn dummy_stat() -> io::FileStat {
@@ -558,10 +558,10 @@ pub mod test {
 
         #[test]
         fn named() {
-            let mut stat = dummy_stat();
-            stat.unstable.uid = 1000;
+            let mut metadata = dummy_stat();
+            metadata.unstable.uid = 1000;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(1000);
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
@@ -572,10 +572,10 @@ pub mod test {
 
         #[test]
         fn unnamed() {
-            let mut stat = dummy_stat();
-            stat.unstable.uid = 1000;
+            let mut metadata = dummy_stat();
+            metadata.unstable.uid = 1000;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(1000);
 
@@ -585,10 +585,10 @@ pub mod test {
 
         #[test]
         fn different_named() {
-            let mut stat = dummy_stat();
-            stat.unstable.uid = 1000;
+            let mut metadata = dummy_stat();
+            metadata.unstable.uid = 1000;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
@@ -599,10 +599,10 @@ pub mod test {
 
         #[test]
         fn different_unnamed() {
-            let mut stat = dummy_stat();
-            stat.unstable.uid = 1000;
+            let mut metadata = dummy_stat();
+            metadata.unstable.uid = 1000;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 
@@ -612,10 +612,10 @@ pub mod test {
 
         #[test]
         fn overflow() {
-            let mut stat = dummy_stat();
-            stat.unstable.uid = 2_147_483_648;
+            let mut metadata = dummy_stat();
+            metadata.unstable.uid = 2_147_483_648;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 
@@ -629,10 +629,10 @@ pub mod test {
 
         #[test]
         fn named() {
-            let mut stat = dummy_stat();
-            stat.unstable.gid = 100;
+            let mut metadata = dummy_stat();
+            metadata.unstable.gid = 100;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
@@ -643,10 +643,10 @@ pub mod test {
 
         #[test]
         fn unnamed() {
-            let mut stat = dummy_stat();
-            stat.unstable.gid = 100;
+            let mut metadata = dummy_stat();
+            metadata.unstable.gid = 100;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 
@@ -656,10 +656,10 @@ pub mod test {
 
         #[test]
         fn primary() {
-            let mut stat = dummy_stat();
-            stat.unstable.gid = 100;
+            let mut metadata = dummy_stat();
+            metadata.unstable.gid = 100;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 100 });
@@ -671,10 +671,10 @@ pub mod test {
 
         #[test]
         fn secondary() {
-            let mut stat = dummy_stat();
-            stat.unstable.gid = 100;
+            let mut metadata = dummy_stat();
+            metadata.unstable.gid = 100;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
             users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 12 });
@@ -686,10 +686,10 @@ pub mod test {
 
         #[test]
         fn overflow() {
-            let mut stat = dummy_stat();
-            stat.unstable.gid = 2_147_483_648;
+            let mut metadata = dummy_stat();
+            metadata.unstable.gid = 2_147_483_648;
 
-            let file = new_file(stat, "/hi");
+            let file = new_file(metadata, "/hi");
 
             let mut users = MockUsers::with_current_uid(3);
 

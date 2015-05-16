@@ -24,12 +24,12 @@ impl Attribute {
         unimplemented!()
     }
 
-    /// Lists the extended attributes. Follows symlinks like `stat`
+    /// Lists the extended attributes. Follows symlinks like `metadata`
     pub fn list(_: &Path) -> io::IoResult<Vec<Attribute>> {
         Ok(Vec::new())
     }
 
-    /// Lists the extended attributes. Does not follow symlinks like `lstat`
+    /// Lists the extended attributes. Does not follow symlinks like `symlink_metadata`
     pub fn llist(_: &Path) -> io::IoResult<Vec<Attribute>> {
         Ok(Vec::new())
     }

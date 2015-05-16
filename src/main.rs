@@ -106,12 +106,12 @@ impl<'dir> Exa<'dir> {
             thread::spawn(move || {
                 let path = Path::new(&*file);
                 let _ = results_tx.send(match fs::metadata(&path) {
-                    Ok(stat) => {
-                        if !stat.is_dir() {
-                            StatResult::File(File::with_stat(stat, &path, None, false))
+                    Ok(metadata) => {
+                        if !metadata.is_dir() {
+                            StatResult::File(File::with_metadata(metadata, &path, None, false))
                         }
                         else if is_tree {
-                            StatResult::File(File::with_stat(stat, &path, None, true))
+                            StatResult::File(File::with_metadata(metadata, &path, None, true))
                         }
                         else {
                             StatResult::Path(path.to_path_buf())

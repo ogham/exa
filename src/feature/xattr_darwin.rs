@@ -111,12 +111,12 @@ impl Attribute {
     }
 
     /// Lists the extended attributes.
-    /// Follows symlinks like `stat`
+    /// Follows symlinks like `metadata`
     pub fn list(path: &Path) -> io::Result<Vec<Attribute>> {
         Attribute::list_attrs(path, &[])
     }
     /// Lists the extended attributes.
-    /// Does not follow symlinks like `lstat`
+    /// Does not follow symlinks like `symlink_metadata`
     pub fn llist(path: &Path) -> io::Result<Vec<Attribute>> {
         Attribute::list_attrs(path, &[ListFlags::NoFollow])
     }

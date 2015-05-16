@@ -137,11 +137,11 @@ impl FileFilter {
         match self.sort_field {
             SortField::Unsorted      => {},
             SortField::Name          => files.sort_by(|a, b| natord::compare(&*a.name, &*b.name)),
-            SortField::Size          => files.sort_by(|a, b| a.stat.len().cmp(&b.stat.len())),
-            SortField::FileInode     => files.sort_by(|a, b| a.stat.as_raw().ino().cmp(&b.stat.as_raw().ino())),
-            SortField::ModifiedDate  => files.sort_by(|a, b| a.stat.as_raw().mtime().cmp(&b.stat.as_raw().mtime())),
-            SortField::AccessedDate  => files.sort_by(|a, b| a.stat.as_raw().atime().cmp(&b.stat.as_raw().atime())),
-            SortField::CreatedDate   => files.sort_by(|a, b| a.stat.as_raw().ctime().cmp(&b.stat.as_raw().ctime())),
+            SortField::Size          => files.sort_by(|a, b| a.metadata.len().cmp(&b.metadata.len())),
+            SortField::FileInode     => files.sort_by(|a, b| a.metadata.as_raw().ino().cmp(&b.metadata.as_raw().ino())),
+            SortField::ModifiedDate  => files.sort_by(|a, b| a.metadata.as_raw().mtime().cmp(&b.metadata.as_raw().mtime())),
+            SortField::AccessedDate  => files.sort_by(|a, b| a.metadata.as_raw().atime().cmp(&b.metadata.as_raw().atime())),
+            SortField::CreatedDate   => files.sort_by(|a, b| a.metadata.as_raw().ctime().cmp(&b.metadata.as_raw().ctime())),
             SortField::Extension     => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
