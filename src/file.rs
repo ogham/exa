@@ -494,207 +494,23 @@ pub mod fields {
     }
 }
 
-#[cfg(broken_test)]
-pub mod test {
-    pub use super::*;
 
-    pub use column::{Cell, Column};
-    pub use output::details::UserLocale;
-
-    pub use users::{User, Group};
-    pub use users::mock::MockUsers;
-
-    pub use ansi_term::Style::Plain;
-    pub use ansi_term::Colour::Yellow;
+#[cfg(test)]
+mod test {
+    use super::ext;
 
     #[test]
     fn extension() {
-        assert_eq!(Some("dat".to_string()), super::ext("fester.dat"))
+        assert_eq!(Some("dat".to_string()), ext("fester.dat"))
     }
 
     #[test]
     fn dotfile() {
-        assert_eq!(Some("vimrc".to_string()), super::ext(".vimrc"))
+        assert_eq!(Some("vimrc".to_string()), ext(".vimrc"))
     }
 
     #[test]
     fn no_extension() {
-        assert_eq!(None, super::ext("jarlsberg"))
-    }
-
-    pub fn new_file(metadata: io::FileStat, path: &'static str) -> File {
-        File::with_metadata(metadata, &Path::new(path), None, false)
-    }
-
-    pub fn dummy_stat() -> io::FileStat {
-        io::FileStat {
-            size: 0,
-            kind: io::FileType::RegularFile,
-            created: 0,
-            modified: 0,
-            accessed: 0,
-            perm: io::USER_READ,
-            unstable: io::UnstableFileStat {
-                inode: 0,
-                device: 0,
-                rdev: 0,
-                nlink: 0,
-                uid: 0,
-                gid: 0,
-                blksize: 0,
-                blocks: 0,
-                flags: 0,
-                gen: 0,
-            }
-        }
-    }
-
-    pub fn dummy_locale() -> UserLocale {
-        UserLocale::default()
-    }
-
-    mod users {
-        use super::*;
-
-        #[test]
-        fn named() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.uid = 1000;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(1000);
-            users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
-
-            let cell = Cell::paint(Yellow.bold(), "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn unnamed() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.uid = 1000;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(1000);
-
-            let cell = Cell::paint(Yellow.bold(), "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn different_named() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.uid = 1000;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-            users.add_user(User { uid: 1000, name: "enoch".to_string(), primary_group: 100 });
-
-            let cell = Cell::paint(Plain, "enoch");
-            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn different_unnamed() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.uid = 1000;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-
-            let cell = Cell::paint(Plain, "1000");
-            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn overflow() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.uid = 2_147_483_648;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-
-            let cell = Cell::paint(Plain, "2147483648");
-            assert_eq!(cell, file.display(&Column::User, &mut users, &dummy_locale()))
-        }
-    }
-
-    mod groups {
-        use super::*;
-
-        #[test]
-        fn named() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.gid = 100;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
-
-            let cell = Cell::paint(Plain, "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn unnamed() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.gid = 100;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-
-            let cell = Cell::paint(Plain, "100");
-            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn primary() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.gid = 100;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-            users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 100 });
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
-
-            let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn secondary() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.gid = 100;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-            users.add_user(User { uid: 3, name: "eve".to_string(), primary_group: 12 });
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
-
-            let cell = Cell::paint(Yellow.bold(), "folk");
-            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
-        }
-
-        #[test]
-        fn overflow() {
-            let mut metadata = dummy_stat();
-            metadata.unstable.gid = 2_147_483_648;
-
-            let file = new_file(metadata, "/hi");
-
-            let mut users = MockUsers::with_current_uid(3);
-
-            let cell = Cell::paint(Plain, "2147483648");
-            assert_eq!(cell, file.display(&Column::Group, &mut users, &dummy_locale()))
-        }
+        assert_eq!(None, ext("jarlsberg"))
     }
 }
