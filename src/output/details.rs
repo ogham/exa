@@ -10,7 +10,6 @@ use users::{OSUsers, Users};
 use super::filename;
 
 use ansi_term::{ANSIString, ANSIStrings, Style};
-use ansi_term::Style::Plain;
 
 use locale;
 
@@ -213,9 +212,9 @@ impl Table {
         };
 
         let x_colour = if let f::Type::File = permissions.file_type { c.user_execute_file }
-                                                            else { c.user_execute_other };
+                                                               else { c.user_execute_other };
 
-        let string = ANSIStrings( &[
+        let mut columns = vec![
             file_type,
             bit(permissions.user_read,     "r", c.user_read),
             bit(permissions.user_write,    "w", c.user_write),
@@ -226,12 +225,15 @@ impl Table {
             bit(permissions.other_read,    "r", c.other_read),
             bit(permissions.other_write,   "w", c.other_write),
             bit(permissions.other_execute, "x", c.other_execute),
-            if permissions.attribute { c.attribute.paint("@") } else { Plain.paint(" ") },
-        ]).to_string();
+        ];
+
+        if permissions.attribute {
+            columns.push(c.attribute.paint("@"));
+        }
 
         Cell {
-            text: string,
-            length: 11,
+            text: ANSIStrings(&columns).to_string(),
+            length: columns.len(),
         }
     }
 
