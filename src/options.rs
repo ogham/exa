@@ -343,6 +343,12 @@ pub enum SizeFormat {
     JustBytes,
 }
 
+impl Default for SizeFormat {
+    fn default() -> SizeFormat {
+        SizeFormat::DecimalBytes
+    }
+}
+
 impl SizeFormat {
     pub fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
         let binary = matches.opt_present("binary");
@@ -381,6 +387,12 @@ pub struct TimeTypes {
     created:  bool,
 }
 
+impl Default for TimeTypes {
+    fn default() -> TimeTypes {
+        TimeTypes { accessed: false, modified: true, created: false }
+    }
+}
+
 impl TimeTypes {
 
     /// Find which field to use based on a user-supplied word.
@@ -413,7 +425,7 @@ impl TimeTypes {
                 Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
             }
             else {
-                Ok(TimeTypes { accessed: false, modified: true, created: false })
+                Ok(TimeTypes::default())
             }
         }
     }
@@ -504,7 +516,7 @@ impl RecurseOptions {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Default)]
 pub struct Columns {
     size_format: SizeFormat,
     time_types: TimeTypes,
