@@ -81,8 +81,8 @@ impl Options {
         }
 
         let matches = match opts.parse(args) {
-            Ok(m) => m,
-            Err(e) => return Err(Misfire::InvalidOptions(e)),
+            Ok(m)   => m,
+            Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
 
         if matches.opt_present("help") {
@@ -93,8 +93,8 @@ impl Options {
         }
 
         let sort_field = match matches.opt_str("sort") {
-            Some(word) => try!(SortField::from_word(word)),
-            None => SortField::Name,
+            Some(word)  => try!(SortField::from_word(word)),
+            None        => SortField::default(),
         };
 
         let filter = FileFilter {
@@ -164,6 +164,12 @@ impl FileFilter {
 pub enum SortField {
     Unsorted, Name, Extension, Size, FileInode,
     ModifiedDate, AccessedDate, CreatedDate,
+}
+
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::Name
+    }
 }
 
 impl SortField {
