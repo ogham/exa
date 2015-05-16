@@ -1,3 +1,5 @@
+//! Files, and methods and fields to access their metadata.
+
 use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
@@ -14,6 +16,7 @@ use feature::Attribute;
 
 use self::fields as f;
 
+
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
 ///
@@ -22,18 +25,48 @@ use self::fields as f;
 /// information queried at least once, so it makes sense to do all this at the
 /// start and hold on to all the information.
 pub struct File<'dir> {
+
+    /// This file's name, as a UTF-8 encoded String.
     pub name:  String,
-    pub dir:   Option<&'dir Dir>,
+
+    /// The file's name's extension, if present, extracted from the name. This
+    /// is queried a lot, so it's worth being cached.
     pub ext:   Option<String>,
+
+    /// The path that begat this file. Even though the file's name is
+    /// extracted, the path needs to be kept around, as certain operations
+    /// involve looking up the file's absolute location (such as the Git
+    /// status, or searching for compiled files).
     pub path:  PathBuf,
+
+    /// A cached `metadata` call for this file. This is queried multiple
+    /// times, and is *not* cached by the OS, as it could easily change
+    /// between invocations - but exa is so short-lived it's better to just
+    /// cache it.
     pub stat:  fs::Metadata,
+
+    /// List of this file's extended attributes. These are only loaded if the
+    /// `xattr` feature is in use.
     pub xattrs: Vec<Attribute>,
+
+    /// A reference to the directory that contains this file, if present.
+    ///
+    /// Filenames that get passed in on the command-line directly will have no
+    /// parent directory reference - although they technically have one on the
+    /// filesystem, we'll never need to look at it, so it'll be `None`.
+    /// However, *directories* that get passed in will produce files that
+    /// contain a reference to it, which is used in certain operations (such
+    /// as looking up a file's Git status).
+    pub dir:   Option<&'dir Dir>,
+
+    /// If this `File` is also a directory, then this field is the same file
+    /// as a `Dir`.
     pub this:  Option<Dir>,
 }
 
 impl<'dir> File<'dir> {
-    /// Create a new File object from the given Path, inside the given Dir, if
-    /// appropriate. Paths specified directly on the command-line have no Dirs.
+    /// Create a new `File` object from the given `Path`, inside the given
+    /// `Dir`, if appropriate.
     ///
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
@@ -66,37 +99,62 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Whether this file is a directory on the filesystem.
     pub fn is_directory(&self) -> bool {
         self.stat.is_dir()
     }
 
+    /// Whether this file is a regular file on the filesystem - that is, not a
+    /// directory, a link, or anything else treated specially.
     pub fn is_file(&self) -> bool {
         self.stat.is_file()
     }
 
+    /// Whether this file is both a regular file *and* executable for the
+    /// current user. Executable files have different semantics than
+    /// executable directories, and so should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
         let bit = unix::fs::USER_EXECUTE;
         self.is_file() && (self.stat.permissions().mode() & bit) == bit
     }
 
+    /// Whether this file is a symlink on the filesystem.
     pub fn is_link(&self) -> bool {
         self.stat.file_type().is_symlink()
     }
 
+    /// Whether this file is a named pipe on the filesystem.
     pub fn is_pipe(&self) -> bool {
         false  // TODO: Still waiting on this one...
     }
 
-    /// Whether this file is a dotfile or not.
+    /// Whether this file is a dotfile, based on its name. In Unix, file names
+    /// beginning with a dot represent system or configuration files, and
+    /// should be hidden by default.
     pub fn is_dotfile(&self) -> bool {
         self.name.starts_with(".")
     }
 
+    /// Constructs the 'path prefix' of this file, which is the portion of the
+    /// path up to, but not including, the file name.
+    ///
+    /// This gets used when displaying the path a symlink points to. In
+    /// certain cases, it may return an empty-length string. Examples:
+    ///
+    /// - `code/exa/file.rs` has `code/exa/` as its prefix, including the
+    ///   trailing slash.
+    /// - `code/exa` has just `code/` as its prefix.
+    /// - `code` has the empty string as its prefix.
+    /// - `/` also has the empty string as its prefix. It does not have a
+    ///   trailing slash, as the slash constitutes the 'name' of this file.
     pub fn path_prefix(&self) -> String {
         let path_bytes: Vec<Component> = self.path.components().collect();
         let mut path_prefix = String::new();
 
+        // TODO: I'm not sure if it's even possible for a file to have
+        // an empty set of components...
         if !path_bytes.is_empty() {
+
             // Use init() to add all but the last component of the
             // path to the prefix. init() panics when given an
             // empty list, hence the check.
@@ -157,11 +215,13 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file's number of hard links as a coloured string.
+    /// This file's number of hard links.
     ///
-    /// This is important, because a file with multiple links is uncommon,
-    /// while you can come across directories and other types with multiple
-    /// links much more often.
+    /// It also reports whether this is both a regular file, and a file with
+    /// multiple links. This is important, because a file with multiple links
+    /// is uncommon, while you can come across directories and other types
+    /// with multiple links much more often. Thus, it should get highlighted
+    /// more attentively.
     pub fn links(&self) -> f::Links {
         let count = self.stat.as_raw().nlink();
 
@@ -171,10 +231,14 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// This file's inode.
     pub fn inode(&self) -> f::Inode {
         f::Inode(self.stat.as_raw().ino())
     }
 
+    /// This file's number of filesystem blocks.
+    ///
+    /// (Not the size of each block, which we don't actually report on)
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
             f::Blocks::Some(self.stat.as_raw().blocks())
@@ -184,20 +248,21 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// The ID of the user that own this file.
     pub fn user(&self) -> f::User {
         f::User(self.stat.as_raw().uid())
     }
 
+    /// The ID of the group that owns this file.
     pub fn group(&self) -> f::Group {
         f::Group(self.stat.as_raw().gid())
     }
 
-    /// This file's size, formatted using the given way, as a coloured string.
+    /// This file's size, if it's a regular file.
     ///
     /// For directories, no size is given. Although they do have a size on
     /// some filesystems, I've never looked at one of those numbers and gained
-    /// any information from it, so by emitting "-" instead, the table is less
-    /// cluttered with numbers.
+    /// any information from it. So it's going to be hidden instead.
     pub fn size(&self) -> f::Size {
         if self.is_directory() {
             f::Size::None
@@ -207,6 +272,7 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// One of this file's timestamps, as a number in seconds.
     pub fn timestamp(&self, time_type: TimeType) -> f::Time {
         let time_in_seconds = match time_type {
             TimeType::FileAccessed => self.stat.as_raw().atime(),
@@ -217,8 +283,9 @@ impl<'dir> File<'dir> {
         f::Time(time_in_seconds)
     }
 
-    /// This file's type, represented by a coloured character.
+    /// This file's 'type'.
     ///
+    /// This is used in the leftmost column of the permissions column.
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
     fn type_char(&self) -> f::Type {
@@ -239,6 +306,7 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// This file's permissions, with flags for each bit.
     pub fn permissions(&self) -> f::Permissions {
         let bits = self.stat.permissions().mode();
         let has_bit = |bit| { bits & bit == bit };
@@ -293,6 +361,9 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Whether this file's extension is any of the strings that get passed in.
+    ///
+    /// This will always return `false` if the file has no extension.
     pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
         match self.ext {
             Some(ref ext)  => choices.contains(&&ext[..]),
@@ -300,10 +371,18 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Whether this file's name, including extension, is any of the strings
+    /// that get passed in.
     pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
         choices.contains(&&self.name[..])
     }
 
+    /// This file's Git status as two flags: one for staged changes, and the
+    /// other for unstaged changes.
+    ///
+    /// This requires looking at the `git` field of this file's parent
+    /// directory, so will not work if this file has just been passed in on
+    /// the command line.
     pub fn git_status(&self) -> f::Git {
         match self.dir {
             None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
@@ -344,6 +423,12 @@ fn ext(name: &str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
+/// Wrapper types for the values returned from `File` objects.
+///
+/// The methods of `File` don't return formatted strings; neither do they
+/// return raw numbers representing timestamps or user IDs. Instead, they will
+/// return an object in this `fields` module. These objects are later rendered
+/// into formatted strings in the `output/details` module.
 pub mod fields {
     use std::os::unix::raw::{blkcnt_t, gid_t, ino_t, nlink_t, time_t, uid_t};
 

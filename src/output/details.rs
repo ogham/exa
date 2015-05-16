@@ -48,6 +48,8 @@ pub struct Details {
     /// Whether to show each file's extended attributes.
     pub xattr: bool,
 
+    /// The colours to use to display information in the table, including the
+    /// colour of the tree view symbols.
     pub colours: Colours,
 }
 
@@ -130,6 +132,7 @@ struct Table {
 }
 
 impl Table {
+
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
     fn with_options(colours: Colours, columns: Vec<Column>) -> Table {
@@ -320,7 +323,7 @@ impl Table {
         };
 
         let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
-                                                               else { self.colours.users.user_someone_else };
+                                                         else { self.colours.users.user_someone_else };
         Cell::paint(style, &*user_name)
     }
 
