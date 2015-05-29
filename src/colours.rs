@@ -1,5 +1,4 @@
 use ansi_term::Style;
-use ansi_term::Style::Plain;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
 use std::default::Default;
@@ -98,7 +97,7 @@ impl Colours {
     pub fn colourful() -> Colours {
         Colours {
             filetypes: FileTypes {
-                normal:      Plain,
+                normal:      Style::default(),
                 directory:   Blue.bold(),
                 symlink:     Cyan.normal(),
                 special:     Yellow.normal(),
@@ -126,7 +125,7 @@ impl Colours {
                 other_read:          Yellow.normal(),
                 other_write:         Red.normal(),
                 other_execute:       Green.normal(),
-                attribute:           Plain,
+                attribute:           Style::default(),
             },
 
             size: Size {
@@ -136,9 +135,9 @@ impl Colours {
 
             users: Users {
                 user_you:           Yellow.bold(),
-                user_someone_else:  Plain,
+                user_someone_else:  Style::default(),
                 group_yours:        Yellow.bold(),
-                group_not_yours:    Plain,
+                group_not_yours:    Style::default(),
             },
 
             links: Links {
@@ -158,7 +157,7 @@ impl Colours {
             date:         Blue.normal(),
             inode:        Purple.normal(),
             blocks:       Cyan.normal(),
-            header:       Plain.underline(),
+            header:       Style::default().underline(),
 
             symlink_path:     Cyan.normal(),
             broken_arrow:     Red.normal(),
