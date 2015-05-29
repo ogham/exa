@@ -461,7 +461,7 @@ pub mod test {
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
 
-    pub use ansi_term::Style::Plain;
+    pub use ansi_term::Style;
     pub use ansi_term::Colour::*;
 
     pub fn newser(uid: uid_t, name: &str, group: gid_t) -> User {
@@ -476,7 +476,7 @@ pub mod test {
 
     // These tests create a new, default Table object, then fill in the
     // expected style in a certain way. This means we can check that the
-    // right style is being used, as otherwise, it would just be `Plain`.
+    // right style is being used, as otherwise, it would just be plain.
     //
     // Doing things with fields is way easier than having to fake the entire
     // Metadata struct, which is what I was doing before!
