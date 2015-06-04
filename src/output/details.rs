@@ -19,6 +19,8 @@ use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixN
 
 use datetime::local::{LocalDateTime, DatePiece};
 use datetime::format::{DateFormat};
+use datetime::zoned::{VariableOffset, TimeZone};
+
 
 /// With the **Details** view, the output gets formatted into columns, with
 /// each `Column` object showing some piece of information about the file,
@@ -128,6 +130,7 @@ pub struct Table<U> {
 
     time:         locale::Time,
     numeric:      locale::Numeric,
+    tz:           VariableOffset,
     users:        U,
     colours:      Colours,
     current_year: i64,
@@ -140,6 +143,7 @@ impl Default for Table<MockUsers> {
             rows:    Vec::new(),
             time:    locale::Time::english(),
             numeric: locale::Numeric::english(),
+            tz:      VariableOffset::localtime().unwrap(),
             users:   MockUsers::with_current_uid(0),
             colours: Colours::default(),
             current_year: 1234,
@@ -158,6 +162,7 @@ impl Table<OSUsers> {
 
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+            tz:           VariableOffset::localtime().unwrap(),
             users:        OSUsers::empty_cache(),
             colours:      colours,
             current_year: LocalDateTime::now().year(),
@@ -304,7 +309,7 @@ impl<U> Table<U> where U: Users {
     }
 
     fn render_time(&self, timestamp: f::Time) -> Cell {
-        let date = LocalDateTime::at(timestamp.0);
+        let date = self.tz.at(LocalDateTime::at(timestamp.0));
 
         let format = if date.year() == self.current_year {
                 DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
@@ -313,7 +318,7 @@ impl<U> Table<U> where U: Users {
                 DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
             };
 
-        Cell::paint(self.colours.date, &format.format(date, &self.time))
+        Cell::paint(self.colours.date, &format.format(&date, &self.time))
     }
 
     fn render_git_status(&self, git: f::Git) -> Cell {
