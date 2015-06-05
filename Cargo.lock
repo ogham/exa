@@ -1,6 +1,6 @@
 [root]
 name = "exa"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "ansi_term 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
