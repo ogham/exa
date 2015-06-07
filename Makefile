@@ -16,7 +16,7 @@ INSTALL = $(PREFIX)/bin/exa
 
 $(INSTALL):
 	cp target/release/exa $(PREFIX)/bin/
-	cp man/*.1 $(PREFIX)/share/man/man1/
+	cp contrib/man/*.1 $(PREFIX)/share/man/man1/
 
 install: build $(INSTALL)
 
