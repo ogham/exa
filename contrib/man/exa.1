@@ -1,0 +1,117 @@
+.TH exa "1" "7/Jun/2015" "exa 0.3.0" "User Commands"
+.SH NAME
+exa - a modern replacement for ls
+.SH SYNOPSIS
+.B exa
+[\fIOPTIONS\fR] [\fIFILES...\fR]
+.SH DESCRIPTION
+exa is a modern replacement for ls. It uses colours for information by
+default, helping you distinguish between many types of files, such as whether
+you are the owner, or in the owning group. It also has extra features not
+present in the original ls, such as viewing the Git status for a directory, or
+recursing into directories with a tree view.
+
+.SH OPTIONS
+
+.TP
+\fB\-?\fR, \fB\-\-help\fR
+Show list of command-line options
+.TP
+\fB\-\-VERSION\fR
+Display version of exa
+
+.SH FILTERING OPTIONS
+
+.TP
+\fB\-a\fR, \fB\-\-all\fR
+show dot-files
+.TP
+\fB\-d\fR, \fB\-\-list-dirs\fR
+list directories as regular files
+.TP
+\fB\-\-group-directories-first\fR
+list directories before other files
+.TP
+\fB\-L\fR, \fB\-\-level\fR DEPTH
+maximum depth of recursion
+.TP
+\fB\-R\fR, \fB\-\-recurse\fR
+recurse into directories
+
+.SH VIEW OPTIONS
+
+.TP
+\fB\-1\fR, \fB\-\-oneline\fR
+display one entry per line
+.TP
+\fB\-r\fR, \fB\-\-reverse\fR
+reverse order of files
+.TP
+\fB\-s\fR, \fB\-\-sort\fR WORD
+field to sort by
+.TP
+\fB\-x\fR, \fB\-\-across\fR
+sort multi-column view entries across
+.TP
+\fB\-T\fR, \fB\-\-tree\fR
+recurse into subdirectories in a tree view
+
+.SH LONG FORMAT OPTIONS
+
+.TP
+\fB\-b\fR, \fB\-\-binary\fR
+use binary prefixes in file sizes
+.TP
+\fB\-B\fR, \fB\-\-bytes\fR
+list file sizes in bytes, without prefixes
+.TP
+\fB\-g\fR, \fB\-\-group\fR
+show group as well as user
+.TP
+\fB\-\-git\fR
+show git status
+.TP
+\fB\-h\fR, \fB\-\-header\fR
+show a header row at the top
+.TP
+\fB\-H\fR, \fB\-\-links\fR
+show number of hard links
+.TP
+\fB\-i\fR, \fB\-\-inode\fR
+show each file's inode number
+.TP
+\fB\-l\fR, \fB\-\-long\fR
+display extended details and attributes
+.TP
+\fB\-m\fR, \fB\-\-modified\fR
+display timestamp of most recent modification
+.TP
+\fB\-S\fR, \fB\-\-blocks\fR
+show number of file system blocks
+.TP
+\fB\-t\fR, \fB\-\-time\fR WORD
+which timestamp to show for a file
+.TP
+\fB\-u\fR, \fB\-\-accessed\fR
+display timestamp of last access for a file
+.TP
+\fB\-U\fR, \fB\-\-created\fR
+display timestamp of creation for a file
+.TP
+\fB\-@\fR, \fB\-\-extended\fR
+display extended attribute keys and sizes
+
+.SH "EXAMPLES"
+
+To display a list of files, with the largest at the top:
+
+    $ exa --reverse --sort=size
+
+To display a tree of files, three levels deep:
+
+    $ exa --long --tree --level=3
+
+.SH "AUTHOR"
+exa is maintained by Benjamin `ogham` Sago and many other contributors. You
+can view the full list at \fIhttps://github.com/ogham/exa/contributors\fR\.
+
