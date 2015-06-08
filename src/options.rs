@@ -609,8 +609,8 @@ mod test {
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
-            Misfire::Err(Help(_)) => true,
-            _            => false,
+            Err(Misfire::Help(_)) => true,
+            _                     => false,
         }
     }
 
