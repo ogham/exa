@@ -3,6 +3,7 @@ use ansi_term::Style;
 use file::File;
 use colours::Colours;
 
+
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
     match file {
         f if f.is_directory()        => colours.filetypes.directory,
@@ -22,6 +23,7 @@ pub fn file_colour(colours: &Colours, file: &File) -> Style {
         _                            => colours.filetypes.normal,
     }
 }
+
 
 trait FileTypes {
     fn is_immediate(&self) -> bool;
@@ -113,6 +115,7 @@ impl<'_> FileTypes for File<'_> {
         }
     }
 }
+
 
 #[cfg(broken_test)]
 mod test {

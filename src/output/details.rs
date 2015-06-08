@@ -1,25 +1,25 @@
 use colours::Colours;
 use column::{Alignment, Column, Cell};
-use feature::Attribute;
 use dir::Dir;
-use file::File;
+use feature::Attribute;
 use file::fields as f;
+use file::File;
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
 
-use users::{OSUsers, Users};
-use users::mock::MockUsers;
-
-use super::filename;
-
 use ansi_term::{ANSIString, ANSIStrings, Style};
+
+use datetime::local::{LocalDateTime, DatePiece};
+use datetime::format::{DateFormat};
+use datetime::zoned::{VariableOffset, TimeZone};
 
 use locale;
 
 use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
-use datetime::local::{LocalDateTime, DatePiece};
-use datetime::format::{DateFormat};
-use datetime::zoned::{VariableOffset, TimeZone};
+use users::{OSUsers, Users};
+use users::mock::MockUsers;
+
+use super::filename;
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -97,6 +97,7 @@ impl Details {
     }
 }
 
+
 struct Row {
 
     /// Vector of cells to display.
@@ -121,6 +122,7 @@ struct Row {
     /// calculating the tree view.
     children: bool,
 }
+
 
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
@@ -426,6 +428,7 @@ impl<U> Table<U> where U: Users {
         }
     }
 }
+
 
 #[derive(PartialEq, Debug, Clone)]
 enum TreePart {

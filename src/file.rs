@@ -423,6 +423,7 @@ fn ext(name: &str) -> Option<String> {
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
+
 /// Wrapper types for the values returned from `File` objects.
 ///
 /// The methods of `File` don't return formatted strings; neither do they

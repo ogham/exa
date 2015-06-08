@@ -8,6 +8,8 @@
 
 #[cfg(not(any(target_os = "macos", target_os = "linux")))] use std::old_io as io;
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+
+
 #[derive(Clone)]
 pub struct Attribute;
 
@@ -38,7 +40,6 @@ impl Attribute {
 }
 
 
-
 // Git support
 
 #[cfg(feature="git")] mod git;
@@ -47,6 +48,7 @@ impl Attribute {
 #[cfg(not(feature="git"))] pub struct Git;
 #[cfg(not(feature="git"))] use std::path::Path;
 #[cfg(not(feature="git"))] use file::fields;
+
 #[cfg(not(feature="git"))]
 impl Git {
     pub fn scan(_: &Path) -> Result<Git, ()> {

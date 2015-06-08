@@ -1,9 +1,10 @@
-use feature::Git;
-use file::{File, fields};
-
 use std::io;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+use feature::Git;
+use file::{File, fields};
+
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
 /// being listed.

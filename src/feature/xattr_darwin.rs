@@ -2,16 +2,19 @@
 extern crate libc;
 
 use std::io;
+use std::mem;
 use std::path::Path;
 use std::ptr;
-use std::mem;
+
 use self::libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
 
 
 /// Don't follow symbolic links
 const XATTR_NOFOLLOW: c_int = 0x0001;
+
 /// Expose HFS Compression extended attributes
 const XATTR_SHOWCOMPRESSION: c_int = 0x0020;
+
 
 extern "C" {
     fn listxattr(path: *const c_char, namebuf: *mut c_char,
@@ -21,6 +24,7 @@ extern "C" {
                 options: c_int) -> ssize_t;
 }
 
+
 /// Attributes which can be passed to `Attribute::list_with_flags`
 #[derive(Copy, Clone)]
 pub enum ListFlags {
@@ -29,6 +33,7 @@ pub enum ListFlags {
     /// Expose HFS Compression extended attributes
     ShowCompression = XATTR_SHOWCOMPRESSION as isize
 }
+
 
 /// Extended attribute
 #[derive(Debug, Clone)]

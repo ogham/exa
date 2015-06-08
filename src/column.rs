@@ -1,10 +1,9 @@
 use std::iter::repeat;
 
-use options::{SizeFormat, TimeType};
-
 use ansi_term::Style;
 use unicode_width::UnicodeWidthStr;
 
+use options::{SizeFormat, TimeType};
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]

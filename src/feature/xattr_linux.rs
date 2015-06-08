@@ -5,7 +5,9 @@ use std::ffi::CString;
 use std::io;
 use std::path::Path;
 use std::ptr;
+
 use self::libc::{size_t, ssize_t, c_char, c_void};
+
 
 extern "C" {
     fn listxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
@@ -18,12 +20,14 @@ extern "C" {
     ) -> ssize_t;
 }
 
+
 /// Attributes which can be passed to `Attribute::list_with_flags`
 #[derive(Copy, Clone)]
 pub enum FollowSymlinks {
     Yes,
     No
 }
+
 
 /// Extended attribute
 #[derive(Debug, Clone)]

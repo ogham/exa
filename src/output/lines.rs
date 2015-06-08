@@ -1,6 +1,8 @@
 use colours::Colours;
 use file::File;
+
 use super::filename;
+
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Lines {

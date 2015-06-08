@@ -1,15 +1,17 @@
-mod grid;
-pub mod details;
-mod lines;
+use ansi_term::ANSIStrings;
 
 use colours::Colours;
 use file::File;
 use filetype::file_colour;
-use ansi_term::ANSIStrings;
 
-pub use self::grid::Grid;
 pub use self::details::Details;
+pub use self::grid::Grid;
 pub use self::lines::Lines;
+
+mod grid;
+pub mod details;
+mod lines;
+
 
 pub fn filename(file: &File, colours: &Colours) -> String {
     if file.is_link() {

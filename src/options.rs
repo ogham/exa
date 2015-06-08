@@ -1,13 +1,5 @@
-use colours::Colours;
-use dir::Dir;
-use file::File;
-use column::Column;
-use column::Column::*;
-use feature::Attribute;
-use output::{Grid, Details, Lines};
-use term::dimensions;
-
-use std::cmp::Ordering;
+use std::cmp;
+use std::default;
 use std::fmt;
 use std::num::ParseIntError;
 use std::os::unix::fs::MetadataExt;
@@ -15,7 +7,15 @@ use std::os::unix::fs::MetadataExt;
 use getopts;
 use natord;
 
-use self::Misfire::*;
+use colours::Colours;
+use column::Column;
+use column::Column::*;
+use dir::Dir;
+use feature::Attribute;
+use file::File;
+use output::{Grid, Details, Lines};
+use term::dimensions;
+
 
 /// The *Options* struct represents a parsed version of the user's
 /// command-line options.
@@ -24,21 +24,6 @@ pub struct Options {
     pub dir_action: DirAction,
     pub filter: FileFilter,
     pub view: View,
-}
-
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct FileFilter {
-    list_dirs_first: bool,
-    reverse: bool,
-    show_invisibles: bool,
-    sort_field: SortField,
-}
-
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum View {
-    Details(Details),
-    Lines(Lines),
-    Grid(Grid),
 }
 
 impl Options {
@@ -126,6 +111,15 @@ impl Options {
     }
 }
 
+
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub struct FileFilter {
+    list_dirs_first: bool,
+    reverse: bool,
+    show_invisibles: bool,
+    sort_field: SortField,
+}
+
 impl FileFilter {
     /// Transform the files (sorting, reversing, filtering) before listing them.
     pub fn transform_files(&self, files: &mut Vec<File>) {
@@ -143,8 +137,8 @@ impl FileFilter {
             SortField::AccessedDate  => files.sort_by(|a, b| a.metadata.as_raw().atime().cmp(&b.metadata.as_raw().atime())),
             SortField::CreatedDate   => files.sort_by(|a, b| a.metadata.as_raw().ctime().cmp(&b.metadata.as_raw().ctime())),
             SortField::Extension     => files.sort_by(|a, b| match a.ext.cmp(&b.ext) {
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order            => order,
+                cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
+                order                 => order,
             }),
         }
 
@@ -166,7 +160,7 @@ pub enum SortField {
     ModifiedDate, AccessedDate, CreatedDate,
 }
 
-impl Default for SortField {
+impl default::Default for SortField {
     fn default() -> SortField {
         SortField::Name
     }
@@ -194,6 +188,7 @@ impl SortField {
         Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
     }
 }
+
 
 /// One of these things could happen instead of listing files.
 #[derive(PartialEq, Debug)]
@@ -227,13 +222,15 @@ pub enum Misfire {
 impl Misfire {
     /// The OS return code this misfire should signify.
     pub fn error_code(&self) -> i32 {
-        if let Help(_) = *self { 2 }
-                          else { 3 }
+        if let Misfire::Help(_) = *self { 2 }
+                                   else { 3 }
     }
 }
 
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::Misfire::*;
+
         match *self {
             InvalidOptions(ref e)  => write!(f, "{}", e),
             Help(ref text)         => write!(f, "{}", text),
@@ -247,14 +244,24 @@ impl fmt::Display for Misfire {
     }
 }
 
+
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum View {
+    Details(Details),
+    Lines(Lines),
+    Grid(Grid),
+}
+
 impl View {
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
+        use self::Misfire::*;
+
         if matches.opt_present("long") {
             if matches.opt_present("across") {
-                Err(Misfire::Useless("across", true, "long"))
+                Err(Useless("across", true, "long"))
             }
             else if matches.opt_present("oneline") {
-                Err(Misfire::Useless("oneline", true, "long"))
+                Err(Useless("oneline", true, "long"))
             }
             else {
                 let details = Details {
@@ -269,45 +276,45 @@ impl View {
             }
         }
         else if matches.opt_present("binary") {
-            Err(Misfire::Useless("binary", false, "long"))
+            Err(Useless("binary", false, "long"))
         }
         else if matches.opt_present("bytes") {
-            Err(Misfire::Useless("bytes", false, "long"))
+            Err(Useless("bytes", false, "long"))
         }
         else if matches.opt_present("inode") {
-            Err(Misfire::Useless("inode", false, "long"))
+            Err(Useless("inode", false, "long"))
         }
         else if matches.opt_present("links") {
-            Err(Misfire::Useless("links", false, "long"))
+            Err(Useless("links", false, "long"))
         }
         else if matches.opt_present("header") {
-            Err(Misfire::Useless("header", false, "long"))
+            Err(Useless("header", false, "long"))
         }
         else if matches.opt_present("blocks") {
-            Err(Misfire::Useless("blocks", false, "long"))
+            Err(Useless("blocks", false, "long"))
         }
         else if cfg!(feature="git") && matches.opt_present("git") {
-            Err(Misfire::Useless("git", false, "long"))
+            Err(Useless("git", false, "long"))
         }
         else if matches.opt_present("time") {
-            Err(Misfire::Useless("time", false, "long"))
+            Err(Useless("time", false, "long"))
         }
         else if matches.opt_present("tree") {
-            Err(Misfire::Useless("tree", false, "long"))
+            Err(Useless("tree", false, "long"))
         }
         else if matches.opt_present("group") {
-            Err(Misfire::Useless("group", false, "long"))
+            Err(Useless("group", false, "long"))
         }
         else if matches.opt_present("level") && !matches.opt_present("recurse") {
-            Err(Misfire::Useless2("level", "recurse", "tree"))
+            Err(Useless2("level", "recurse", "tree"))
         }
         else if Attribute::feature_implemented() && matches.opt_present("extended") {
-            Err(Misfire::Useless("extended", false, "long"))
+            Err(Useless("extended", false, "long"))
         }
         else if let Some((width, _)) = dimensions() {
             if matches.opt_present("oneline") {
                 if matches.opt_present("across") {
-                    Err(Misfire::Useless("across", true, "oneline"))
+                    Err(Useless("across", true, "oneline"))
                 }
                 else {
                     let lines = Lines {
@@ -341,7 +348,6 @@ impl View {
 }
 
 
-
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
     DecimalBytes,
@@ -349,7 +355,7 @@ pub enum SizeFormat {
     JustBytes,
 }
 
-impl Default for SizeFormat {
+impl default::Default for SizeFormat {
     fn default() -> SizeFormat {
         SizeFormat::DecimalBytes
     }
@@ -393,7 +399,7 @@ pub struct TimeTypes {
     created:  bool,
 }
 
-impl Default for TimeTypes {
+impl default::Default for TimeTypes {
     fn default() -> TimeTypes {
         TimeTypes { accessed: false, modified: true, created: false }
     }
@@ -599,12 +605,11 @@ impl Columns {
 mod test {
     use super::Options;
     use super::Misfire;
-    use super::Misfire::*;
     use feature::Attribute;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
-            Err(Help(_)) => true,
+            Misfire::Err(Help(_)) => true,
             _            => false,
         }
     }

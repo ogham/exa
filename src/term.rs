@@ -1,6 +1,6 @@
 mod c {
-    pub use libc::{c_int, c_ushort, c_ulong, STDOUT_FILENO};
     use std::mem::zeroed;
+    use libc::{c_int, c_ushort, c_ulong, STDOUT_FILENO};
 
     // Getting the terminal size is done using an ioctl command that
     // takes the file handle to the terminal (which in our case is

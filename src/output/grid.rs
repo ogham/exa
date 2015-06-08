@@ -1,11 +1,13 @@
+use std::cmp::max;
+use std::iter::repeat;
+
 use colours::Colours;
 use column::Alignment::Left;
 use file::File;
 use filetype::file_colour;
+
 use super::lines::Lines;
 
-use std::cmp::max;
-use std::iter::repeat;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Grid {

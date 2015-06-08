@@ -4,6 +4,7 @@ use git2;
 
 use file::fields;
 
+
 /// Container of Git statuses for all the files in this folder's Git repository.
 pub struct Git {
     statuses: Vec<(PathBuf, git2::Status)>,

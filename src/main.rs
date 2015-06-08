@@ -11,18 +11,19 @@ extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
 extern crate threadpool;
-extern crate users;
 extern crate unicode_width;
+extern crate users;
 
 #[cfg(feature="git")]
 extern crate git2;
 
+
 use std::env;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
+use std::sync::mpsc::channel;
 
 use threadpool::ThreadPool;
-use std::sync::mpsc::channel;
 
 use dir::Dir;
 use file::File;
@@ -182,6 +183,7 @@ impl<'dir> Exa<'dir> {
         }
     }
 }
+
 
 #[cfg(not(test))]
 fn main() {

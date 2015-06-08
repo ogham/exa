@@ -1,7 +1,6 @@
 use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
-use std::default::Default;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Colours {
