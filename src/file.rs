@@ -223,7 +223,7 @@ impl<'dir> File<'dir> {
     /// with multiple links much more often. Thus, it should get highlighted
     /// more attentively.
     pub fn links(&self) -> f::Links {
-        let count = self.metadata.as_raw().nlink();
+        let count = self.metadata.nlink();
 
         f::Links {
             count: count,
@@ -233,7 +233,7 @@ impl<'dir> File<'dir> {
 
     /// This file's inode.
     pub fn inode(&self) -> f::Inode {
-        f::Inode(self.metadata.as_raw().ino())
+        f::Inode(self.metadata.ino())
     }
 
     /// This file's number of filesystem blocks.
@@ -241,7 +241,7 @@ impl<'dir> File<'dir> {
     /// (Not the size of each block, which we don't actually report on)
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
-            f::Blocks::Some(self.metadata.as_raw().blocks())
+            f::Blocks::Some(self.metadata.blocks())
         }
         else {
             f::Blocks::None
@@ -250,12 +250,12 @@ impl<'dir> File<'dir> {
 
     /// The ID of the user that own this file.
     pub fn user(&self) -> f::User {
-        f::User(self.metadata.as_raw().uid())
+        f::User(self.metadata.uid())
     }
 
     /// The ID of the group that owns this file.
     pub fn group(&self) -> f::Group {
-        f::Group(self.metadata.as_raw().gid())
+        f::Group(self.metadata.gid())
     }
 
     /// This file's size, if it's a regular file.
@@ -275,9 +275,9 @@ impl<'dir> File<'dir> {
     /// One of this file's timestamps, as a number in seconds.
     pub fn timestamp(&self, time_type: TimeType) -> f::Time {
         let time_in_seconds = match time_type {
-            TimeType::FileAccessed => self.metadata.as_raw().atime(),
-            TimeType::FileModified => self.metadata.as_raw().mtime(),
-            TimeType::FileCreated  => self.metadata.as_raw().ctime(),
+            TimeType::FileAccessed => self.metadata.atime(),
+            TimeType::FileModified => self.metadata.mtime(),
+            TimeType::FileCreated  => self.metadata.ctime(),
         };
 
         f::Time(time_in_seconds)

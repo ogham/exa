@@ -16,7 +16,7 @@ mod c {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     static TIOCGWINSZ: c_ulong = 0x5413;
 
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "dragonfly"))]
     static TIOCGWINSZ: c_ulong = 0x40087468;
 
     extern {
