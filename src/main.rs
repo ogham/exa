@@ -1,4 +1,5 @@
-#![feature(collections, convert, core, exit_status, fs_mode)]
+#![feature(convert, fs_mode)]
+#![feature(slice_extras, iter_arith, vec_resize)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -20,6 +21,7 @@ extern crate git2;
 use std::env;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
+use std::process;
 use std::sync::mpsc::channel;
 
 use threadpool::ThreadPool;
@@ -197,7 +199,7 @@ fn main() {
         },
         Err(e) => {
             println!("{}", e);
-            env::set_exit_status(e.error_code());
+            process::exit(e.error_code());
         },
     };
 }
