@@ -1,12 +1,8 @@
-use std::cmp::max;
-use std::iter::repeat;
-
 use colours::Colours;
-use column::Alignment::Left;
 use file::File;
 use filetype::file_colour;
 
-use super::lines::Lines;
+use term_grid as grid;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -17,91 +13,32 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn fit_into_grid(&self, files: &[File]) -> Option<(usize, Vec<usize>)> {
-        // TODO: this function could almost certainly be optimised...
-        // surely not *all* of the numbers of lines are worth searching through!
+    pub fn view(&self, files: &[File]) {
+        let direction = if self.across { grid::Direction::LeftToRight }
+                                  else { grid::Direction::TopToBottom };
 
-        // Instead of numbers of columns, try to find the fewest number of *lines*
-        // that the output will fit in.
-        for num_lines in 1 .. files.len() {
+        let mut grid = grid::Grid::new(grid::GridOptions {
+            direction:        direction,
+            separator_width:  2,
+        });
 
-            // The number of columns is the number of files divided by the number
-            // of lines, *rounded up*.
-            let mut num_columns = files.len() / num_lines;
-            if files.len() % num_lines != 0 {
-                num_columns += 1;
-            }
+        grid.reserve(files.len());
 
-            // Early abort: if there are so many columns that the width of the
-            // *column separators* is bigger than the width of the screen, then
-            // don't even try to tabulate it.
-            // This is actually a necessary check, because the width is stored as
-            // a usize, and making it go negative makes it huge instead, but it
-            // also serves as a speed-up.
-            let separator_width = (num_columns - 1) * 2;
-            if self.console_width < separator_width {
-                continue;
-            }
-
-            // Remove the separator width from the available space.
-            let adjusted_width = self.console_width - separator_width;
-
-            // Find the width of each column by adding the lengths of the file
-            // names in that column up.
-            let mut column_widths: Vec<usize> = repeat(0).take(num_columns).collect();
-            for (index, file) in files.iter().enumerate() {
-                let index = if self.across {
-                    index % num_columns
-                }
-                else {
-                    index / num_lines
-                };
-                column_widths[index] = max(column_widths[index], file.file_name_width());
-            }
-
-            // If they all fit in the terminal, combined, then success!
-            if column_widths.iter().map(|&x| x).sum::<usize>() < adjusted_width {
-                return Some((num_lines, column_widths));
-            }
+        for file in files.iter() {
+            grid.add(grid::Cell {
+                contents:  file_colour(&self.colours, file).paint(&file.name).to_string(),
+                width:     file.file_name_width(),
+            });
         }
 
-        // If you get here you have really long file names.
-        return None;
-    }
-
-    pub fn view(&self, files: &[File]) {
-        if let Some((num_lines, widths)) = self.fit_into_grid(files) {
-            for y in 0 .. num_lines {
-                for x in 0 .. widths.len() {
-                    let num = if self.across {
-                        y * widths.len() + x
-                    }
-                    else {
-                        y + num_lines * x
-                    };
-
-                    // Show whitespace in the place of trailing files
-                    if num >= files.len() {
-                        continue;
-                    }
-
-                    let ref file = files[num];
-                    let styled_name = file_colour(&self.colours, file).paint(&file.name).to_string();
-                    if x == widths.len() - 1 {
-                        // The final column doesn't need to have trailing spaces
-                        print!("{}", styled_name);
-                    }
-                    else {
-                        assert!(widths[x] >= file.file_name_width());
-                        print!("{}", Left.pad_string(&styled_name, widths[x] - file.file_name_width() + 2));
-                    }
-                }
-                print!("\n");
-            }
+        if let Some(display) = grid.fit_into_width(self.console_width) {
+            print!("{}", display);
         }
         else {
-            // Drop down to lines view if the file names are too big for a grid
-            Lines { colours: self.colours }.view(files);
+            // File names too long for a grid - drop down to just listing them!
+            for file in files.iter() {
+                println!("{}", file_colour(&self.colours, file).paint(&file.name));
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 #![feature(convert, fs_mode)]
-#![feature(slice_extras, iter_arith, vec_resize)]
+#![feature(slice_extras, vec_resize)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -10,6 +10,7 @@ extern crate natord;
 extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
+extern crate term_grid;
 extern crate threadpool;
 extern crate unicode_width;
 extern crate users;
