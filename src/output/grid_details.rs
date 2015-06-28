@@ -25,7 +25,12 @@ impl GridDetails {
         for column_count in 2.. {
             let grid = self.make_grid(column_count, &*columns_for_dir, files, cells.clone());
 
-            if grid.fit_into_columns(column_count).width() <= self.grid.console_width {
+            let the_grid_fits = {
+                let d = grid.fit_into_columns(column_count);
+                d.is_complete() && d.width() <= self.grid.console_width
+            };
+
+            if the_grid_fits {
                 last_working_table = grid;
             }
             else {
