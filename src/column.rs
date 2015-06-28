@@ -57,7 +57,7 @@ impl Column {
 }
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Cell {
     pub length: usize,
     pub text: String,

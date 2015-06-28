@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 use term_grid as grid;
 
-use column::Cell;
+use column::{Column, Cell};
 use dir::Dir;
 use file::File;
 use output::details::{Details, Table};
@@ -16,10 +16,14 @@ pub struct GridDetails {
 
 impl GridDetails {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
-        let mut last_working_table = self.make_grid(1, dir, files);
+        let columns_for_dir = self.details.columns.for_dir(dir);
+        let mut first_table = Table::with_options(self.details.colours, columns_for_dir.clone());
+        let cells: Vec<_> = files.iter().map(|file| first_table.cells_for_file(file)).collect();
+
+        let mut last_working_table = self.make_grid(1, &*columns_for_dir, files, cells.clone());
 
         for column_count in 2.. {
-            let grid = self.make_grid(column_count, dir, files);
+            let grid = self.make_grid(column_count, &*columns_for_dir, files, cells.clone());
 
             if grid.fit_into_columns(column_count).width() <= self.grid.console_width {
                 last_working_table = grid;
@@ -31,22 +35,22 @@ impl GridDetails {
         }
     }
 
-    pub fn make_grid(&self, column_count: usize, dir: Option<&Dir>, files: &[File]) -> grid::Grid {
+    pub fn make_grid(&self, column_count: usize, columns_for_dir: &[Column], files: &[File], cells: Vec<Vec<Cell>>) -> grid::Grid {
         let make_table = || {
-            let mut table = Table::with_options(self.details.colours, self.details.columns.for_dir(dir));
+            let mut table = Table::with_options(self.details.colours, columns_for_dir.into());
             if self.details.header { table.add_header() }
             table
         };
 
         let mut tables: Vec<_> = repeat(()).map(|_| make_table()).take(column_count).collect();
 
-        let mut height = files.len() / column_count;
-        if files.len() % column_count != 0 {
+        let mut height = cells.len() / column_count;
+        if cells.len() % column_count != 0 {
             height += 1;
         }
 
-        for (i, file) in files.iter().enumerate() {
-            tables[i / height].add_file(file, 0, false, false);
+        for (i, (file, row)) in files.iter().zip(cells.into_iter()).enumerate() {
+            tables[i / height].add_file_with_cells(row, file, 0, false, false);
         }
 
         let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();

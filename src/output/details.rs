@@ -197,9 +197,14 @@ impl<U> Table<U> where U: Users {
 
     /// Get the cells for the given file, and add the result to the table.
     pub fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool) {
+        let cells = self.cells_for_file(file);
+        self.add_file_with_cells(cells, file, depth, last, links)
+    }
+
+    pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {
         let row = Row {
             depth:    depth,
-            cells:    self.cells_for_file(file),
+            cells:    cells,
             name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
             last:     last,
             attrs:    file.xattrs.clone(),
