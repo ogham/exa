@@ -288,6 +288,12 @@ impl View {
             if cfg!(feature="git") && matches.opt_present("git") {
                 Err(Useless("git", false, "long"))
             }
+            else if matches.opt_present("level") && !matches.opt_present("recurse") {
+                Err(Useless2("level", "recurse", "tree"))
+            }
+            else if Attribute::feature_implemented() && matches.opt_present("extended") {
+                Err(Useless("extended", false, "long"))
+            }
             else {
                 Ok(())
             }
@@ -721,5 +727,4 @@ mod test {
         let opts = Options::getopts(&[ "--level".to_string(), "69105".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
     }
-
 }
