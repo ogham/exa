@@ -40,29 +40,31 @@ impl GridDetails {
 
         let mut tables: Vec<_> = repeat(()).map(|_| make_table()).take(column_count).collect();
 
-        for (i, file) in files.iter().enumerate() {
-            tables[i % column_count].add_file(file, 0, false, false);
+        let mut height = files.len() / column_count;
+        if files.len() % column_count != 0 {
+            height += 1;
         }
 
-        let direction = grid::Direction::LeftToRight;
+        for (i, file) in files.iter().enumerate() {
+            tables[i / height].add_file(file, 0, false, false);
+        }
 
+        let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();
+
+        let direction = grid::Direction::TopToBottom;
         let mut grid = grid::Grid::new(grid::GridOptions {
             direction:        direction,
             separator_width:  4,
         });
 
-        let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();
+        for column in columns.iter() {
+            for cell in column.iter() {
+                let cell = grid::Cell {
+                    contents: cell.text.clone(),
+                    width:    cell.length,
+                };
 
-        for row in 0 .. columns[0].len() {
-            for column in columns.iter() {
-                if row < column.len() {
-                    let cell = grid::Cell {
-                        contents: column[row].text.clone(),
-                        width:    column[row].length,
-                    };
-
-                    grid.add(cell);
-                }
+                grid.add(cell);
             }
         }
 
