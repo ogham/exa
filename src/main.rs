@@ -179,9 +179,10 @@ impl<'dir> Exa<'dir> {
 
     fn print(&self, dir: Option<&Dir>, files: &[File]) {
         match self.options.view {
-            View::Grid(g)     => g.view(files),
-            View::Details(d)  => d.view(dir, files),
-            View::Lines(l)    => l.view(files),
+            View::Grid(g)         => g.view(files),
+            View::Details(d)      => d.view(dir, files),
+            View::GridDetails(gd) => gd.view(dir, files),
+            View::Lines(l)        => l.view(files),
         }
     }
 }

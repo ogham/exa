@@ -13,7 +13,7 @@ pub struct Lines {
 impl Lines {
     pub fn view(&self, files: &[File]) {
         for file in files {
-            println!("{}", filename(file, &self.colours));
+            println!("{}", filename(file, &self.colours, true));
         }
     }
 }

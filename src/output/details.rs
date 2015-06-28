@@ -1,3 +1,6 @@
+use std::iter::repeat;
+use std::string::ToString;
+
 use colours::Colours;
 use column::{Alignment, Column, Cell};
 use dir::Dir;
@@ -66,14 +69,16 @@ impl Details {
 
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
-        table.print_table(self.xattr, self.recurse.is_some());
+        for cell in table.print_table(self.xattr, self.recurse.is_some()) {
+            println!("{}", cell.text);
+        }
     }
 
     /// Adds files to the table - recursively, if the `recurse` option
     /// is present.
     fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
-            table.add_file(file, depth, index == src.len() - 1);
+            table.add_file(file, depth, index == src.len() - 1, true);
 
             // There are two types of recursion that exa supports: a tree
             // view, which is dealt with here, and multiple listings, which is
@@ -105,7 +110,7 @@ struct Row {
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
-    name:     String,
+    name:     Cell,
 
     /// How many directories deep into the tree structure this is. Directories
     /// on top have depth 0.
@@ -157,7 +162,7 @@ impl Table<OSUsers> {
 
     /// Create a new, empty Table object, setting the caching fields to their
     /// empty states.
-    fn with_options(colours: Colours, columns: Vec<Column>) -> Table<OSUsers> {
+    pub fn with_options(colours: Colours, columns: Vec<Column>) -> Table<OSUsers> {
         Table {
             columns: columns,
             rows:    Vec::new(),
@@ -177,11 +182,11 @@ impl<U> Table<U> where U: Users {
     /// Add a dummy "header" row to the table, which contains the names of all
     /// the columns, underlined. This has dummy data for the cases that aren't
     /// actually used, such as the depth or list of attributes.
-    fn add_header(&mut self) {
+    pub fn add_header(&mut self) {
         let row = Row {
             depth:    0,
             cells:    self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect(),
-            name:     self.colours.header.paint("Name").to_string(),
+            name:     Cell::paint(self.colours.header, "Name"),
             last:     false,
             attrs:    Vec::new(),
             children: false,
@@ -191,11 +196,11 @@ impl<U> Table<U> where U: Users {
     }
 
     /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool) {
+    pub fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool) {
         let row = Row {
             depth:    depth,
             cells:    self.cells_for_file(file),
-            name:     filename(file, &self.colours),
+            name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
             last:     last,
             attrs:    file.xattrs.clone(),
             children: file.this.is_some(),
@@ -206,7 +211,7 @@ impl<U> Table<U> where U: Users {
 
     /// Use the list of columns to find which cells should be produced for
     /// this file, per-column.
-    fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
+    pub fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
         self.columns.clone().iter()
                     .map(|c| self.display(file, c))
                     .collect()
@@ -373,8 +378,9 @@ impl<U> Table<U> where U: Users {
     }
 
     /// Print the table to standard output, consuming it in the process.
-    fn print_table(self, xattr: bool, show_children: bool) {
+    pub fn print_table(&self, xattr: bool, show_children: bool) -> Vec<Cell> {
         let mut stack = Vec::new();
+        let mut cells = Vec::new();
 
         // Work out the list of column widths by finding the longest cell for
         // each column, then formatting each cell in that column to be the
@@ -383,11 +389,20 @@ impl<U> Table<U> where U: Users {
             .map(|n| self.rows.iter().map(|row| row.cells[n].length).max().unwrap_or(0))
             .collect();
 
-        for row in self.rows.into_iter() {
+        for row in self.rows.iter() {
+            let mut cell = Cell::empty();
+
             for (n, width) in column_widths.iter().enumerate() {
-                let padding = width - row.cells[n].length;
-                print!("{} ", self.columns[n].alignment().pad_string(&row.cells[n].text, padding));
+                match self.columns[n].alignment() {
+                    Alignment::Left  => { cell.append(&row.cells[n]); cell.add_spaces(width - row.cells[n].length); }
+                    Alignment::Right => { cell.add_spaces(width - row.cells[n].length); cell.append(&row.cells[n]); }
+                }
+
+                cell.add_spaces(1);
             }
+
+            let mut filename = String::new();
+            let mut filename_length = 0;
 
             // A stack tracks which tree characters should be printed. It's
             // necessary to maintain information about the previously-printed
@@ -398,7 +413,8 @@ impl<U> Table<U> where U: Users {
                 stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
                 for i in 1 .. row.depth + 1 {
-                    print!("{}", self.colours.punctuation.paint(stack[i].ascii_art()));
+                    filename.push_str(&*self.colours.punctuation.paint(stack[i].ascii_art()).to_string());
+                    filename_length += 4;
                 }
 
                 if row.children {
@@ -408,24 +424,29 @@ impl<U> Table<U> where U: Users {
                 // If any tree characters have been printed, then add an extra
                 // space, which makes the output look much better.
                 if row.depth != 0 {
-                    print!(" ");
+                    filename.push(' ');
+                    filename_length += 1;
                 }
             }
 
             // Print the name without worrying about padding.
-            print!("{}\n", row.name);
+            filename.push_str(&*row.name.text);
+            filename_length += row.name.length;
 
             if xattr {
                 let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
                 for attr in row.attrs.iter() {
                     let name = attr.name();
-                    println!("{}\t{}",
-                        Alignment::Left.pad_string(name, width - name.len()),
-                        attr.size()
-                    )
+                    let spaces: String = repeat(" ").take(width - name.len()).collect();
+                    filename.push_str(&*format!("\n{}{}  {}", name, spaces, attr.size()))
                 }
             }
+
+            cell.append(&Cell { text: filename, length: filename_length });
+            cells.push(cell);
         }
+
+        cells
     }
 }
 

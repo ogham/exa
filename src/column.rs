@@ -1,5 +1,3 @@
-use std::iter::repeat;
-
 use ansi_term::Style;
 use unicode_width::UnicodeWidthStr;
 
@@ -58,25 +56,6 @@ impl Column {
     }
 }
 
-/// Pad a string with the given number of spaces.
-fn spaces(length: usize) -> String {
-    repeat(" ").take(length).collect()
-}
-
-impl Alignment {
-    /// Pad a string with the given alignment and number of spaces.
-    ///
-    /// This doesn't take the width the string *should* be, rather the number
-    /// of spaces to add: this is because the strings are usually full of
-    /// invisible control characters, so getting the displayed width of the
-    /// string is not as simple as just getting its length.
-    pub fn pad_string(&self, string: &str, padding: usize) -> String {
-        match *self {
-            Alignment::Left  => format!("{}{}", string, spaces(padding)),
-            Alignment::Right => format!("{}{}", spaces(padding), string),
-        }
-    }
-}
 
 #[derive(PartialEq, Debug)]
 pub struct Cell {
@@ -85,10 +64,29 @@ pub struct Cell {
 }
 
 impl Cell {
+    pub fn empty() -> Cell {
+        Cell {
+            text: String::new(),
+            length: 0,
+        }
+    }
+
     pub fn paint(style: Style, string: &str) -> Cell {
         Cell {
             text: style.paint(string).to_string(),
             length: UnicodeWidthStr::width(string),
         }
+    }
+
+    pub fn add_spaces(&mut self, count: usize) {
+        self.length += count;
+        for _ in 0 .. count {
+            self.text.push(' ');
+        }
+    }
+
+    pub fn append(&mut self, other: &Cell) {
+        self.length += other.length;
+        self.text.push_str(&*other.text);
     }
 }
