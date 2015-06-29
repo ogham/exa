@@ -259,7 +259,7 @@ impl View {
         use self::Misfire::*;
 
         let long = || {
-            if matches.opt_present("across") {
+            if matches.opt_present("across") && !matches.opt_present("grid") {
                 Err(Useless("across", true, "long"))
             }
             else if matches.opt_present("oneline") {

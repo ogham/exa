@@ -49,31 +49,67 @@ impl GridDetails {
 
         let mut tables: Vec<_> = repeat(()).map(|_| make_table()).take(column_count).collect();
 
-        let mut height = cells.len() / column_count;
+        let mut num_cells = cells.len();
+        if self.details.header {
+            num_cells += column_count;
+        }
+
+        let mut original_height = cells.len() / column_count;
         if cells.len() % column_count != 0 {
+            original_height += 1;
+        }
+
+        let mut height = num_cells / column_count;
+
+        if num_cells % column_count != 0 {
             height += 1;
         }
 
         for (i, (file, row)) in files.iter().zip(cells.into_iter()).enumerate() {
-            tables[i / height].add_file_with_cells(row, file, 0, false, false);
+            let index = if self.grid.across {
+                    i % column_count
+                }
+                else {
+                    i / original_height
+                };
+
+            tables[index].add_file_with_cells(row, file, 0, false, false);
         }
 
         let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();
 
-        let direction = grid::Direction::TopToBottom;
+        let direction = if self.grid.across { grid::Direction::LeftToRight }
+                                       else { grid::Direction::TopToBottom };
+
         let mut grid = grid::Grid::new(grid::GridOptions {
             direction:        direction,
             separator_width:  4,
         });
 
-        for column in columns.iter() {
-            for cell in column.iter() {
-                let cell = grid::Cell {
-                    contents: cell.text.clone(),
-                    width:    cell.length,
-                };
+        if self.grid.across {
+            for row in 0 .. height {
+                for column in columns.iter() {
+                    if row < column.len() {
+                        let cell = grid::Cell {
+                            contents: column[row].text.clone(),
+                            width:    column[row].length,
+                        };
 
-                grid.add(cell);
+                        grid.add(cell);
+                    }
+                }
+            }
+        }
+        else {
+            for column in columns.iter() {
+                for cell in column.iter() {
+                    let cell = grid::Cell {
+                        contents: cell.text.clone(),
+                        width:    cell.length,
+                    };
+
+                    grid.add(cell);
+                }
             }
         }
 
