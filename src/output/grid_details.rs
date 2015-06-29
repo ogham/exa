@@ -1,5 +1,6 @@
 use std::iter::repeat;
 
+use users::OSUsers;
 use term_grid as grid;
 
 use column::{Column, Cell};
@@ -40,30 +41,22 @@ impl GridDetails {
         }
     }
 
-    pub fn make_grid(&self, column_count: usize, columns_for_dir: &[Column], files: &[File], cells: Vec<Vec<Cell>>) -> grid::Grid {
-        let make_table = || {
-            let mut table = Table::with_options(self.details.colours, columns_for_dir.into());
-            if self.details.header { table.add_header() }
-            table
-        };
+    fn make_table(&self, columns_for_dir: &[Column]) -> Table<OSUsers> {
+        let mut table = Table::with_options(self.details.colours, columns_for_dir.into());
+        if self.details.header { table.add_header() }
+        table
+    }
 
-        let mut tables: Vec<_> = repeat(()).map(|_| make_table()).take(column_count).collect();
+    fn make_grid(&self, column_count: usize, columns_for_dir: &[Column], files: &[File], cells: Vec<Vec<Cell>>) -> grid::Grid {
+        let mut tables: Vec<_> = repeat(()).map(|_| self.make_table(columns_for_dir)).take(column_count).collect();
 
         let mut num_cells = cells.len();
         if self.details.header {
             num_cells += column_count;
         }
 
-        let mut original_height = cells.len() / column_count;
-        if cells.len() % column_count != 0 {
-            original_height += 1;
-        }
-
-        let mut height = num_cells / column_count;
-
-        if num_cells % column_count != 0 {
-            height += 1;
-        }
+        let original_height = divide_rounding_up(cells.len(), column_count);
+        let height = divide_rounding_up(num_cells, column_count);
 
         for (i, (file, row)) in files.iter().zip(cells.into_iter()).enumerate() {
             let index = if self.grid.across {
@@ -115,4 +108,11 @@ impl GridDetails {
 
         grid
     }
+}
+
+
+fn divide_rounding_up(a: usize, b: usize) -> usize {
+    let mut result = a / b;
+    if a % b != 0 { result += 1; }
+    result
 }
