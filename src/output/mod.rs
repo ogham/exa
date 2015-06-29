@@ -7,14 +7,15 @@ use filetype::file_colour;
 pub use self::details::Details;
 pub use self::grid::Grid;
 pub use self::lines::Lines;
+pub use self::grid_details::GridDetails;
 
 mod grid;
 pub mod details;
 mod lines;
+mod grid_details;
 
-
-pub fn filename(file: &File, colours: &Colours) -> String {
-    if file.is_link() {
+pub fn filename(file: &File, colours: &Colours, links: bool) -> String {
+    if links && file.is_link() {
         symlink_filename(file, colours)
     }
     else {

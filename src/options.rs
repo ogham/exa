@@ -13,7 +13,7 @@ use column::Column::*;
 use dir::Dir;
 use feature::Attribute;
 use file::File;
-use output::{Grid, Details, Lines};
+use output::{Grid, Details, GridDetails, Lines};
 use term::dimensions;
 
 
@@ -37,6 +37,7 @@ impl Options {
         opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
         opts.optflag("d", "list-dirs", "list directories as regular files");
         opts.optflag("g", "group",     "show group as well as user");
+        opts.optflag("G", "grid",      "display entries in a grid view (default)");
         opts.optflag("",  "group-directories-first", "list directories before other files");
         opts.optflag("h", "header",    "show a header row at the top");
         opts.optflag("H", "links",     "show number of hard links");
@@ -248,16 +249,17 @@ impl fmt::Display for Misfire {
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum View {
     Details(Details),
-    Lines(Lines),
     Grid(Grid),
+    GridDetails(GridDetails),
+    Lines(Lines),
 }
 
 impl View {
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
         use self::Misfire::*;
 
-        if matches.opt_present("long") {
-            if matches.opt_present("across") {
+        let long = || {
+            if matches.opt_present("across") && !matches.opt_present("grid") {
                 Err(Useless("across", true, "long"))
             }
             else if matches.opt_present("oneline") {
@@ -272,78 +274,85 @@ impl View {
                         colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
                 };
 
-                Ok(View::Details(details))
+                Ok(details)
             }
-        }
-        else if matches.opt_present("binary") {
-            Err(Useless("binary", false, "long"))
-        }
-        else if matches.opt_present("bytes") {
-            Err(Useless("bytes", false, "long"))
-        }
-        else if matches.opt_present("inode") {
-            Err(Useless("inode", false, "long"))
-        }
-        else if matches.opt_present("links") {
-            Err(Useless("links", false, "long"))
-        }
-        else if matches.opt_present("header") {
-            Err(Useless("header", false, "long"))
-        }
-        else if matches.opt_present("blocks") {
-            Err(Useless("blocks", false, "long"))
-        }
-        else if cfg!(feature="git") && matches.opt_present("git") {
-            Err(Useless("git", false, "long"))
-        }
-        else if matches.opt_present("time") {
-            Err(Useless("time", false, "long"))
-        }
-        else if matches.opt_present("tree") {
-            Err(Useless("tree", false, "long"))
-        }
-        else if matches.opt_present("group") {
-            Err(Useless("group", false, "long"))
-        }
-        else if matches.opt_present("level") && !matches.opt_present("recurse") {
-            Err(Useless2("level", "recurse", "tree"))
-        }
-        else if Attribute::feature_implemented() && matches.opt_present("extended") {
-            Err(Useless("extended", false, "long"))
-        }
-        else if let Some((width, _)) = dimensions() {
-            if matches.opt_present("oneline") {
-                if matches.opt_present("across") {
-                    Err(Useless("across", true, "oneline"))
+        };
+
+        let long_options_scan = || {
+            for option in &[ "binary", "bytes", "inode", "links", "header", "blocks", "time", "tree", "group" ] {
+                if matches.opt_present(option) {
+                    return Err(Useless(option, false, "long"));
+                }
+            }
+
+            if cfg!(feature="git") && matches.opt_present("git") {
+                Err(Useless("git", false, "long"))
+            }
+            else if matches.opt_present("level") && !matches.opt_present("recurse") {
+                Err(Useless2("level", "recurse", "tree"))
+            }
+            else if Attribute::feature_implemented() && matches.opt_present("extended") {
+                Err(Useless("extended", false, "long"))
+            }
+            else {
+                Ok(())
+            }
+        };
+
+        let other_options_scan = || {
+            if let Some((width, _)) = dimensions() {
+                if matches.opt_present("oneline") {
+                    if matches.opt_present("across") {
+                        Err(Useless("across", true, "oneline"))
+                    }
+                    else {
+                        let lines = Lines {
+                             colours: Colours::colourful(),
+                        };
+
+                        Ok(View::Lines(lines))
+                    }
                 }
                 else {
-                    let lines = Lines {
-                         colours: Colours::colourful(),
+                    let grid = Grid {
+                        across: matches.opt_present("across"),
+                        console_width: width,
+                        colours: Colours::colourful(),
                     };
 
-                    Ok(View::Lines(lines))
+                    Ok(View::Grid(grid))
                 }
             }
             else {
-                let grid = Grid {
-                    across: matches.opt_present("across"),
-                    console_width: width,
-                    colours: Colours::colourful(),
+                // If the terminal width couldn't be matched for some reason, such
+                // as the program's stdout being connected to a file, then
+                // fallback to the lines view.
+                let lines = Lines {
+                     colours: Colours::plain(),
                 };
 
-                Ok(View::Grid(grid))
+                Ok(View::Lines(lines))
+            }
+        };
+
+        if matches.opt_present("long") {
+            let long_options = try!(long());
+
+            if matches.opt_present("grid") {
+                match other_options_scan() {
+                    Ok(View::Grid(grid)) => return Ok(View::GridDetails(GridDetails { grid: grid, details: long_options })),
+                    Ok(lines)            => return Ok(lines),
+                    Err(e)               => return Err(e),
+                };
+            }
+            else {
+                return Ok(View::Details(long_options));
             }
         }
-        else {
-            // If the terminal width couldn't be matched for some reason, such
-            // as the program's stdout being connected to a file, then
-            // fallback to the lines view.
-            let lines = Lines {
-                 colours: Colours::plain(),
-            };
 
-            Ok(View::Lines(lines))
-        }
+        try!(long_options_scan());
+
+        other_options_scan()
     }
 }
 
@@ -718,5 +727,4 @@ mod test {
         let opts = Options::getopts(&[ "--level".to_string(), "69105".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
     }
-
 }
