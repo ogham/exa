@@ -18,8 +18,8 @@ impl Grid {
                                   else { grid::Direction::TopToBottom };
 
         let mut grid = grid::Grid::new(grid::GridOptions {
-            direction:        direction,
-            separator_width:  2,
+            direction:  direction,
+            filling:    grid::Filling::Spaces(2),
         });
 
         grid.reserve(files.len());

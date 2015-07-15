@@ -75,8 +75,8 @@ impl GridDetails {
                                        else { grid::Direction::TopToBottom };
 
         let mut grid = grid::Grid::new(grid::GridOptions {
-            direction:        direction,
-            separator_width:  4,
+            direction:  direction,
+            filling:    grid::Filling::Spaces(4),
         });
 
         if self.grid.across {
