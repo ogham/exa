@@ -1,5 +1,5 @@
 #![feature(convert, fs_mode)]
-#![feature(slice_extras, vec_resize)]
+#![feature(slice_splits, vec_resize)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -190,9 +190,9 @@ impl<'dir> Exa<'dir> {
 
 #[cfg(not(test))]
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().skip(1).collect();
 
-    match Options::getopts(args.tail()) {
+    match Options::getopts(&args) {
         Ok((options, paths)) => {
             let mut exa = Exa::new(options);
             exa.load(&paths);

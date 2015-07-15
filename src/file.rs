@@ -148,17 +148,11 @@ impl<'dir> File<'dir> {
     /// - `/` also has the empty string as its prefix. It does not have a
     ///   trailing slash, as the slash constitutes the 'name' of this file.
     pub fn path_prefix(&self) -> String {
-        let path_bytes: Vec<Component> = self.path.components().collect();
+        let components: Vec<Component> = self.path.components().collect();
         let mut path_prefix = String::new();
 
-        // TODO: I'm not sure if it's even possible for a file to have
-        // an empty set of components...
-        if !path_bytes.is_empty() {
-
-            // Use init() to add all but the last component of the
-            // path to the prefix. init() panics when given an
-            // empty list, hence the check.
-            for component in path_bytes.init().iter() {
+        if let Some((_, components_init)) = components.split_last() {
+            for component in components_init.iter() {
                 path_prefix.push_str(&*component.as_os_str().to_string_lossy());
 
                 if component != &Component::RootDir {
