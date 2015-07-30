@@ -15,8 +15,8 @@ build-no-git:
 INSTALL = $(PREFIX)/bin/exa
 
 $(INSTALL):
-	cp target/release/exa $(PREFIX)/bin/
-	cp contrib/man/*.1 $(PREFIX)/share/man/man1/
+	install -Dsm755 target/release/exa $(PREFIX)/bin/
+	install -Dm644 contrib/man/*.1 -t $(PREFIX)/share/man/man1/
 
 install: build $(INSTALL)
 
