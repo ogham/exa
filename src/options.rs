@@ -267,11 +267,11 @@ impl View {
             }
             else {
                 let details = Details {
-                        columns: try!(Columns::deduce(matches)),
-                        header: matches.opt_present("header"),
-                        recurse: dir_action.recurse_options().map(|o| (o, filter)),
-                        xattr: Attribute::feature_implemented() && matches.opt_present("extended"),
-                        colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
+                    columns: Some(try!(Columns::deduce(matches))),
+                    header: matches.opt_present("header"),
+                    recurse: dir_action.recurse_options().map(|o| (o, filter)),
+                    xattr: Attribute::feature_implemented() && matches.opt_present("extended"),
+                    colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
                 };
 
                 Ok(details)
@@ -279,7 +279,7 @@ impl View {
         };
 
         let long_options_scan = || {
-            for option in &[ "binary", "bytes", "inode", "links", "header", "blocks", "time", "tree", "group" ] {
+            for option in &[ "binary", "bytes", "inode", "links", "header", "blocks", "time", "group" ] {
                 if matches.opt_present(option) {
                     return Err(Useless(option, false, "long"));
                 }
@@ -288,7 +288,7 @@ impl View {
             if cfg!(feature="git") && matches.opt_present("git") {
                 Err(Useless("git", false, "long"))
             }
-            else if matches.opt_present("level") && !matches.opt_present("recurse") {
+            else if matches.opt_present("level") && !matches.opt_present("recurse") && !matches.opt_present("tree") {
                 Err(Useless2("level", "recurse", "tree"))
             }
             else if Attribute::feature_implemented() && matches.opt_present("extended") {
@@ -312,6 +312,17 @@ impl View {
 
                         Ok(View::Lines(lines))
                     }
+                }
+                else if matches.opt_present("tree") {
+                    let details = Details {
+                        columns: None,
+                        header: false,
+                        recurse: dir_action.recurse_options().map(|o| (o, filter)),
+                        xattr: false,
+                        colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
+                    };
+
+                    Ok(View::Details(details))
                 }
                 else {
                     let grid = Grid {

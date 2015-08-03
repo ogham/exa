@@ -42,7 +42,7 @@ pub struct Details {
     /// A Columns object that says which columns should be included in the
     /// output in the general case. Directories themselves can pick which
     /// columns are *added* to this list, such as the Git column.
-    pub columns: Columns,
+    pub columns: Option<Columns>,
 
     /// Whether to recurse through directories with a tree view, and if so,
     /// which options to use. This field is only relevant here if the `tree`
@@ -64,7 +64,13 @@ impl Details {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-        let mut table = Table::with_options(self.colours, self.columns.for_dir(dir));
+
+        let columns_for_dir = match self.columns {
+            Some(cols) => cols.for_dir(dir),
+            None => Vec::new(),
+        };
+
+        let mut table = Table::with_options(self.colours, columns_for_dir);
         if self.header { table.add_header() }
 
         // Then add files to the table and print it out.

@@ -17,7 +17,11 @@ pub struct GridDetails {
 
 impl GridDetails {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
-        let columns_for_dir = self.details.columns.for_dir(dir);
+        let columns_for_dir = match self.details.columns {
+            Some(cols) => cols.for_dir(dir),
+            None => Vec::new(),
+        };
+
         let mut first_table = Table::with_options(self.details.colours, columns_for_dir.clone());
         let cells: Vec<_> = files.iter().map(|file| first_table.cells_for_file(file)).collect();
 
