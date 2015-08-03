@@ -110,6 +110,17 @@ impl Options {
     pub fn transform_files(&self, files: &mut Vec<File>) {
         self.filter.transform_files(files)
     }
+
+    /// Whether the View specified in this set of options includes a Git
+    /// status column. It's only worth trying to discover a repository if the
+    /// results will end up being displayed.
+    pub fn should_scan_for_git(&self) -> bool {
+        match self.view {
+            View::Details(Details { columns: Some(cols), .. }) => cols.should_scan_for_git(),
+            View::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
+            _ => false,
+        }
+    }
 }
 
 
@@ -572,6 +583,10 @@ impl Columns {
         })
     }
 
+    pub fn should_scan_for_git(&self) -> bool {
+        self.git
+    }
+
     pub fn for_dir(&self, dir: Option<&Dir>) -> Vec<Column> {
         let mut columns = vec![];
 
@@ -611,7 +626,7 @@ impl Columns {
 
         if cfg!(feature="git") {
             if let Some(d) = dir {
-                if self.git && d.has_git_repo() {
+                if self.should_scan_for_git() && d.has_git_repo() {
                     columns.push(GitStatus);
                 }
             }

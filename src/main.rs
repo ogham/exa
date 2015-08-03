@@ -144,7 +144,7 @@ impl<'dir> Exa<'dir> {
                 print!("\n");
             }
 
-            match Dir::readdir(&dir_path) {
+            match Dir::readdir(&dir_path, self.options.should_scan_for_git()) {
                 Ok(ref dir) => {
                     let mut files = dir.files(false);
                     self.options.transform_files(&mut files);

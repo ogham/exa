@@ -82,7 +82,7 @@ impl<'dir> File<'dir> {
         // that represents the current File as a directory, if it is a
         // directory. This is used for the --tree option.
         let this = if recurse && metadata.is_dir() {
-            Dir::readdir(path).ok()
+            Dir::readdir(path, false).ok()
         }
         else {
             None
