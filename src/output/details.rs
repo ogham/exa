@@ -105,10 +105,12 @@ impl Details {
                     Some(Ok(ref dir)) => {
                         let mut files = Vec::new();
 
-                        for file_to_add in dir.files(true) {
+                        let files_to_add = dir.files(true).collect::<Vec<_>>();
+                        let child_count = files_to_add.len();
+                        for (index, file_to_add) in files_to_add.into_iter().enumerate() {
                             match file_to_add {
                                 Ok(f)          => files.push(f),
-                                Err((path, e)) => table.add_error(&e, depth + 1, false, Some(&*path)),
+                                Err((path, e)) => table.add_error(&e, depth + 1, index == child_count - 1 && files.is_empty(), Some(&*path)),
                             }
                         }
 
