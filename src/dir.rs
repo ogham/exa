@@ -1,6 +1,7 @@
 use std::io;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::slice::Iter as SliceIter;
 
 use feature::Git;
 use file::{File, fields};
@@ -36,17 +37,12 @@ impl Dir {
     ///
     /// Passing in `recurse` means that any directories will be scanned for
     /// their contents, as well.
-    pub fn files(&self, recurse: bool) -> Vec<File> {
-        let mut files = vec![];
-
-        for path in self.contents.iter() {
-            match File::from_path(path, Some(self), recurse) {
-                Ok(file) => files.push(file),
-                Err(e)   => println!("{}: {}", path.display(), e),
-            }
+    pub fn files<'dir>(&'dir self, recurse: bool) -> Files<'dir> {
+        Files {
+            inner: self.contents.iter(),
+            recurse: recurse,
+            dir: &self,
         }
-
-        files
     }
 
     /// Whether this directory contains a file with the given path.
@@ -71,5 +67,20 @@ impl Dir {
             (&Some(ref git), true)   => git.dir_status(path),
             (&None, _)               => fields::Git::empty()
         }
+    }
+}
+
+
+pub struct Files<'dir> {
+    inner: SliceIter<'dir, PathBuf>,
+    recurse: bool,
+    dir: &'dir Dir,
+}
+
+impl<'dir> Iterator for Files<'dir> {
+    type Item = io::Result<File<'dir>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|path| File::from_path(path, Some(self.dir), self.recurse))
     }
 }

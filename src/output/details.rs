@@ -99,7 +99,8 @@ impl Details {
                 // them, so we don't examine any directories that wouldn't
                 // have their contents listed anyway.
                 if let Some(ref dir) = file.this {
-                    let mut files = dir.files(true);
+                    let mut files = dir.files(true).flat_map(|f| f).collect();
+
                     filter.transform_files(&mut files);
                     self.add_files_to_table(table, &files, depth + 1);
                 }

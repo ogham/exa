@@ -146,7 +146,7 @@ impl<'dir> Exa<'dir> {
 
             match Dir::readdir(&dir_path, self.options.should_scan_for_git()) {
                 Ok(ref dir) => {
-                    let mut files = dir.files(false);
+                    let mut files = dir.files(false).flat_map(|f| f).collect();
                     self.options.transform_files(&mut files);
 
                     // When recursing, add any directories to the dirs stack
