@@ -113,22 +113,30 @@ impl Details {
 struct Row {
 
     /// Vector of cells to display.
-    cells:    Option<Vec<Cell>>,
+    ///
+    /// Most of the rows will be files that have had their metadata
+    /// successfully queried and displayed in these cells, so this will almost
+    /// always be `Some`. It will be `None` for a row that's only displaying
+    /// an attribute or an error.
+    cells: Option<Vec<Cell>>,
+
+    // Did You Know?
+    // A Vec<Cell> and an Option<Vec<Cell>> actually have the same byte size!
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
-    name:     Cell,
+    name: Cell,
 
     /// How many directories deep into the tree structure this is. Directories
     /// on top have depth 0.
-    depth:    usize,
+    depth: usize,
 
     /// Vector of this file's extended attributes, if that feature is active.
-    attrs:    Vec<Attribute>,
+    attrs: Vec<Attribute>,
 
     /// Whether this is the last entry in the directory. This flag is used
     /// when calculating the tree view.
-    last:     bool,
+    last: bool,
 
     /// Whether this file is a directory and has any children. Also used when
     /// calculating the tree view.
@@ -136,6 +144,8 @@ struct Row {
 }
 
 impl Row {
+
+    /// Gets the 'width' of the indexed column, if present. If not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
             Some(ref cells) => cells[index].length,
@@ -398,7 +408,7 @@ impl<U> Table<U> where U: Users {
         Cell::paint(style, &*group_name)
     }
 
-    /// Print the table to standard output, consuming it in the process.
+    /// Render the table as a vector of Cells, to be displayed on standard output.
     pub fn print_table(&self, xattr: bool, show_children: bool) -> Vec<Cell> {
         let mut stack = Vec::new();
         let mut cells = Vec::new();
