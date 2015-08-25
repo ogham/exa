@@ -1,3 +1,4 @@
+#![feature(iter_arith)]
 #![feature(convert, fs_mode)]
 #![feature(slice_splits, vec_resize)]
 
@@ -146,7 +147,15 @@ impl<'dir> Exa<'dir> {
 
             match Dir::readdir(&dir_path, self.options.should_scan_for_git()) {
                 Ok(ref dir) => {
-                    let mut files = dir.files(false).flat_map(|f| f).collect();
+                    let mut files = Vec::new();
+
+                    for file in dir.files(true) {
+                        match file {
+                            Ok(file) => files.push(file),
+                            Err((path, e))   => println!("[{}: {}]", path.display(), e),
+                        }
+                    }
+
                     self.options.transform_files(&mut files);
 
                     // When recursing, add any directories to the dirs stack

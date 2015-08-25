@@ -1,4 +1,7 @@
+use std::error::Error;
+use std::io;
 use std::iter::repeat;
+use std::path::Path;
 use std::string::ToString;
 
 use colours::Colours;
@@ -98,11 +101,24 @@ impl Details {
                 // Use the filter to remove unwanted files *before* expanding
                 // them, so we don't examine any directories that wouldn't
                 // have their contents listed anyway.
-                if let Some(ref dir) = file.this {
-                    let mut files = dir.files(true).flat_map(|f| f).collect();
+                match file.this {
+                    Some(Ok(ref dir)) => {
+                        let mut files = Vec::new();
 
-                    filter.transform_files(&mut files);
-                    self.add_files_to_table(table, &files, depth + 1);
+                        for file_to_add in dir.files(true) {
+                            match file_to_add {
+                                Ok(f)          => files.push(f),
+                                Err((path, e)) => table.add_error(&e, depth + 1, false, Some(&*path)),
+                            }
+                        }
+
+                        filter.transform_files(&mut files);
+                        self.add_files_to_table(table, &files, depth + 1);
+                    },
+                    Some(Err(ref e)) => {
+                        table.add_error(e, depth + 1, true, None);
+                    },
+                    None => {},
                 }
             }
         }
@@ -214,6 +230,24 @@ impl<U> Table<U> where U: Users {
             cells:    Some(self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect()),
             name:     Cell::paint(self.colours.header, "Name"),
             last:     false,
+            attrs:    Vec::new(),
+            children: false,
+        };
+
+        self.rows.push(row);
+    }
+
+    pub fn add_error(&mut self, error: &io::Error, depth: usize, last: bool, path: Option<&Path>) {
+        let error_message = match path {
+            Some(path) => format!("<{}: {}>", path.display(), error),
+            None       => format!("<{}>", error),
+        };
+
+        let row = Row {
+            depth:    depth,
+            cells:    None,
+            name:     Cell::paint(self.colours.broken_arrow, &error_message),
+            last:     last,
             attrs:    Vec::new(),
             children: false,
         };
@@ -420,6 +454,8 @@ impl<U> Table<U> where U: Users {
             .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
             .collect();
 
+        let total_width: usize = self.columns.len() + column_widths.iter().sum::<usize>();
+
         for row in self.rows.iter() {
             let mut cell = Cell::empty();
 
@@ -434,7 +470,7 @@ impl<U> Table<U> where U: Users {
                 }
             }
             else {
-                cell.add_spaces(column_widths.len())
+                cell.add_spaces(total_width)
             }
 
             let mut filename = String::new();

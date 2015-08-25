@@ -78,9 +78,9 @@ pub struct Files<'dir> {
 }
 
 impl<'dir> Iterator for Files<'dir> {
-    type Item = io::Result<File<'dir>>;
+    type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|path| File::from_path(path, Some(self.dir), self.recurse))
+        self.inner.next().map(|path| File::from_path(path, Some(self.dir), self.recurse).map_err(|t| (path.clone(), t)))
     }
 }

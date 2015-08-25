@@ -27,23 +27,23 @@ use self::fields as f;
 pub struct File<'dir> {
 
     /// This file's name, as a UTF-8 encoded String.
-    pub name:  String,
+    pub name: String,
 
     /// The file's name's extension, if present, extracted from the name. This
     /// is queried a lot, so it's worth being cached.
-    pub ext:   Option<String>,
+    pub ext: Option<String>,
 
     /// The path that begat this file. Even though the file's name is
     /// extracted, the path needs to be kept around, as certain operations
     /// involve looking up the file's absolute location (such as the Git
     /// status, or searching for compiled files).
-    pub path:  PathBuf,
+    pub path: PathBuf,
 
     /// A cached `metadata` call for this file. This is queried multiple
     /// times, and is *not* cached by the OS, as it could easily change
     /// between invocations - but exa is so short-lived it's better to just
     /// cache it.
-    pub metadata:  fs::Metadata,
+    pub metadata: fs::Metadata,
 
     /// List of this file's extended attributes. These are only loaded if the
     /// `xattr` feature is in use.
@@ -57,11 +57,11 @@ pub struct File<'dir> {
     /// However, *directories* that get passed in will produce files that
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up a file's Git status).
-    pub dir:   Option<&'dir Dir>,
+    pub dir: Option<&'dir Dir>,
 
     /// If this `File` is also a directory, then this field is the same file
     /// as a `Dir`.
-    pub this:  Option<Dir>,
+    pub this: Option<io::Result<Dir>>,
 }
 
 impl<'dir> File<'dir> {
@@ -82,7 +82,7 @@ impl<'dir> File<'dir> {
         // that represents the current File as a directory, if it is a
         // directory. This is used for the --tree option.
         let this = if recurse && metadata.is_dir() {
-            Dir::readdir(path, false).ok()
+            Some(Dir::readdir(path, false))
         }
         else {
             None
