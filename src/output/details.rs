@@ -7,7 +7,7 @@ use std::string::ToString;
 use colours::Colours;
 use column::{Alignment, Column, Cell};
 use dir::Dir;
-use feature::Attribute;
+use feature::xattr::Attribute;
 use file::fields as f;
 use file::File;
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
@@ -508,11 +508,11 @@ impl<U> Table<U> where U: Users {
             filename_length += row.name.length;
 
             if xattr {
-                let width = row.attrs.iter().map(|a| a.name().len()).max().unwrap_or(0);
+                let width = row.attrs.iter().map(|a| a.name.len()).max().unwrap_or(0);
                 for attr in row.attrs.iter() {
-                    let name = attr.name();
+                    let name = &*attr.name;
                     let spaces: String = repeat(" ").take(width - name.len()).collect();
-                    filename.push_str(&*format!("\n{}{}  {}", name, spaces, attr.size()))
+                    filename.push_str(&*format!("\n{}{}  {}", name, spaces, attr.size))
                 }
             }
 

@@ -12,7 +12,7 @@ use unicode_width::UnicodeWidthStr;
 
 use dir::Dir;
 use options::TimeType;
-use feature::Attribute;
+use feature::xattr::{Attribute, FileAttributes};
 
 use self::fields as f;
 
@@ -93,7 +93,7 @@ impl<'dir> File<'dir> {
             dir:    parent,
             metadata:   metadata,
             ext:    ext(&filename),
-            xattrs: Attribute::llist(path).unwrap_or(Vec::new()),
+            xattrs: path.symlink_attributes().unwrap_or(Vec::new()),
             name:   filename.to_string(),
             this:   this,
         }
@@ -199,7 +199,7 @@ impl<'dir> File<'dir> {
                 dir:    self.dir,
                 metadata:   metadata,
                 ext:    ext(&filename),
-                xattrs: Attribute::list(&target_path).unwrap_or(Vec::new()),
+                xattrs: target_path.attributes().unwrap_or(Vec::new()),
                 name:   filename.to_string(),
                 this:   None,
             })
