@@ -12,7 +12,6 @@ use unicode_width::UnicodeWidthStr;
 
 use dir::Dir;
 use options::TimeType;
-use feature::xattr::{Attribute, FileAttributes};
 
 use self::fields as f;
 
@@ -44,10 +43,6 @@ pub struct File<'dir> {
     /// between invocations - but exa is so short-lived it's better to just
     /// cache it.
     pub metadata: fs::Metadata,
-
-    /// List of this file's extended attributes. These are only loaded if the
-    /// `xattr` feature is in use.
-    pub xattrs: Vec<Attribute>,
 
     /// A reference to the directory that contains this file, if present.
     ///
@@ -93,7 +88,6 @@ impl<'dir> File<'dir> {
             dir:    parent,
             metadata:   metadata,
             ext:    ext(&filename),
-            xattrs: path.symlink_attributes().unwrap_or(Vec::new()),
             name:   filename.to_string(),
             this:   this,
         }
@@ -199,7 +193,6 @@ impl<'dir> File<'dir> {
                 dir:    self.dir,
                 metadata:   metadata,
                 ext:    ext(&filename),
-                xattrs: target_path.attributes().unwrap_or(Vec::new()),
                 name:   filename.to_string(),
                 this:   None,
             })
@@ -316,7 +309,7 @@ impl<'dir> File<'dir> {
             other_read:     has_bit(unix::fs::OTHER_READ),
             other_write:    has_bit(unix::fs::OTHER_WRITE),
             other_execute:  has_bit(unix::fs::OTHER_EXECUTE),
-            attribute:      !self.xattrs.is_empty()
+            attribute:      false, // !self.xattrs.is_empty()
         }
     }
 

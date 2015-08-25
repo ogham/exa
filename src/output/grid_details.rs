@@ -73,7 +73,7 @@ impl GridDetails {
             tables[index].add_file_with_cells(row, file, 0, false, false);
         }
 
-        let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();
+        let columns: Vec<_> = tables.iter().map(|t| t.print_table()).collect();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }
                                        else { grid::Direction::TopToBottom };

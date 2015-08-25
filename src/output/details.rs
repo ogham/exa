@@ -1,13 +1,12 @@
 use std::error::Error;
 use std::io;
-use std::iter::repeat;
 use std::path::Path;
 use std::string::ToString;
 
 use colours::Colours;
 use column::{Alignment, Column, Cell};
 use dir::Dir;
-use feature::xattr::Attribute;
+use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
 use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
@@ -78,7 +77,7 @@ impl Details {
 
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
-        for cell in table.print_table(self.xattr, self.recurse.is_some()) {
+        for cell in table.print_table() {
             println!("{}", cell.text);
         }
     }
@@ -88,6 +87,17 @@ impl Details {
     fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
             table.add_file(file, depth, index == src.len() - 1, true);
+
+            if self.xattr {
+                match file.path.attributes() {
+                    Ok(xattrs) => {
+                        for xattr in xattrs {
+                            table.add_xattr(xattr, depth + 1, false);
+                        }
+                    },
+                    Err(e) => table.add_error(&e, depth + 1, true, None),
+                }
+            }
 
             // There are two types of recursion that exa supports: a tree
             // view, which is dealt with here, and multiple listings, which is
@@ -149,16 +159,9 @@ struct Row {
     /// on top have depth 0.
     depth: usize,
 
-    /// Vector of this file's extended attributes, if that feature is active.
-    attrs: Vec<Attribute>,
-
     /// Whether this is the last entry in the directory. This flag is used
     /// when calculating the tree view.
     last: bool,
-
-    /// Whether this file is a directory and has any children. Also used when
-    /// calculating the tree view.
-    children: bool,
 }
 
 impl Row {
@@ -232,8 +235,6 @@ impl<U> Table<U> where U: Users {
             cells:    Some(self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect()),
             name:     Cell::paint(self.colours.header, "Name"),
             last:     false,
-            attrs:    Vec::new(),
-            children: false,
         };
 
         self.rows.push(row);
@@ -250,8 +251,17 @@ impl<U> Table<U> where U: Users {
             cells:    None,
             name:     Cell::paint(self.colours.broken_arrow, &error_message),
             last:     last,
-            attrs:    Vec::new(),
-            children: false,
+        };
+
+        self.rows.push(row);
+    }
+
+    pub fn add_xattr(&mut self, xattr: Attribute, depth: usize, last: bool) {
+        let row = Row {
+            depth:    depth,
+            cells:    None,
+            name:     Cell::paint(self.colours.perms.attribute, &format!("{}\t{}", xattr.name, xattr.size)),
+            last:     last,
         };
 
         self.rows.push(row);
@@ -269,8 +279,6 @@ impl<U> Table<U> where U: Users {
             cells:    Some(cells),
             name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
             last:     last,
-            attrs:    file.xattrs.clone(),
-            children: file.this.is_some(),
         };
 
         self.rows.push(row);
@@ -445,7 +453,7 @@ impl<U> Table<U> where U: Users {
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn print_table(&self, xattr: bool, show_children: bool) -> Vec<Cell> {
+    pub fn print_table(&self) -> Vec<Cell> {
         let mut stack = Vec::new();
         let mut cells = Vec::new();
 
@@ -482,39 +490,26 @@ impl<U> Table<U> where U: Users {
             // necessary to maintain information about the previously-printed
             // lines, as the output will change based on whether the
             // *previous* entry was the last in its directory.
-            if show_children {
-                stack.resize(row.depth + 1, TreePart::Edge);
-                stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
+            stack.resize(row.depth + 1, TreePart::Edge);
+            stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
-                for i in 1 .. row.depth + 1 {
-                    filename.push_str(&*self.colours.punctuation.paint(stack[i].ascii_art()).to_string());
-                    filename_length += 4;
-                }
+            for i in 1 .. row.depth + 1 {
+                filename.push_str(&*self.colours.punctuation.paint(stack[i].ascii_art()).to_string());
+                filename_length += 4;
+            }
 
-                if row.children {
-                    stack[row.depth] = if row.last { TreePart::Blank } else { TreePart::Line };
-                }
+            stack[row.depth] = if row.last { TreePart::Blank } else { TreePart::Line };
 
-                // If any tree characters have been printed, then add an extra
-                // space, which makes the output look much better.
-                if row.depth != 0 {
-                    filename.push(' ');
-                    filename_length += 1;
-                }
+            // If any tree characters have been printed, then add an extra
+            // space, which makes the output look much better.
+            if row.depth != 0 {
+                filename.push(' ');
+                filename_length += 1;
             }
 
             // Print the name without worrying about padding.
             filename.push_str(&*row.name.text);
             filename_length += row.name.length;
-
-            if xattr {
-                let width = row.attrs.iter().map(|a| a.name.len()).max().unwrap_or(0);
-                for attr in row.attrs.iter() {
-                    let name = &*attr.name;
-                    let spaces: String = repeat(" ").take(width - name.len()).collect();
-                    filename.push_str(&*format!("\n{}{}  {}", name, spaces, attr.size))
-                }
-            }
 
             cell.append(&Cell { text: filename, length: filename_length });
             cells.push(cell);

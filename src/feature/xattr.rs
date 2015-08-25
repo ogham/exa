@@ -39,14 +39,22 @@ pub struct Attribute {
 pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
     let c_path = match path.as_os_str().to_cstring() {
         Some(cstring) => cstring,
-        None => return Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes")),
+        None => return Err(io::Error::new(io::ErrorKind::Other, "Error: path somehow contained a NUL?")),
     };
 
+    let mut names = Vec::new();
     let bufsize = lister.listxattr_first(&c_path);
 
-    if bufsize > 0 {
+    if bufsize < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    else if bufsize > 0 {
         let mut buf = vec![0u8; bufsize as usize];
         let err = lister.listxattr_second(&c_path, &mut buf, bufsize);
+
+        if err < 0 {
+            return Err(io::Error::last_os_error());
+        }
 
         if err > 0 {
             // End indicies of the attribute names
@@ -54,8 +62,6 @@ pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribu
             let idx = buf.iter().enumerate().filter_map(|(i, v)|
                 if *v == 0 { Some(i) } else { None }
             );
-
-            let mut names = Vec::new();
             let mut start = 0;
 
             for end in idx {
@@ -72,15 +78,10 @@ pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribu
                 start = c_end;
             }
 
-            Ok(names)
         }
-        else {
-            Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes"))
-        }
+
     }
-    else {
-        Err(io::Error::new(io::ErrorKind::Other, "could not read extended attributes"))
-    }
+    Ok(names)
 }
 
 #[cfg(target_os = "macos")]
