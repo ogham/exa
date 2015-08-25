@@ -113,7 +113,7 @@ impl Details {
 struct Row {
 
     /// Vector of cells to display.
-    cells:    Vec<Cell>,
+    cells:    Option<Vec<Cell>>,
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
@@ -133,6 +133,15 @@ struct Row {
     /// Whether this file is a directory and has any children. Also used when
     /// calculating the tree view.
     children: bool,
+}
+
+impl Row {
+    fn column_width(&self, index: usize) -> usize {
+        match self.cells {
+            Some(ref cells) => cells[index].length,
+            None => 0,
+        }
+    }
 }
 
 
@@ -192,7 +201,7 @@ impl<U> Table<U> where U: Users {
     pub fn add_header(&mut self) {
         let row = Row {
             depth:    0,
-            cells:    self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect(),
+            cells:    Some(self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect()),
             name:     Cell::paint(self.colours.header, "Name"),
             last:     false,
             attrs:    Vec::new(),
@@ -211,7 +220,7 @@ impl<U> Table<U> where U: Users {
     pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {
         let row = Row {
             depth:    depth,
-            cells:    cells,
+            cells:    Some(cells),
             name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
             last:     last,
             attrs:    file.xattrs.clone(),
@@ -398,19 +407,24 @@ impl<U> Table<U> where U: Users {
         // each column, then formatting each cell in that column to be the
         // width of that one.
         let column_widths: Vec<usize> = (0 .. self.columns.len())
-            .map(|n| self.rows.iter().map(|row| row.cells[n].length).max().unwrap_or(0))
+            .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
             .collect();
 
         for row in self.rows.iter() {
             let mut cell = Cell::empty();
 
-            for (n, width) in column_widths.iter().enumerate() {
-                match self.columns[n].alignment() {
-                    Alignment::Left  => { cell.append(&row.cells[n]); cell.add_spaces(width - row.cells[n].length); }
-                    Alignment::Right => { cell.add_spaces(width - row.cells[n].length); cell.append(&row.cells[n]); }
-                }
+            if let Some(ref cells) = row.cells {
+                for (n, width) in column_widths.iter().enumerate() {
+                    match self.columns[n].alignment() {
+                        Alignment::Left  => { cell.append(&cells[n]); cell.add_spaces(width - cells[n].length); }
+                        Alignment::Right => { cell.add_spaces(width - cells[n].length); cell.append(&cells[n]); }
+                    }
 
-                cell.add_spaces(1);
+                    cell.add_spaces(1);
+                }
+            }
+            else {
+                cell.add_spaces(column_widths.len())
             }
 
             let mut filename = String::new();
