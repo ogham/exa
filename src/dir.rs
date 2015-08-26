@@ -23,20 +23,21 @@ impl Dir {
 
     /// Create a new Dir object filled with all the files in the directory
     /// pointed to by the given path. Fails if the directory can't be read, or
-    /// isn't actually a directory.
+    /// isn't actually a directory, or if there's an IO error that occurs
+    /// while scanning.
     pub fn readdir(path: &Path, git: bool) -> io::Result<Dir> {
-        fs::read_dir(path).map(|dir_obj| Dir {
-            contents: dir_obj.map(|entry| entry.unwrap().path()).collect(),
+        let reader = try!(fs::read_dir(path));
+        let contents = try!(reader.map(|e| e.map(|e| e.path())).collect());
+
+        Ok(Dir {
+            contents: contents,
             path: path.to_path_buf(),
             git: if git { Git::scan(path).ok() } else { None },
         })
     }
 
-    /// Produce a vector of File objects from an initialised directory,
-    /// printing out an error if any of the Files fail to be created.
-    ///
-    /// Passing in `recurse` means that any directories will be scanned for
-    /// their contents, as well.
+    /// Produce an iterator of IO results of trying to read all the files in
+    /// this directory.
     pub fn files<'dir>(&'dir self) -> Files<'dir> {
         Files {
             inner: self.contents.iter(),
