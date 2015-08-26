@@ -86,21 +86,28 @@ impl Details {
     /// is present.
     fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
         for (index, file) in src.iter().enumerate() {
-            table.add_file(file, depth, index == src.len() - 1, true);
-
             let mut xattrs = Vec::new();
             let mut errors = Vec::new();
 
-            if self.xattr {
-                match file.path.attributes() {
-                    Ok(xs) => {
+            let has_xattrs = match file.path.attributes() {
+                Ok(xs) => {
+                    let r = !xs.is_empty();
+                    if self.xattr {
                         for xattr in xs {
                             xattrs.push(xattr);
                         }
-                    },
-                    Err(e) => errors.push((e, None)),
-                }
-            }
+                    }
+                    r
+                },
+                Err(e) => {
+                    if self.xattr {
+                        errors.push((e, None));
+                    }
+                    true
+                },
+            };
+
+            table.add_file(file, depth, index == src.len() - 1, true, has_xattrs);
 
             // There are two types of recursion that exa supports: a tree
             // view, which is dealt with here, and multiple listings, which is
@@ -290,8 +297,8 @@ impl<U> Table<U> where U: Users {
     }
 
     /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool) {
-        let cells = self.cells_for_file(file);
+    fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool, xattrs: bool) {
+        let cells = self.cells_for_file(file, xattrs);
         self.add_file_with_cells(cells, file, depth, last, links)
     }
 
@@ -308,15 +315,15 @@ impl<U> Table<U> where U: Users {
 
     /// Use the list of columns to find which cells should be produced for
     /// this file, per-column.
-    pub fn cells_for_file(&mut self, file: &File) -> Vec<Cell> {
+    pub fn cells_for_file(&mut self, file: &File, xattrs: bool) -> Vec<Cell> {
         self.columns.clone().iter()
-                    .map(|c| self.display(file, c))
+                    .map(|c| self.display(file, c, xattrs))
                     .collect()
     }
 
-    fn display(&mut self, file: &File, column: &Column) -> Cell {
+    fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> Cell {
         match *column {
-            Column::Permissions    => self.render_permissions(file.permissions()),
+            Column::Permissions    => self.render_permissions(file.permissions(), xattrs),
             Column::FileSize(fmt)  => self.render_size(file.size(), fmt),
             Column::Timestamp(t)   => self.render_time(file.timestamp(t)),
             Column::HardLinks      => self.render_links(file.links()),
@@ -328,7 +335,7 @@ impl<U> Table<U> where U: Users {
         }
     }
 
-    fn render_permissions(&self, permissions: f::Permissions) -> Cell {
+    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> Cell {
         let c = self.colours.perms;
         let bit = |bit, chr: &'static str, style: Style| {
             if bit { style.paint(chr) } else { self.colours.punctuation.paint("-") }
@@ -358,7 +365,7 @@ impl<U> Table<U> where U: Users {
             bit(permissions.other_execute, "x", c.other_execute),
         ];
 
-        if permissions.attribute {
+        if xattrs {
             columns.push(c.attribute.paint("@"));
         }
 
