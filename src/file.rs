@@ -12,7 +12,6 @@ use unicode_width::UnicodeWidthStr;
 
 use dir::Dir;
 use options::TimeType;
-use feature::Attribute;
 
 use self::fields as f;
 
@@ -27,27 +26,23 @@ use self::fields as f;
 pub struct File<'dir> {
 
     /// This file's name, as a UTF-8 encoded String.
-    pub name:  String,
+    pub name: String,
 
     /// The file's name's extension, if present, extracted from the name. This
     /// is queried a lot, so it's worth being cached.
-    pub ext:   Option<String>,
+    pub ext: Option<String>,
 
     /// The path that begat this file. Even though the file's name is
     /// extracted, the path needs to be kept around, as certain operations
     /// involve looking up the file's absolute location (such as the Git
     /// status, or searching for compiled files).
-    pub path:  PathBuf,
+    pub path: PathBuf,
 
     /// A cached `metadata` call for this file. This is queried multiple
     /// times, and is *not* cached by the OS, as it could easily change
     /// between invocations - but exa is so short-lived it's better to just
     /// cache it.
-    pub metadata:  fs::Metadata,
-
-    /// List of this file's extended attributes. These are only loaded if the
-    /// `xattr` feature is in use.
-    pub xattrs: Vec<Attribute>,
+    pub metadata: fs::Metadata,
 
     /// A reference to the directory that contains this file, if present.
     ///
@@ -57,11 +52,7 @@ pub struct File<'dir> {
     /// However, *directories* that get passed in will produce files that
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up a file's Git status).
-    pub dir:   Option<&'dir Dir>,
-
-    /// If this `File` is also a directory, then this field is the same file
-    /// as a `Dir`.
-    pub this:  Option<Dir>,
+    pub dir: Option<&'dir Dir>,
 }
 
 impl<'dir> File<'dir> {
@@ -70,38 +61,30 @@ impl<'dir> File<'dir> {
     ///
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> io::Result<File<'dir>> {
-        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent, recurse))
+    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> io::Result<File<'dir>> {
+        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent))
     }
 
     /// Create a new File object from the given metadata result, and other data.
-    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> File<'dir> {
+    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
         let filename = path_filename(path);
-
-        // If we are recursing, then the `this` field contains a Dir object
-        // that represents the current File as a directory, if it is a
-        // directory. This is used for the --tree option.
-        let this = if recurse && metadata.is_dir() {
-            Dir::readdir(path, false).ok()
-        }
-        else {
-            None
-        };
 
         File {
             path:   path.to_path_buf(),
             dir:    parent,
             metadata:   metadata,
             ext:    ext(&filename),
-            xattrs: Attribute::llist(path).unwrap_or(Vec::new()),
             name:   filename.to_string(),
-            this:   this,
         }
     }
 
     /// Whether this file is a directory on the filesystem.
     pub fn is_directory(&self) -> bool {
         self.metadata.is_dir()
+    }
+
+    pub fn to_dir(&self) -> io::Result<Dir> {
+        Dir::readdir(&*self.path, false)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
@@ -199,9 +182,7 @@ impl<'dir> File<'dir> {
                 dir:    self.dir,
                 metadata:   metadata,
                 ext:    ext(&filename),
-                xattrs: Attribute::list(&target_path).unwrap_or(Vec::new()),
                 name:   filename.to_string(),
-                this:   None,
             })
         }
         else {
@@ -316,7 +297,7 @@ impl<'dir> File<'dir> {
             other_read:     has_bit(unix::fs::OTHER_READ),
             other_write:    has_bit(unix::fs::OTHER_WRITE),
             other_execute:  has_bit(unix::fs::OTHER_EXECUTE),
-            attribute:      !self.xattrs.is_empty()
+            attribute:      false, // !self.xattrs.is_empty()
         }
     }
 

@@ -1,3 +1,4 @@
+#![feature(iter_arith)]
 #![feature(convert, fs_mode)]
 #![feature(slice_splits, vec_resize)]
 
@@ -89,11 +90,8 @@ impl<'dir> Exa<'dir> {
                 let path = Path::new(&*file);
                 let _ = tx.send(match fs::metadata(&path) {
                     Ok(metadata) => {
-                        if !metadata.is_dir() {
-                            StatResult::File(File::with_metadata(metadata, &path, None, false))
-                        }
-                        else if is_tree {
-                            StatResult::File(File::with_metadata(metadata, &path, None, true))
+                        if is_tree || !metadata.is_dir() {
+                            StatResult::File(File::with_metadata(metadata, &path, None))
                         }
                         else {
                             StatResult::Dir(path.to_path_buf())
@@ -146,7 +144,15 @@ impl<'dir> Exa<'dir> {
 
             match Dir::readdir(&dir_path, self.options.should_scan_for_git()) {
                 Ok(ref dir) => {
-                    let mut files = dir.files(false);
+                    let mut files = Vec::new();
+
+                    for file in dir.files() {
+                        match file {
+                            Ok(file) => files.push(file),
+                            Err((path, e))   => println!("[{}: {}]", path.display(), e),
+                        }
+                    }
+
                     self.options.transform_files(&mut files);
 
                     // When recursing, add any directories to the dirs stack

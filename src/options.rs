@@ -11,7 +11,7 @@ use colours::Colours;
 use column::Column;
 use column::Column::*;
 use dir::Dir;
-use feature::Attribute;
+use feature::xattr;
 use file::File;
 use output::{Grid, Details, GridDetails, Lines};
 use term::dimensions;
@@ -62,7 +62,7 @@ impl Options {
             opts.optflag("", "git", "show git status");
         }
 
-        if Attribute::feature_implemented() {
+        if xattr::ENABLED {
             opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
         }
 
@@ -281,7 +281,7 @@ impl View {
                     columns: Some(try!(Columns::deduce(matches))),
                     header: matches.opt_present("header"),
                     recurse: dir_action.recurse_options().map(|o| (o, filter)),
-                    xattr: Attribute::feature_implemented() && matches.opt_present("extended"),
+                    xattr: xattr::ENABLED && matches.opt_present("extended"),
                     colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
                 };
 
@@ -302,7 +302,7 @@ impl View {
             else if matches.opt_present("level") && !matches.opt_present("recurse") && !matches.opt_present("tree") {
                 Err(Useless2("level", "recurse", "tree"))
             }
-            else if Attribute::feature_implemented() && matches.opt_present("extended") {
+            else if xattr::ENABLED && matches.opt_present("extended") {
                 Err(Useless("extended", false, "long"))
             }
             else {
@@ -640,7 +640,7 @@ impl Columns {
 mod test {
     use super::Options;
     use super::Misfire;
-    use feature::Attribute;
+    use feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {
@@ -742,7 +742,7 @@ mod test {
 
     #[test]
     fn extended_without_long() {
-        if Attribute::feature_implemented() {
+        if xattr::ENABLED {
             let opts = Options::getopts(&[ "--extended".to_string() ]);
             assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
         }

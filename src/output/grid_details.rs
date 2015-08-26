@@ -5,6 +5,7 @@ use term_grid as grid;
 
 use column::{Column, Cell};
 use dir::Dir;
+use feature::xattr::FileAttributes;
 use file::File;
 use output::details::{Details, Table};
 use output::grid::Grid;
@@ -15,6 +16,13 @@ pub struct GridDetails {
     pub details: Details,
 }
 
+fn file_has_xattrs(file: &File) -> bool {
+    match file.path.attributes() {
+        Ok(attrs) => !attrs.is_empty(),
+        Err(_) => false,
+    }
+}
+
 impl GridDetails {
     pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
         let columns_for_dir = match self.details.columns {
@@ -23,7 +31,7 @@ impl GridDetails {
         };
 
         let mut first_table = Table::with_options(self.details.colours, columns_for_dir.clone());
-        let cells: Vec<_> = files.iter().map(|file| first_table.cells_for_file(file)).collect();
+        let cells: Vec<_> = files.iter().map(|file| first_table.cells_for_file(file, file_has_xattrs(file))).collect();
 
         let mut last_working_table = self.make_grid(1, &*columns_for_dir, files, cells.clone());
 
@@ -73,7 +81,7 @@ impl GridDetails {
             tables[index].add_file_with_cells(row, file, 0, false, false);
         }
 
-        let columns: Vec<_> = tables.iter().map(|t| t.print_table(false, false)).collect();
+        let columns: Vec<_> = tables.iter().map(|t| t.print_table()).collect();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }
                                        else { grid::Direction::TopToBottom };
