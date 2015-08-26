@@ -90,11 +90,8 @@ impl<'dir> Exa<'dir> {
                 let path = Path::new(&*file);
                 let _ = tx.send(match fs::metadata(&path) {
                     Ok(metadata) => {
-                        if !metadata.is_dir() {
-                            StatResult::File(File::with_metadata(metadata, &path, None, false))
-                        }
-                        else if is_tree {
-                            StatResult::File(File::with_metadata(metadata, &path, None, true))
+                        if is_tree || !metadata.is_dir() {
+                            StatResult::File(File::with_metadata(metadata, &path, None))
                         }
                         else {
                             StatResult::Dir(path.to_path_buf())
@@ -149,7 +146,7 @@ impl<'dir> Exa<'dir> {
                 Ok(ref dir) => {
                     let mut files = Vec::new();
 
-                    for file in dir.files(true) {
+                    for file in dir.files() {
                         match file {
                             Ok(file) => files.push(file),
                             Err((path, e))   => println!("[{}: {}]", path.display(), e),

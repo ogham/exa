@@ -53,10 +53,6 @@ pub struct File<'dir> {
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up a file's Git status).
     pub dir: Option<&'dir Dir>,
-
-    /// If this `File` is also a directory, then this field is the same file
-    /// as a `Dir`.
-    pub this: Option<io::Result<Dir>>,
 }
 
 impl<'dir> File<'dir> {
@@ -65,23 +61,13 @@ impl<'dir> File<'dir> {
     ///
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> io::Result<File<'dir>> {
-        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent, recurse))
+    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> io::Result<File<'dir>> {
+        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent))
     }
 
     /// Create a new File object from the given metadata result, and other data.
-    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>, recurse: bool) -> File<'dir> {
+    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
         let filename = path_filename(path);
-
-        // If we are recursing, then the `this` field contains a Dir object
-        // that represents the current File as a directory, if it is a
-        // directory. This is used for the --tree option.
-        let this = if recurse && metadata.is_dir() {
-            Some(Dir::readdir(path, false))
-        }
-        else {
-            None
-        };
 
         File {
             path:   path.to_path_buf(),
@@ -89,13 +75,16 @@ impl<'dir> File<'dir> {
             metadata:   metadata,
             ext:    ext(&filename),
             name:   filename.to_string(),
-            this:   this,
         }
     }
 
     /// Whether this file is a directory on the filesystem.
     pub fn is_directory(&self) -> bool {
         self.metadata.is_dir()
+    }
+
+    pub fn to_dir(&self) -> io::Result<Dir> {
+        Dir::readdir(&*self.path, false)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
@@ -194,7 +183,6 @@ impl<'dir> File<'dir> {
                 metadata:   metadata,
                 ext:    ext(&filename),
                 name:   filename.to_string(),
-                this:   None,
             })
         }
         else {

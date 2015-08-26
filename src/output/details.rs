@@ -104,18 +104,18 @@ impl Details {
             // dealt with in the main module. So only actually recurse if we
             // are in tree mode - the other case will be dealt with elsewhere.
             if let Some((r, filter)) = self.recurse {
-                if r.tree == false || r.is_too_deep(depth) {
+                if !file.is_directory() || !r.tree || r.is_too_deep(depth) {
                     continue;
                 }
 
                 // Use the filter to remove unwanted files *before* expanding
                 // them, so we don't examine any directories that wouldn't
                 // have their contents listed anyway.
-                match file.this {
-                    Some(Ok(ref dir)) => {
+                match file.to_dir() {
+                    Ok(ref dir) => {
                         let mut files = Vec::new();
 
-                        let files_to_add = dir.files(true).collect::<Vec<_>>();
+                        let files_to_add = dir.files().collect::<Vec<_>>();
                         let child_count = files_to_add.len();
                         for (index, file_to_add) in files_to_add.into_iter().enumerate() {
                             match file_to_add {
@@ -127,10 +127,9 @@ impl Details {
                         filter.transform_files(&mut files);
                         self.add_files_to_table(table, &files, depth + 1);
                     },
-                    Some(Err(ref e)) => {
+                    Err(ref e) => {
                         table.add_error(e, depth + 1, true, None);
                     },
-                    None => {},
                 }
             }
         }

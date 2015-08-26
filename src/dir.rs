@@ -37,10 +37,9 @@ impl Dir {
     ///
     /// Passing in `recurse` means that any directories will be scanned for
     /// their contents, as well.
-    pub fn files<'dir>(&'dir self, recurse: bool) -> Files<'dir> {
+    pub fn files<'dir>(&'dir self) -> Files<'dir> {
         Files {
             inner: self.contents.iter(),
-            recurse: recurse,
             dir: &self,
         }
     }
@@ -73,7 +72,6 @@ impl Dir {
 
 pub struct Files<'dir> {
     inner: SliceIter<'dir, PathBuf>,
-    recurse: bool,
     dir: &'dir Dir,
 }
 
@@ -81,6 +79,6 @@ impl<'dir> Iterator for Files<'dir> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|path| File::from_path(path, Some(self.dir), self.recurse).map_err(|t| (path.clone(), t)))
+        self.inner.next().map(|path| File::from_path(path, Some(self.dir)).map_err(|t| (path.clone(), t)))
     }
 }
