@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::io;
-use std::path::Path;
+use std::path::PathBuf;
 use std::string::ToString;
 
 use colours::Colours;
@@ -88,14 +88,17 @@ impl Details {
         for (index, file) in src.iter().enumerate() {
             table.add_file(file, depth, index == src.len() - 1, true);
 
+            let mut xattrs = Vec::new();
+            let mut errors = Vec::new();
+
             if self.xattr {
                 match file.path.attributes() {
-                    Ok(xattrs) => {
-                        for xattr in xattrs {
-                            table.add_xattr(xattr, depth + 1, false);
+                    Ok(xs) => {
+                        for xattr in xs {
+                            xattrs.push(xattr);
                         }
                     },
-                    Err(e) => table.add_error(&e, depth + 1, true, None),
+                    Err(e) => errors.push((e, None)),
                 }
             }
 
@@ -104,34 +107,54 @@ impl Details {
             // dealt with in the main module. So only actually recurse if we
             // are in tree mode - the other case will be dealt with elsewhere.
             if let Some((r, filter)) = self.recurse {
-                if !file.is_directory() || !r.tree || r.is_too_deep(depth) {
-                    continue;
-                }
+                if file.is_directory() && r.tree && !r.is_too_deep(depth) {
 
-                // Use the filter to remove unwanted files *before* expanding
-                // them, so we don't examine any directories that wouldn't
-                // have their contents listed anyway.
-                match file.to_dir() {
-                    Ok(ref dir) => {
-                        let mut files = Vec::new();
+                    // Use the filter to remove unwanted files *before* expanding
+                    // them, so we don't examine any directories that wouldn't
+                    // have their contents listed anyway.
+                    match file.to_dir() {
+                        Ok(ref dir) => {
+                            let mut files = Vec::new();
 
-                        let files_to_add = dir.files().collect::<Vec<_>>();
-                        let child_count = files_to_add.len();
-                        for (index, file_to_add) in files_to_add.into_iter().enumerate() {
-                            match file_to_add {
-                                Ok(f)          => files.push(f),
-                                Err((path, e)) => table.add_error(&e, depth + 1, index == child_count - 1 && files.is_empty(), Some(&*path)),
+                            for file_to_add in dir.files() {
+                                match file_to_add {
+                                    Ok(f)          => files.push(f),
+                                    Err((path, e)) => errors.push((e, Some(path)))
+                                }
                             }
-                        }
 
-                        filter.transform_files(&mut files);
-                        self.add_files_to_table(table, &files, depth + 1);
-                    },
-                    Err(ref e) => {
-                        table.add_error(e, depth + 1, true, None);
-                    },
+                            filter.transform_files(&mut files);
+
+                            if !files.is_empty() {
+                                for xattr in xattrs {
+                                    table.add_xattr(xattr, depth + 1, false);
+                                }
+
+                                for (error, path) in errors {
+                                    table.add_error(&error, depth + 1, false, path);
+                                }
+
+                                self.add_files_to_table(table, &files, depth + 1);
+                                continue;
+                            }
+                        },
+                        Err(e) => {
+                            errors.push((e, None));
+                        },
+                    }
                 }
             }
+
+            let count = xattrs.len();
+            for (index, xattr) in xattrs.into_iter().enumerate() {
+                table.add_xattr(xattr, depth + 1, errors.is_empty() && index == count - 1);
+            }
+
+            let count = errors.len();
+            for (index, (error, path)) in errors.into_iter().enumerate() {
+                table.add_error(&error, depth + 1, index == count - 1, path);
+            }
+
         }
     }
 }
@@ -239,7 +262,7 @@ impl<U> Table<U> where U: Users {
         self.rows.push(row);
     }
 
-    pub fn add_error(&mut self, error: &io::Error, depth: usize, last: bool, path: Option<&Path>) {
+    fn add_error(&mut self, error: &io::Error, depth: usize, last: bool, path: Option<PathBuf>) {
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
             None       => format!("<{}>", error),
@@ -255,7 +278,7 @@ impl<U> Table<U> where U: Users {
         self.rows.push(row);
     }
 
-    pub fn add_xattr(&mut self, xattr: Attribute, depth: usize, last: bool) {
+    fn add_xattr(&mut self, xattr: Attribute, depth: usize, last: bool) {
         let row = Row {
             depth:    depth,
             cells:    None,
@@ -267,7 +290,7 @@ impl<U> Table<U> where U: Users {
     }
 
     /// Get the cells for the given file, and add the result to the table.
-    pub fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool) {
+    fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool) {
         let cells = self.cells_for_file(file);
         self.add_file_with_cells(cells, file, depth, last, links)
     }
