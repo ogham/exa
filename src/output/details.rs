@@ -49,7 +49,10 @@ pub struct Details {
     /// Whether to recurse through directories with a tree view, and if so,
     /// which options to use. This field is only relevant here if the `tree`
     /// field of the RecurseOptions is `true`.
-    pub recurse: Option<(RecurseOptions, FileFilter)>,
+    pub recurse: Option<RecurseOptions>,
+
+    /// How to sort and filter the files after getting their details.
+    pub filter: FileFilter,
 
     /// Whether to show a header line or not.
     pub header: bool,
@@ -63,7 +66,7 @@ pub struct Details {
 }
 
 impl Details {
-    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
+    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
         // First, transform the Columns object into a vector of columns for
         // the current directory.
 
@@ -84,76 +87,121 @@ impl Details {
 
     /// Adds files to the table - recursively, if the `recurse` option
     /// is present.
-    fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
-        for (index, file) in src.iter().enumerate() {
-            let mut xattrs = Vec::new();
-            let mut errors = Vec::new();
+    fn add_files_to_table<'dir, U: Users+Send+Sync>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
+        use num_cpus;
+        use scoped_threadpool::Pool;
+        use std::sync::{Arc, Mutex};
 
-            let has_xattrs = match file.path.attributes() {
-                Ok(xs) => {
-                    let r = !xs.is_empty();
-                    if self.xattr {
-                        for xattr in xs {
-                            xattrs.push(xattr);
-                        }
-                    }
-                    r
-                },
-                Err(e) => {
-                    if self.xattr {
-                        errors.push((e, None));
-                    }
-                    true
-                },
-            };
+        let mut pool = Pool::new(num_cpus::get() as u32);
+        let mut file_eggs = Vec::new();
 
-            table.add_file(file, depth, index == src.len() - 1, true, has_xattrs);
+        struct Egg<'_> {
+            cells:   Vec<Cell>,
+            name:    Cell,
+            xattrs:  Vec<Attribute>,
+            errors:  Vec<(io::Error, Option<PathBuf>)>,
+            dir:     Option<Dir>,
+            file:    Arc<File<'_>>,
+        }
 
-            // There are two types of recursion that exa supports: a tree
-            // view, which is dealt with here, and multiple listings, which is
-            // dealt with in the main module. So only actually recurse if we
-            // are in tree mode - the other case will be dealt with elsewhere.
-            if let Some((r, filter)) = self.recurse {
-                if file.is_directory() && r.tree && !r.is_too_deep(depth) {
+        pool.scoped(|scoped| {
+            let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
+            let table = Arc::new(Mutex::new(&mut table));
 
-                    // Use the filter to remove unwanted files *before* expanding
-                    // them, so we don't examine any directories that wouldn't
-                    // have their contents listed anyway.
-                    match file.to_dir() {
-                        Ok(ref dir) => {
-                            let mut files = Vec::new();
+            for file in src.into_iter() {
+                let file: Arc<File> = Arc::new(file);
+                let file_eggs = file_eggs.clone();
+                let table = table.clone();
 
-                            for file_to_add in dir.files() {
-                                match file_to_add {
-                                    Ok(f)          => files.push(f),
-                                    Err((path, e)) => errors.push((e, Some(path)))
+                scoped.execute(move || {
+                    let mut errors = Vec::new();
+
+                    let mut xattrs = Vec::new();
+                    match file.path.attributes() {
+                        Ok(xs) => {
+                            if self.xattr {
+                                for xattr in xs {
+                                    xattrs.push(xattr);
                                 }
-                            }
-
-                            filter.transform_files(&mut files);
-
-                            if !files.is_empty() {
-                                for xattr in xattrs {
-                                    table.add_xattr(xattr, depth + 1, false);
-                                }
-
-                                for (error, path) in errors {
-                                    table.add_error(&error, depth + 1, false, path);
-                                }
-
-                                self.add_files_to_table(table, &files, depth + 1);
-                                continue;
                             }
                         },
                         Err(e) => {
-                            errors.push((e, None));
+                            if self.xattr {
+                                errors.push((e, None));
+                            }
                         },
+                    };
+
+                    let cells = table.lock().unwrap().cells_for_file(&file, !xattrs.is_empty());
+                    let links = true;
+                    let name = Cell { text: filename(&file, &self.colours, links), length: file.file_name_width() };
+
+                    let mut dir = None;
+
+                    if let Some(r) = self.recurse {
+                        if file.is_directory() && r.tree && !r.is_too_deep(depth) {
+                            if let Ok(d) = file.to_dir(false) {
+                                dir = Some(d);
+                            }
+                        }
+                    };
+
+                    let egg = Egg {
+                        cells: cells,
+                        name: name,
+                        xattrs: xattrs,
+                        errors: errors,
+                        dir: dir,
+                        file: file,
+                    };
+
+                    file_eggs.lock().unwrap().push(egg);
+                });
+            }
+        });
+
+        file_eggs.sort_by(|a, b| self.filter.compare_files(&*a.file, &*b.file));
+
+        let num_eggs = file_eggs.len();
+        for (index, egg) in file_eggs.into_iter().enumerate() {
+            let mut files = Vec::new();
+            let mut errors = egg.errors;
+
+            let row = Row {
+                depth:    depth,
+                cells:    Some(egg.cells),
+                name:     egg.name,
+                last:     index == num_eggs - 1,
+            };
+
+            table.rows.push(row);
+
+            if let Some(ref dir) = egg.dir {
+                for file_to_add in dir.files() {
+                    match file_to_add {
+                        Ok(f)          => files.push(f),
+                        Err((path, e)) => errors.push((e, Some(path)))
                     }
+                }
+
+                self.filter.filter_files(&mut files);
+
+                if !files.is_empty() {
+                    for xattr in egg.xattrs {
+                        table.add_xattr(xattr, depth + 1, false);
+                    }
+
+                    for (error, path) in errors {
+                        table.add_error(&error, depth + 1, false, path);
+                    }
+
+                    self.add_files_to_table(table, files, depth + 1);
+                    continue;
                 }
             }
 
-            let count = xattrs.len();
-            for (index, xattr) in xattrs.into_iter().enumerate() {
+            let count = egg.xattrs.len();
+            for (index, xattr) in egg.xattrs.into_iter().enumerate() {
                 table.add_xattr(xattr, depth + 1, errors.is_empty() && index == count - 1);
             }
 
@@ -161,7 +209,6 @@ impl Details {
             for (index, (error, path)) in errors.into_iter().enumerate() {
                 table.add_error(&error, depth + 1, index == count - 1, path);
             }
-
         }
     }
 }
@@ -289,17 +336,11 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.perms.attribute, &format!("{}\t{}", xattr.name, xattr.size)),
+            name:     Cell::paint(self.colours.perms.attribute, &format!("{} (len {})", xattr.name, xattr.size)),
             last:     last,
         };
 
         self.rows.push(row);
-    }
-
-    /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool, xattrs: bool) {
-        let cells = self.cells_for_file(file, xattrs);
-        self.add_file_with_cells(cells, file, depth, last, links)
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {

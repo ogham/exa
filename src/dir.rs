@@ -15,7 +15,7 @@ use file::{File, fields};
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
     contents: Vec<PathBuf>,
-    path: PathBuf,
+    pub path: PathBuf,
     git: Option<Git>,
 }
 

@@ -83,8 +83,8 @@ impl<'dir> File<'dir> {
         self.metadata.is_dir()
     }
 
-    pub fn to_dir(&self) -> io::Result<Dir> {
-        Dir::readdir(&*self.path, false)
+    pub fn to_dir(&self, scan_for_git: bool) -> io::Result<Dir> {
+        Dir::readdir(&*self.path, scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
