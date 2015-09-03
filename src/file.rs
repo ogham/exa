@@ -84,7 +84,7 @@ impl<'dir> File<'dir> {
     }
 
     pub fn to_dir(&self, scan_for_git: bool) -> io::Result<Dir> {
-        Dir::readdir(&*self.path, scan_for_git)
+        Dir::read_dir(&*self.path, scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a

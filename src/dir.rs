@@ -25,7 +25,7 @@ impl Dir {
     /// pointed to by the given path. Fails if the directory can't be read, or
     /// isn't actually a directory, or if there's an IO error that occurs
     /// while scanning.
-    pub fn readdir(path: &Path, git: bool) -> io::Result<Dir> {
+    pub fn read_dir(path: &Path, git: bool) -> io::Result<Dir> {
         let reader = try!(fs::read_dir(path));
         let contents = try!(reader.map(|e| e.map(|e| e.path())).collect());
 
