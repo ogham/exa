@@ -297,7 +297,6 @@ impl<'dir> File<'dir> {
             other_read:     has_bit(unix::fs::OTHER_READ),
             other_write:    has_bit(unix::fs::OTHER_WRITE),
             other_execute:  has_bit(unix::fs::OTHER_EXECUTE),
-            attribute:      false, // !self.xattrs.is_empty()
         }
     }
 
@@ -423,7 +422,6 @@ pub mod fields {
         pub other_read:     bool,
         pub other_write:    bool,
         pub other_execute:  bool,
-        pub attribute:      bool,
     }
 
     pub struct Links {
