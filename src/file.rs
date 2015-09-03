@@ -56,6 +56,7 @@ pub struct File<'dir> {
 }
 
 impl<'dir> File<'dir> {
+
     /// Create a new `File` object from the given `Path`, inside the given
     /// `Dir`, if appropriate.
     ///
@@ -70,11 +71,11 @@ impl<'dir> File<'dir> {
         let filename = path_filename(path);
 
         File {
-            path:   path.to_path_buf(),
-            dir:    parent,
-            metadata:   metadata,
-            ext:    ext(&filename),
-            name:   filename.to_string(),
+            path:      path.to_path_buf(),
+            dir:       parent,
+            metadata:  metadata,
+            ext:       ext(&filename),
+            name:      filename.to_string(),
         }
     }
 
@@ -83,6 +84,12 @@ impl<'dir> File<'dir> {
         self.metadata.is_dir()
     }
 
+    /// If this file is a directory on the filesystem, then clone its
+    /// `PathBuf` for use in one of our own `Dir` objects, and read a list of
+    /// its contents.
+    ///
+    /// Returns an IO error upon failure, but this shouldn't be used to check
+    /// if a `File` is a directory or not! For that, just use `is_directory()`.
     pub fn to_dir(&self, scan_for_git: bool) -> io::Result<Dir> {
         Dir::read_dir(&*self.path, scan_for_git)
     }
@@ -178,11 +185,11 @@ impl<'dir> File<'dir> {
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
         if let Ok(metadata) = fs::metadata(&target_path) {
             Ok(File {
-                path:   target_path.to_path_buf(),
-                dir:    self.dir,
-                metadata:   metadata,
-                ext:    ext(&filename),
-                name:   filename.to_string(),
+                path:      target_path.to_path_buf(),
+                dir:       self.dir,
+                metadata:  metadata,
+                ext:       ext(&filename),
+                name:      filename.to_string(),
             })
         }
         else {
@@ -282,6 +289,10 @@ impl<'dir> File<'dir> {
     }
 
     /// This file's permissions, with flags for each bit.
+    ///
+    /// The extended-attribute '@' character that you see in here is in fact
+    /// added in later, to avoid querying the extended attributes more than
+    /// once. (Yes, it's a little hacky.)
     pub fn permissions(&self) -> f::Permissions {
         let bits = self.metadata.permissions().mode();
         let has_bit = |bit| { bits & bit == bit };

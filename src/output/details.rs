@@ -1,3 +1,116 @@
+//! The **Details** output view displays each file as a row in a table.
+//!
+//! It's used in the following situations:
+//!
+//! - Most commonly, when using the `--long` command-line argument to display the
+//!   details of each file, which requires using a table view to hold all the data;
+//! - When using the `--tree` argument, which uses the same table view to display
+//!   each file on its own line, with the table providing the tree characters;
+//! - When using both the `--long` and `--grid` arguments, which constructs a
+//!   series of tables to fit all the data on the screen.
+//!
+//! You will probably recognise it from the `ls --long` command. It looks like
+//! this:
+//!
+//!     .rw-r--r--  9.6k ben 29 Jun 16:16 Cargo.lock
+//!     .rw-r--r--   547 ben 23 Jun 10:54 Cargo.toml
+//!     .rw-r--r--  1.1k ben 23 Nov  2014 LICENCE
+//!     .rw-r--r--  2.5k ben 21 May 14:38 README.md
+//!     .rw-r--r--  382k ben  8 Jun 21:00 screenshot.png
+//!     drwxr-xr-x     - ben 29 Jun 14:50 src
+//!     drwxr-xr-x     - ben 28 Jun 19:53 target
+//!
+//! The table is constructed by creating a `Table` value, which produces a `Row`
+//! value for each file. These rows can contain a vector of `Cell`s, or they can
+//! contain depth information for the tree view, or both. These are described
+//! below.
+//!
+//!
+//! ## Constructing Detail Views
+//!
+//! When using the `--long` command-line argument, the details of each file are
+//! displayed next to its name.
+//!
+//! The table holds a vector of all the column types. For each file and column, a
+//! `Cell` value containing the ANSI-coloured text and Unicode width of each cell
+//! is generated, with the row and column determined by indexing into both arrays.
+//!
+//! The column types vector does not actually include the filename. This is
+//! because the filename is always the rightmost field, and as such, it does not
+//! need to have its width queried or be padded with spaces.
+//!
+//! To illustrate the above:
+//!
+//!     ┌─────────────────────────────────────────────────────────────────────────┐
+//!     │ columns: [ Permissions,  Size,   User,  Date(Modified) ]                │
+//!     ├─────────────────────────────────────────────────────────────────────────┤
+//!     │   rows:  cells:                                            filename:    │
+//!     │   row 1: [ ".rw-r--r--", "9.6k", "ben", "29 Jun 16:16" ]   Cargo.lock   │
+//!     │   row 2: [ ".rw-r--r--",  "547", "ben", "23 Jun 10:54" ]   Cargo.toml   │
+//!     │   row 3: [ "drwxr-xr-x",    "-", "ben", "29 Jun 14:50" ]   src          │
+//!     │   row 4: [ "drwxr-xr-x",    "-", "ben", "28 Jun 19:53" ]   target       │
+//!     └─────────────────────────────────────────────────────────────────────────┘
+//!
+//! Each column in the table needs to be resized to fit its widest argument. This
+//! means that we must wait until every row has been added to the table before it
+//! can be displayed, in order to make sure that every column is wide enough.
+//!
+//!
+//! ## Constructing Tree Views
+//!
+//! When using the `--tree` argument, instead of a vector of cells, each row has a
+//! `depth` field that indicates how far deep in the tree it is: the top level has
+//! depth 0, its children have depth 1, and *their* children have depth 2, and so
+//! on.
+//!
+//! On top of this, it also has a `last` field that specifies whether this is the
+//! last row of this particular consecutive set of rows. This doesn't affect the
+//! file's information; it's just used to display a different set of Unicode tree
+//! characters! The resulting table looks like this:
+//!
+//!     ┌───────┬───────┬───────────────────────┐
+//!     │ Depth │ Last  │ Output                │
+//!     ├───────┼───────┼───────────────────────┤
+//!     │     0 │       │ documents             │
+//!     │     1 │ false │ ├── this_file.txt     │
+//!     │     1 │ false │ ├── that_file.txt     │
+//!     │     1 │ false │ ├── features          │
+//!     │     2 │ false │ │  ├── feature_1.rs   │
+//!     │     2 │ false │ │  ├── feature_2.rs   │
+//!     │     2 │ true  │ │  └── feature_3.rs   │
+//!     │     1 │ true  │ └── pictures          │
+//!     │     2 │ false │    ├── garden.jpg     │
+//!     │     2 │ false │    ├── flowers.jpg    │
+//!     │     2 │ false │    ├── library.png    │
+//!     │     2 │ true  │    └── space.tiff     │
+//!     └───────┴───────┴───────────────────────┘
+//!
+//! Creating the table like this means that each file has to be tested to see if
+//! it's the last one in the group. This is usually done by putting all the files
+//! in a vector beforehand, getting its length, then comparing the index of each
+//! file to see if it's the last one. (As some files may not be successfully
+//! `stat`ted, we don't know how many files are going to exist in each directory)
+//!
+//! These rows have a `None` value for their vector of cells, instead of a `Some`
+//! vector containing any. It's possible to have *both* a vector of cells and
+//! depth and last flags when the user specifies `--tree` *and* `--long`.
+//!
+//!
+//! ## Extended Attributes and Errors
+//!
+//! Finally, files' extended attributes and any errors that occur while statting
+//! them can also be displayed as their children. It looks like this:
+//!
+//!     .rw-r--r--  0 ben  3 Sep 13:26 forbidden
+//!                                    └── <Permission denied (os error 13)>
+//!     .rw-r--r--@ 0 ben  3 Sep 13:26 file_with_xattrs
+//!                                    ├── another_greeting (len 2)
+//!                                    └── greeting (len 5)
+//!
+//! These lines also have `None` cells, and the error string or attribute details
+//! are used in place of the filename.
+
+
 use std::error::Error;
 use std::io;
 use std::path::PathBuf;
@@ -66,15 +179,19 @@ pub struct Details {
 }
 
 impl Details {
+
+    /// Print the details of the given vector of files -- all of which will
+    /// have been read from the given directory, if present -- to stdout.
     pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-
         let columns_for_dir = match self.columns {
             Some(cols) => cols.for_dir(dir),
             None => Vec::new(),
         };
 
+        // Next, add a header if the user requests it.
         let mut table = Table::with_options(self.colours, columns_for_dir);
         if self.header { table.add_header() }
 
@@ -85,9 +202,9 @@ impl Details {
         }
     }
 
-    /// Adds files to the table - recursively, if the `recurse` option
-    /// is present.
-    fn add_files_to_table<'dir, U: Users+Send+Sync>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
+    /// Adds files to the table, possibly recursively. This is easily
+    /// parallelisable, and uses a pool of threads.
+    fn add_files_to_table<'dir, U: Users+Send>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
@@ -133,8 +250,11 @@ impl Details {
                     };
 
                     let cells = table.lock().unwrap().cells_for_file(&file, !xattrs.is_empty());
-                    let links = true;
-                    let name = Cell { text: filename(&file, &self.colours, links), length: file.file_name_width() };
+
+                    let name = Cell {
+                        text: filename(&file, &self.colours, true),
+                        length: file.file_name_width()
+                    };
 
                     let mut dir = None;
 
@@ -218,10 +338,10 @@ struct Row {
 
     /// Vector of cells to display.
     ///
-    /// Most of the rows will be files that have had their metadata
-    /// successfully queried and displayed in these cells, so this will almost
-    /// always be `Some`. It will be `None` for a row that's only displaying
-    /// an attribute or an error.
+    /// Most of the rows will be used to display files' metadata, so this will
+    /// almost always be `Some`, containing a vector of cells. It will only be
+    /// `None` for a row displaying an attribute or error, neither of which
+    /// have cells.
     cells: Option<Vec<Cell>>,
 
     // Did You Know?
@@ -242,7 +362,8 @@ struct Row {
 
 impl Row {
 
-    /// Gets the 'width' of the indexed column, if present. If not, returns 0.
+    /// Gets the Unicode display width of the indexed column, if present. If
+    /// not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
             Some(ref cells) => cells[index].length,
