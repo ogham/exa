@@ -1,3 +1,116 @@
+//! The **Details** output view displays each file as a row in a table.
+//!
+//! It's used in the following situations:
+//!
+//! - Most commonly, when using the `--long` command-line argument to display the
+//!   details of each file, which requires using a table view to hold all the data;
+//! - When using the `--tree` argument, which uses the same table view to display
+//!   each file on its own line, with the table providing the tree characters;
+//! - When using both the `--long` and `--grid` arguments, which constructs a
+//!   series of tables to fit all the data on the screen.
+//!
+//! You will probably recognise it from the `ls --long` command. It looks like
+//! this:
+//!
+//!     .rw-r--r--  9.6k ben 29 Jun 16:16 Cargo.lock
+//!     .rw-r--r--   547 ben 23 Jun 10:54 Cargo.toml
+//!     .rw-r--r--  1.1k ben 23 Nov  2014 LICENCE
+//!     .rw-r--r--  2.5k ben 21 May 14:38 README.md
+//!     .rw-r--r--  382k ben  8 Jun 21:00 screenshot.png
+//!     drwxr-xr-x     - ben 29 Jun 14:50 src
+//!     drwxr-xr-x     - ben 28 Jun 19:53 target
+//!
+//! The table is constructed by creating a `Table` value, which produces a `Row`
+//! value for each file. These rows can contain a vector of `Cell`s, or they can
+//! contain depth information for the tree view, or both. These are described
+//! below.
+//!
+//!
+//! ## Constructing Detail Views
+//!
+//! When using the `--long` command-line argument, the details of each file are
+//! displayed next to its name.
+//!
+//! The table holds a vector of all the column types. For each file and column, a
+//! `Cell` value containing the ANSI-coloured text and Unicode width of each cell
+//! is generated, with the row and column determined by indexing into both arrays.
+//!
+//! The column types vector does not actually include the filename. This is
+//! because the filename is always the rightmost field, and as such, it does not
+//! need to have its width queried or be padded with spaces.
+//!
+//! To illustrate the above:
+//!
+//!     ┌─────────────────────────────────────────────────────────────────────────┐
+//!     │ columns: [ Permissions,  Size,   User,  Date(Modified) ]                │
+//!     ├─────────────────────────────────────────────────────────────────────────┤
+//!     │   rows:  cells:                                            filename:    │
+//!     │   row 1: [ ".rw-r--r--", "9.6k", "ben", "29 Jun 16:16" ]   Cargo.lock   │
+//!     │   row 2: [ ".rw-r--r--",  "547", "ben", "23 Jun 10:54" ]   Cargo.toml   │
+//!     │   row 3: [ "drwxr-xr-x",    "-", "ben", "29 Jun 14:50" ]   src          │
+//!     │   row 4: [ "drwxr-xr-x",    "-", "ben", "28 Jun 19:53" ]   target       │
+//!     └─────────────────────────────────────────────────────────────────────────┘
+//!
+//! Each column in the table needs to be resized to fit its widest argument. This
+//! means that we must wait until every row has been added to the table before it
+//! can be displayed, in order to make sure that every column is wide enough.
+//!
+//!
+//! ## Constructing Tree Views
+//!
+//! When using the `--tree` argument, instead of a vector of cells, each row has a
+//! `depth` field that indicates how far deep in the tree it is: the top level has
+//! depth 0, its children have depth 1, and *their* children have depth 2, and so
+//! on.
+//!
+//! On top of this, it also has a `last` field that specifies whether this is the
+//! last row of this particular consecutive set of rows. This doesn't affect the
+//! file's information; it's just used to display a different set of Unicode tree
+//! characters! The resulting table looks like this:
+//!
+//!     ┌───────┬───────┬───────────────────────┐
+//!     │ Depth │ Last  │ Output                │
+//!     ├───────┼───────┼───────────────────────┤
+//!     │     0 │       │ documents             │
+//!     │     1 │ false │ ├── this_file.txt     │
+//!     │     1 │ false │ ├── that_file.txt     │
+//!     │     1 │ false │ ├── features          │
+//!     │     2 │ false │ │  ├── feature_1.rs   │
+//!     │     2 │ false │ │  ├── feature_2.rs   │
+//!     │     2 │ true  │ │  └── feature_3.rs   │
+//!     │     1 │ true  │ └── pictures          │
+//!     │     2 │ false │    ├── garden.jpg     │
+//!     │     2 │ false │    ├── flowers.jpg    │
+//!     │     2 │ false │    ├── library.png    │
+//!     │     2 │ true  │    └── space.tiff     │
+//!     └───────┴───────┴───────────────────────┘
+//!
+//! Creating the table like this means that each file has to be tested to see if
+//! it's the last one in the group. This is usually done by putting all the files
+//! in a vector beforehand, getting its length, then comparing the index of each
+//! file to see if it's the last one. (As some files may not be successfully
+//! `stat`ted, we don't know how many files are going to exist in each directory)
+//!
+//! These rows have a `None` value for their vector of cells, instead of a `Some`
+//! vector containing any. It's possible to have *both* a vector of cells and
+//! depth and last flags when the user specifies `--tree` *and* `--long`.
+//!
+//!
+//! ## Extended Attributes and Errors
+//!
+//! Finally, files' extended attributes and any errors that occur while statting
+//! them can also be displayed as their children. It looks like this:
+//!
+//!     .rw-r--r--  0 ben  3 Sep 13:26 forbidden
+//!                                    └── <Permission denied (os error 13)>
+//!     .rw-r--r--@ 0 ben  3 Sep 13:26 file_with_xattrs
+//!                                    ├── another_greeting (len 2)
+//!                                    └── greeting (len 5)
+//!
+//! These lines also have `None` cells, and the error string or attribute details
+//! are used in place of the filename.
+
+
 use std::error::Error;
 use std::io;
 use std::path::PathBuf;
@@ -49,7 +162,10 @@ pub struct Details {
     /// Whether to recurse through directories with a tree view, and if so,
     /// which options to use. This field is only relevant here if the `tree`
     /// field of the RecurseOptions is `true`.
-    pub recurse: Option<(RecurseOptions, FileFilter)>,
+    pub recurse: Option<RecurseOptions>,
+
+    /// How to sort and filter the files after getting their details.
+    pub filter: FileFilter,
 
     /// Whether to show a header line or not.
     pub header: bool,
@@ -63,15 +179,19 @@ pub struct Details {
 }
 
 impl Details {
-    pub fn view(&self, dir: Option<&Dir>, files: &[File]) {
+
+    /// Print the details of the given vector of files -- all of which will
+    /// have been read from the given directory, if present -- to stdout.
+    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-
         let columns_for_dir = match self.columns {
             Some(cols) => cols.for_dir(dir),
             None => Vec::new(),
         };
 
+        // Next, add a header if the user requests it.
         let mut table = Table::with_options(self.colours, columns_for_dir);
         if self.header { table.add_header() }
 
@@ -82,78 +202,126 @@ impl Details {
         }
     }
 
-    /// Adds files to the table - recursively, if the `recurse` option
-    /// is present.
-    fn add_files_to_table<U: Users>(&self, table: &mut Table<U>, src: &[File], depth: usize) {
-        for (index, file) in src.iter().enumerate() {
-            let mut xattrs = Vec::new();
-            let mut errors = Vec::new();
+    /// Adds files to the table, possibly recursively. This is easily
+    /// parallelisable, and uses a pool of threads.
+    fn add_files_to_table<'dir, U: Users+Send>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
+        use num_cpus;
+        use scoped_threadpool::Pool;
+        use std::sync::{Arc, Mutex};
 
-            let has_xattrs = match file.path.attributes() {
-                Ok(xs) => {
-                    let r = !xs.is_empty();
-                    if self.xattr {
-                        for xattr in xs {
-                            xattrs.push(xattr);
-                        }
-                    }
-                    r
-                },
-                Err(e) => {
-                    if self.xattr {
-                        errors.push((e, None));
-                    }
-                    true
-                },
-            };
+        let mut pool = Pool::new(num_cpus::get() as u32);
+        let mut file_eggs = Vec::new();
 
-            table.add_file(file, depth, index == src.len() - 1, true, has_xattrs);
+        struct Egg<'_> {
+            cells:   Vec<Cell>,
+            name:    Cell,
+            xattrs:  Vec<Attribute>,
+            errors:  Vec<(io::Error, Option<PathBuf>)>,
+            dir:     Option<Dir>,
+            file:    Arc<File<'_>>,
+        }
 
-            // There are two types of recursion that exa supports: a tree
-            // view, which is dealt with here, and multiple listings, which is
-            // dealt with in the main module. So only actually recurse if we
-            // are in tree mode - the other case will be dealt with elsewhere.
-            if let Some((r, filter)) = self.recurse {
-                if file.is_directory() && r.tree && !r.is_too_deep(depth) {
+        pool.scoped(|scoped| {
+            let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
+            let table = Arc::new(Mutex::new(&mut table));
 
-                    // Use the filter to remove unwanted files *before* expanding
-                    // them, so we don't examine any directories that wouldn't
-                    // have their contents listed anyway.
-                    match file.to_dir() {
-                        Ok(ref dir) => {
-                            let mut files = Vec::new();
+            for file in src.into_iter() {
+                let file: Arc<File> = Arc::new(file);
+                let file_eggs = file_eggs.clone();
+                let table = table.clone();
 
-                            for file_to_add in dir.files() {
-                                match file_to_add {
-                                    Ok(f)          => files.push(f),
-                                    Err((path, e)) => errors.push((e, Some(path)))
+                scoped.execute(move || {
+                    let mut errors = Vec::new();
+
+                    let mut xattrs = Vec::new();
+                    match file.path.attributes() {
+                        Ok(xs) => {
+                            if self.xattr {
+                                for xattr in xs {
+                                    xattrs.push(xattr);
                                 }
-                            }
-
-                            filter.transform_files(&mut files);
-
-                            if !files.is_empty() {
-                                for xattr in xattrs {
-                                    table.add_xattr(xattr, depth + 1, false);
-                                }
-
-                                for (error, path) in errors {
-                                    table.add_error(&error, depth + 1, false, path);
-                                }
-
-                                self.add_files_to_table(table, &files, depth + 1);
-                                continue;
                             }
                         },
                         Err(e) => {
-                            errors.push((e, None));
+                            if self.xattr {
+                                errors.push((e, None));
+                            }
                         },
+                    };
+
+                    let cells = table.lock().unwrap().cells_for_file(&file, !xattrs.is_empty());
+
+                    let name = Cell {
+                        text: filename(&file, &self.colours, true),
+                        length: file.file_name_width()
+                    };
+
+                    let mut dir = None;
+
+                    if let Some(r) = self.recurse {
+                        if file.is_directory() && r.tree && !r.is_too_deep(depth) {
+                            if let Ok(d) = file.to_dir(false) {
+                                dir = Some(d);
+                            }
+                        }
+                    };
+
+                    let egg = Egg {
+                        cells: cells,
+                        name: name,
+                        xattrs: xattrs,
+                        errors: errors,
+                        dir: dir,
+                        file: file,
+                    };
+
+                    file_eggs.lock().unwrap().push(egg);
+                });
+            }
+        });
+
+        file_eggs.sort_by(|a, b| self.filter.compare_files(&*a.file, &*b.file));
+
+        let num_eggs = file_eggs.len();
+        for (index, egg) in file_eggs.into_iter().enumerate() {
+            let mut files = Vec::new();
+            let mut errors = egg.errors;
+
+            let row = Row {
+                depth:    depth,
+                cells:    Some(egg.cells),
+                name:     egg.name,
+                last:     index == num_eggs - 1,
+            };
+
+            table.rows.push(row);
+
+            if let Some(ref dir) = egg.dir {
+                for file_to_add in dir.files() {
+                    match file_to_add {
+                        Ok(f)          => files.push(f),
+                        Err((path, e)) => errors.push((e, Some(path)))
                     }
+                }
+
+                self.filter.filter_files(&mut files);
+
+                if !files.is_empty() {
+                    for xattr in egg.xattrs {
+                        table.add_xattr(xattr, depth + 1, false);
+                    }
+
+                    for (error, path) in errors {
+                        table.add_error(&error, depth + 1, false, path);
+                    }
+
+                    self.add_files_to_table(table, files, depth + 1);
+                    continue;
                 }
             }
 
-            let count = xattrs.len();
-            for (index, xattr) in xattrs.into_iter().enumerate() {
+            let count = egg.xattrs.len();
+            for (index, xattr) in egg.xattrs.into_iter().enumerate() {
                 table.add_xattr(xattr, depth + 1, errors.is_empty() && index == count - 1);
             }
 
@@ -161,7 +329,6 @@ impl Details {
             for (index, (error, path)) in errors.into_iter().enumerate() {
                 table.add_error(&error, depth + 1, index == count - 1, path);
             }
-
         }
     }
 }
@@ -171,10 +338,10 @@ struct Row {
 
     /// Vector of cells to display.
     ///
-    /// Most of the rows will be files that have had their metadata
-    /// successfully queried and displayed in these cells, so this will almost
-    /// always be `Some`. It will be `None` for a row that's only displaying
-    /// an attribute or an error.
+    /// Most of the rows will be used to display files' metadata, so this will
+    /// almost always be `Some`, containing a vector of cells. It will only be
+    /// `None` for a row displaying an attribute or error, neither of which
+    /// have cells.
     cells: Option<Vec<Cell>>,
 
     // Did You Know?
@@ -195,7 +362,8 @@ struct Row {
 
 impl Row {
 
-    /// Gets the 'width' of the indexed column, if present. If not, returns 0.
+    /// Gets the Unicode display width of the indexed column, if present. If
+    /// not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
             Some(ref cells) => cells[index].length,
@@ -289,17 +457,11 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.perms.attribute, &format!("{}\t{}", xattr.name, xattr.size)),
+            name:     Cell::paint(self.colours.perms.attribute, &format!("{} (len {})", xattr.name, xattr.size)),
             last:     last,
         };
 
         self.rows.push(row);
-    }
-
-    /// Get the cells for the given file, and add the result to the table.
-    fn add_file(&mut self, file: &File, depth: usize, last: bool, links: bool, xattrs: bool) {
-        let cells = self.cells_for_file(file, xattrs);
-        self.add_file_with_cells(cells, file, depth, last, links)
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {

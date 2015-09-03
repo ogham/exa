@@ -14,8 +14,15 @@ use file::{File, fields};
 /// check the existence of surrounding files, then highlight themselves
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
+
+    /// A vector of the files that have been read from this directory.
     contents: Vec<PathBuf>,
-    path: PathBuf,
+
+    /// The path that was read.
+    pub path: PathBuf,
+
+    /// Holds a `Git` object if scanning for Git repositories is switched on,
+    /// and this directory happens to contain one.
     git: Option<Git>,
 }
 
@@ -25,7 +32,7 @@ impl Dir {
     /// pointed to by the given path. Fails if the directory can't be read, or
     /// isn't actually a directory, or if there's an IO error that occurs
     /// while scanning.
-    pub fn readdir(path: &Path, git: bool) -> io::Result<Dir> {
+    pub fn read_dir(path: &Path, git: bool) -> io::Result<Dir> {
         let reader = try!(fs::read_dir(path));
         let contents = try!(reader.map(|e| e.map(|e| e.path())).collect());
 
@@ -71,6 +78,7 @@ impl Dir {
 }
 
 
+/// Iterator over reading the contents of a directory as `File` objects.
 pub struct Files<'dir> {
     inner: SliceIter<'dir, PathBuf>,
     dir: &'dir Dir,

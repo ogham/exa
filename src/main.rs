@@ -11,8 +11,8 @@ extern crate natord;
 extern crate num_cpus;
 extern crate number_prefix;
 extern crate pad;
+extern crate scoped_threadpool;
 extern crate term_grid;
-extern crate threadpool;
 extern crate unicode_width;
 extern crate users;
 
@@ -21,12 +21,8 @@ extern crate git2;
 
 
 use std::env;
-use std::fs;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Component, Path};
 use std::process;
-use std::sync::mpsc::channel;
-
-use threadpool::ThreadPool;
 
 use dir::Dir;
 use file::File;
@@ -43,95 +39,43 @@ mod output;
 mod term;
 
 
-#[cfg(not(test))]
-struct Exa<'dir> {
-    count:   usize,
+struct Exa {
     options: Options,
-    dirs:    Vec<PathBuf>,
-    files:   Vec<File<'dir>>,
 }
 
-#[cfg(not(test))]
-impl<'dir> Exa<'dir> {
-    fn new(options: Options) -> Exa<'dir> {
-        Exa {
-            count: 0,
-            options: options,
-            dirs: Vec::new(),
-            files: Vec::new(),
-        }
-    }
+impl Exa {
+    fn run(&mut self, args_file_names: &[String]) {
+        let mut files = Vec::new();
+        let mut dirs = Vec::new();
 
-    fn load(&mut self, files: &[String]) {
-
-        // Separate the user-supplied paths into directories and files.
-        // Files are shown first, and then each directory is expanded
-        // and listed second.
-        let is_tree = self.options.dir_action.is_tree() || self.options.dir_action.is_as_file();
-        let total_files = files.len();
-
-
-        // Communication between consumer thread and producer threads
-        enum StatResult<'dir> {
-            File(File<'dir>),
-            Dir(PathBuf),
-            Error
-        }
-
-        let pool = ThreadPool::new(8 * num_cpus::get());
-        let (tx, rx) = channel();
-
-        for file in files.iter() {
-            let tx = tx.clone();
-            let file = file.clone();
-
-            // Spawn producer thread
-            pool.execute(move || {
-                let path = Path::new(&*file);
-                let _ = tx.send(match fs::metadata(&path) {
-                    Ok(metadata) => {
-                        if is_tree || !metadata.is_dir() {
-                            StatResult::File(File::with_metadata(metadata, &path, None))
-                        }
-                        else {
-                            StatResult::Dir(path.to_path_buf())
+        for file_name in args_file_names.iter() {
+            match File::from_path(Path::new(&file_name), None) {
+                Err(e) => {
+                    println!("{}: {}", file_name, e);
+                },
+                Ok(f) => {
+                    if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
+                        match f.to_dir(self.options.should_scan_for_git()) {
+                            Ok(d) => dirs.push(d),
+                            Err(e) => println!("{}: {}", file_name, e),
                         }
                     }
-                    Err(e) => {
-                        println!("{}: {}", file, e);
-                        StatResult::Error
+                    else {
+                        files.push(f);
                     }
-                });
-            });
-        }
-
-        // Spawn consumer thread
-        for result in rx.iter().take(total_files) {
-            match result {
-                StatResult::File(file)  => self.files.push(file),
-                StatResult::Dir(path)   => self.dirs.push(path),
-                StatResult::Error       => ()
+                },
             }
-            self.count += 1;
         }
+
+        let any_files = files.is_empty();
+        self.print_files(None, files);
+
+        let is_only_dir = dirs.len() == 1;
+        self.print_dirs(dirs, any_files, is_only_dir);
     }
 
-    fn print_files(&self) {
-        if !self.files.is_empty() {
-            self.print(None, &self.files[..]);
-        }
-    }
-
-    fn print_dirs(&mut self) {
-        let mut first = self.files.is_empty();
-
-        // Directories are put on a stack rather than just being iterated through,
-        // as the vector can change as more directories are added.
-        loop {
-            let dir_path = match self.dirs.pop() {
-                None => break,
-                Some(f) => f,
-            };
+    fn print_dirs(&self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) {
+        for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and the
             // first directory.
@@ -142,68 +86,66 @@ impl<'dir> Exa<'dir> {
                 print!("\n");
             }
 
-            match Dir::readdir(&dir_path, self.options.should_scan_for_git()) {
-                Ok(ref dir) => {
-                    let mut files = Vec::new();
+            if !is_only_dir {
+                println!("{}:", dir.path.display());
+            }
 
-                    for file in dir.files() {
-                        match file {
-                            Ok(file) => files.push(file),
-                            Err((path, e))   => println!("[{}: {}]", path.display(), e),
-                        }
-                    }
-
-                    self.options.transform_files(&mut files);
-
-                    // When recursing, add any directories to the dirs stack
-                    // backwards: the *last* element of the stack is used each
-                    // time, so by inserting them backwards, they get displayed in
-                    // the correct sort order.
-                    if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
-                        let depth = dir_path.components().filter(|&c| c != Component::CurDir).count() + 1;
-                        if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
-                            for dir in files.iter().filter(|f| f.is_directory()).rev() {
-                                self.dirs.push(dir.path.clone());
-                            }
-                        }
-                    }
-
-                    if self.count > 1 {
-                        println!("{}:", dir_path.display());
-                    }
-                    self.count += 1;
-
-                    self.print(Some(dir), &files[..]);
-                }
-                Err(e) => {
-                    println!("{}: {}", dir_path.display(), e);
-                    return;
+            let mut children = Vec::new();
+            for file in dir.files() {
+                match file {
+                    Ok(file)       => children.push(file),
+                    Err((path, e)) => println!("[{}: {}]", path.display(), e),
                 }
             };
+
+            self.options.filter_files(&mut children);
+            self.options.sort_files(&mut children);
+
+            if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
+                let depth = dir.path.components().filter(|&c| c != Component::CurDir).count() + 1;
+                if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
+
+                    let mut child_dirs = Vec::new();
+                    for child_dir in children.iter().filter(|f| f.is_directory()) {
+                        match child_dir.to_dir(false) {
+                            Ok(d)  => child_dirs.push(d),
+                            Err(e) => println!("{}: {}", child_dir.path.display(), e),
+                        }
+                    }
+
+                    self.print_files(Some(&dir), children);
+
+                    if !child_dirs.is_empty() {
+                        self.print_dirs(child_dirs, false, false);
+                    }
+
+                    continue;
+                }
+            }
+
+            self.print_files(Some(&dir), children);
+
         }
     }
 
-    fn print(&self, dir: Option<&Dir>, files: &[File]) {
+    fn print_files(&self, dir: Option<&Dir>, files: Vec<File>) {
         match self.options.view {
-            View::Grid(g)         => g.view(files),
+            View::Grid(g)         => g.view(&files),
             View::Details(d)      => d.view(dir, files),
-            View::GridDetails(gd) => gd.view(dir, files),
-            View::Lines(l)        => l.view(files),
+            View::GridDetails(gd) => gd.view(dir, &files),
+            View::Lines(l)        => l.view(&files),
         }
     }
 }
 
 
-#[cfg(not(test))]
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     match Options::getopts(&args) {
         Ok((options, paths)) => {
-            let mut exa = Exa::new(options);
-            exa.load(&paths);
-            exa.print_files();
-            exa.print_dirs();
+            let mut exa = Exa { options: options };
+            exa.run(&paths);
         },
         Err(e) => {
             println!("{}", e);
