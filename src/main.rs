@@ -39,17 +39,11 @@ mod output;
 mod term;
 
 
-#[cfg(not(test))]
 struct Exa {
     options: Options,
 }
 
-#[cfg(not(test))]
 impl Exa {
-    fn new(options: Options) -> Exa {
-        Exa { options: options }
-    }
-
     fn run(&mut self, args_file_names: &[String]) {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
@@ -145,13 +139,12 @@ impl Exa {
 }
 
 
-#[cfg(not(test))]
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     match Options::getopts(&args) {
         Ok((options, paths)) => {
-            let mut exa = Exa::new(options);
+            let mut exa = Exa { options: options };
             exa.run(&paths);
         },
         Err(e) => {
