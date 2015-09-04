@@ -25,7 +25,7 @@ mod c {
 
     pub unsafe fn dimensions() -> Winsize {
         let mut window: Winsize = zeroed();
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window as *mut Winsize);
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &mut window);
         window
     }
 }

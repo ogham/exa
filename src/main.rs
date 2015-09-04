@@ -2,6 +2,8 @@
 #![feature(convert, fs_mode)]
 #![feature(slice_splits, vec_resize)]
 
+#![warn(trivial_casts, trivial_numeric_casts)]
+
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
