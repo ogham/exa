@@ -3,6 +3,7 @@
 #![feature(slice_splits, vec_resize)]
 
 #![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_extern_crates, unused_qualifications)]
 
 extern crate ansi_term;
 extern crate datetime;
@@ -12,7 +13,6 @@ extern crate locale;
 extern crate natord;
 extern crate num_cpus;
 extern crate number_prefix;
-extern crate pad;
 extern crate scoped_threadpool;
 extern crate term_grid;
 extern crate unicode_width;

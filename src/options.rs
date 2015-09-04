@@ -1,5 +1,4 @@
 use std::cmp;
-use std::default;
 use std::fmt;
 use std::num::ParseIntError;
 use std::os::unix::fs::MetadataExt;
@@ -180,7 +179,7 @@ pub enum SortField {
     ModifiedDate, AccessedDate, CreatedDate,
 }
 
-impl default::Default for SortField {
+impl Default for SortField {
     fn default() -> SortField {
         SortField::Name
     }
@@ -396,7 +395,7 @@ pub enum SizeFormat {
     JustBytes,
 }
 
-impl default::Default for SizeFormat {
+impl Default for SizeFormat {
     fn default() -> SizeFormat {
         SizeFormat::DecimalBytes
     }
@@ -442,7 +441,7 @@ pub struct TimeTypes {
     created:  bool,
 }
 
-impl default::Default for TimeTypes {
+impl Default for TimeTypes {
     fn default() -> TimeTypes {
         TimeTypes { accessed: false, modified: true, created: false }
     }
