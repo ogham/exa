@@ -28,6 +28,7 @@ pub struct Options {
 impl Options {
 
     /// Call getopts on the given slice of command-line strings.
+    #[allow(unused_results)]
     pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
         opts.optflag("1", "oneline",   "display one entry per line");
