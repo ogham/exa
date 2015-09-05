@@ -70,11 +70,13 @@ impl Exa {
             }
         }
 
-        let any_files = files.is_empty();
-        self.print_files(None, files);
+        let no_files = files.is_empty();
+        if !no_files {
+            self.print_files(None, files);
+        }
 
         let is_only_dir = dirs.len() == 1;
-        self.print_dirs(dirs, any_files, is_only_dir);
+        self.print_dirs(dirs, no_files, is_only_dir);
     }
 
     fn print_dirs(&self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) {
