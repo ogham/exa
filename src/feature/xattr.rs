@@ -12,6 +12,7 @@ pub trait FileAttributes {
     fn symlink_attributes(&self) -> io::Result<Vec<Attribute>>;
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 impl FileAttributes for Path {
     fn attributes(&self) -> io::Result<Vec<Attribute>> {
         list_attrs(lister::Lister::new(FollowSymlinks::Yes), &self)
@@ -22,7 +23,19 @@ impl FileAttributes for Path {
     }
 }
 
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+impl FileAttributes for Path {
+    fn attributes(&self) -> io::Result<Vec<Attribute>> {
+        Ok(vec![])
+    }
+
+    fn symlink_attributes(&self) -> io::Result<Vec<Attribute>> {
+        Ok(vec![])
+    }
+}
+
 /// Attributes which can be passed to `Attribute::list_with_flags`
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[derive(Copy, Clone)]
 pub enum FollowSymlinks {
     Yes,
@@ -36,6 +49,7 @@ pub struct Attribute {
     pub size: usize,
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
     let c_path = match path.as_os_str().to_cstring() {
         Some(cstring) => cstring,
