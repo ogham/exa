@@ -771,6 +771,7 @@ pub mod test {
     // Metadata struct, which is what I was doing before!
 
     mod users {
+        #![allow(unused_results)]
         use super::*;
 
         #[test]
@@ -833,6 +834,7 @@ pub mod test {
     }
 
     mod groups {
+        #![allow(unused_results)]
         use super::*;
 
         #[test]
