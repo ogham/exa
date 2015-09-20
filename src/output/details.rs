@@ -128,7 +128,7 @@ use ansi_term::{ANSIString, ANSIStrings, Style};
 
 use datetime::local::{LocalDateTime, DatePiece};
 use datetime::format::{DateFormat};
-use datetime::zoned::{VariableOffset, TimeZone};
+use datetime::zoned::{TimeZone};
 
 use locale;
 
@@ -381,7 +381,7 @@ pub struct Table<U> {
 
     time:         locale::Time,
     numeric:      locale::Numeric,
-    tz:           VariableOffset,
+    tz:           TimeZone,
     users:        U,
     colours:      Colours,
     current_year: i64,
@@ -394,7 +394,7 @@ impl Default for Table<MockUsers> {
             rows:    Vec::new(),
             time:    locale::Time::english(),
             numeric: locale::Numeric::english(),
-            tz:      VariableOffset::localtime().unwrap(),
+            tz:      TimeZone::localtime().unwrap(),
             users:   MockUsers::with_current_uid(0),
             colours: Colours::default(),
             current_year: 1234,
@@ -413,7 +413,7 @@ impl Table<OSUsers> {
 
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
-            tz:           VariableOffset::localtime().unwrap(),
+            tz:           TimeZone::localtime().unwrap(),
             users:        OSUsers::empty_cache(),
             colours:      colours,
             current_year: LocalDateTime::now().year(),
