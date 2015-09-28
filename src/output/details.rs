@@ -582,7 +582,7 @@ impl<U> Table<U> where U: Users {
     }
 
     fn render_time(&self, timestamp: f::Time) -> Cell {
-        let date = self.tz.at(LocalDateTime::at(timestamp.0));
+        let date = self.tz.at(LocalDateTime::at(timestamp.0 as i64));
 
         let format = if date.year() == self.current_year {
                 DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
