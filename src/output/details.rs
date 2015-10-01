@@ -581,6 +581,7 @@ impl<U> Table<U> where U: Users {
         }
     }
 
+    #[allow(trivial_numeric_casts)]
     fn render_time(&self, timestamp: f::Time) -> Cell {
         let date = self.tz.at(LocalDateTime::at(timestamp.0 as i64));
 
