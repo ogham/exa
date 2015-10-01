@@ -31,5 +31,5 @@ debug = false
 lto = true
 
 [dependencies.git2]
-git = "https://github.com/alexcrichton/git2-rs.git"
+version = "0.3"
 optional = true
