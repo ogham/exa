@@ -2,7 +2,7 @@
 
 [exa](http://bsago.me/exa) is a replacement for `ls` written in Rust.
 
-**You'll have to use the nightly, rather than Rust 1.0 stable or 1.1 beta. Sorry about that.**
+**You'll have to use the Rust 1.5.0 nightly, rather than stable or beta. Sorry about that.**
 
 
 ## Screenshot
