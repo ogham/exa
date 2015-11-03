@@ -26,7 +26,7 @@ impl Grid {
 
         for file in files.iter() {
             grid.add(grid::Cell {
-                contents:  file_colour(&self.colours, file).paint(&file.name).to_string(),
+                contents:  file_colour(&self.colours, file).paint(&*file.name).to_string(),
                 width:     file.file_name_width(),
             });
         }
@@ -37,7 +37,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                println!("{}", file_colour(&self.colours, file).paint(&file.name));
+                println!("{}", file_colour(&self.colours, file).paint(&*file.name));
             }
         }
     }
