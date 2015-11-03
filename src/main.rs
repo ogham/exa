@@ -1,6 +1,5 @@
 #![feature(iter_arith)]
 #![feature(convert, fs_mode)]
-#![feature(slice_splits, vec_resize)]
 
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_extern_crates, unused_qualifications)]
