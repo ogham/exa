@@ -1,4 +1,4 @@
-#![feature(convert, fs_mode)]
+#![feature(convert)]
 
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_extern_crates, unused_qualifications)]
