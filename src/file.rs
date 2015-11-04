@@ -534,14 +534,26 @@ mod test {
     }
 
     #[test]
-    fn test_no_prefix() {
+    fn test_prefix_empty() {
         let f = File::from_path(Path::new("Cargo.toml"), None).unwrap();
         assert_eq!("", f.path_prefix());
-        let f2 = File::from_path(Path::new("src/main.rs"), None).unwrap();
-        assert_eq!("src/", f2.path_prefix());
-        let f3 = File::from_path(Path::new("src"), None).unwrap();
-        assert_eq!("", f3.path_prefix());
-        let f4 = File::from_path(Path::new("/"), None).unwrap();
-        assert_eq!("", f4.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_file() {
+        let f = File::from_path(Path::new("src/main.rs"), None).unwrap();
+        assert_eq!("src/", f.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_path() {
+        let f = File::from_path(Path::new("src"), None).unwrap();
+        assert_eq!("", f.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_root() {
+        let f = File::from_path(Path::new("/"), None).unwrap();
+        assert_eq!("", f.path_prefix());
     }
 }
