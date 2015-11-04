@@ -7,7 +7,7 @@ dependencies = [
  "datetime 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "locale 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "natord 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -99,6 +99,11 @@ dependencies = [
 [[package]]
 name = "libc"
 version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libc"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
