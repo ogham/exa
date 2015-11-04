@@ -683,7 +683,7 @@ impl<U> Table<U> where U: Users {
             // necessary to maintain information about the previously-printed
             // lines, as the output will change based on whether the
             // *previous* entry was the last in its directory.
-            stack.resize(row.depth + 1, TreePart::Edge);
+            stack.reserve(row.depth + 1);
             stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
             for i in 1 .. row.depth + 1 {
