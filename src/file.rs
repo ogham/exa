@@ -4,7 +4,6 @@ use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
 use std::io;
-use std::os::unix;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
@@ -14,6 +13,35 @@ use dir::Dir;
 use options::TimeType;
 
 use self::fields as f;
+
+// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
+// which is currently unstable and lacks vision for stabilization,
+// see https://github.com/rust-lang/rust/issues/27712
+
+#[allow(dead_code)]
+mod modes {
+    use std::os::unix::raw;
+
+    pub const USER_READ: raw::mode_t = 0o400;
+    pub const USER_WRITE: raw::mode_t = 0o200;
+    pub const USER_EXECUTE: raw::mode_t = 0o100;
+    pub const USER_RWX: raw::mode_t = 0o700;
+    pub const GROUP_READ: raw::mode_t = 0o040;
+    pub const GROUP_WRITE: raw::mode_t = 0o020;
+    pub const GROUP_EXECUTE: raw::mode_t = 0o010;
+    pub const GROUP_RWX: raw::mode_t = 0o070;
+    pub const OTHER_READ: raw::mode_t = 0o004;
+    pub const OTHER_WRITE: raw::mode_t = 0o002;
+    pub const OTHER_EXECUTE: raw::mode_t = 0o001;
+    pub const OTHER_RWX: raw::mode_t = 0o007;
+    pub const ALL_READ: raw::mode_t = 0o444;
+    pub const ALL_WRITE: raw::mode_t = 0o222;
+    pub const ALL_EXECUTE: raw::mode_t = 0o111;
+    pub const ALL_RWX: raw::mode_t = 0o777;
+    pub const SETUID: raw::mode_t = 0o4000;
+    pub const SETGID: raw::mode_t = 0o2000;
+    pub const STICKY_BIT: raw::mode_t = 0o1000;
+}
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -104,7 +132,7 @@ impl<'dir> File<'dir> {
     /// current user. Executable files have different semantics than
     /// executable directories, and so should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
-        let bit = unix::fs::USER_EXECUTE;
+        let bit = modes::USER_EXECUTE;
         self.is_file() && (self.metadata.permissions().mode() & bit) == bit
     }
 
@@ -141,16 +169,15 @@ impl<'dir> File<'dir> {
         let components: Vec<Component> = self.path.components().collect();
         let mut path_prefix = String::new();
 
-        if let Some((_, components_init)) = components.split_last() {
-            for component in components_init.iter() {
-                path_prefix.push_str(&*component.as_os_str().to_string_lossy());
+        // This slicing is safe as components always has the RootComponent
+        // as the first element.
+        for component in components[..(components.len() - 1)].iter() {
+            path_prefix.push_str(&*component.as_os_str().to_string_lossy());
 
-                if component != &Component::RootDir {
-                    path_prefix.push_str("/");
-                }
+            if component != &Component::RootDir {
+                path_prefix.push_str("/");
             }
         }
-
         path_prefix
     }
 
@@ -299,15 +326,15 @@ impl<'dir> File<'dir> {
 
         f::Permissions {
             file_type:      self.type_char(),
-            user_read:      has_bit(unix::fs::USER_READ),
-            user_write:     has_bit(unix::fs::USER_WRITE),
-            user_execute:   has_bit(unix::fs::USER_EXECUTE),
-            group_read:     has_bit(unix::fs::GROUP_READ),
-            group_write:    has_bit(unix::fs::GROUP_WRITE),
-            group_execute:  has_bit(unix::fs::GROUP_EXECUTE),
-            other_read:     has_bit(unix::fs::OTHER_READ),
-            other_write:    has_bit(unix::fs::OTHER_WRITE),
-            other_execute:  has_bit(unix::fs::OTHER_EXECUTE),
+            user_read:      has_bit(modes::USER_READ),
+            user_write:     has_bit(modes::USER_WRITE),
+            user_execute:   has_bit(modes::USER_EXECUTE),
+            group_read:     has_bit(modes::GROUP_READ),
+            group_write:    has_bit(modes::GROUP_WRITE),
+            group_execute:  has_bit(modes::GROUP_EXECUTE),
+            other_read:     has_bit(modes::OTHER_READ),
+            other_write:    has_bit(modes::OTHER_WRITE),
+            other_execute:  has_bit(modes::OTHER_EXECUTE),
         }
     }
 
@@ -483,6 +510,8 @@ pub mod fields {
 #[cfg(test)]
 mod test {
     use super::ext;
+    use super::File;
+    use std::path::Path;
 
     #[test]
     fn extension() {
@@ -497,5 +526,29 @@ mod test {
     #[test]
     fn no_extension() {
         assert_eq!(None, ext("jarlsberg"))
+    }
+
+    #[test]
+    fn test_prefix_empty() {
+        let f = File::from_path(Path::new("Cargo.toml"), None).unwrap();
+        assert_eq!("", f.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_file() {
+        let f = File::from_path(Path::new("src/main.rs"), None).unwrap();
+        assert_eq!("src/", f.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_path() {
+        let f = File::from_path(Path::new("src"), None).unwrap();
+        assert_eq!("", f.path_prefix());
+    }
+
+    #[test]
+    fn test_prefix_root() {
+        let f = File::from_path(Path::new("/"), None).unwrap();
+        assert_eq!("", f.path_prefix());
     }
 }

@@ -2,8 +2,7 @@
 
 [exa](http://bsago.me/exa) is a replacement for `ls` written in Rust.
 
-**You'll have to use the Rust 1.6.0 nightly, rather than stable (1.4) or beta (1.5). Sorry about that.**
-
+Works on all recent Rust versions >= 1.4.0.
 
 ## Screenshot
 
@@ -52,6 +51,6 @@ You can sort by **name**, **size**, **ext**, **inode**, **modified**, **created*
 
 ## Installation
 
-exa is written in [Rust](http://www.rust-lang.org). You'll have to use the nightly -- I try to keep it up to date with the latest version when possible.  Once you have it set up, a simple `make install` will compile exa and install it into `/usr/local/bin`.
+exa is written in [Rust](http://www.rust-lang.org). Once you have it set up, a simple `make install` will compile exa and install it into `/usr/local/bin`.
 
 exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features. If you're unable to compile libgit2, you can opt out of Git support by passing `--no-default-features` to Cargo.
