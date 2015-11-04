@@ -116,6 +116,7 @@ use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
 use std::ops::Add;
+use std::iter::repeat;
 
 use colours::Colours;
 use column::{Alignment, Column, Cell};
@@ -683,7 +684,14 @@ impl<U> Table<U> where U: Users {
             // necessary to maintain information about the previously-printed
             // lines, as the output will change based on whether the
             // *previous* entry was the last in its directory.
-            stack.reserve(row.depth + 1);
+            // TODO: Replace this by Vec::resize() when it becomes stable (1.5.0)
+            let stack_len = stack.len();
+            if row.depth + 1 > stack_len {
+                stack.extend(repeat(TreePart::Edge).take(row.depth + 1 - stack_len));
+            } else {
+                stack = stack[..(row.depth + 1)].into();
+            }
+
             stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
             for i in 1 .. row.depth + 1 {
