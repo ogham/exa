@@ -4,5 +4,8 @@ before_install:
   - sudo apt-get install cmake
 sudo: true
 language: rust
-rust: nightly
+rust:
+  - nightly
+  - beta
+  - stable
 
