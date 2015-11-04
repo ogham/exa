@@ -174,16 +174,15 @@ impl<'dir> File<'dir> {
         let components: Vec<Component> = self.path.components().collect();
         let mut path_prefix = String::new();
 
-        if let Some((_, components_init)) = components.split_last() {
-            for component in components_init.iter() {
-                path_prefix.push_str(&*component.as_os_str().to_string_lossy());
+        // This slicing is safe as components always has the RootComponent
+        // as the first element.
+        for component in components[..(components.len() - 1)].iter() {
+            path_prefix.push_str(&*component.as_os_str().to_string_lossy());
 
-                if component != &Component::RootDir {
-                    path_prefix.push_str("/");
-                }
+            if component != &Component::RootDir {
+                path_prefix.push_str("/");
             }
         }
-
         path_prefix
     }
 
@@ -516,6 +515,8 @@ pub mod fields {
 #[cfg(test)]
 mod test {
     use super::ext;
+    use super::File;
+    use std::path::Path;
 
     #[test]
     fn extension() {
@@ -530,5 +531,17 @@ mod test {
     #[test]
     fn no_extension() {
         assert_eq!(None, ext("jarlsberg"))
+    }
+
+    #[test]
+    fn test_no_prefix() {
+        let f = File::from_path(Path::new("Cargo.toml"), None).unwrap();
+        assert_eq!("", f.path_prefix());
+        let f2 = File::from_path(Path::new("src/main.rs"), None).unwrap();
+        assert_eq!("src/", f2.path_prefix());
+        let f3 = File::from_path(Path::new("src"), None).unwrap();
+        assert_eq!("", f3.path_prefix());
+        let f4 = File::from_path(Path::new("/"), None).unwrap();
+        assert_eq!("", f4.path_prefix());
     }
 }
