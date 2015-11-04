@@ -115,6 +115,7 @@ use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 use std::string::ToString;
+use std::ops::Add;
 
 use colours::Colours;
 use column::{Alignment, Column, Cell};
@@ -656,7 +657,7 @@ impl<U> Table<U> where U: Users {
             .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
             .collect();
 
-        let total_width: usize = self.columns.len() + column_widths.iter().sum::<usize>();
+        let total_width: usize = self.columns.len() + column_widths.iter().fold(0,Add::add);
 
         for row in self.rows.iter() {
             let mut cell = Cell::empty();
