@@ -4,7 +4,6 @@ use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
 use std::io;
-use std::os::unix::raw;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
@@ -18,35 +17,31 @@ use self::fields as f;
 // Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
 // which is currently unstable and lacks vision for stabilization,
 // see https://github.com/rust-lang/rust/issues/27712
-const USER_READ: raw::mode_t = 0o400;
-const USER_WRITE: raw::mode_t = 0o200;
-const USER_EXECUTE: raw::mode_t = 0o100;
+
 #[allow(dead_code)]
-const USER_RWX: raw::mode_t = 0o700;
-const GROUP_READ: raw::mode_t = 0o040;
-const GROUP_WRITE: raw::mode_t = 0o020;
-const GROUP_EXECUTE: raw::mode_t = 0o010;
-#[allow(dead_code)]
-const GROUP_RWX: raw::mode_t = 0o070;
-const OTHER_READ: raw::mode_t = 0o004;
-const OTHER_WRITE: raw::mode_t = 0o002;
-const OTHER_EXECUTE: raw::mode_t = 0o001;
-#[allow(dead_code)]
-const OTHER_RWX: raw::mode_t = 0o007;
-#[allow(dead_code)]
-const ALL_READ: raw::mode_t = 0o444;
-#[allow(dead_code)]
-const ALL_WRITE: raw::mode_t = 0o222;
-#[allow(dead_code)]
-const ALL_EXECUTE: raw::mode_t = 0o111;
-#[allow(dead_code)]
-const ALL_RWX: raw::mode_t = 0o777;
-#[allow(dead_code)]
-const SETUID: raw::mode_t = 0o4000;
-#[allow(dead_code)]
-const SETGID: raw::mode_t = 0o2000;
-#[allow(dead_code)]
-const STICKY_BIT: raw::mode_t = 0o1000;
+mod modes {
+    use std::os::unix::raw;
+
+    pub const USER_READ: raw::mode_t = 0o400;
+    pub const USER_WRITE: raw::mode_t = 0o200;
+    pub const USER_EXECUTE: raw::mode_t = 0o100;
+    pub const USER_RWX: raw::mode_t = 0o700;
+    pub const GROUP_READ: raw::mode_t = 0o040;
+    pub const GROUP_WRITE: raw::mode_t = 0o020;
+    pub const GROUP_EXECUTE: raw::mode_t = 0o010;
+    pub const GROUP_RWX: raw::mode_t = 0o070;
+    pub const OTHER_READ: raw::mode_t = 0o004;
+    pub const OTHER_WRITE: raw::mode_t = 0o002;
+    pub const OTHER_EXECUTE: raw::mode_t = 0o001;
+    pub const OTHER_RWX: raw::mode_t = 0o007;
+    pub const ALL_READ: raw::mode_t = 0o444;
+    pub const ALL_WRITE: raw::mode_t = 0o222;
+    pub const ALL_EXECUTE: raw::mode_t = 0o111;
+    pub const ALL_RWX: raw::mode_t = 0o777;
+    pub const SETUID: raw::mode_t = 0o4000;
+    pub const SETGID: raw::mode_t = 0o2000;
+    pub const STICKY_BIT: raw::mode_t = 0o1000;
+}
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -137,7 +132,7 @@ impl<'dir> File<'dir> {
     /// current user. Executable files have different semantics than
     /// executable directories, and so should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
-        let bit = USER_EXECUTE;
+        let bit = modes::USER_EXECUTE;
         self.is_file() && (self.metadata.permissions().mode() & bit) == bit
     }
 
@@ -331,15 +326,15 @@ impl<'dir> File<'dir> {
 
         f::Permissions {
             file_type:      self.type_char(),
-            user_read:      has_bit(USER_READ),
-            user_write:     has_bit(USER_WRITE),
-            user_execute:   has_bit(USER_EXECUTE),
-            group_read:     has_bit(GROUP_READ),
-            group_write:    has_bit(GROUP_WRITE),
-            group_execute:  has_bit(GROUP_EXECUTE),
-            other_read:     has_bit(OTHER_READ),
-            other_write:    has_bit(OTHER_WRITE),
-            other_execute:  has_bit(OTHER_EXECUTE),
+            user_read:      has_bit(modes::USER_READ),
+            user_write:     has_bit(modes::USER_WRITE),
+            user_execute:   has_bit(modes::USER_EXECUTE),
+            group_read:     has_bit(modes::GROUP_READ),
+            group_write:    has_bit(modes::GROUP_WRITE),
+            group_execute:  has_bit(modes::GROUP_EXECUTE),
+            other_read:     has_bit(modes::OTHER_READ),
+            other_write:    has_bit(modes::OTHER_WRITE),
+            other_execute:  has_bit(modes::OTHER_EXECUTE),
         }
     }
 
