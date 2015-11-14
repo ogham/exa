@@ -83,10 +83,7 @@ impl Options {
             return Err(Misfire::Version);
         }
 
-        let sort_field = match matches.opt_str("sort") {
-            Some(word)  => try!(SortField::from_word(word)),
-            None        => SortField::default(),
-        };
+        let sort_field = try!(SortField::deduce(&matches));
 
         let filter = FileFilter {
             list_dirs_first: matches.opt_present("group-directories-first"),
@@ -336,29 +333,26 @@ impl Default for SortField {
 
 impl OptionSet for SortField {
     fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
-        match matches.opt_str("sort") {
-            Some(word)  => SortField::from_word(word),
-            None        => Ok(SortField::default()),
+        if let Some(word) = matches.opt_str("sort") {
+            match &word[..] {
+                "name" | "filename"   => Ok(SortField::Name),
+                "size" | "filesize"   => Ok(SortField::Size),
+                "ext"  | "extension"  => Ok(SortField::Extension),
+                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
+                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
+                "cr"   | "created"    => Ok(SortField::CreatedDate),
+                "none"                => Ok(SortField::Unsorted),
+                "inode"               => Ok(SortField::FileInode),
+                field                 => Err(SortField::none(field))
+            }
+        }
+        else {
+            Ok(SortField::default())
         }
     }
 }
 
 impl SortField {
-
-    /// Find which field to use based on a user-supplied word.
-    fn from_word(word: String) -> Result<SortField, Misfire> {
-        match &word[..] {
-            "name" | "filename"   => Ok(SortField::Name),
-            "size" | "filesize"   => Ok(SortField::Size),
-            "ext"  | "extension"  => Ok(SortField::Extension),
-            "mod"  | "modified"   => Ok(SortField::ModifiedDate),
-            "acc"  | "accessed"   => Ok(SortField::AccessedDate),
-            "cr"   | "created"    => Ok(SortField::CreatedDate),
-            "none"                => Ok(SortField::Unsorted),
-            "inode"               => Ok(SortField::FileInode),
-            field                 => Err(SortField::none(field))
-        }
-    }
 
     /// How to display an error when the word didn't match with anything.
     fn none(field: &str) -> Misfire {
