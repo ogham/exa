@@ -119,12 +119,12 @@ use std::ops::Add;
 use std::iter::repeat;
 
 use colours::Colours;
-use column::{Alignment, Column, Cell};
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
-use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
+use options::{FileFilter, RecurseOptions};
+use output::column::{Alignment, Column, Columns, Cell, SizeFormat};
 
 use ansi_term::{ANSIString, ANSIStrings, Style};
 
@@ -153,7 +153,7 @@ use super::filename;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy, Clone, Default)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the
@@ -658,7 +658,7 @@ impl<U> Table<U> where U: Users {
             .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
             .collect();
 
-        let total_width: usize = self.columns.len() + column_widths.iter().fold(0,Add::add);
+        let total_width: usize = self.columns.len() + column_widths.iter().fold(0, Add::add);
 
         for row in self.rows.iter() {
             let mut cell = Cell::empty();
@@ -754,8 +754,7 @@ pub mod test {
     pub use super::Table;
     pub use file::File;
     pub use file::fields as f;
-
-    pub use column::{Cell, Column};
+    pub use output::column::{Cell, Column};
 
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;

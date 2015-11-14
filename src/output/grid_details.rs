@@ -3,10 +3,11 @@ use std::iter::repeat;
 use users::OSUsers;
 use term_grid as grid;
 
-use column::{Column, Cell};
 use dir::Dir;
 use feature::xattr::FileAttributes;
 use file::File;
+
+use output::column::{Column, Cell};
 use output::details::{Details, Table};
 use output::grid::Grid;
 

@@ -28,7 +28,6 @@ use file::File;
 use options::{Options, View};
 
 mod colours;
-mod column;
 mod dir;
 mod feature;
 mod file;
@@ -99,8 +98,8 @@ impl Exa {
                 }
             };
 
-            self.options.filter_files(&mut children);
-            self.options.sort_files(&mut children);
+            self.options.filter.filter_files(&mut children);
+            self.options.filter.sort_files(&mut children);
 
             if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
                 let depth = dir.path.components().filter(|&c| c != Component::CurDir).count() + 1;

@@ -13,6 +13,8 @@ mod grid;
 pub mod details;
 mod lines;
 mod grid_details;
+pub mod column;
+
 
 pub fn filename(file: &File, colours: &Colours, links: bool) -> String {
     if links && file.is_link() {

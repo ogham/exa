@@ -10,7 +10,7 @@ use std::path::{Component, Path, PathBuf};
 use unicode_width::UnicodeWidthStr;
 
 use dir::Dir;
-use options::TimeType;
+use output::column::TimeType;
 
 use self::fields as f;
 
