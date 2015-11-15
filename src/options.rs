@@ -36,39 +36,45 @@ impl Options {
     #[allow(unused_results)]
     pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
+
+        opts.optflag("v", "version",   "display version of exa");
+        opts.optflag("?", "help",      "show list of command-line options");
+
+        // Display options
         opts.optflag("1", "oneline",   "display one entry per line");
+        opts.optflag("G", "grid",      "display entries in a grid view (default)");
+        opts.optflag("l", "long",      "display extended details and attributes");
+        opts.optflag("R", "recurse",   "recurse into directories");
+        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
+        opts.optflag("x", "across",    "sort multi-column view entries across");
+
+        // Filtering and sorting options
+        opts.optflag("",  "group-directories-first", "list directories before other files");
         opts.optflag("a", "all",       "show dot-files");
+        opts.optflag("d", "list-dirs", "list directories as regular files");
+        opts.optflag("r", "reverse",   "reverse order of files");
+        opts.optopt ("s", "sort",      "field to sort by", "WORD");
+
+        // Long view options
         opts.optflag("b", "binary",    "use binary prefixes in file sizes");
         opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
-        opts.optflag("d", "list-dirs", "list directories as regular files");
         opts.optflag("g", "group",     "show group as well as user");
-        opts.optflag("G", "grid",      "display entries in a grid view (default)");
-        opts.optflag("",  "group-directories-first", "list directories before other files");
         opts.optflag("h", "header",    "show a header row at the top");
         opts.optflag("H", "links",     "show number of hard links");
         opts.optflag("i", "inode",     "show each file's inode number");
-        opts.optflag("l", "long",      "display extended details and attributes");
         opts.optopt ("L", "level",     "maximum depth of recursion", "DEPTH");
         opts.optflag("m", "modified",  "display timestamp of most recent modification");
-        opts.optflag("r", "reverse",   "reverse order of files");
-        opts.optflag("R", "recurse",   "recurse into directories");
-        opts.optopt ("s", "sort",      "field to sort by", "WORD");
         opts.optflag("S", "blocks",    "show number of file system blocks");
         opts.optopt ("t", "time",      "which timestamp to show for a file", "WORD");
-        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
         opts.optflag("u", "accessed",  "display timestamp of last access for a file");
         opts.optflag("U", "created",   "display timestamp of creation for a file");
-        opts.optflag("x", "across",    "sort multi-column view entries across");
-
-        opts.optflag("",  "version",   "display version of exa");
-        opts.optflag("?", "help",      "show list of command-line options");
 
         if cfg!(feature="git") {
             opts.optflag("", "git", "show git status");
         }
 
         if xattr::ENABLED {
-            opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
+            opts.optflag("@", "extended", "display extended attribute keys and sizes");
         }
 
         let matches = match opts.parse(args) {
@@ -77,7 +83,25 @@ impl Options {
         };
 
         if matches.opt_present("help") {
-            return Err(Misfire::Help(opts.usage("Usage:\n  exa [options] [files...]")));
+            let mut help_string = "Usage:\n  exa [options] [files...]\n".to_owned();
+
+            if !matches.opt_present("long") {
+                help_string.push_str(OPTIONS);
+            }
+
+            help_string.push_str(LONG_OPTIONS);
+
+            if cfg!(feature="git") {
+                help_string.push_str(GIT_HELP);
+                help_string.push('\n');
+            }
+
+            if xattr::ENABLED {
+                help_string.push_str(EXTENDED_HELP);
+                help_string.push('\n');
+            }
+
+            return Err(Misfire::Help(help_string));
         }
         else if matches.opt_present("version") {
             return Err(Misfire::Version);
@@ -568,6 +592,42 @@ impl fmt::Display for Misfire {
         }
     }
 }
+
+static OPTIONS: &'static str = r##"
+DISPLAY OPTIONS
+  -1, --oneline  display one entry per line
+  -G, --grid     display entries in a grid view (default)
+  -l, --long     display extended details and attributes
+  -R, --recurse  recurse into directories
+  -T, --tree     recurse into subdirectories in a tree view
+  -x, --across   sort multi-column view entries across
+
+FILTERING AND SORTING OPTIONS
+  -a, --all                  show dot-files
+  -d, --list-dirs            list directories as regular files
+  -r, --reverse              reverse order of files
+  -s, --sort WORD            field to sort by
+  --group-directories-first  list directories before other files
+"##;
+
+static LONG_OPTIONS: &'static str = r##"
+LONG VIEW OPTIONS
+  -b, --binary       use binary prefixes in file sizes
+  -B, --bytes        list file sizes in bytes, without prefixes
+  -g, --group        show group as well as user
+  -h, --header       show a header row at the top
+  -H, --links        show number of hard links
+  -i, --inode        show each file's inode number
+  -L, --level DEPTH  maximum depth of recursion
+  -m, --modified     display timestamp of most recent modification
+  -S, --blocks       show number of file system blocks
+  -t, --time WORD    which timestamp to show for a file
+  -u, --accessed     display timestamp of last access for a file
+  -U, --created      display timestamp of creation for a file
+"##;
+
+static GIT_HELP:      &'static str = r##"  -@, --extended     display extended attribute keys and sizes"##;
+static EXTENDED_HELP: &'static str = r##"  --git              show git status for files"##;
 
 
 #[cfg(test)]
