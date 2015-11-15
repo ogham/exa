@@ -343,20 +343,12 @@ impl OptionSet for SortField {
                 "cr"   | "created"    => Ok(SortField::CreatedDate),
                 "none"                => Ok(SortField::Unsorted),
                 "inode"               => Ok(SortField::FileInode),
-                field                 => Err(SortField::none(field))
+                field                 => Err(Misfire::bad_argument("sort", field))
             }
         }
         else {
             Ok(SortField::default())
         }
-    }
-}
-
-impl SortField {
-
-    /// How to display an error when the word didn't match with anything.
-    fn none(field: &str) -> Misfire {
-        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
     }
 }
 
@@ -418,7 +410,7 @@ impl OptionSet for TimeTypes {
                 "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
                 "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
                 "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
-                otherwise           => Err(Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--time {}", otherwise)))),
+                otherwise           => Err(Misfire::bad_argument("time", otherwise)),
             }
         }
         else {
@@ -539,10 +531,19 @@ pub enum Misfire {
 }
 
 impl Misfire {
+
     /// The OS return code this misfire should signify.
     pub fn error_code(&self) -> i32 {
         if let Misfire::Help(_) = *self { 2 }
                                    else { 3 }
+    }
+
+    /// The Misfire that happens when an option gets given the wrong
+    /// argument. This has to use one of the `getopts` failure
+    /// variants--it’s meant to take just an option name, rather than an
+    /// option *and* an argument, but it works just as well.
+    pub fn bad_argument(option: &str, otherwise: &str) -> Misfire {
+        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--{} {}", option, otherwise)))
     }
 }
 
