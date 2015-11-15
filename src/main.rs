@@ -28,7 +28,6 @@ use file::File;
 use options::{Options, View};
 
 mod colours;
-mod column;
 mod dir;
 mod feature;
 mod file;
@@ -43,9 +42,13 @@ struct Exa {
 }
 
 impl Exa {
-    fn run(&mut self, args_file_names: &[String]) {
+    fn run(&mut self, mut args_file_names: Vec<String>) {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
+
+        if args_file_names.is_empty() {
+            args_file_names.push(".".to_owned());
+        }
 
         for file_name in args_file_names.iter() {
             match File::from_path(Path::new(&file_name), None) {
@@ -99,8 +102,8 @@ impl Exa {
                 }
             };
 
-            self.options.filter_files(&mut children);
-            self.options.sort_files(&mut children);
+            self.options.filter.filter_files(&mut children);
+            self.options.filter.sort_files(&mut children);
 
             if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
                 let depth = dir.path.components().filter(|&c| c != Component::CurDir).count() + 1;
@@ -146,7 +149,7 @@ fn main() {
     match Options::getopts(&args) {
         Ok((options, paths)) => {
             let mut exa = Exa { options: options };
-            exa.run(&paths);
+            exa.run(paths);
         },
         Err(e) => {
             println!("{}", e);

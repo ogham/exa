@@ -7,21 +7,26 @@ use getopts;
 use natord;
 
 use colours::Colours;
-use column::Column;
-use column::Column::*;
-use dir::Dir;
 use feature::xattr;
 use file::File;
 use output::{Grid, Details, GridDetails, Lines};
+use output::column::{Columns, TimeTypes, SizeFormat};
 use term::dimensions;
 
 
-/// The *Options* struct represents a parsed version of the user's
-/// command-line options.
+/// These **options** represent a parsed, error-checked versions of the
+/// user's command-line options.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Options {
+
+    /// The action to perform when encountering a directory rather than a
+    /// regular file.
     pub dir_action: DirAction,
+
+    /// How to sort and filter files before outputting them.
     pub filter: FileFilter,
+
+    /// The type of output to use (lines, grid, or details).
     pub view: View,
 }
 
@@ -31,39 +36,45 @@ impl Options {
     #[allow(unused_results)]
     pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
         let mut opts = getopts::Options::new();
+
+        opts.optflag("v", "version",   "display version of exa");
+        opts.optflag("?", "help",      "show list of command-line options");
+
+        // Display options
         opts.optflag("1", "oneline",   "display one entry per line");
+        opts.optflag("G", "grid",      "display entries in a grid view (default)");
+        opts.optflag("l", "long",      "display extended details and attributes");
+        opts.optflag("R", "recurse",   "recurse into directories");
+        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
+        opts.optflag("x", "across",    "sort multi-column view entries across");
+
+        // Filtering and sorting options
+        opts.optflag("",  "group-directories-first", "list directories before other files");
         opts.optflag("a", "all",       "show dot-files");
+        opts.optflag("d", "list-dirs", "list directories as regular files");
+        opts.optflag("r", "reverse",   "reverse order of files");
+        opts.optopt ("s", "sort",      "field to sort by", "WORD");
+
+        // Long view options
         opts.optflag("b", "binary",    "use binary prefixes in file sizes");
         opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
-        opts.optflag("d", "list-dirs", "list directories as regular files");
         opts.optflag("g", "group",     "show group as well as user");
-        opts.optflag("G", "grid",      "display entries in a grid view (default)");
-        opts.optflag("",  "group-directories-first", "list directories before other files");
         opts.optflag("h", "header",    "show a header row at the top");
         opts.optflag("H", "links",     "show number of hard links");
         opts.optflag("i", "inode",     "show each file's inode number");
-        opts.optflag("l", "long",      "display extended details and attributes");
         opts.optopt ("L", "level",     "maximum depth of recursion", "DEPTH");
         opts.optflag("m", "modified",  "display timestamp of most recent modification");
-        opts.optflag("r", "reverse",   "reverse order of files");
-        opts.optflag("R", "recurse",   "recurse into directories");
-        opts.optopt ("s", "sort",      "field to sort by", "WORD");
         opts.optflag("S", "blocks",    "show number of file system blocks");
         opts.optopt ("t", "time",      "which timestamp to show for a file", "WORD");
-        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
         opts.optflag("u", "accessed",  "display timestamp of last access for a file");
         opts.optflag("U", "created",   "display timestamp of creation for a file");
-        opts.optflag("x", "across",    "sort multi-column view entries across");
-
-        opts.optflag("",  "version",   "display version of exa");
-        opts.optflag("?", "help",      "show list of command-line options");
 
         if cfg!(feature="git") {
             opts.optflag("", "git", "show git status");
         }
 
         if xattr::ENABLED {
-            opts.optflag("@", "extended", "display extended attribute keys and sizes in long (-l) output");
+            opts.optflag("@", "extended", "display extended attribute keys and sizes");
         }
 
         let matches = match opts.parse(args) {
@@ -72,47 +83,32 @@ impl Options {
         };
 
         if matches.opt_present("help") {
-            return Err(Misfire::Help(opts.usage("Usage:\n  exa [options] [files...]")));
+            let mut help_string = "Usage:\n  exa [options] [files...]\n".to_owned();
+
+            if !matches.opt_present("long") {
+                help_string.push_str(OPTIONS);
+            }
+
+            help_string.push_str(LONG_OPTIONS);
+
+            if cfg!(feature="git") {
+                help_string.push_str(GIT_HELP);
+                help_string.push('\n');
+            }
+
+            if xattr::ENABLED {
+                help_string.push_str(EXTENDED_HELP);
+                help_string.push('\n');
+            }
+
+            return Err(Misfire::Help(help_string));
         }
         else if matches.opt_present("version") {
             return Err(Misfire::Version);
         }
 
-        let sort_field = match matches.opt_str("sort") {
-            Some(word)  => try!(SortField::from_word(word)),
-            None        => SortField::default(),
-        };
-
-        let filter = FileFilter {
-            list_dirs_first: matches.opt_present("group-directories-first"),
-            reverse:         matches.opt_present("reverse"),
-            show_invisibles: matches.opt_present("all"),
-            sort_field:      sort_field,
-        };
-
-        let path_strs = if matches.free.is_empty() {
-            vec![ ".".to_string() ]
-        }
-        else {
-            matches.free.clone()
-        };
-
-        let dir_action = try!(DirAction::deduce(&matches));
-        let view = try!(View::deduce(&matches, filter, dir_action));
-
-        Ok((Options {
-            dir_action: dir_action,
-            view:       view,
-            filter:     filter,
-        }, path_strs))
-    }
-
-    pub fn sort_files(&self, files: &mut Vec<File>) {
-        self.filter.sort_files(files)
-    }
-
-    pub fn filter_files(&self, files: &mut Vec<File>) {
-        self.filter.filter_files(files)
+        let options = try!(Options::deduce(&matches));
+        Ok((options, matches.free))
     }
 
     /// Whether the View specified in this set of options includes a Git
@@ -127,140 +123,17 @@ impl Options {
     }
 }
 
+impl OptionSet for Options {
+    fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
+        let dir_action = try!(DirAction::deduce(&matches));
+        let filter = try!(FileFilter::deduce(&matches));
+        let view = try!(View::deduce(&matches, filter, dir_action));
 
-#[derive(Default, PartialEq, Debug, Copy, Clone)]
-pub struct FileFilter {
-    list_dirs_first: bool,
-    reverse: bool,
-    show_invisibles: bool,
-    sort_field: SortField,
-}
-
-impl FileFilter {
-    pub fn filter_files(&self, files: &mut Vec<File>) {
-        if !self.show_invisibles {
-            files.retain(|f| !f.is_dotfile());
-        }
-    }
-
-    pub fn sort_files(&self, files: &mut Vec<File>) {
-        files.sort_by(|a, b| self.compare_files(a, b));
-
-        if self.reverse {
-            files.reverse();
-        }
-
-        if self.list_dirs_first {
-            // This relies on the fact that sort_by is stable.
-            files.sort_by(|a, b| b.is_directory().cmp(&a.is_directory()));
-        }
-    }
-
-    pub fn compare_files(&self, a: &File, b: &File) -> cmp::Ordering {
-        match self.sort_field {
-            SortField::Unsorted      => cmp::Ordering::Equal,
-            SortField::Name          => natord::compare(&*a.name, &*b.name),
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
-            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
-            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
-            SortField::Extension     => match a.ext.cmp(&b.ext) {
-                cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order                 => order,
-            },
-        }
-    }
-}
-
-/// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SortField {
-    Unsorted, Name, Extension, Size, FileInode,
-    ModifiedDate, AccessedDate, CreatedDate,
-}
-
-impl Default for SortField {
-    fn default() -> SortField {
-        SortField::Name
-    }
-}
-
-impl SortField {
-
-    /// Find which field to use based on a user-supplied word.
-    fn from_word(word: String) -> Result<SortField, Misfire> {
-        match &word[..] {
-            "name" | "filename"   => Ok(SortField::Name),
-            "size" | "filesize"   => Ok(SortField::Size),
-            "ext"  | "extension"  => Ok(SortField::Extension),
-            "mod"  | "modified"   => Ok(SortField::ModifiedDate),
-            "acc"  | "accessed"   => Ok(SortField::AccessedDate),
-            "cr"   | "created"    => Ok(SortField::CreatedDate),
-            "none"                => Ok(SortField::Unsorted),
-            "inode"               => Ok(SortField::FileInode),
-            field                 => Err(SortField::none(field))
-        }
-    }
-
-    /// How to display an error when the word didn't match with anything.
-    fn none(field: &str) -> Misfire {
-        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--sort {}", field)))
-    }
-}
-
-
-/// One of these things could happen instead of listing files.
-#[derive(PartialEq, Debug)]
-pub enum Misfire {
-
-    /// The getopts crate didn't like these arguments.
-    InvalidOptions(getopts::Fail),
-
-    /// The user asked for help. This isn't strictly an error, which is why
-    /// this enum isn't named Error!
-    Help(String),
-
-    /// The user wanted the version number.
-    Version,
-
-    /// Two options were given that conflict with one another.
-    Conflict(&'static str, &'static str),
-
-    /// An option was given that does nothing when another one either is or
-    /// isn't present.
-    Useless(&'static str, bool, &'static str),
-
-    /// An option was given that does nothing when either of two other options
-    /// are not present.
-    Useless2(&'static str, &'static str, &'static str),
-
-    /// A numeric option was given that failed to be parsed as a number.
-    FailedParse(ParseIntError),
-}
-
-impl Misfire {
-    /// The OS return code this misfire should signify.
-    pub fn error_code(&self) -> i32 {
-        if let Misfire::Help(_) = *self { 2 }
-                                   else { 3 }
-    }
-}
-
-impl fmt::Display for Misfire {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::Misfire::*;
-
-        match *self {
-            InvalidOptions(ref e)  => write!(f, "{}", e),
-            Help(ref text)         => write!(f, "{}", text),
-            Version                => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
-            Conflict(a, b)         => write!(f, "Option --{} conflicts with option {}.", a, b),
-            Useless(a, false, b)   => write!(f, "Option --{} is useless without option --{}.", a, b),
-            Useless(a, true, b)    => write!(f, "Option --{} is useless given option --{}.", a, b),
-            Useless2(a, b1, b2)    => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
-            FailedParse(ref e)     => write!(f, "Failed to parse number: {}", e),
-        }
+        Ok(Options {
+            dir_action: dir_action,
+            view:       view,
+            filter:     filter,
+        })
     }
 }
 
@@ -274,7 +147,7 @@ pub enum View {
 }
 
 impl View {
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
+    fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
         use self::Misfire::*;
 
         let long = || {
@@ -356,8 +229,8 @@ impl View {
                 }
             }
             else {
-                // If the terminal width couldn't be matched for some reason, such
-                // as the program's stdout being connected to a file, then
+                // If the terminal width couldn’t be matched for some reason, such
+                // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
                 let lines = Lines {
                      colours: Colours::plain(),
@@ -389,21 +262,137 @@ impl View {
 }
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SizeFormat {
-    DecimalBytes,
-    BinaryBytes,
-    JustBytes,
+trait OptionSet: Sized {
+    fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire>;
 }
 
-impl Default for SizeFormat {
-    fn default() -> SizeFormat {
-        SizeFormat::DecimalBytes
+impl OptionSet for Columns {
+    fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
+        Ok(Columns {
+            size_format: try!(SizeFormat::deduce(matches)),
+            time_types:  try!(TimeTypes::deduce(matches)),
+            inode:  matches.opt_present("inode"),
+            links:  matches.opt_present("links"),
+            blocks: matches.opt_present("blocks"),
+            group:  matches.opt_present("group"),
+            git:    cfg!(feature="git") && matches.opt_present("git"),
+        })
     }
 }
 
-impl SizeFormat {
-    pub fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
+
+/// The **file filter** processes a vector of files before outputting them,
+/// filtering and sorting the files depending on the user’s command-line
+/// flags.
+#[derive(Default, PartialEq, Debug, Copy, Clone)]
+pub struct FileFilter {
+    list_dirs_first: bool,
+    reverse: bool,
+    show_invisibles: bool,
+    sort_field: SortField,
+}
+
+impl OptionSet for FileFilter {
+    fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
+        let sort_field = try!(SortField::deduce(&matches));
+
+        Ok(FileFilter {
+            list_dirs_first: matches.opt_present("group-directories-first"),
+            reverse:         matches.opt_present("reverse"),
+            show_invisibles: matches.opt_present("all"),
+            sort_field:      sort_field,
+        })
+    }
+}
+
+impl FileFilter {
+
+    /// Remove every file in the given vector that does *not* pass the
+    /// filter predicate.
+    pub fn filter_files(&self, files: &mut Vec<File>) {
+        if !self.show_invisibles {
+            files.retain(|f| !f.is_dotfile());
+        }
+    }
+
+    /// Sort the files in the given vector based on the sort field option.
+    pub fn sort_files(&self, files: &mut Vec<File>) {
+        files.sort_by(|a, b| self.compare_files(a, b));
+
+        if self.reverse {
+            files.reverse();
+        }
+
+        if self.list_dirs_first {
+            // This relies on the fact that `sort_by` is stable.
+            files.sort_by(|a, b| b.is_directory().cmp(&a.is_directory()));
+        }
+    }
+
+    pub fn compare_files(&self, a: &File, b: &File) -> cmp::Ordering {
+        match self.sort_field {
+            SortField::Unsorted      => cmp::Ordering::Equal,
+            SortField::Name          => natord::compare(&*a.name, &*b.name),
+            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
+            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
+            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
+            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
+            SortField::Extension     => match a.ext.cmp(&b.ext) {
+                cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
+                order                 => order,
+            },
+        }
+    }
+}
+
+
+/// User-supplied field to sort by.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum SortField {
+    Unsorted, Name, Extension, Size, FileInode,
+    ModifiedDate, AccessedDate, CreatedDate,
+}
+
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::Name
+    }
+}
+
+impl OptionSet for SortField {
+    fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
+        if let Some(word) = matches.opt_str("sort") {
+            match &word[..] {
+                "name" | "filename"   => Ok(SortField::Name),
+                "size" | "filesize"   => Ok(SortField::Size),
+                "ext"  | "extension"  => Ok(SortField::Extension),
+                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
+                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
+                "cr"   | "created"    => Ok(SortField::CreatedDate),
+                "none"                => Ok(SortField::Unsorted),
+                "inode"               => Ok(SortField::FileInode),
+                field                 => Err(Misfire::bad_argument("sort", field))
+            }
+        }
+        else {
+            Ok(SortField::default())
+        }
+    }
+}
+
+
+impl OptionSet for SizeFormat {
+
+    /// Determine which file size to use in the file size column based on
+    /// the user’s options.
+    ///
+    /// The default mode is to use the decimal prefixes, as they are the
+    /// most commonly-understood, and don’t involve trying to parse large
+    /// strings of digits in your head. Changing the format to anything else
+    /// involves the `--binary` or `--bytes` flags, and these conflict with
+    /// each other.
+    fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
         let binary = matches.opt_present("binary");
         let bytes  = matches.opt_present("bytes");
 
@@ -417,40 +406,18 @@ impl SizeFormat {
 }
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum TimeType {
-    FileAccessed,
-    FileModified,
-    FileCreated,
-}
+impl OptionSet for TimeTypes {
 
-impl TimeType {
-    pub fn header(&self) -> &'static str {
-        match *self {
-            TimeType::FileAccessed  => "Date Accessed",
-            TimeType::FileModified  => "Date Modified",
-            TimeType::FileCreated   => "Date Created",
-        }
-    }
-}
-
-
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct TimeTypes {
-    accessed: bool,
-    modified: bool,
-    created:  bool,
-}
-
-impl Default for TimeTypes {
-    fn default() -> TimeTypes {
-        TimeTypes { accessed: false, modified: true, created: false }
-    }
-}
-
-impl TimeTypes {
-
-    /// Find which field to use based on a user-supplied word.
+    /// Determine which of a file’s time fields should be displayed for it
+    /// based on the user’s options.
+    ///
+    /// There are two separate ways to pick which fields to show: with a
+    /// flag (such as `--modified`) or with a parameter (such as
+    /// `--time=modified`). An error is signaled if both ways are used.
+    ///
+    /// It’s valid to show more than one column by passing in more than one
+    /// option, but passing *no* options means that the user just wants to
+    /// see the default set.
     fn deduce(matches: &getopts::Matches) -> Result<TimeTypes, Misfire> {
         let possible_word = matches.opt_str("time");
         let modified = matches.opt_present("modified");
@@ -468,11 +435,11 @@ impl TimeTypes {
                 return Err(Misfire::Useless("accessed", true, "time"));
             }
 
-            match &word[..] {
-                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true, created: false }),
-                "acc" | "accessed"  => Ok(TimeTypes { accessed: true, modified: false, created: false }),
-                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true }),
-                field   => Err(TimeTypes::none(field)),
+            match &*word {
+                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
+                "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
+                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
+                otherwise           => Err(Misfire::bad_argument("time", otherwise)),
             }
         }
         else {
@@ -483,11 +450,6 @@ impl TimeTypes {
                 Ok(TimeTypes::default())
             }
         }
-    }
-
-    /// How to display an error when the word didn't match with anything.
-    fn none(field: &str) -> Misfire {
-        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--time {}", field)))
     }
 }
 
@@ -568,82 +530,105 @@ impl RecurseOptions {
 }
 
 
-#[derive(PartialEq, Copy, Clone, Debug, Default)]
-pub struct Columns {
-    size_format: SizeFormat,
-    time_types: TimeTypes,
-    inode: bool,
-    links: bool,
-    blocks: bool,
-    group: bool,
-    git: bool
+/// One of these things could happen instead of listing files.
+#[derive(PartialEq, Debug)]
+pub enum Misfire {
+
+    /// The getopts crate didn't like these arguments.
+    InvalidOptions(getopts::Fail),
+
+    /// The user asked for help. This isn't strictly an error, which is why
+    /// this enum isn't named Error!
+    Help(String),
+
+    /// The user wanted the version number.
+    Version,
+
+    /// Two options were given that conflict with one another.
+    Conflict(&'static str, &'static str),
+
+    /// An option was given that does nothing when another one either is or
+    /// isn't present.
+    Useless(&'static str, bool, &'static str),
+
+    /// An option was given that does nothing when either of two other options
+    /// are not present.
+    Useless2(&'static str, &'static str, &'static str),
+
+    /// A numeric option was given that failed to be parsed as a number.
+    FailedParse(ParseIntError),
 }
 
-impl Columns {
-    pub fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
-        Ok(Columns {
-            size_format: try!(SizeFormat::deduce(matches)),
-            time_types:  try!(TimeTypes::deduce(matches)),
-            inode:  matches.opt_present("inode"),
-            links:  matches.opt_present("links"),
-            blocks: matches.opt_present("blocks"),
-            group:  matches.opt_present("group"),
-            git:    cfg!(feature="git") && matches.opt_present("git"),
-        })
+impl Misfire {
+
+    /// The OS return code this misfire should signify.
+    pub fn error_code(&self) -> i32 {
+        if let Misfire::Help(_) = *self { 2 }
+                                   else { 3 }
     }
 
-    pub fn should_scan_for_git(&self) -> bool {
-        self.git
-    }
-
-    pub fn for_dir(&self, dir: Option<&Dir>) -> Vec<Column> {
-        let mut columns = vec![];
-
-        if self.inode {
-            columns.push(Inode);
-        }
-
-        columns.push(Permissions);
-
-        if self.links {
-            columns.push(HardLinks);
-        }
-
-        columns.push(FileSize(self.size_format));
-
-        if self.blocks {
-            columns.push(Blocks);
-        }
-
-        columns.push(User);
-
-        if self.group {
-            columns.push(Group);
-        }
-
-        if self.time_types.modified {
-            columns.push(Timestamp(TimeType::FileModified));
-        }
-
-        if self.time_types.created {
-            columns.push(Timestamp(TimeType::FileCreated));
-        }
-
-        if self.time_types.accessed {
-            columns.push(Timestamp(TimeType::FileAccessed));
-        }
-
-        if cfg!(feature="git") {
-            if let Some(d) = dir {
-                if self.should_scan_for_git() && d.has_git_repo() {
-                    columns.push(GitStatus);
-                }
-            }
-        }
-
-        columns
+    /// The Misfire that happens when an option gets given the wrong
+    /// argument. This has to use one of the `getopts` failure
+    /// variants--it’s meant to take just an option name, rather than an
+    /// option *and* an argument, but it works just as well.
+    pub fn bad_argument(option: &str, otherwise: &str) -> Misfire {
+        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--{} {}", option, otherwise)))
     }
 }
+
+impl fmt::Display for Misfire {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::Misfire::*;
+
+        match *self {
+            InvalidOptions(ref e)  => write!(f, "{}", e),
+            Help(ref text)         => write!(f, "{}", text),
+            Version                => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
+            Conflict(a, b)         => write!(f, "Option --{} conflicts with option {}.", a, b),
+            Useless(a, false, b)   => write!(f, "Option --{} is useless without option --{}.", a, b),
+            Useless(a, true, b)    => write!(f, "Option --{} is useless given option --{}.", a, b),
+            Useless2(a, b1, b2)    => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
+            FailedParse(ref e)     => write!(f, "Failed to parse number: {}", e),
+        }
+    }
+}
+
+static OPTIONS: &'static str = r##"
+DISPLAY OPTIONS
+  -1, --oneline  display one entry per line
+  -G, --grid     display entries in a grid view (default)
+  -l, --long     display extended details and attributes
+  -R, --recurse  recurse into directories
+  -T, --tree     recurse into subdirectories in a tree view
+  -x, --across   sort multi-column view entries across
+
+FILTERING AND SORTING OPTIONS
+  -a, --all                  show dot-files
+  -d, --list-dirs            list directories as regular files
+  -r, --reverse              reverse order of files
+  -s, --sort WORD            field to sort by
+  --group-directories-first  list directories before other files
+"##;
+
+static LONG_OPTIONS: &'static str = r##"
+LONG VIEW OPTIONS
+  -b, --binary       use binary prefixes in file sizes
+  -B, --bytes        list file sizes in bytes, without prefixes
+  -g, --group        show group as well as user
+  -h, --header       show a header row at the top
+  -H, --links        show number of hard links
+  -i, --inode        show each file's inode number
+  -L, --level DEPTH  maximum depth of recursion
+  -m, --modified     display timestamp of most recent modification
+  -S, --blocks       show number of file system blocks
+  -t, --time WORD    which timestamp to show for a file
+  -u, --accessed     display timestamp of last access for a file
+  -U, --created      display timestamp of creation for a file
+"##;
+
+static GIT_HELP:      &'static str = r##"  -@, --extended     display extended attribute keys and sizes"##;
+static EXTENDED_HELP: &'static str = r##"  --git              show git status for files"##;
+
 
 #[cfg(test)]
 mod test {
@@ -679,7 +664,7 @@ mod test {
     #[test]
     fn no_args() {
         let args = Options::getopts(&[]).unwrap().1;
-        assert_eq!(args, vec![ ".".to_string() ])
+        assert!(args.is_empty());  // Listing the `.` directory is done in main.rs
     }
 
     #[test]

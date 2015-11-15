@@ -119,12 +119,12 @@ use std::ops::Add;
 use std::iter::repeat;
 
 use colours::Colours;
-use column::{Alignment, Column, Cell};
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
-use options::{Columns, FileFilter, RecurseOptions, SizeFormat};
+use options::{FileFilter, RecurseOptions};
+use output::column::{Alignment, Column, Columns, Cell, SizeFormat};
 
 use ansi_term::{ANSIString, ANSIStrings, Style};
 
@@ -153,7 +153,7 @@ use super::filename;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy, Clone, Default)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the
@@ -486,16 +486,20 @@ impl<U> Table<U> where U: Users {
     }
 
     fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> Cell {
+        use output::column::TimeType::*;
+
         match *column {
-            Column::Permissions    => self.render_permissions(file.permissions(), xattrs),
-            Column::FileSize(fmt)  => self.render_size(file.size(), fmt),
-            Column::Timestamp(t)   => self.render_time(file.timestamp(t)),
-            Column::HardLinks      => self.render_links(file.links()),
-            Column::Inode          => self.render_inode(file.inode()),
-            Column::Blocks         => self.render_blocks(file.blocks()),
-            Column::User           => self.render_user(file.user()),
-            Column::Group          => self.render_group(file.group()),
-            Column::GitStatus      => self.render_git_status(file.git_status()),
+            Column::Permissions          => self.render_permissions(file.permissions(), xattrs),
+            Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
+            Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
+            Column::Timestamp(Created)   => self.render_time(file.created_time()),
+            Column::Timestamp(Accessed)  => self.render_time(file.accessed_time()),
+            Column::HardLinks            => self.render_links(file.links()),
+            Column::Inode                => self.render_inode(file.inode()),
+            Column::Blocks               => self.render_blocks(file.blocks()),
+            Column::User                 => self.render_user(file.user()),
+            Column::Group                => self.render_group(file.group()),
+            Column::GitStatus            => self.render_git_status(file.git_status()),
         }
     }
 
@@ -658,7 +662,7 @@ impl<U> Table<U> where U: Users {
             .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
             .collect();
 
-        let total_width: usize = self.columns.len() + column_widths.iter().fold(0,Add::add);
+        let total_width: usize = self.columns.len() + column_widths.iter().fold(0, Add::add);
 
         for row in self.rows.iter() {
             let mut cell = Cell::empty();
@@ -754,8 +758,7 @@ pub mod test {
     pub use super::Table;
     pub use file::File;
     pub use file::fields as f;
-
-    pub use column::{Cell, Column};
+    pub use output::column::{Cell, Column};
 
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
