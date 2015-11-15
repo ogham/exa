@@ -10,14 +10,13 @@ use std::path::{Component, Path, PathBuf};
 use unicode_width::UnicodeWidthStr;
 
 use dir::Dir;
-use output::column::TimeType;
 
 use self::fields as f;
 
-// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
-// which is currently unstable and lacks vision for stabilization,
-// see https://github.com/rust-lang/rust/issues/27712
 
+/// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
+/// which is currently unstable and lacks vision for stabilization,
+/// see https://github.com/rust-lang/rust/issues/27712
 #[allow(dead_code)]
 mod modes {
     use std::os::unix::raw;
@@ -281,15 +280,16 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// One of this file's timestamps, as a number in seconds.
-    pub fn timestamp(&self, time_type: TimeType) -> f::Time {
-        let time_in_seconds = match time_type {
-            TimeType::FileAccessed => self.metadata.atime(),
-            TimeType::FileModified => self.metadata.mtime(),
-            TimeType::FileCreated  => self.metadata.ctime(),
-        };
+    pub fn modified_time(&self) -> f::Time {
+        f::Time(self.metadata.mtime())
+    }
 
-        f::Time(time_in_seconds)
+    pub fn created_time(&self) -> f::Time {
+        f::Time(self.metadata.ctime())
+    }
+
+    pub fn accessed_time(&self) -> f::Time {
+        f::Time(self.metadata.mtime())
     }
 
     /// This file's 'type'.

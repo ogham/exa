@@ -486,16 +486,20 @@ impl<U> Table<U> where U: Users {
     }
 
     fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> Cell {
+        use output::column::TimeType::*;
+
         match *column {
-            Column::Permissions    => self.render_permissions(file.permissions(), xattrs),
-            Column::FileSize(fmt)  => self.render_size(file.size(), fmt),
-            Column::Timestamp(t)   => self.render_time(file.timestamp(t)),
-            Column::HardLinks      => self.render_links(file.links()),
-            Column::Inode          => self.render_inode(file.inode()),
-            Column::Blocks         => self.render_blocks(file.blocks()),
-            Column::User           => self.render_user(file.user()),
-            Column::Group          => self.render_group(file.group()),
-            Column::GitStatus      => self.render_git_status(file.git_status()),
+            Column::Permissions          => self.render_permissions(file.permissions(), xattrs),
+            Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
+            Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
+            Column::Timestamp(Created)   => self.render_time(file.created_time()),
+            Column::Timestamp(Accessed)  => self.render_time(file.accessed_time()),
+            Column::HardLinks            => self.render_links(file.links()),
+            Column::Inode                => self.render_inode(file.inode()),
+            Column::Blocks               => self.render_blocks(file.blocks()),
+            Column::User                 => self.render_user(file.user()),
+            Column::Group                => self.render_group(file.group()),
+            Column::GitStatus            => self.render_git_status(file.git_status()),
         }
     }
 

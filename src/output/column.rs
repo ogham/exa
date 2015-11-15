@@ -99,15 +99,15 @@ impl Columns {
         }
 
         if self.time_types.modified {
-            columns.push(Column::Timestamp(TimeType::FileModified));
+            columns.push(Column::Timestamp(TimeType::Modified));
         }
 
         if self.time_types.created {
-            columns.push(Column::Timestamp(TimeType::FileCreated));
+            columns.push(Column::Timestamp(TimeType::Created));
         }
 
         if self.time_types.accessed {
-            columns.push(Column::Timestamp(TimeType::FileAccessed));
+            columns.push(Column::Timestamp(TimeType::Accessed));
         }
 
         if cfg!(feature="git") {
@@ -152,13 +152,13 @@ impl Default for SizeFormat {
 pub enum TimeType {
 
     /// The file’s accessed time (`st_atime`).
-    FileAccessed,
+    Accessed,
 
     /// The file’s modified time (`st_mtime`).
-    FileModified,
+    Modified,
 
     /// The file’s creation time (`st_ctime`).
-    FileCreated,
+    Created,
 }
 
 impl TimeType {
@@ -166,9 +166,9 @@ impl TimeType {
     /// Returns the text to use for a column’s heading in the columns output.
     pub fn header(&self) -> &'static str {
         match *self {
-            TimeType::FileAccessed  => "Date Accessed",
-            TimeType::FileModified  => "Date Modified",
-            TimeType::FileCreated   => "Date Created",
+            TimeType::Accessed  => "Date Accessed",
+            TimeType::Modified  => "Date Modified",
+            TimeType::Created   => "Date Created",
         }
     }
 }
