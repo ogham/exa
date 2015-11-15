@@ -42,9 +42,13 @@ struct Exa {
 }
 
 impl Exa {
-    fn run(&mut self, args_file_names: &[String]) {
+    fn run(&mut self, mut args_file_names: Vec<String>) {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
+
+        if args_file_names.is_empty() {
+            args_file_names.push(".".to_owned());
+        }
 
         for file_name in args_file_names.iter() {
             match File::from_path(Path::new(&file_name), None) {
@@ -145,7 +149,7 @@ fn main() {
     match Options::getopts(&args) {
         Ok((options, paths)) => {
             let mut exa = Exa { options: options };
-            exa.run(&paths);
+            exa.run(paths);
         },
         Err(e) => {
             println!("{}", e);

@@ -83,15 +83,8 @@ impl Options {
             return Err(Misfire::Version);
         }
 
-        let path_strs = if matches.free.is_empty() {
-            vec![ ".".to_string() ]
-        }
-        else {
-            matches.free.clone()
-        };
-
         let options = try!(Options::deduce(&matches));
-        Ok((options, path_strs))
+        Ok((options, matches.free))
     }
 
     /// Whether the View specified in this set of options includes a Git
@@ -611,7 +604,7 @@ mod test {
     #[test]
     fn no_args() {
         let args = Options::getopts(&[]).unwrap().1;
-        assert_eq!(args, vec![ ".".to_string() ])
+        assert!(args.is_empty());  // Listing the `.` directory is done in main.rs
     }
 
     #[test]
