@@ -1,5 +1,5 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
-#![warn(unused_extern_crates, unused_qualifications)]
+#![warn(unused_qualifications)]
 #![warn(unused_results)]
 
 extern crate ansi_term;
@@ -15,9 +15,8 @@ extern crate term_grid;
 extern crate unicode_width;
 extern crate users;
 
-#[cfg(feature="git")]
-extern crate git2;
-
+#[cfg(feature="git")] extern crate git2;
+#[macro_use] extern crate lazy_static;
 
 use std::env;
 use std::path::{Component, Path};

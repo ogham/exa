@@ -129,12 +129,10 @@ use output::column::{Alignment, Column, Columns, Cell, SizeFormat};
 use ansi_term::{ANSIString, ANSIStrings, Style};
 
 use datetime::local::{LocalDateTime, DatePiece};
-use datetime::format::{DateFormat};
-use datetime::zoned::{TimeZone};
+use datetime::format::DateFormat;
+use datetime::zoned::TimeZone;
 
 use locale;
-
-use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
 
 use users::{OSUsers, Users};
 use users::mock::MockUsers;
@@ -562,6 +560,8 @@ impl<U> Table<U> where U: Users {
     }
 
     fn render_size(&self, size: f::Size, size_format: SizeFormat) -> Cell {
+        use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+
         if let f::Size::Some(offset) = size {
             let result = match size_format {
                 SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
@@ -591,14 +591,14 @@ impl<U> Table<U> where U: Users {
     fn render_time(&self, timestamp: f::Time) -> Cell {
         let date = self.tz.at(LocalDateTime::at(timestamp.0 as i64));
 
-        let format = if date.year() == self.current_year {
-                DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap()
+        let datestamp = if date.year() == self.current_year {
+                DATE_AND_TIME.format(&date, &self.time)
             }
             else {
-                DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
+                DATE_AND_YEAR.format(&date, &self.time)
             };
 
-        Cell::paint(self.colours.date, &format.format(&date, &self.time))
+        Cell::paint(self.colours.date, &datestamp)
     }
 
     fn render_git_status(&self, git: f::Git) -> Cell {
@@ -750,6 +750,15 @@ impl TreePart {
             TreePart::Blank   => "   ",
         }
     }
+}
+
+
+lazy_static! {
+    static ref DATE_AND_TIME: DateFormat<'static> =
+        DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap();
+
+    static ref DATE_AND_YEAR: DateFormat<'static> =
+        DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap();
 }
 
 
