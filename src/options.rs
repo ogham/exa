@@ -83,15 +83,6 @@ impl Options {
             return Err(Misfire::Version);
         }
 
-        let sort_field = try!(SortField::deduce(&matches));
-
-        let filter = FileFilter {
-            list_dirs_first: matches.opt_present("group-directories-first"),
-            reverse:         matches.opt_present("reverse"),
-            show_invisibles: matches.opt_present("all"),
-            sort_field:      sort_field,
-        };
-
         let path_strs = if matches.free.is_empty() {
             vec![ ".".to_string() ]
         }
@@ -99,14 +90,8 @@ impl Options {
             matches.free.clone()
         };
 
-        let dir_action = try!(DirAction::deduce(&matches));
-        let view = try!(View::deduce(&matches, filter, dir_action));
-
-        Ok((Options {
-            dir_action: dir_action,
-            view:       view,
-            filter:     filter,
-        }, path_strs))
+        let options = try!(Options::deduce(&matches));
+        Ok((options, path_strs))
     }
 
     /// Whether the View specified in this set of options includes a Git
@@ -118,6 +103,20 @@ impl Options {
             View::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
             _ => false,
         }
+    }
+}
+
+impl OptionSet for Options {
+    fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
+        let dir_action = try!(DirAction::deduce(&matches));
+        let filter = try!(FileFilter::deduce(&matches));
+        let view = try!(View::deduce(&matches, filter, dir_action));
+
+        Ok(Options {
+            dir_action: dir_action,
+            view:       view,
+            filter:     filter,
+        })
     }
 }
 
@@ -274,6 +273,19 @@ pub struct FileFilter {
     reverse: bool,
     show_invisibles: bool,
     sort_field: SortField,
+}
+
+impl OptionSet for FileFilter {
+    fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
+        let sort_field = try!(SortField::deduce(&matches));
+
+        Ok(FileFilter {
+            list_dirs_first: matches.opt_present("group-directories-first"),
+            reverse:         matches.opt_present("reverse"),
+            show_invisibles: matches.opt_present("all"),
+            sort_field:      sort_field,
+        })
+    }
 }
 
 impl FileFilter {
