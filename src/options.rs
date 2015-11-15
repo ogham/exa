@@ -266,20 +266,6 @@ trait OptionSet: Sized {
     fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire>;
 }
 
-impl OptionSet for Columns {
-    fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
-        Ok(Columns {
-            size_format: try!(SizeFormat::deduce(matches)),
-            time_types:  try!(TimeTypes::deduce(matches)),
-            inode:  matches.opt_present("inode"),
-            links:  matches.opt_present("links"),
-            blocks: matches.opt_present("blocks"),
-            group:  matches.opt_present("group"),
-            git:    cfg!(feature="git") && matches.opt_present("git"),
-        })
-    }
-}
-
 
 /// The **file filter** processes a vector of files before outputting them,
 /// filtering and sorting the files depending on the user’s command-line
@@ -342,113 +328,6 @@ impl FileFilter {
                 cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order                 => order,
             },
-        }
-    }
-}
-
-
-/// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SortField {
-    Unsorted, Name, Extension, Size, FileInode,
-    ModifiedDate, AccessedDate, CreatedDate,
-}
-
-impl Default for SortField {
-    fn default() -> SortField {
-        SortField::Name
-    }
-}
-
-impl OptionSet for SortField {
-    fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
-        if let Some(word) = matches.opt_str("sort") {
-            match &word[..] {
-                "name" | "filename"   => Ok(SortField::Name),
-                "size" | "filesize"   => Ok(SortField::Size),
-                "ext"  | "extension"  => Ok(SortField::Extension),
-                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
-                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
-                "cr"   | "created"    => Ok(SortField::CreatedDate),
-                "none"                => Ok(SortField::Unsorted),
-                "inode"               => Ok(SortField::FileInode),
-                field                 => Err(Misfire::bad_argument("sort", field))
-            }
-        }
-        else {
-            Ok(SortField::default())
-        }
-    }
-}
-
-
-impl OptionSet for SizeFormat {
-
-    /// Determine which file size to use in the file size column based on
-    /// the user’s options.
-    ///
-    /// The default mode is to use the decimal prefixes, as they are the
-    /// most commonly-understood, and don’t involve trying to parse large
-    /// strings of digits in your head. Changing the format to anything else
-    /// involves the `--binary` or `--bytes` flags, and these conflict with
-    /// each other.
-    fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
-        let binary = matches.opt_present("binary");
-        let bytes  = matches.opt_present("bytes");
-
-        match (binary, bytes) {
-            (true,  true )  => Err(Misfire::Conflict("binary", "bytes")),
-            (true,  false)  => Ok(SizeFormat::BinaryBytes),
-            (false, true )  => Ok(SizeFormat::JustBytes),
-            (false, false)  => Ok(SizeFormat::DecimalBytes),
-        }
-    }
-}
-
-
-impl OptionSet for TimeTypes {
-
-    /// Determine which of a file’s time fields should be displayed for it
-    /// based on the user’s options.
-    ///
-    /// There are two separate ways to pick which fields to show: with a
-    /// flag (such as `--modified`) or with a parameter (such as
-    /// `--time=modified`). An error is signaled if both ways are used.
-    ///
-    /// It’s valid to show more than one column by passing in more than one
-    /// option, but passing *no* options means that the user just wants to
-    /// see the default set.
-    fn deduce(matches: &getopts::Matches) -> Result<TimeTypes, Misfire> {
-        let possible_word = matches.opt_str("time");
-        let modified = matches.opt_present("modified");
-        let created  = matches.opt_present("created");
-        let accessed = matches.opt_present("accessed");
-
-        if let Some(word) = possible_word {
-            if modified {
-                return Err(Misfire::Useless("modified", true, "time"));
-            }
-            else if created {
-                return Err(Misfire::Useless("created", true, "time"));
-            }
-            else if accessed {
-                return Err(Misfire::Useless("accessed", true, "time"));
-            }
-
-            match &*word {
-                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
-                "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
-                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
-                otherwise           => Err(Misfire::bad_argument("time", otherwise)),
-            }
-        }
-        else {
-            if modified || created || accessed {
-                Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
-            }
-            else {
-                Ok(TimeTypes::default())
-            }
         }
     }
 }
@@ -524,6 +403,128 @@ impl RecurseOptions {
             None    => false,
             Some(d) => {
                 d <= depth
+            }
+        }
+    }
+}
+
+
+/// User-supplied field to sort by.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum SortField {
+    Unsorted, Name, Extension, Size, FileInode,
+    ModifiedDate, AccessedDate, CreatedDate,
+}
+
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::Name
+    }
+}
+
+impl OptionSet for SortField {
+    fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
+        if let Some(word) = matches.opt_str("sort") {
+            match &word[..] {
+                "name" | "filename"   => Ok(SortField::Name),
+                "size" | "filesize"   => Ok(SortField::Size),
+                "ext"  | "extension"  => Ok(SortField::Extension),
+                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
+                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
+                "cr"   | "created"    => Ok(SortField::CreatedDate),
+                "none"                => Ok(SortField::Unsorted),
+                "inode"               => Ok(SortField::FileInode),
+                field                 => Err(Misfire::bad_argument("sort", field))
+            }
+        }
+        else {
+            Ok(SortField::default())
+        }
+    }
+}
+
+
+impl OptionSet for Columns {
+    fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
+        Ok(Columns {
+            size_format: try!(SizeFormat::deduce(matches)),
+            time_types:  try!(TimeTypes::deduce(matches)),
+            inode:  matches.opt_present("inode"),
+            links:  matches.opt_present("links"),
+            blocks: matches.opt_present("blocks"),
+            group:  matches.opt_present("group"),
+            git:    cfg!(feature="git") && matches.opt_present("git"),
+        })
+    }
+}
+
+
+impl OptionSet for SizeFormat {
+
+    /// Determine which file size to use in the file size column based on
+    /// the user’s options.
+    ///
+    /// The default mode is to use the decimal prefixes, as they are the
+    /// most commonly-understood, and don’t involve trying to parse large
+    /// strings of digits in your head. Changing the format to anything else
+    /// involves the `--binary` or `--bytes` flags, and these conflict with
+    /// each other.
+    fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
+        let binary = matches.opt_present("binary");
+        let bytes  = matches.opt_present("bytes");
+
+        match (binary, bytes) {
+            (true,  true )  => Err(Misfire::Conflict("binary", "bytes")),
+            (true,  false)  => Ok(SizeFormat::BinaryBytes),
+            (false, true )  => Ok(SizeFormat::JustBytes),
+            (false, false)  => Ok(SizeFormat::DecimalBytes),
+        }
+    }
+}
+
+
+impl OptionSet for TimeTypes {
+
+    /// Determine which of a file’s time fields should be displayed for it
+    /// based on the user’s options.
+    ///
+    /// There are two separate ways to pick which fields to show: with a
+    /// flag (such as `--modified`) or with a parameter (such as
+    /// `--time=modified`). An error is signaled if both ways are used.
+    ///
+    /// It’s valid to show more than one column by passing in more than one
+    /// option, but passing *no* options means that the user just wants to
+    /// see the default set.
+    fn deduce(matches: &getopts::Matches) -> Result<TimeTypes, Misfire> {
+        let possible_word = matches.opt_str("time");
+        let modified = matches.opt_present("modified");
+        let created  = matches.opt_present("created");
+        let accessed = matches.opt_present("accessed");
+
+        if let Some(word) = possible_word {
+            if modified {
+                return Err(Misfire::Useless("modified", true, "time"));
+            }
+            else if created {
+                return Err(Misfire::Useless("created", true, "time"));
+            }
+            else if accessed {
+                return Err(Misfire::Useless("accessed", true, "time"));
+            }
+
+            match &*word {
+                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
+                "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
+                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
+                otherwise           => Err(Misfire::bad_argument("time", otherwise)),
+            }
+        }
+        else {
+            if modified || created || accessed {
+                Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
+            }
+            else {
+                Ok(TimeTypes::default())
             }
         }
     }
