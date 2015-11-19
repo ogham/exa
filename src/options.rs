@@ -425,7 +425,7 @@ impl Default for SortField {
 impl OptionSet for SortField {
     fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
         if let Some(word) = matches.opt_str("sort") {
-            match &word[..] {
+            match &*word {
                 "name" | "filename"   => Ok(SortField::Name),
                 "size" | "filesize"   => Ok(SortField::Size),
                 "ext"  | "extension"  => Ok(SortField::Extension),
@@ -519,13 +519,11 @@ impl OptionSet for TimeTypes {
                 otherwise           => Err(Misfire::bad_argument("time", otherwise)),
             }
         }
+        else if modified || created || accessed {
+            Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
+        }
         else {
-            if modified || created || accessed {
-                Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
-            }
-            else {
-                Ok(TimeTypes::default())
-            }
+            Ok(TimeTypes::default())
         }
     }
 }
