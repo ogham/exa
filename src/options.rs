@@ -1,4 +1,5 @@
 use std::cmp;
+use std::env::var_os;
 use std::fmt;
 use std::num::ParseIntError;
 use std::os::unix::fs::MetadataExt;
@@ -47,6 +48,8 @@ impl Options {
         opts.optflag("R", "recurse",   "recurse into directories");
         opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
         opts.optflag("x", "across",    "sort multi-column view entries across");
+        opts.optopt ("",  "color",     "when to show anything in colours", "WHEN");
+        opts.optopt ("",  "colour",    "when to show anything in colours (alternate spelling)", "WHEN");
 
         // Filtering and sorting options
         opts.optflag("",  "group-directories-first", "list directories before other files");
@@ -158,13 +161,27 @@ impl View {
                 Err(Useless("oneline", true, "long"))
             }
             else {
+                let term_colours = try!(TerminalColours::deduce(matches));
+                let colours = match term_colours {
+                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Never     => Colours::plain(),
+                    TerminalColours::Automatic => {
+                        if dimensions().is_some() {
+                            Colours::colourful()
+                        }
+                        else {
+                            Colours::plain()
+                        }
+                    },
+                };
+
                 let details = Details {
                     columns: Some(try!(Columns::deduce(matches))),
                     header: matches.opt_present("header"),
                     recurse: dir_action.recurse_options(),
                     filter: filter,
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
-                    colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
+                    colours: colours,
                 };
 
                 Ok(details)
@@ -193,14 +210,23 @@ impl View {
         };
 
         let other_options_scan = || {
-            if let Some((width, _)) = dimensions() {
+            let term_colours = try!(TerminalColours::deduce(matches));
+            let term_width   = try!(TerminalWidth::deduce(matches));
+
+            if let TerminalWidth::Set(width) = term_width {
+                let colours = match term_colours {
+                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Never     => Colours::plain(),
+                    TerminalColours::Automatic => Colours::colourful(),
+                };
+
                 if matches.opt_present("oneline") {
                     if matches.opt_present("across") {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
                         let lines = Lines {
-                             colours: Colours::colourful(),
+                             colours: colours,
                         };
 
                         Ok(View::Lines(lines))
@@ -213,7 +239,7 @@ impl View {
                         recurse: dir_action.recurse_options(),
                         filter: filter,
                         xattr: false,
-                        colours: if dimensions().is_some() { Colours::colourful() } else { Colours::plain() },
+                        colours: colours,
                     };
 
                     Ok(View::Details(details))
@@ -222,7 +248,7 @@ impl View {
                     let grid = Grid {
                         across: matches.opt_present("across"),
                         console_width: width,
-                        colours: Colours::colourful(),
+                        colours: colours,
                     };
 
                     Ok(View::Grid(grid))
@@ -232,8 +258,15 @@ impl View {
                 // If the terminal width couldn’t be matched for some reason, such
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
+
+                let colours = match term_colours {
+                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Never     => Colours::plain(),
+                    TerminalColours::Automatic => Colours::plain(),
+                };
+
                 let lines = Lines {
-                     colours: Colours::plain(),
+                     colours: colours,
                 };
 
                 Ok(View::Lines(lines))
@@ -444,6 +477,60 @@ impl OptionSet for SortField {
 }
 
 
+#[derive(PartialEq, Debug)]
+enum TerminalWidth {
+    Set(usize),
+    Unset,
+}
+
+impl OptionSet for TerminalWidth {
+    fn deduce(_: &getopts::Matches) -> Result<TerminalWidth, Misfire> {
+        if let Some(columns) = var_os("COLUMNS").and_then(|s| s.into_string().ok()) {
+            match columns.parse() {
+                Ok(width)  => Ok(TerminalWidth::Set(width)),
+                Err(e)     => Err(Misfire::FailedParse(e)),
+            }
+        }
+        else if let Some((width, _)) = dimensions() {
+            Ok(TerminalWidth::Set(width))
+        }
+        else {
+            Ok(TerminalWidth::Unset)
+        }
+    }
+}
+
+
+#[derive(PartialEq, Debug)]
+enum TerminalColours {
+    Always,
+    Automatic,
+    Never,
+}
+
+impl Default for TerminalColours {
+    fn default() -> TerminalColours {
+        TerminalColours::Automatic
+    }
+}
+
+impl OptionSet for TerminalColours {
+    fn deduce(matches: &getopts::Matches) -> Result<TerminalColours, Misfire> {
+        if let Some(word) = matches.opt_str("color").or(matches.opt_str("colour")) {
+            match &*word {
+                "always"              => Ok(TerminalColours::Always),
+                "auto" | "automatic"  => Ok(TerminalColours::Automatic),
+                "never"               => Ok(TerminalColours::Never),
+                otherwise             => Err(Misfire::bad_argument("color", otherwise))
+            }
+        }
+        else {
+            Ok(TerminalColours::default())
+        }
+    }
+}
+
+
 impl OptionSet for Columns {
     fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
@@ -594,12 +681,13 @@ impl fmt::Display for Misfire {
 
 static OPTIONS: &'static str = r##"
 DISPLAY OPTIONS
-  -1, --oneline  display one entry per line
-  -G, --grid     display entries in a grid view (default)
-  -l, --long     display extended details and attributes
-  -R, --recurse  recurse into directories
-  -T, --tree     recurse into subdirectories in a tree view
-  -x, --across   sort multi-column view entries across
+  -1, --oneline      display one entry per line
+  -G, --grid         display entries in a grid view (default)
+  -l, --long         display extended details and attributes
+  -R, --recurse      recurse into directories
+  -T, --tree         recurse into subdirectories in a tree view
+  -x, --across       sort multi-column view entries across
+  --color, --colour  when to colourise the output
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show dot-files
