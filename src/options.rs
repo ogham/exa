@@ -265,11 +265,25 @@ impl View {
                     TerminalColours::Automatic => Colours::plain(),
                 };
 
-                let lines = Lines {
-                     colours: colours,
-                };
+                if matches.opt_present("tree") {
+                    let details = Details {
+                        columns: None,
+                        header: false,
+                        recurse: dir_action.recurse_options(),
+                        filter: filter,
+                        xattr: false,
+                        colours: colours,
+                    };
 
-                Ok(View::Lines(lines))
+                    Ok(View::Details(details))
+                }
+                else {
+                    let lines = Lines {
+                         colours: colours,
+                    };
+
+                    Ok(View::Lines(lines))
+                }
             }
         };
 
