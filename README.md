@@ -5,9 +5,9 @@
 Works on all recent Rust versions >= 1.4.0.
 
 
-## Screenshot
+## Screenshots
 
-![Screenshot of exa](https://raw.githubusercontent.com/ogham/exa/master/screenshot.png)
+![Screenshots of exa](screenshots.png)
 
 
 ## Options
