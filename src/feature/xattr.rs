@@ -215,7 +215,7 @@ mod lister {
             };
 
             unsafe {
-                listxattr(c_path.as_ptr(), ptr::null_mut(), 0)
+                listxattr(c_path.as_ptr() as *const _, ptr::null_mut(), 0)
             }
         }
 
@@ -227,7 +227,7 @@ mod lister {
 
             unsafe {
                 listxattr(
-                    c_path.as_ptr(),
+                    c_path.as_ptr() as *const _,
                     buf.as_mut_ptr() as *mut c_char,
                     bufsize as size_t
                 )
@@ -242,7 +242,7 @@ mod lister {
 
             unsafe {
                 getxattr(
-                    c_path.as_ptr(),
+                    c_path.as_ptr() as *const _,
                     buf.as_ptr() as *const c_char,
                     ptr::null_mut(), 0
                 )
