@@ -727,9 +727,8 @@ LONG VIEW OPTIONS
   -U, --created      display timestamp of creation for a file
 "##;
 
-static GIT_HELP:      &'static str = r##"  -@, --extended     display extended attribute keys and sizes"##;
-static EXTENDED_HELP: &'static str = r##"  --git              show git status for files"##;
-
+static GIT_HELP:      &'static str = r##"  --git              show git status for files"##;
+static EXTENDED_HELP: &'static str = r##"  -@, --extended     display extended attribute keys and sizes"##;
 
 #[cfg(test)]
 mod test {
