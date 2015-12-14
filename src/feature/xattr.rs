@@ -3,7 +3,6 @@ extern crate libc;
 
 use std::io;
 use std::path::Path;
-use std::ffi::CString;
 
 pub const ENABLED: bool = cfg!(feature="git") && cfg!(any(target_os="macos", target_os="linux"));
 
@@ -51,6 +50,8 @@ pub struct Attribute {
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
+    use std::ffi::CString;
+
     let c_path = match path.to_str().and_then(|s| { CString::new(s).ok() }) {
         Some(cstring) => cstring,
         None => return Err(io::Error::new(io::ErrorKind::Other, "Error: path somehow contained a NUL?")),
