@@ -3,7 +3,7 @@
 use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
-use std::io;
+use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
@@ -89,7 +89,7 @@ impl<'dir> File<'dir> {
     ///
     /// This uses `symlink_metadata` instead of `metadata`, which doesn't
     /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> io::Result<File<'dir>> {
+    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> IOResult<File<'dir>> {
         fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent))
     }
 
@@ -117,7 +117,7 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, scan_for_git: bool) -> io::Result<Dir> {
+    pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
         Dir::read_dir(&*self.path, scan_for_git)
     }
 
