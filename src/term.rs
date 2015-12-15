@@ -22,7 +22,13 @@ struct Winsize {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 static TIOCGWINSZ: c_ulong = 0x5413;
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "dragonfly"))]
+#[cfg(any(target_os = "macos",
+          target_os = "ios",
+          target_os = "bitrig",
+          target_os = "dragonfly",
+          target_os = "freebsd",
+          target_os = "netbsd",
+          target_os = "openbsd"))]
 static TIOCGWINSZ: c_ulong = 0x40087468;
 
 extern {
