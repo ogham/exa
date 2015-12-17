@@ -23,7 +23,7 @@ pub struct TextCell {
     pub contents: TextCellContents,
 
     /// The Unicode “display width” of this cell.
-    pub length: DisplayWidth,
+    pub width: DisplayWidth,
 }
 
 impl TextCell {
@@ -31,9 +31,11 @@ impl TextCell {
     /// Creates a new text cell that holds the given text in the given style,
     /// computing the Unicode width of the text.
     pub fn paint(style: Style, text: String) -> Self {
+        let width = DisplayWidth::from(&*text);
+
         TextCell {
-            length: DisplayWidth::from(&*text),
             contents: vec![ style.paint(text) ],
+            width:    width,
         }
     }
 
@@ -41,9 +43,11 @@ impl TextCell {
     /// computing the Unicode width of the text. (This could be merged with
     /// `paint`, but.)
     pub fn paint_str(style: Style, text: &'static str) -> Self {
+        let width = DisplayWidth::from(text);
+
         TextCell {
-            length: DisplayWidth::from(text),
             contents: vec![ style.paint(text) ],
+            width:    width,
         }
     }
 
@@ -55,8 +59,8 @@ impl TextCell {
     /// tabular data when there is *something* in each cell.
     pub fn blank(style: Style) -> Self {
         TextCell {
-            length: DisplayWidth::from(1),
             contents: vec![ style.paint("-") ],
+            width:    DisplayWidth::from(1),
         }
     }
 
@@ -66,21 +70,21 @@ impl TextCell {
     pub fn add_spaces(&mut self, count: usize) {
         use std::iter::repeat;
 
-        (*self.length) += count;
+        (*self.width) += count;
 
         let spaces: String = repeat(' ').take(count).collect();
         self.contents.push(Style::default().paint(spaces));
     }
 
     /// Adds the contents of another `ANSIString` to the end of this cell.
-    pub fn push(&mut self, string: ANSIString<'static>, length: usize) {
+    pub fn push(&mut self, string: ANSIString<'static>, extra_width: usize) {
         self.contents.push(string);
-        (*self.length) += length;
+        (*self.width) += extra_width;
     }
 
     /// Adds all the contents of another `TextCell` to the end of this cell.
     pub fn append(&mut self, other: TextCell) {
-        (*self.length) += *other.length;
+        (*self.width) += *other.width;
         self.contents.extend(other.contents);
     }
 

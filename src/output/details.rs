@@ -279,10 +279,11 @@ impl Details {
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
+            let width = DisplayWidth::from(&*egg.file.name);
 
             let name = TextCell {
-                length:   DisplayWidth::from(&*egg.file.name),
                 contents: filename(egg.file, &self.colours, true),
+                width:    width,
             };
 
             let row = Row {
@@ -361,7 +362,7 @@ impl Row {
     /// not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
-            Some(ref cells) => *cells[index].length,
+            Some(ref cells) => *cells[index].width,
             None => 0,
         }
     }
@@ -460,9 +461,11 @@ impl<U> Table<U> where U: Users {
     }
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
+        let width = DisplayWidth::from(&*file.name);
+
         TextCell {
-            length:   DisplayWidth::from(&*file.name),
             contents: filename(file, &self.colours, links),
+            width:    width,
         }
     }
 
@@ -543,8 +546,8 @@ impl<U> Table<U> where U: Users {
         let width = DisplayWidth::from(chars.len());
 
         TextCell {
-            length:   width,
             contents: chars,
+            width:    width,
         }
     }
 
@@ -598,7 +601,7 @@ impl<U> Table<U> where U: Users {
         let width = DisplayWidth::from(number.len() + symbol.len());
 
         TextCell {
-            length: width,
+            width:    width,
             contents: vec![
                 self.colours.size.numbers.paint(number),
                 self.colours.size.unit.paint(symbol),
@@ -631,7 +634,7 @@ impl<U> Table<U> where U: Users {
         };
 
         TextCell {
-            length: DisplayWidth::from(2),
+            width: DisplayWidth::from(2),
             contents: vec![
                 git_char(git.staged),
                 git_char(git.unstaged)
@@ -688,7 +691,7 @@ impl<U> Table<U> where U: Users {
 
             if let Some(cells) = row.cells {
                 for (n, (this_cell, width)) in cells.into_iter().zip(column_widths.iter()).enumerate() {
-                    let padding = width - *this_cell.length;
+                    let padding = width - *this_cell.width;
 
                     match self.columns[n].alignment() {
                         Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }
