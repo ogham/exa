@@ -1,6 +1,7 @@
 use colours::Colours;
 use file::File;
 use filetype::file_colour;
+use output::DisplayWidth;
 
 use term_grid as grid;
 
@@ -27,7 +28,7 @@ impl Grid {
         for file in files.iter() {
             grid.add(grid::Cell {
                 contents:  file_colour(&self.colours, file).paint(&*file.name).to_string(),
-                width:     *file.file_name_width(),
+                width:     *DisplayWidth::from(&*file.name),
             });
         }
 

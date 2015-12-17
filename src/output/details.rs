@@ -281,7 +281,7 @@ impl Details {
             let mut errors = egg.errors;
 
             let name = TextCell {
-                length: egg.file.file_name_width(),
+                length:   DisplayWidth::from(&*egg.file.name),
                 contents: filename(egg.file, &self.colours, true),
             };
 
@@ -461,7 +461,7 @@ impl<U> Table<U> where U: Users {
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
         TextCell {
-            length:   file.file_name_width(),
+            length:   DisplayWidth::from(&*file.name),
             contents: filename(file, &self.colours, links),
         }
     }
