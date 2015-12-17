@@ -7,9 +7,8 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
-use unicode_width::UnicodeWidthStr;
-
 use dir::Dir;
+use output::DisplayWidth;
 
 use self::fields as f;
 
@@ -185,8 +184,8 @@ impl<'dir> File<'dir> {
     /// This is related to the number of graphemes in the string: most
     /// characters are 1 columns wide, but in some contexts, certain
     /// characters are actually 2 columns wide.
-    pub fn file_name_width(&self) -> usize {
-        UnicodeWidthStr::width(&self.name[..])
+    pub fn file_name_width(&self) -> DisplayWidth {
+        DisplayWidth::from(&*self.name)
     }
 
     /// Assuming the current file is a symlink, follows the link and

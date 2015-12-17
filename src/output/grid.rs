@@ -27,7 +27,7 @@ impl Grid {
         for file in files.iter() {
             grid.add(grid::Cell {
                 contents:  file_colour(&self.colours, file).paint(&*file.name).to_string(),
-                width:     file.file_name_width(),
+                width:     *file.file_name_width(),
             });
         }
 

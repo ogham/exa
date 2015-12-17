@@ -1,5 +1,7 @@
 //! The `TextCell` type for the details and lines views.
 
+use std::ops::{Deref, DerefMut};
+
 use ansi_term::{Style, ANSIString, ANSIStrings};
 use unicode_width::UnicodeWidthStr;
 
@@ -20,12 +22,8 @@ pub struct TextCell {
     /// The contents of this cell, as a vector of ANSI-styled strings.
     pub contents: TextCellContents,
 
-    /// The Unicode “display width” of this cell, in characters.
-    ///
-    /// As with the `File` type’s width, this is related to the number of
-    /// *graphemes*, rather than *characters*, in the cell: most are 1 column
-    /// wide, but in some contexts, certain characters are two columns wide.
-    pub length: usize,
+    /// The Unicode “display width” of this cell.
+    pub length: DisplayWidth,
 }
 
 impl TextCell {
@@ -34,7 +32,7 @@ impl TextCell {
     /// computing the Unicode width of the text.
     pub fn paint(style: Style, text: String) -> Self {
         TextCell {
-            length: text.width(),
+            length: DisplayWidth::from(&*text),
             contents: vec![ style.paint(text) ],
         }
     }
@@ -44,7 +42,7 @@ impl TextCell {
     /// `paint`, but.)
     pub fn paint_str(style: Style, text: &'static str) -> Self {
         TextCell {
-            length: text.len(),
+            length: DisplayWidth::from(text),
             contents: vec![ style.paint(text) ],
         }
     }
@@ -57,7 +55,7 @@ impl TextCell {
     /// tabular data when there is *something* in each cell.
     pub fn blank(style: Style) -> Self {
         TextCell {
-            length: 1,
+            length: DisplayWidth::from(1),
             contents: vec![ style.paint("-") ],
         }
     }
@@ -68,7 +66,7 @@ impl TextCell {
     pub fn add_spaces(&mut self, count: usize) {
         use std::iter::repeat;
 
-        self.length += count;
+        (*self.length) += count;
 
         let spaces: String = repeat(' ').take(count).collect();
         self.contents.push(Style::default().paint(spaces));
@@ -77,12 +75,12 @@ impl TextCell {
     /// Adds the contents of another `ANSIString` to the end of this cell.
     pub fn push(&mut self, string: ANSIString<'static>, length: usize) {
         self.contents.push(string);
-        self.length += length;
+        (*self.length) += length;
     }
 
     /// Adds all the contents of another `TextCell` to the end of this cell.
     pub fn append(&mut self, other: TextCell) {
-        self.length += other.length;
+        (*self.length) += *other.length;
         self.contents.extend(other.contents);
     }
 
@@ -128,3 +126,46 @@ impl TextCell {
 /// in the final cell of a table or grid and there’s no point padding it. This
 /// happens when dealing with file names.
 pub type TextCellContents = Vec<ANSIString<'static>>;
+
+
+/// The Unicode “display width” of a string.
+///
+/// This is related to the number of *graphemes* of a string, rather than the
+/// number of *characters*, or *bytes*: although most characters are one
+/// column wide, a few can be two columns wide, and this is important to note
+/// when calculating widths for displaying tables in a terminal.
+///
+/// This type is used to ensure that the width, rather than the length, is
+/// used when constructing a `TextCell` -- it's too easy to write something
+/// like `file_name.len()` and assume it will work!
+///
+/// It has `From` impls that convert an input string or fixed with to values
+/// of this type, and will `Deref` to the contained `usize` value.
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
+pub struct DisplayWidth(usize);
+
+impl<'a> From<&'a str> for DisplayWidth {
+    fn from(input: &'a str) -> DisplayWidth {
+        DisplayWidth(UnicodeWidthStr::width(input))
+    }
+}
+
+impl From<usize> for DisplayWidth {
+    fn from(width: usize) -> DisplayWidth {
+        DisplayWidth(width)
+    }
+}
+
+impl Deref for DisplayWidth {
+    type Target = usize;
+
+    fn deref<'a>(&'a self) -> &'a Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DisplayWidth {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut Self::Target {
+        &mut self.0
+    }
+}

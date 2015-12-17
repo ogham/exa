@@ -4,7 +4,7 @@ use colours::Colours;
 use file::File;
 use filetype::file_colour;
 
-pub use self::cell::{TextCell, TextCellContents};
+pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
 pub use self::details::Details;
 pub use self::grid::Grid;
 pub use self::lines::Lines;

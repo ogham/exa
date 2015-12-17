@@ -125,7 +125,7 @@ use file::fields as f;
 use file::File;
 use options::{FileFilter, RecurseOptions};
 use output::column::{Alignment, Column, Columns, SizeFormat};
-use output::cell::TextCell;
+use output::cell::{TextCell, DisplayWidth};
 
 use ansi_term::Style;
 
@@ -361,7 +361,7 @@ impl Row {
     /// not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
-            Some(ref cells) => cells[index].length,
+            Some(ref cells) => *cells[index].length,
             None => 0,
         }
     }
@@ -537,8 +537,13 @@ impl<U> Table<U> where U: Users {
             chars.push(c.attribute.paint("@"));
         }
 
+        // As these are all ASCII characters, we can guarantee that they’re
+        // all going to be one character wide, and don’t need to compute the
+        // cell’s display width.
+        let width = DisplayWidth::from(chars.len());
+
         TextCell {
-            length:   chars.len(),
+            length:   width,
             contents: chars,
         }
     }
@@ -588,8 +593,12 @@ impl<U> Table<U> where U: Users {
         let number = if n < 10f64 { self.numeric.format_float(n, 1) }
                              else { self.numeric.format_int(n as isize) };
 
+        // The numbers and symbols are guaranteed to be written in ASCII, so
+        // we can skip the display width calculation.
+        let width = DisplayWidth::from(number.len() + symbol.len());
+
         TextCell {
-            length: number.len() + symbol.len(),
+            length: width,
             contents: vec![
                 self.colours.size.numbers.paint(number),
                 self.colours.size.unit.paint(symbol),
@@ -622,7 +631,7 @@ impl<U> Table<U> where U: Users {
         };
 
         TextCell {
-            length: 2,
+            length: DisplayWidth::from(2),
             contents: vec![
                 git_char(git.staged),
                 git_char(git.unstaged)
@@ -679,7 +688,7 @@ impl<U> Table<U> where U: Users {
 
             if let Some(cells) = row.cells {
                 for (n, (this_cell, width)) in cells.into_iter().zip(column_widths.iter()).enumerate() {
-                    let padding = width - this_cell.length;
+                    let padding = width - *this_cell.length;
 
                     match self.columns[n].alignment() {
                         Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }

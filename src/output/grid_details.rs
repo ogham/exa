@@ -106,7 +106,7 @@ impl GridDetails {
                     if row < column.len() {
                         let cell = grid::Cell {
                             contents: ANSIStrings(&column[row].contents).to_string(),
-                            width:    column[row].length,
+                            width:    *column[row].length,
                         };
 
                         grid.add(cell);
@@ -119,7 +119,7 @@ impl GridDetails {
                 for cell in column.iter() {
                     let cell = grid::Cell {
                         contents: ANSIStrings(&cell.contents).to_string(),
-                        width:    cell.length,
+                        width:    *cell.length,
                     };
 
                     grid.add(cell);
