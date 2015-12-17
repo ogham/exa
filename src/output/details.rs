@@ -546,7 +546,7 @@ impl<U> Table<U> where U: Users {
         let width = DisplayWidth::from(chars.len());
 
         TextCell {
-            contents: chars,
+            contents: chars.into(),
             width:    width,
         }
     }
@@ -605,7 +605,7 @@ impl<U> Table<U> where U: Users {
             contents: vec![
                 self.colours.size.numbers.paint(number),
                 self.colours.size.unit.paint(symbol),
-            ],
+            ].into(),
         }
     }
 
@@ -638,7 +638,7 @@ impl<U> Table<U> where U: Users {
             contents: vec![
                 git_char(git.staged),
                 git_char(git.unstaged)
-            ],
+            ].into(),
         }
     }
 

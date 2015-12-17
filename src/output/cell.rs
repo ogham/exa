@@ -26,6 +26,14 @@ pub struct TextCell {
     pub width: DisplayWidth,
 }
 
+impl Deref for TextCell {
+    type Target = TextCellContents;
+
+    fn deref<'a>(&'a self) -> &'a Self::Target {
+        &self.contents
+    }
+}
+
 impl TextCell {
 
     /// Creates a new text cell that holds the given text in the given style,
@@ -34,7 +42,7 @@ impl TextCell {
         let width = DisplayWidth::from(&*text);
 
         TextCell {
-            contents: vec![ style.paint(text) ],
+            contents: vec![ style.paint(text) ].into(),
             width:    width,
         }
     }
@@ -46,7 +54,7 @@ impl TextCell {
         let width = DisplayWidth::from(text);
 
         TextCell {
-            contents: vec![ style.paint(text) ],
+            contents: vec![ style.paint(text) ].into(),
             width:    width,
         }
     }
@@ -59,7 +67,7 @@ impl TextCell {
     /// tabular data when there is *something* in each cell.
     pub fn blank(style: Style) -> Self {
         TextCell {
-            contents: vec![ style.paint("-") ],
+            contents: vec![ style.paint("-") ].into(),
             width:    DisplayWidth::from(1),
         }
     }
@@ -73,25 +81,19 @@ impl TextCell {
         (*self.width) += count;
 
         let spaces: String = repeat(' ').take(count).collect();
-        self.contents.push(Style::default().paint(spaces));
+        self.contents.0.push(Style::default().paint(spaces));
     }
 
     /// Adds the contents of another `ANSIString` to the end of this cell.
     pub fn push(&mut self, string: ANSIString<'static>, extra_width: usize) {
-        self.contents.push(string);
+        self.contents.0.push(string);
         (*self.width) += extra_width;
     }
 
     /// Adds all the contents of another `TextCell` to the end of this cell.
     pub fn append(&mut self, other: TextCell) {
         (*self.width) += *other.width;
-        self.contents.extend(other.contents);
-    }
-
-    /// Produces an `ANSIStrings` value that can be used to print the styled
-    /// values of this cell as an ANSI-terminal-formatted string.
-    pub fn strings(&self) -> ANSIStrings {
-        ANSIStrings(&self.contents)
+        self.contents.0.extend(other.contents.0);
     }
 }
 
@@ -129,7 +131,35 @@ impl TextCell {
 /// `TextCell` but aren’t concerned with tracking its width, because it occurs
 /// in the final cell of a table or grid and there’s no point padding it. This
 /// happens when dealing with file names.
-pub type TextCellContents = Vec<ANSIString<'static>>;
+#[derive(PartialEq, Debug, Clone, Default)]
+pub struct TextCellContents(Vec<ANSIString<'static>>);
+
+impl From<Vec<ANSIString<'static>>> for TextCellContents {
+    fn from(strings: Vec<ANSIString<'static>>) -> TextCellContents {
+        TextCellContents(strings)
+    }
+}
+
+impl Deref for TextCellContents {
+    type Target = [ANSIString<'static>];
+
+    fn deref<'a>(&'a self) -> &'a Self::Target {
+        &*self.0
+    }
+}
+
+// No DerefMut implementation here -- it would be publicly accessible, and as
+// the contents only get changed in this module, the mutators in the struct
+// above can just access the value directly.
+
+impl TextCellContents {
+
+    /// Produces an `ANSIStrings` value that can be used to print the styled
+    /// values of this cell as an ANSI-terminal-formatted string.
+    pub fn strings(&self) -> ANSIStrings {
+        ANSIStrings(&self.0)
+    }
+}
 
 
 /// The Unicode “display width” of a string.

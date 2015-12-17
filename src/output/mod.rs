@@ -25,7 +25,7 @@ pub fn filename(file: File, colours: &Colours, links: bool) -> TextCellContents 
     else {
         vec![
             file_colour(colours, &file).paint(file.name)
-        ]
+        ].into()
     }
 }
 
@@ -38,7 +38,7 @@ fn symlink_filename(file: File, colours: &Colours) -> TextCellContents {
             Style::default().paint(" "),
             colours.symlink_path.paint(target.path_prefix()),
             file_colour(colours, &target).paint(target.name)
-        ],
+        ].into(),
 
         Err(filename) => vec![
             file_colour(colours, &file).paint(file.name),
@@ -46,6 +46,6 @@ fn symlink_filename(file: File, colours: &Colours) -> TextCellContents {
             colours.broken_arrow.paint("->"),
             Style::default().paint(" "),
             colours.broken_filename.paint(filename),
-        ],
+        ].into(),
     }
 }
