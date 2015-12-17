@@ -195,7 +195,7 @@ impl<'dir> File<'dir> {
     /// If statting the file fails (usually because the file on the
     /// other end doesn't exist), returns the *filename* of the file
     /// that should be there.
-    pub fn link_target(&self) -> Result<File, String> {
+    pub fn link_target(&self) -> Result<File<'dir>, String> {
         let path = match fs::read_link(&self.path) {
             Ok(path)  => path,
             Err(_)    => return Err(self.name.clone()),

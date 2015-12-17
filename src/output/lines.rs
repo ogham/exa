@@ -1,6 +1,8 @@
 use colours::Colours;
 use file::File;
 
+use ansi_term::ANSIStrings;
+
 use super::filename;
 
 
@@ -11,9 +13,9 @@ pub struct Lines {
 
 /// The lines view literally just displays each file, line-by-line.
 impl Lines {
-    pub fn view(&self, files: &[File]) {
+    pub fn view(&self, files: Vec<File>) {
         for file in files {
-            println!("{}", filename(file, &self.colours, true));
+            println!("{}", ANSIStrings(&filename(file, &self.colours, true)));
         }
     }
 }

@@ -124,9 +124,10 @@ use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
 use options::{FileFilter, RecurseOptions};
-use output::column::{Alignment, Column, Columns, Cell, SizeFormat};
+use output::column::{Alignment, Column, Columns, SizeFormat};
+use output::cell::TextCell;
 
-use ansi_term::{ANSIString, ANSIStrings, Style};
+use ansi_term::Style;
 
 use datetime::local::{LocalDateTime, DatePiece};
 use datetime::format::DateFormat;
@@ -198,7 +199,7 @@ impl Details {
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
         for cell in table.print_table() {
-            println!("{}", cell.text);
+            println!("{}", cell.strings());
         }
     }
 
@@ -213,20 +214,18 @@ impl Details {
         let mut file_eggs = Vec::new();
 
         struct Egg<'_> {
-            cells:   Vec<Cell>,
-            name:    Cell,
+            cells:   Vec<TextCell>,
             xattrs:  Vec<Attribute>,
             errors:  Vec<(io::Error, Option<PathBuf>)>,
             dir:     Option<Dir>,
-            file:    Arc<File<'_>>,
+            file:    File<'_>,
         }
 
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
             let table = Arc::new(Mutex::new(&mut table));
 
-            for file in src.into_iter() {
-                let file: Arc<File> = Arc::new(file);
+            for file in src {
                 let file_eggs = file_eggs.clone();
                 let table = table.clone();
 
@@ -251,11 +250,6 @@ impl Details {
 
                     let cells = table.lock().unwrap().cells_for_file(&file, !xattrs.is_empty());
 
-                    let name = Cell {
-                        text: filename(&file, &self.colours, true),
-                        length: file.file_name_width()
-                    };
-
                     let mut dir = None;
 
                     if let Some(r) = self.recurse {
@@ -268,7 +262,6 @@ impl Details {
 
                     let egg = Egg {
                         cells: cells,
-                        name: name,
                         xattrs: xattrs,
                         errors: errors,
                         dir: dir,
@@ -280,17 +273,22 @@ impl Details {
             }
         });
 
-        file_eggs.sort_by(|a, b| self.filter.compare_files(&*a.file, &*b.file));
+        file_eggs.sort_by(|a, b| self.filter.compare_files(&a.file, &b.file));
 
         let num_eggs = file_eggs.len();
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
+            let name = TextCell {
+                length: egg.file.file_name_width(),
+                contents: filename(egg.file, &self.colours, true),
+            };
+
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     egg.name,
+                name:     name,
                 last:     index == num_eggs - 1,
             };
 
@@ -342,14 +340,11 @@ struct Row {
     /// almost always be `Some`, containing a vector of cells. It will only be
     /// `None` for a row displaying an attribute or error, neither of which
     /// have cells.
-    cells: Option<Vec<Cell>>,
-
-    // Did You Know?
-    // A Vec<Cell> and an Option<Vec<Cell>> actually have the same byte size!
+    cells: Option<Vec<TextCell>>,
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
-    name: Cell,
+    name: TextCell,
 
     /// How many directories deep into the tree structure this is. Directories
     /// on top have depth 0.
@@ -429,8 +424,8 @@ impl<U> Table<U> where U: Users {
     pub fn add_header(&mut self) {
         let row = Row {
             depth:    0,
-            cells:    Some(self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect()),
-            name:     Cell::paint(self.colours.header, "Name"),
+            cells:    Some(self.columns.iter().map(|c| TextCell::paint_str(self.colours.header, c.header())).collect()),
+            name:     TextCell::paint_str(self.colours.header, "Name"),
             last:     false,
         };
 
@@ -446,7 +441,7 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.broken_arrow, &error_message),
+            name:     TextCell::paint(self.colours.broken_arrow, error_message),
             last:     last,
         };
 
@@ -457,19 +452,26 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.perms.attribute, &format!("{} (len {})", xattr.name, xattr.size)),
+            name:     TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size)),
             last:     last,
         };
 
         self.rows.push(row);
     }
 
-    pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {
+    pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
+        TextCell {
+            length:   file.file_name_width(),
+            contents: filename(file, &self.colours, links),
+        }
+    }
+
+    pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {
         let row = Row {
-            depth:    depth,
-            cells:    Some(cells),
-            name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
-            last:     last,
+            depth:  depth,
+            cells:  Some(cells),
+            name:   name_cell,
+            last:   last,
         };
 
         self.rows.push(row);
@@ -477,13 +479,13 @@ impl<U> Table<U> where U: Users {
 
     /// Use the list of columns to find which cells should be produced for
     /// this file, per-column.
-    pub fn cells_for_file(&mut self, file: &File, xattrs: bool) -> Vec<Cell> {
+    pub fn cells_for_file(&mut self, file: &File, xattrs: bool) -> Vec<TextCell> {
         self.columns.clone().iter()
                     .map(|c| self.display(file, c, xattrs))
                     .collect()
     }
 
-    fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> Cell {
+    fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> TextCell {
         use output::column::TimeType::*;
 
         match *column {
@@ -501,7 +503,7 @@ impl<U> Table<U> where U: Users {
         }
     }
 
-    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> Cell {
+    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> TextCell {
         let c = self.colours.perms;
         let bit = |bit, chr: &'static str, style: Style| {
             if bit { style.paint(chr) } else { self.colours.punctuation.paint("-") }
@@ -518,7 +520,7 @@ impl<U> Table<U> where U: Users {
         let x_colour = if let f::Type::File = permissions.file_type { c.user_execute_file }
                                                                else { c.user_execute_other };
 
-        let mut columns = vec![
+        let mut chars = vec![
             file_type,
             bit(permissions.user_read,     "r", c.user_read),
             bit(permissions.user_write,    "w", c.user_write),
@@ -532,63 +534,71 @@ impl<U> Table<U> where U: Users {
         ];
 
         if xattrs {
-            columns.push(c.attribute.paint("@"));
+            chars.push(c.attribute.paint("@"));
         }
 
-        Cell {
-            text: ANSIStrings(&columns).to_string(),
-            length: columns.len(),
+        TextCell {
+            length:   chars.len(),
+            contents: chars,
         }
     }
 
-    fn render_links(&self, links: f::Links) -> Cell {
+    fn render_links(&self, links: f::Links) -> TextCell {
         let style = if links.multiple { self.colours.links.multi_link_file }
                                  else { self.colours.links.normal };
 
-        Cell::paint(style, &self.numeric.format_int(links.count))
+        TextCell::paint(style, self.numeric.format_int(links.count))
     }
 
-    fn render_blocks(&self, blocks: f::Blocks) -> Cell {
+    fn render_blocks(&self, blocks: f::Blocks) -> TextCell {
         match blocks {
-            f::Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
-            f::Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
+            f::Blocks::Some(blk)  => TextCell::paint(self.colours.blocks, blk.to_string()),
+            f::Blocks::None       => TextCell::blank(self.colours.punctuation),
         }
     }
 
-    fn render_inode(&self, inode: f::Inode) -> Cell {
-        Cell::paint(self.colours.inode, &inode.0.to_string())
+    fn render_inode(&self, inode: f::Inode) -> TextCell {
+        TextCell::paint(self.colours.inode, inode.0.to_string())
     }
 
-    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> Cell {
-        use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> TextCell {
+        use number_prefix::{binary_prefix, decimal_prefix};
+        use number_prefix::{Prefixed, Standalone, PrefixNames};
 
-        if let f::Size::Some(offset) = size {
-            let result = match size_format {
-                SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
-                SizeFormat::BinaryBytes   => binary_prefix(offset as f64),
-                SizeFormat::JustBytes     => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
-            };
+        let size = match size {
+            f::Size::Some(s) => s,
+            f::Size::None => return TextCell::blank(self.colours.punctuation),
+        };
 
-            match result {
-                Standalone(bytes)    => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
-                Prefixed(prefix, n)  => {
-                    let number = if n < 10f64 { self.numeric.format_float(n, 1) } else { self.numeric.format_int(n as isize) };
-                    let symbol = prefix.symbol();
+        let result = match size_format {
+            SizeFormat::DecimalBytes  => decimal_prefix(size as f64),
+            SizeFormat::BinaryBytes   => binary_prefix(size as f64),
+            SizeFormat::JustBytes     => {
+                let string = self.numeric.format_int(size);
+                return TextCell::paint(self.colours.size.numbers, string);
+            },
+        };
 
-                    Cell {
-                        text: ANSIStrings( &[ self.colours.size.numbers.paint(&number[..]), self.colours.size.unit.paint(symbol) ]).to_string(),
-                        length: number.len() + symbol.len(),
-                    }
-                }
-            }
-        }
-        else {
-            Cell::paint(self.colours.punctuation, "-")
+        let (prefix, n) = match result {
+            Standalone(b)  => return TextCell::paint(self.colours.size.numbers, b.to_string()),
+            Prefixed(p, n) => (p, n)
+        };
+
+        let symbol = prefix.symbol();
+        let number = if n < 10f64 { self.numeric.format_float(n, 1) }
+                             else { self.numeric.format_int(n as isize) };
+
+        TextCell {
+            length: number.len() + symbol.len(),
+            contents: vec![
+                self.colours.size.numbers.paint(number),
+                self.colours.size.unit.paint(symbol),
+            ],
         }
     }
 
     #[allow(trivial_numeric_casts)]
-    fn render_time(&self, timestamp: f::Time) -> Cell {
+    fn render_time(&self, timestamp: f::Time) -> TextCell {
         let date = self.tz.at(LocalDateTime::at(timestamp.0 as i64));
 
         let datestamp = if date.year() == self.current_year {
@@ -598,60 +608,60 @@ impl<U> Table<U> where U: Users {
                 DATE_AND_YEAR.format(&date, &self.time)
             };
 
-        Cell::paint(self.colours.date, &datestamp)
+        TextCell::paint(self.colours.date, datestamp)
     }
 
-    fn render_git_status(&self, git: f::Git) -> Cell {
-        Cell {
-            text: ANSIStrings(&[ self.render_git_char(git.staged),
-                                 self.render_git_char(git.unstaged) ]).to_string(),
-            length: 2,
-        }
-    }
-
-    fn render_git_char(&self, status: f::GitStatus) -> ANSIString {
-        match status {
+    fn render_git_status(&self, git: f::Git) -> TextCell {
+        let git_char = |status| match status {
             f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
             f::GitStatus::New          => self.colours.git.new.paint("N"),
             f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
             f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
             f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
             f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
+        };
+
+        TextCell {
+            length: 2,
+            contents: vec![
+                git_char(git.staged),
+                git_char(git.unstaged)
+            ],
         }
     }
 
-    fn render_user(&mut self, user: f::User) -> Cell {
+    fn render_user(&mut self, user: f::User) -> TextCell {
         let user_name = match self.users.get_user_by_uid(user.0) {
             Some(user)  => user.name,
             None        => user.0.to_string(),
         };
 
         let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
-                                                         else { self.colours.users.user_someone_else };
-        Cell::paint(style, &*user_name)
+                                                else { self.colours.users.user_someone_else };
+        TextCell::paint(style, user_name)
     }
 
-    fn render_group(&mut self, group: f::Group) -> Cell {
+    fn render_group(&mut self, group: f::Group) -> TextCell {
         let mut style = self.colours.users.group_not_yours;
 
-        let group_name = match self.users.get_group_by_gid(group.0) {
-            Some(group) => {
-                let current_uid = self.users.get_current_uid();
-                if let Some(current_user) = self.users.get_user_by_uid(current_uid) {
-                    if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
-                        style = self.colours.users.group_yours;
-                    }
-                }
-                group.name
-            },
-            None => group.0.to_string(),
+        let group = match self.users.get_group_by_gid(group.0) {
+            Some(g) => g,
+            None    => return TextCell::paint(style, group.0.to_string()),
         };
 
-        Cell::paint(style, &*group_name)
+        let current_uid = self.users.get_current_uid();
+        if let Some(current_user) = self.users.get_user_by_uid(current_uid) {
+            if current_user.primary_group == group.gid
+            || group.members.contains(&current_user.name) {
+                style = self.colours.users.group_yours;
+            }
+        }
+
+        TextCell::paint(style, group.name)
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn print_table(&self) -> Vec<Cell> {
+    pub fn print_table(self) -> Vec<TextCell> {
         let mut stack = Vec::new();
         let mut cells = Vec::new();
 
@@ -664,14 +674,16 @@ impl<U> Table<U> where U: Users {
 
         let total_width: usize = self.columns.len() + column_widths.iter().fold(0, Add::add);
 
-        for row in self.rows.iter() {
-            let mut cell = Cell::empty();
+        for row in self.rows {
+            let mut cell = TextCell::default();
 
-            if let Some(ref cells) = row.cells {
-                for (n, width) in column_widths.iter().enumerate() {
+            if let Some(cells) = row.cells {
+                for (n, (this_cell, width)) in cells.into_iter().zip(column_widths.iter()).enumerate() {
+                    let padding = width - this_cell.length;
+
                     match self.columns[n].alignment() {
-                        Alignment::Left  => { cell.append(&cells[n]); cell.add_spaces(width - cells[n].length); }
-                        Alignment::Right => { cell.add_spaces(width - cells[n].length); cell.append(&cells[n]); }
+                        Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }
+                        Alignment::Right => { cell.add_spaces(padding); cell.append(this_cell); }
                     }
 
                     cell.add_spaces(1);
@@ -681,8 +693,7 @@ impl<U> Table<U> where U: Users {
                 cell.add_spaces(total_width)
             }
 
-            let mut filename = String::new();
-            let mut filename_length = 0;
+            let mut filename = TextCell::default();
 
             // A stack tracks which tree characters should be printed. It's
             // necessary to maintain information about the previously-printed
@@ -699,8 +710,7 @@ impl<U> Table<U> where U: Users {
             stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
             for i in 1 .. row.depth + 1 {
-                filename.push_str(&*self.colours.punctuation.paint(stack[i].ascii_art()).to_string());
-                filename_length += 4;
+                filename.push(self.colours.punctuation.paint(stack[i].ascii_art()), 4);
             }
 
             stack[row.depth] = if row.last { TreePart::Blank } else { TreePart::Line };
@@ -708,15 +718,13 @@ impl<U> Table<U> where U: Users {
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
             if row.depth != 0 {
-                filename.push(' ');
-                filename_length += 1;
+                filename.add_spaces(1);
             }
 
             // Print the name without worrying about padding.
-            filename.push_str(&*row.name.text);
-            filename_length += row.name.length;
+            filename.append(row.name);
 
-            cell.append(&Cell { text: filename, length: filename_length });
+            cell.append(filename);
             cells.push(cell);
         }
 
@@ -767,7 +775,8 @@ pub mod test {
     pub use super::Table;
     pub use file::File;
     pub use file::fields as f;
-    pub use output::column::{Cell, Column};
+    pub use output::column::Column;
+    pub use output::cell::TextCell;
 
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
@@ -806,7 +815,7 @@ pub mod test {
             table.users = users;
 
             let user = f::User(1000);
-            let expected = Cell::paint(Red.bold(), "enoch");
+            let expected = TextCell::paint_str(Red.bold(), "enoch");
             assert_eq!(expected, table.render_user(user))
         }
 
@@ -819,7 +828,7 @@ pub mod test {
             table.users = users;
 
             let user = f::User(1000);
-            let expected = Cell::paint(Cyan.bold(), "1000");
+            let expected = TextCell::paint_str(Cyan.bold(), "1000");
             assert_eq!(expected, table.render_user(user));
         }
 
@@ -830,7 +839,7 @@ pub mod test {
             table.users.add_user(newser(1000, "enoch", 100));
 
             let user = f::User(1000);
-            let expected = Cell::paint(Green.bold(), "enoch");
+            let expected = TextCell::paint_str(Green.bold(), "enoch");
             assert_eq!(expected, table.render_user(user));
         }
 
@@ -840,7 +849,7 @@ pub mod test {
             table.colours.users.user_someone_else = Red.normal();
 
             let user = f::User(1000);
-            let expected = Cell::paint(Red.normal(), "1000");
+            let expected = TextCell::paint_str(Red.normal(), "1000");
             assert_eq!(expected, table.render_user(user));
         }
 
@@ -850,7 +859,7 @@ pub mod test {
             table.colours.users.user_someone_else = Blue.underline();
 
             let user = f::User(2_147_483_648);
-            let expected = Cell::paint(Blue.underline(), "2147483648");
+            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
             assert_eq!(expected, table.render_user(user));
         }
     }
@@ -869,7 +878,7 @@ pub mod test {
             table.users = users;
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(101).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
@@ -882,7 +891,7 @@ pub mod test {
             table.users = users;
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(87).normal(), "100");
+            let expected = TextCell::paint_str(Fixed(87).normal(), "100");
             assert_eq!(expected, table.render_group(group));
         }
 
@@ -897,7 +906,7 @@ pub mod test {
             table.users = users;
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(64).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
@@ -912,7 +921,7 @@ pub mod test {
             table.users = users;
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(31).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
@@ -922,7 +931,7 @@ pub mod test {
             table.colours.users.group_not_yours = Blue.underline();
 
             let group = f::Group(2_147_483_648);
-            let expected = Cell::paint(Blue.underline(), "2147483648");
+            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
             assert_eq!(expected, table.render_group(group));
         }
     }
