@@ -26,7 +26,6 @@ use dir::Dir;
 use file::File;
 use options::{Options, View};
 
-mod colours;
 mod dir;
 mod feature;
 mod file;

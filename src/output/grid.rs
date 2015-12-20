@@ -1,9 +1,9 @@
-use colours::Colours;
-use file::File;
-use filetype::file_colour;
-use output::DisplayWidth;
-
 use term_grid as grid;
+
+use file::File;
+use output::DisplayWidth;
+use output::colours::Colours;
+use super::file_colour;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]

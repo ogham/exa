@@ -118,12 +118,12 @@ use std::string::ToString;
 use std::ops::Add;
 use std::iter::repeat;
 
-use colours::Colours;
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
 use options::{FileFilter, RecurseOptions};
+use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, DisplayWidth};
 

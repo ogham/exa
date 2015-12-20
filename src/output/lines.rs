@@ -1,9 +1,9 @@
-use colours::Colours;
-use file::File;
-
 use ansi_term::ANSIStrings;
 
+use file::File;
+
 use super::filename;
+use super::colours::Colours;
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
