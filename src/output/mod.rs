@@ -16,6 +16,7 @@ mod grid_details;
 pub mod column;
 mod cell;
 mod colours;
+mod tree;
 
 pub fn filename(file: File, colours: &Colours, links: bool) -> TextCellContents {
     if links && file.is_link() {
