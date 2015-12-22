@@ -26,7 +26,6 @@ use dir::Dir;
 use file::File;
 use options::{Options, View};
 
-mod colours;
 mod dir;
 mod feature;
 mod file;
@@ -135,8 +134,8 @@ impl Exa {
         match self.options.view {
             View::Grid(g)         => g.view(&files),
             View::Details(d)      => d.view(dir, files),
-            View::GridDetails(gd) => gd.view(dir, &files),
-            View::Lines(l)        => l.view(&files),
+            View::GridDetails(gd) => gd.view(dir, files),
+            View::Lines(l)        => l.view(files),
         }
     }
 }

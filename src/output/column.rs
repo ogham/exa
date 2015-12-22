@@ -1,6 +1,3 @@
-use ansi_term::Style;
-use unicode_width::UnicodeWidthStr;
-
 use dir::Dir;
 
 
@@ -192,40 +189,5 @@ impl Default for TimeTypes {
     /// common option, which is why it has this shorthand.
     fn default() -> TimeTypes {
         TimeTypes { accessed: false, modified: true, created: false }
-    }
-}
-
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct Cell {
-    pub length: usize,
-    pub text: String,
-}
-
-impl Cell {
-    pub fn empty() -> Cell {
-        Cell {
-            text: String::new(),
-            length: 0,
-        }
-    }
-
-    pub fn paint(style: Style, string: &str) -> Cell {
-        Cell {
-            text: style.paint(string).to_string(),
-            length: UnicodeWidthStr::width(string),
-        }
-    }
-
-    pub fn add_spaces(&mut self, count: usize) {
-        self.length += count;
-        for _ in 0 .. count {
-            self.text.push(' ');
-        }
-    }
-
-    pub fn append(&mut self, other: &Cell) {
-        self.length += other.length;
-        self.text.push_str(&*other.text);
     }
 }

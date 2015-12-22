@@ -1,31 +1,7 @@
-use ansi_term::Style;
-
 use file::File;
-use colours::Colours;
 
 
-pub fn file_colour(colours: &Colours, file: &File) -> Style {
-    match file {
-        f if f.is_directory()        => colours.filetypes.directory,
-        f if f.is_executable_file()  => colours.filetypes.executable,
-        f if f.is_link()             => colours.filetypes.symlink,
-        f if !f.is_file()            => colours.filetypes.special,
-        f if f.is_immediate()        => colours.filetypes.immediate,
-        f if f.is_image()            => colours.filetypes.image,
-        f if f.is_video()            => colours.filetypes.video,
-        f if f.is_music()            => colours.filetypes.music,
-        f if f.is_lossless()         => colours.filetypes.lossless,
-        f if f.is_crypto()           => colours.filetypes.crypto,
-        f if f.is_document()         => colours.filetypes.document,
-        f if f.is_compressed()       => colours.filetypes.compressed,
-        f if f.is_temp()             => colours.filetypes.temp,
-        f if f.is_compiled()         => colours.filetypes.compiled,
-        _                            => colours.filetypes.normal,
-    }
-}
-
-
-trait FileTypes {
+pub trait FileTypes {
     fn is_immediate(&self) -> bool;
     fn is_image(&self) -> bool;
     fn is_video(&self) -> bool;

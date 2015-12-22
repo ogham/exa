@@ -7,8 +7,6 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
-use unicode_width::UnicodeWidthStr;
-
 use dir::Dir;
 
 use self::fields as f;
@@ -180,22 +178,13 @@ impl<'dir> File<'dir> {
         path_prefix
     }
 
-    /// The Unicode 'display width' of the filename.
-    ///
-    /// This is related to the number of graphemes in the string: most
-    /// characters are 1 columns wide, but in some contexts, certain
-    /// characters are actually 2 columns wide.
-    pub fn file_name_width(&self) -> usize {
-        UnicodeWidthStr::width(&self.name[..])
-    }
-
     /// Assuming the current file is a symlink, follows the link and
     /// returns a File object from the path the link points to.
     ///
     /// If statting the file fails (usually because the file on the
     /// other end doesn't exist), returns the *filename* of the file
     /// that should be there.
-    pub fn link_target(&self) -> Result<File, String> {
+    pub fn link_target(&self) -> Result<File<'dir>, String> {
         let path = match fs::read_link(&self.path) {
             Ok(path)  => path,
             Err(_)    => return Err(self.name.clone()),

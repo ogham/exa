@@ -7,10 +7,10 @@ use std::os::unix::fs::MetadataExt;
 use getopts;
 use natord;
 
-use colours::Colours;
 use feature::xattr;
 use file::File;
 use output::{Grid, Details, GridDetails, Lines};
+use output::Colours;
 use output::column::{Columns, TimeTypes, SizeFormat};
 use term::dimensions;
 
