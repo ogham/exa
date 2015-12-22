@@ -56,46 +56,6 @@
 //! can be displayed, in order to make sure that every column is wide enough.
 //!
 //!
-//! ## Constructing Tree Views
-//!
-//! When using the `--tree` argument, instead of a vector of cells, each row has a
-//! `depth` field that indicates how far deep in the tree it is: the top level has
-//! depth 0, its children have depth 1, and *their* children have depth 2, and so
-//! on.
-//!
-//! On top of this, it also has a `last` field that specifies whether this is the
-//! last row of this particular consecutive set of rows. This doesn't affect the
-//! file's information; it's just used to display a different set of Unicode tree
-//! characters! The resulting table looks like this:
-//!
-//!     ┌───────┬───────┬───────────────────────┐
-//!     │ Depth │ Last  │ Output                │
-//!     ├───────┼───────┼───────────────────────┤
-//!     │     0 │       │ documents             │
-//!     │     1 │ false │ ├── this_file.txt     │
-//!     │     1 │ false │ ├── that_file.txt     │
-//!     │     1 │ false │ ├── features          │
-//!     │     2 │ false │ │  ├── feature_1.rs   │
-//!     │     2 │ false │ │  ├── feature_2.rs   │
-//!     │     2 │ true  │ │  └── feature_3.rs   │
-//!     │     1 │ true  │ └── pictures          │
-//!     │     2 │ false │    ├── garden.jpg     │
-//!     │     2 │ false │    ├── flowers.jpg    │
-//!     │     2 │ false │    ├── library.png    │
-//!     │     2 │ true  │    └── space.tiff     │
-//!     └───────┴───────┴───────────────────────┘
-//!
-//! Creating the table like this means that each file has to be tested to see if
-//! it's the last one in the group. This is usually done by putting all the files
-//! in a vector beforehand, getting its length, then comparing the index of each
-//! file to see if it's the last one. (As some files may not be successfully
-//! `stat`ted, we don't know how many files are going to exist in each directory)
-//!
-//! These rows have a `None` value for their vector of cells, instead of a `Some`
-//! vector containing any. It's possible to have *both* a vector of cells and
-//! depth and last flags when the user specifies `--tree` *and* `--long`.
-//!
-//!
 //! ## Extended Attributes and Errors
 //!
 //! Finally, files' extended attributes and any errors that occur while statting
@@ -136,7 +96,7 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, DisplayWidth};
-use output::tree::TreePart;
+use output::tree::TreeTrunk;
 use super::filename;
 
 
@@ -673,7 +633,7 @@ impl<U> Table<U> where U: Users {
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
     pub fn print_table(self) -> Vec<TextCell> {
-        let mut stack = Vec::new();
+        let mut tree_trunk = TreeTrunk::default();
         let mut cells = Vec::new();
 
         // Work out the list of column widths by finding the longest cell for
@@ -706,19 +666,9 @@ impl<U> Table<U> where U: Users {
 
             let mut filename = TextCell::default();
 
-            // A stack tracks which tree characters should be printed. It's
-            // necessary to maintain information about the previously-printed
-            // lines, as the output will change based on whether the
-            // *previous* entry was the last in its directory.
-            stack.resize(row.depth + 1, TreePart::Edge);
-
-            stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
-
-            for i in 1 .. row.depth + 1 {
-                filename.push(self.colours.punctuation.paint(stack[i].ascii_art()), 4);
+            for tree_part in tree_trunk.new_row(row.depth, row.last) {
+                filename.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
-
-            stack[row.depth] = if row.last { TreePart::Blank } else { TreePart::Line };
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
