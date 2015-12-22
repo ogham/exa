@@ -113,7 +113,6 @@
 
 use std::error::Error;
 use std::io;
-use std::iter::repeat;
 use std::ops::Add;
 use std::path::PathBuf;
 use std::string::ToString;
@@ -711,13 +710,7 @@ impl<U> Table<U> where U: Users {
             // necessary to maintain information about the previously-printed
             // lines, as the output will change based on whether the
             // *previous* entry was the last in its directory.
-            // TODO: Replace this by Vec::resize() when it becomes stable (1.5.0)
-            let stack_len = stack.len();
-            if row.depth + 1 > stack_len {
-                stack.extend(repeat(TreePart::Edge).take(row.depth + 1 - stack_len));
-            } else {
-                stack = stack[..(row.depth + 1)].into();
-            }
+            stack.resize(row.depth + 1, TreePart::Edge);
 
             stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
 
