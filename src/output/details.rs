@@ -113,10 +113,21 @@
 
 use std::error::Error;
 use std::io;
+use std::iter::repeat;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::string::ToString;
-use std::ops::Add;
-use std::iter::repeat;
+
+use ansi_term::Style;
+
+use datetime::format::DateFormat;
+use datetime::local::{LocalDateTime, DatePiece};
+use datetime::zoned::TimeZone;
+
+use locale;
+
+use users::{OSUsers, Users};
+use users::mock::MockUsers;
 
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
@@ -126,18 +137,6 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, DisplayWidth};
-
-use ansi_term::Style;
-
-use datetime::local::{LocalDateTime, DatePiece};
-use datetime::format::DateFormat;
-use datetime::zoned::TimeZone;
-
-use locale;
-
-use users::{OSUsers, Users};
-use users::mock::MockUsers;
-
 use super::filename;
 
 
