@@ -1,4 +1,4 @@
-use std::iter::repeat;
+use std::sync::Arc;
 
 use ansi_term::ANSIStrings;
 use users::OSUsers;
@@ -10,7 +10,7 @@ use file::File;
 
 use output::cell::TextCell;
 use output::column::Column;
-use output::details::{Details, Table};
+use output::details::{Details, Table, Environment};
 use output::grid::Grid;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -33,19 +33,27 @@ impl GridDetails {
             None => Vec::new(),
         };
 
-        let mut first_table = Table::with_options(self.details.colours, columns_for_dir.clone());
-        let cells = files.iter()
-                          .map(|file| first_table.cells_for_file(file, file_has_xattrs(file)))
-                          .collect::<Vec<_>>();
+        let env = Arc::new(Environment::default());
 
-        let file_names = files.into_iter()
-                              .map(|file| first_table.filename_cell(file, false))
+        let (cells, file_names) = {
+
+            let first_table = self.make_table(env.clone(), &*columns_for_dir);
+
+            let cells = files.iter()
+                              .map(|file| first_table.cells_for_file(file, file_has_xattrs(file)))
                               .collect::<Vec<_>>();
 
-        let mut last_working_table = self.make_grid(1, &columns_for_dir, &file_names, cells.clone());
+            let file_names = files.into_iter()
+                                  .map(|file| first_table.filename_cell(file, false))
+                                  .collect::<Vec<_>>();
+
+            (cells, file_names)
+        };
+
+        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone());
 
         for column_count in 2.. {
-            let grid = self.make_grid(column_count, &columns_for_dir, &file_names, cells.clone());
+            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone());
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -62,14 +70,24 @@ impl GridDetails {
         }
     }
 
-    fn make_table(&self, columns_for_dir: &[Column]) -> Table<OSUsers> {
-        let mut table = Table::with_options(self.details.colours, columns_for_dir.into());
+    fn make_table<'a>(&'a self, env: Arc<Environment<OSUsers>>, columns_for_dir: &'a [Column]) -> Table<OSUsers> {
+        let mut table = Table {
+            columns: columns_for_dir,
+            opts: &self.details,
+            env: env,
+
+            rows: Vec::new(),
+        };
+
         if self.details.header { table.add_header() }
         table
     }
 
-    fn make_grid(&self, column_count: usize, columns_for_dir: &[Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>) -> grid::Grid {
-        let mut tables: Vec<_> = repeat(()).map(|_| self.make_table(columns_for_dir)).take(column_count).collect();
+    fn make_grid<'a>(&'a self, env: Arc<Environment<OSUsers>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>) -> grid::Grid {
+        let mut tables = Vec::new();
+        for _ in 0 .. column_count {
+            tables.push(self.make_table(env.clone(), columns_for_dir));
+        }
 
         let mut num_cells = cells.len();
         if self.details.header {
