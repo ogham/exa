@@ -214,6 +214,7 @@ impl Details {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
+        use feature::xattr;
 
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
@@ -236,24 +237,20 @@ impl Details {
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
-
                     let mut xattrs = Vec::new();
-                    match file.path.attributes() {
-                        Ok(xs) => {
-                            if self.xattr {
-                                for xattr in xs {
-                                    xattrs.push(xattr);
-                                }
-                            }
-                        },
-                        Err(e) => {
-                            if self.xattr {
-                                errors.push((e, None));
-                            }
-                        },
-                    };
+
+                    if xattr::ENABLED {
+                        match file.path.attributes() {
+                            Ok(xs) => xattrs.extend(xs),
+                            Err(e) => errors.push((e, None)),
+                        };
+                    }
 
                     let cells = table.cells_for_file(&file, !xattrs.is_empty());
+
+                    if !table.opts.xattr {
+                        xattrs.clear();
+                    }
 
                     let mut dir = None;
 
