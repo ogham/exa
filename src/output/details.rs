@@ -56,46 +56,6 @@
 //! can be displayed, in order to make sure that every column is wide enough.
 //!
 //!
-//! ## Constructing Tree Views
-//!
-//! When using the `--tree` argument, instead of a vector of cells, each row has a
-//! `depth` field that indicates how far deep in the tree it is: the top level has
-//! depth 0, its children have depth 1, and *their* children have depth 2, and so
-//! on.
-//!
-//! On top of this, it also has a `last` field that specifies whether this is the
-//! last row of this particular consecutive set of rows. This doesn't affect the
-//! file's information; it's just used to display a different set of Unicode tree
-//! characters! The resulting table looks like this:
-//!
-//!     ┌───────┬───────┬───────────────────────┐
-//!     │ Depth │ Last  │ Output                │
-//!     ├───────┼───────┼───────────────────────┤
-//!     │     0 │       │ documents             │
-//!     │     1 │ false │ ├── this_file.txt     │
-//!     │     1 │ false │ ├── that_file.txt     │
-//!     │     1 │ false │ ├── features          │
-//!     │     2 │ false │ │  ├── feature_1.rs   │
-//!     │     2 │ false │ │  ├── feature_2.rs   │
-//!     │     2 │ true  │ │  └── feature_3.rs   │
-//!     │     1 │ true  │ └── pictures          │
-//!     │     2 │ false │    ├── garden.jpg     │
-//!     │     2 │ false │    ├── flowers.jpg    │
-//!     │     2 │ false │    ├── library.png    │
-//!     │     2 │ true  │    └── space.tiff     │
-//!     └───────┴───────┴───────────────────────┘
-//!
-//! Creating the table like this means that each file has to be tested to see if
-//! it's the last one in the group. This is usually done by putting all the files
-//! in a vector beforehand, getting its length, then comparing the index of each
-//! file to see if it's the last one. (As some files may not be successfully
-//! `stat`ted, we don't know how many files are going to exist in each directory)
-//!
-//! These rows have a `None` value for their vector of cells, instead of a `Some`
-//! vector containing any. It's possible to have *both* a vector of cells and
-//! depth and last flags when the user specifies `--tree` *and* `--long`.
-//!
-//!
 //! ## Extended Attributes and Errors
 //!
 //! Finally, files' extended attributes and any errors that occur while statting
@@ -113,30 +73,30 @@
 
 use std::error::Error;
 use std::io;
+use std::ops::Add;
 use std::path::PathBuf;
 use std::string::ToString;
-use std::ops::Add;
-use std::iter::repeat;
+use std::sync::{Arc, Mutex};
 
-use colours::Colours;
+use ansi_term::Style;
+
+use datetime::format::DateFormat;
+use datetime::local::{LocalDateTime, DatePiece};
+use datetime::zoned::TimeZone;
+
+use locale;
+
+use users::{OSUsers, Users, Groups};
+
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
 use file::fields as f;
 use file::File;
 use options::{FileFilter, RecurseOptions};
-use output::column::{Alignment, Column, Columns, Cell, SizeFormat};
-
-use ansi_term::{ANSIString, ANSIStrings, Style};
-
-use datetime::local::{LocalDateTime, DatePiece};
-use datetime::format::DateFormat;
-use datetime::zoned::TimeZone;
-
-use locale;
-
-use users::{OSUsers, Users};
-use users::mock::MockUsers;
-
+use output::colours::Colours;
+use output::column::{Alignment, Column, Columns, SizeFormat};
+use output::cell::{TextCell, DisplayWidth};
+use output::tree::TreeTrunk;
 use super::filename;
 
 
@@ -151,7 +111,7 @@ use super::filename;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone, Default)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the
@@ -178,6 +138,42 @@ pub struct Details {
     pub colours: Colours,
 }
 
+/// The **environment** struct contains any data that could change between
+/// running instances of exa, depending on the user's computer's configuration.
+///
+/// Any environment field should be able to be mocked up for test runs.
+pub struct Environment<U: Users+Groups> {
+
+    /// The year of the current time. This gets used to determine which date
+    /// format to use.
+    current_year: i64,
+
+    /// Localisation rules for formatting numbers.
+    numeric: locale::Numeric,
+
+    /// Localisation rules for formatting timestamps.
+    time: locale::Time,
+
+    /// The computer's current time zone. This gets used to determine how to
+    /// offset files' timestamps.
+    tz: TimeZone,
+
+    /// Mapping cache of user IDs to usernames.
+    users: Mutex<U>,
+}
+
+impl Default for Environment<OSUsers> {
+    fn default() -> Self {
+        Environment {
+            current_year: LocalDateTime::now().year(),
+            numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
+            time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
+            tz:           TimeZone::localtime().unwrap(),
+            users:        Mutex::new(OSUsers::empty_cache()),
+        }
+    }
+}
+
 impl Details {
 
     /// Print the details of the given vector of files -- all of which will
@@ -191,70 +187,70 @@ impl Details {
             None => Vec::new(),
         };
 
+        // Then, retrieve various environment variables.
+        let env = Arc::new(Environment::<OSUsers>::default());
+
+        // Build the table to put rows in.
+        let mut table = Table {
+            columns: &*columns_for_dir,
+            opts: &self,
+            env: env,
+            rows: Vec::new(),
+        };
+
         // Next, add a header if the user requests it.
-        let mut table = Table::with_options(self.colours, columns_for_dir);
         if self.header { table.add_header() }
 
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
         for cell in table.print_table() {
-            println!("{}", cell.text);
+            println!("{}", cell.strings());
         }
     }
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, U: Users+Send>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
+    fn add_files_to_table<'dir, U: Users+Groups+Send>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
+        use feature::xattr;
 
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
 
         struct Egg<'_> {
-            cells:   Vec<Cell>,
-            name:    Cell,
+            cells:   Vec<TextCell>,
             xattrs:  Vec<Attribute>,
             errors:  Vec<(io::Error, Option<PathBuf>)>,
             dir:     Option<Dir>,
-            file:    Arc<File<'_>>,
+            file:    File<'_>,
         }
 
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
-            let table = Arc::new(Mutex::new(&mut table));
+            let table = Arc::new(&mut table);
 
-            for file in src.into_iter() {
-                let file: Arc<File> = Arc::new(file);
+            for file in src {
                 let file_eggs = file_eggs.clone();
                 let table = table.clone();
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
-
                     let mut xattrs = Vec::new();
-                    match file.path.attributes() {
-                        Ok(xs) => {
-                            if self.xattr {
-                                for xattr in xs {
-                                    xattrs.push(xattr);
-                                }
-                            }
-                        },
-                        Err(e) => {
-                            if self.xattr {
-                                errors.push((e, None));
-                            }
-                        },
-                    };
 
-                    let cells = table.lock().unwrap().cells_for_file(&file, !xattrs.is_empty());
+                    if xattr::ENABLED {
+                        match file.path.attributes() {
+                            Ok(xs) => xattrs.extend(xs),
+                            Err(e) => errors.push((e, None)),
+                        };
+                    }
 
-                    let name = Cell {
-                        text: filename(&file, &self.colours, true),
-                        length: file.file_name_width()
-                    };
+                    let cells = table.cells_for_file(&file, !xattrs.is_empty());
+
+                    if !table.opts.xattr {
+                        xattrs.clear();
+                    }
 
                     let mut dir = None;
 
@@ -268,7 +264,6 @@ impl Details {
 
                     let egg = Egg {
                         cells: cells,
-                        name: name,
                         xattrs: xattrs,
                         errors: errors,
                         dir: dir,
@@ -280,17 +275,23 @@ impl Details {
             }
         });
 
-        file_eggs.sort_by(|a, b| self.filter.compare_files(&*a.file, &*b.file));
+        file_eggs.sort_by(|a, b| self.filter.compare_files(&a.file, &b.file));
 
         let num_eggs = file_eggs.len();
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
+            let width = DisplayWidth::from(&*egg.file.name);
+
+            let name = TextCell {
+                contents: filename(egg.file, &self.colours, true),
+                width:    width,
+            };
 
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     egg.name,
+                name:     name,
                 last:     index == num_eggs - 1,
             };
 
@@ -334,7 +335,7 @@ impl Details {
 }
 
 
-struct Row {
+pub struct Row {
 
     /// Vector of cells to display.
     ///
@@ -342,14 +343,11 @@ struct Row {
     /// almost always be `Some`, containing a vector of cells. It will only be
     /// `None` for a row displaying an attribute or error, neither of which
     /// have cells.
-    cells: Option<Vec<Cell>>,
-
-    // Did You Know?
-    // A Vec<Cell> and an Option<Vec<Cell>> actually have the same byte size!
+    cells: Option<Vec<TextCell>>,
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
-    name: Cell,
+    name: TextCell,
 
     /// How many directories deep into the tree structure this is. Directories
     /// on top have depth 0.
@@ -366,7 +364,7 @@ impl Row {
     /// not, returns 0.
     fn column_width(&self, index: usize) -> usize {
         match self.cells {
-            Some(ref cells) => cells[index].length,
+            Some(ref cells) => *cells[index].width,
             None => 0,
         }
     }
@@ -375,53 +373,15 @@ impl Row {
 
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
-pub struct Table<U> {
-    columns:  Vec<Column>,
-    rows:     Vec<Row>,
+pub struct Table<'a, U: Users+Groups+'a> {
+    pub rows: Vec<Row>,
 
-    time:         locale::Time,
-    numeric:      locale::Numeric,
-    tz:           TimeZone,
-    users:        U,
-    colours:      Colours,
-    current_year: i64,
+    pub columns: &'a [Column],
+    pub opts: &'a Details,
+    pub env: Arc<Environment<U>>,
 }
 
-impl Default for Table<MockUsers> {
-    fn default() -> Table<MockUsers> {
-        Table {
-            columns: Columns::default().for_dir(None),
-            rows:    Vec::new(),
-            time:    locale::Time::english(),
-            numeric: locale::Numeric::english(),
-            tz:      TimeZone::localtime().unwrap(),
-            users:   MockUsers::with_current_uid(0),
-            colours: Colours::default(),
-            current_year: 1234,
-        }
-    }
-}
-
-impl Table<OSUsers> {
-
-    /// Create a new, empty Table object, setting the caching fields to their
-    /// empty states.
-    pub fn with_options(colours: Colours, columns: Vec<Column>) -> Table<OSUsers> {
-        Table {
-            columns: columns,
-            rows:    Vec::new(),
-
-            time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
-            tz:           TimeZone::localtime().unwrap(),
-            users:        OSUsers::empty_cache(),
-            colours:      colours,
-            current_year: LocalDateTime::now().year(),
-        }
-    }
-}
-
-impl<U> Table<U> where U: Users {
+impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
     /// Add a dummy "header" row to the table, which contains the names of all
     /// the columns, underlined. This has dummy data for the cases that aren't
@@ -429,8 +389,8 @@ impl<U> Table<U> where U: Users {
     pub fn add_header(&mut self) {
         let row = Row {
             depth:    0,
-            cells:    Some(self.columns.iter().map(|c| Cell::paint(self.colours.header, c.header())).collect()),
-            name:     Cell::paint(self.colours.header, "Name"),
+            cells:    Some(self.columns.iter().map(|c| TextCell::paint_str(self.opts.colours.header, c.header())).collect()),
+            name:     TextCell::paint_str(self.opts.colours.header, "Name"),
             last:     false,
         };
 
@@ -446,7 +406,7 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.broken_arrow, &error_message),
+            name:     TextCell::paint(self.opts.colours.broken_arrow, error_message),
             last:     last,
         };
 
@@ -457,19 +417,28 @@ impl<U> Table<U> where U: Users {
         let row = Row {
             depth:    depth,
             cells:    None,
-            name:     Cell::paint(self.colours.perms.attribute, &format!("{} (len {})", xattr.name, xattr.size)),
+            name:     TextCell::paint(self.opts.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size)),
             last:     last,
         };
 
         self.rows.push(row);
     }
 
-    pub fn add_file_with_cells(&mut self, cells: Vec<Cell>, file: &File, depth: usize, last: bool, links: bool) {
+    pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
+        let width = DisplayWidth::from(&*file.name);
+
+        TextCell {
+            contents: filename(file, &self.opts.colours, links),
+            width:    width,
+        }
+    }
+
+    pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {
         let row = Row {
-            depth:    depth,
-            cells:    Some(cells),
-            name:     Cell { text: filename(file, &self.colours, links), length: file.file_name_width() },
-            last:     last,
+            depth:  depth,
+            cells:  Some(cells),
+            name:   name_cell,
+            last:   last,
         };
 
         self.rows.push(row);
@@ -477,13 +446,13 @@ impl<U> Table<U> where U: Users {
 
     /// Use the list of columns to find which cells should be produced for
     /// this file, per-column.
-    pub fn cells_for_file(&mut self, file: &File, xattrs: bool) -> Vec<Cell> {
+    pub fn cells_for_file(&self, file: &File, xattrs: bool) -> Vec<TextCell> {
         self.columns.clone().iter()
                     .map(|c| self.display(file, c, xattrs))
                     .collect()
     }
 
-    fn display(&mut self, file: &File, column: &Column, xattrs: bool) -> Cell {
+    fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
         use output::column::TimeType::*;
 
         match *column {
@@ -501,158 +470,181 @@ impl<U> Table<U> where U: Users {
         }
     }
 
-    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> Cell {
-        let c = self.colours.perms;
+    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> TextCell {
+        let perms = self.opts.colours.perms;
+        let types = self.opts.colours.filetypes;
+
         let bit = |bit, chr: &'static str, style: Style| {
-            if bit { style.paint(chr) } else { self.colours.punctuation.paint("-") }
+            if bit { style.paint(chr) } else { self.opts.colours.punctuation.paint("-") }
         };
 
         let file_type = match permissions.file_type {
-            f::Type::File       => self.colours.filetypes.normal.paint("."),
-            f::Type::Directory  => self.colours.filetypes.directory.paint("d"),
-            f::Type::Pipe       => self.colours.filetypes.special.paint("|"),
-            f::Type::Link       => self.colours.filetypes.symlink.paint("l"),
-            f::Type::Special    => self.colours.filetypes.special.paint("?"),
+            f::Type::File       => types.normal.paint("."),
+            f::Type::Directory  => types.directory.paint("d"),
+            f::Type::Pipe       => types.special.paint("|"),
+            f::Type::Link       => types.symlink.paint("l"),
+            f::Type::Special    => types.special.paint("?"),
         };
 
-        let x_colour = if let f::Type::File = permissions.file_type { c.user_execute_file }
-                                                               else { c.user_execute_other };
+        let x_colour = if let f::Type::File = permissions.file_type { perms.user_execute_file }
+                                                               else { perms.user_execute_other };
 
-        let mut columns = vec![
+        let mut chars = vec![
             file_type,
-            bit(permissions.user_read,     "r", c.user_read),
-            bit(permissions.user_write,    "w", c.user_write),
+            bit(permissions.user_read,     "r", perms.user_read),
+            bit(permissions.user_write,    "w", perms.user_write),
             bit(permissions.user_execute,  "x", x_colour),
-            bit(permissions.group_read,    "r", c.group_read),
-            bit(permissions.group_write,   "w", c.group_write),
-            bit(permissions.group_execute, "x", c.group_execute),
-            bit(permissions.other_read,    "r", c.other_read),
-            bit(permissions.other_write,   "w", c.other_write),
-            bit(permissions.other_execute, "x", c.other_execute),
+            bit(permissions.group_read,    "r", perms.group_read),
+            bit(permissions.group_write,   "w", perms.group_write),
+            bit(permissions.group_execute, "x", perms.group_execute),
+            bit(permissions.other_read,    "r", perms.other_read),
+            bit(permissions.other_write,   "w", perms.other_write),
+            bit(permissions.other_execute, "x", perms.other_execute),
         ];
 
         if xattrs {
-            columns.push(c.attribute.paint("@"));
+            chars.push(perms.attribute.paint("@"));
         }
 
-        Cell {
-            text: ANSIStrings(&columns).to_string(),
-            length: columns.len(),
+        // As these are all ASCII characters, we can guarantee that they’re
+        // all going to be one character wide, and don’t need to compute the
+        // cell’s display width.
+        let width = DisplayWidth::from(chars.len());
+
+        TextCell {
+            contents: chars.into(),
+            width:    width,
         }
     }
 
-    fn render_links(&self, links: f::Links) -> Cell {
-        let style = if links.multiple { self.colours.links.multi_link_file }
-                                 else { self.colours.links.normal };
+    fn render_links(&self, links: f::Links) -> TextCell {
+        let style = if links.multiple { self.opts.colours.links.multi_link_file }
+                                 else { self.opts.colours.links.normal };
 
-        Cell::paint(style, &self.numeric.format_int(links.count))
+        TextCell::paint(style, self.env.numeric.format_int(links.count))
     }
 
-    fn render_blocks(&self, blocks: f::Blocks) -> Cell {
+    fn render_blocks(&self, blocks: f::Blocks) -> TextCell {
         match blocks {
-            f::Blocks::Some(blocks)  => Cell::paint(self.colours.blocks, &blocks.to_string()),
-            f::Blocks::None          => Cell::paint(self.colours.punctuation, "-"),
+            f::Blocks::Some(blk)  => TextCell::paint(self.opts.colours.blocks, blk.to_string()),
+            f::Blocks::None       => TextCell::blank(self.opts.colours.punctuation),
         }
     }
 
-    fn render_inode(&self, inode: f::Inode) -> Cell {
-        Cell::paint(self.colours.inode, &inode.0.to_string())
+    fn render_inode(&self, inode: f::Inode) -> TextCell {
+        TextCell::paint(self.opts.colours.inode, inode.0.to_string())
     }
 
-    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> Cell {
-        use number_prefix::{binary_prefix, decimal_prefix, Prefixed, Standalone, PrefixNames};
+    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> TextCell {
+        use number_prefix::{binary_prefix, decimal_prefix};
+        use number_prefix::{Prefixed, Standalone, PrefixNames};
 
-        if let f::Size::Some(offset) = size {
-            let result = match size_format {
-                SizeFormat::DecimalBytes  => decimal_prefix(offset as f64),
-                SizeFormat::BinaryBytes   => binary_prefix(offset as f64),
-                SizeFormat::JustBytes     => return Cell::paint(self.colours.size.numbers, &self.numeric.format_int(offset)),
-            };
+        let size = match size {
+            f::Size::Some(s) => s,
+            f::Size::None => return TextCell::blank(self.opts.colours.punctuation),
+        };
 
-            match result {
-                Standalone(bytes)    => Cell::paint(self.colours.size.numbers, &*bytes.to_string()),
-                Prefixed(prefix, n)  => {
-                    let number = if n < 10f64 { self.numeric.format_float(n, 1) } else { self.numeric.format_int(n as isize) };
-                    let symbol = prefix.symbol();
+        let result = match size_format {
+            SizeFormat::DecimalBytes  => decimal_prefix(size as f64),
+            SizeFormat::BinaryBytes   => binary_prefix(size as f64),
+            SizeFormat::JustBytes     => {
+                let string = self.env.numeric.format_int(size);
+                return TextCell::paint(self.opts.colours.size.numbers, string);
+            },
+        };
 
-                    Cell {
-                        text: ANSIStrings( &[ self.colours.size.numbers.paint(&number[..]), self.colours.size.unit.paint(symbol) ]).to_string(),
-                        length: number.len() + symbol.len(),
-                    }
-                }
-            }
-        }
-        else {
-            Cell::paint(self.colours.punctuation, "-")
+        let (prefix, n) = match result {
+            Standalone(b)  => return TextCell::paint(self.opts.colours.size.numbers, b.to_string()),
+            Prefixed(p, n) => (p, n)
+        };
+
+        let symbol = prefix.symbol();
+        let number = if n < 10f64 { self.env.numeric.format_float(n, 1) }
+                             else { self.env.numeric.format_int(n as isize) };
+
+        // The numbers and symbols are guaranteed to be written in ASCII, so
+        // we can skip the display width calculation.
+        let width = DisplayWidth::from(number.len() + symbol.len());
+
+        TextCell {
+            width:    width,
+            contents: vec![
+                self.opts.colours.size.numbers.paint(number),
+                self.opts.colours.size.unit.paint(symbol),
+            ].into(),
         }
     }
 
     #[allow(trivial_numeric_casts)]
-    fn render_time(&self, timestamp: f::Time) -> Cell {
-        let date = self.tz.at(LocalDateTime::at(timestamp.0 as i64));
+    fn render_time(&self, timestamp: f::Time) -> TextCell {
+        let date = self.env.tz.at(LocalDateTime::at(timestamp.0 as i64));
 
-        let datestamp = if date.year() == self.current_year {
-                DATE_AND_TIME.format(&date, &self.time)
+        let datestamp = if date.year() == self.env.current_year {
+                DATE_AND_TIME.format(&date, &self.env.time)
             }
             else {
-                DATE_AND_YEAR.format(&date, &self.time)
+                DATE_AND_YEAR.format(&date, &self.env.time)
             };
 
-        Cell::paint(self.colours.date, &datestamp)
+        TextCell::paint(self.opts.colours.date, datestamp)
     }
 
-    fn render_git_status(&self, git: f::Git) -> Cell {
-        Cell {
-            text: ANSIStrings(&[ self.render_git_char(git.staged),
-                                 self.render_git_char(git.unstaged) ]).to_string(),
-            length: 2,
+    fn render_git_status(&self, git: f::Git) -> TextCell {
+        let git_char = |status| match status {
+            f::GitStatus::NotModified  => self.opts.colours.punctuation.paint("-"),
+            f::GitStatus::New          => self.opts.colours.git.new.paint("N"),
+            f::GitStatus::Modified     => self.opts.colours.git.modified.paint("M"),
+            f::GitStatus::Deleted      => self.opts.colours.git.deleted.paint("D"),
+            f::GitStatus::Renamed      => self.opts.colours.git.renamed.paint("R"),
+            f::GitStatus::TypeChange   => self.opts.colours.git.typechange.paint("T"),
+        };
+
+        TextCell {
+            width: DisplayWidth::from(2),
+            contents: vec![
+                git_char(git.staged),
+                git_char(git.unstaged)
+            ].into(),
         }
     }
 
-    fn render_git_char(&self, status: f::GitStatus) -> ANSIString {
-        match status {
-            f::GitStatus::NotModified  => self.colours.punctuation.paint("-"),
-            f::GitStatus::New          => self.colours.git.new.paint("N"),
-            f::GitStatus::Modified     => self.colours.git.modified.paint("M"),
-            f::GitStatus::Deleted      => self.colours.git.deleted.paint("D"),
-            f::GitStatus::Renamed      => self.colours.git.renamed.paint("R"),
-            f::GitStatus::TypeChange   => self.colours.git.typechange.paint("T"),
-        }
-    }
+    fn render_user(&self, user: f::User) -> TextCell {
+        let users = self.env.users.lock().unwrap();
 
-    fn render_user(&mut self, user: f::User) -> Cell {
-        let user_name = match self.users.get_user_by_uid(user.0) {
-            Some(user)  => user.name,
+
+        let user_name = match users.get_user_by_uid(user.0) {
+            Some(user)  => (*user.name).clone(),
             None        => user.0.to_string(),
         };
 
-        let style = if self.users.get_current_uid() == user.0 { self.colours.users.user_you }
-                                                         else { self.colours.users.user_someone_else };
-        Cell::paint(style, &*user_name)
+        let style = if users.get_current_uid() == user.0 { self.opts.colours.users.user_you }
+                                                    else { self.opts.colours.users.user_someone_else };
+        TextCell::paint(style, user_name)
     }
 
-    fn render_group(&mut self, group: f::Group) -> Cell {
-        let mut style = self.colours.users.group_not_yours;
+    fn render_group(&self, group: f::Group) -> TextCell {
+        let mut style = self.opts.colours.users.group_not_yours;
 
-        let group_name = match self.users.get_group_by_gid(group.0) {
-            Some(group) => {
-                let current_uid = self.users.get_current_uid();
-                if let Some(current_user) = self.users.get_user_by_uid(current_uid) {
-                    if current_user.primary_group == group.gid || group.members.contains(&current_user.name) {
-                        style = self.colours.users.group_yours;
-                    }
-                }
-                group.name
-            },
-            None => group.0.to_string(),
+        let users = self.env.users.lock().unwrap();
+        let group = match users.get_group_by_gid(group.0) {
+            Some(g) => (*g).clone(),
+            None    => return TextCell::paint(style, group.0.to_string()),
         };
 
-        Cell::paint(style, &*group_name)
+        let current_uid = users.get_current_uid();
+        if let Some(current_user) = users.get_user_by_uid(current_uid) {
+            if current_user.primary_group == group.gid
+            || group.members.contains(&current_user.name) {
+                style = self.opts.colours.users.group_yours;
+            }
+        }
+
+        TextCell::paint(style, (*group.name).clone())
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn print_table(&self) -> Vec<Cell> {
-        let mut stack = Vec::new();
+    pub fn print_table(self) -> Vec<TextCell> {
+        let mut tree_trunk = TreeTrunk::default();
         let mut cells = Vec::new();
 
         // Work out the list of column widths by finding the longest cell for
@@ -664,14 +656,16 @@ impl<U> Table<U> where U: Users {
 
         let total_width: usize = self.columns.len() + column_widths.iter().fold(0, Add::add);
 
-        for row in self.rows.iter() {
-            let mut cell = Cell::empty();
+        for row in self.rows {
+            let mut cell = TextCell::default();
 
-            if let Some(ref cells) = row.cells {
-                for (n, width) in column_widths.iter().enumerate() {
+            if let Some(cells) = row.cells {
+                for (n, (this_cell, width)) in cells.into_iter().zip(column_widths.iter()).enumerate() {
+                    let padding = width - *this_cell.width;
+
                     match self.columns[n].alignment() {
-                        Alignment::Left  => { cell.append(&cells[n]); cell.add_spaces(width - cells[n].length); }
-                        Alignment::Right => { cell.add_spaces(width - cells[n].length); cell.append(&cells[n]); }
+                        Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }
+                        Alignment::Right => { cell.add_spaces(padding); cell.append(this_cell); }
                     }
 
                     cell.add_spaces(1);
@@ -681,74 +675,26 @@ impl<U> Table<U> where U: Users {
                 cell.add_spaces(total_width)
             }
 
-            let mut filename = String::new();
-            let mut filename_length = 0;
+            let mut filename = TextCell::default();
 
-            // A stack tracks which tree characters should be printed. It's
-            // necessary to maintain information about the previously-printed
-            // lines, as the output will change based on whether the
-            // *previous* entry was the last in its directory.
-            // TODO: Replace this by Vec::resize() when it becomes stable (1.5.0)
-            let stack_len = stack.len();
-            if row.depth + 1 > stack_len {
-                stack.extend(repeat(TreePart::Edge).take(row.depth + 1 - stack_len));
-            } else {
-                stack = stack[..(row.depth + 1)].into();
+            for tree_part in tree_trunk.new_row(row.depth, row.last) {
+                filename.push(self.opts.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
-
-            stack[row.depth] = if row.last { TreePart::Corner } else { TreePart::Edge };
-
-            for i in 1 .. row.depth + 1 {
-                filename.push_str(&*self.colours.punctuation.paint(stack[i].ascii_art()).to_string());
-                filename_length += 4;
-            }
-
-            stack[row.depth] = if row.last { TreePart::Blank } else { TreePart::Line };
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
             if row.depth != 0 {
-                filename.push(' ');
-                filename_length += 1;
+                filename.add_spaces(1);
             }
 
             // Print the name without worrying about padding.
-            filename.push_str(&*row.name.text);
-            filename_length += row.name.length;
+            filename.append(row.name);
 
-            cell.append(&Cell { text: filename, length: filename_length });
+            cell.append(filename);
             cells.push(cell);
         }
 
         cells
-    }
-}
-
-
-#[derive(PartialEq, Debug, Clone)]
-enum TreePart {
-
-    /// Rightmost column, *not* the last in the directory.
-    Edge,
-
-    /// Not the rightmost column, and the directory has not finished yet.
-    Line,
-
-    /// Rightmost column, and the last in the directory.
-    Corner,
-
-    /// Not the rightmost column, and the directory *has* finished.
-    Blank,
-}
-
-impl TreePart {
-    fn ascii_art(&self) -> &'static str {
-        match *self {
-            TreePart::Edge    => "├──",
-            TreePart::Line    => "│  ",
-            TreePart::Corner  => "└──",
-            TreePart::Blank   => "   ",
-        }
     }
 }
 
@@ -764,10 +710,13 @@ lazy_static! {
 
 #[cfg(test)]
 pub mod test {
-    pub use super::Table;
+    pub use super::{Table, Environment, Details};
+    pub use std::sync::Mutex;
+
     pub use file::File;
     pub use file::fields as f;
-    pub use output::column::{Cell, Column};
+    pub use output::column::{Column, Columns};
+    pub use output::cell::TextCell;
 
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
@@ -775,82 +724,123 @@ pub mod test {
     pub use ansi_term::Style;
     pub use ansi_term::Colour::*;
 
+    impl Default for Environment<MockUsers> {
+        fn default() -> Self {
+            use locale;
+            use datetime::zoned::TimeZone;
+            use users::mock::MockUsers;
+            use std::sync::Mutex;
+
+            Environment {
+                current_year: 1234,
+                numeric:      locale::Numeric::english(),
+                time:         locale::Time::english(),
+                tz:           TimeZone::localtime().unwrap(),
+                users:        Mutex::new(MockUsers::with_current_uid(0)),
+            }
+        }
+    }
+
+    pub fn new_table<'a>(columns: &'a [Column], details: &'a Details) -> Table<'a, MockUsers> {
+        use std::sync::Arc;
+
+        Table {
+            columns: columns,
+            opts: details,
+            env: Arc::new(Environment::<MockUsers>::default()),
+            rows: Vec::new(),
+        }
+    }
+
+
     pub fn newser(uid: uid_t, name: &str, group: gid_t) -> User {
+        use std::sync::Arc;
+
         User {
             uid: uid,
-            name: name.to_string(),
+            name: Arc::new(name.to_string()),
             primary_group: group,
             home_dir: String::new(),
             shell: String::new(),
         }
     }
 
-    // These tests create a new, default Table object, then fill in the
-    // expected style in a certain way. This means we can check that the
-    // right style is being used, as otherwise, it would just be plain.
-    //
-    // Doing things with fields is way easier than having to fake the entire
-    // Metadata struct, which is what I was doing before!
-
     mod users {
         #![allow(unused_results)]
         use super::*;
+        use std::sync::Arc;
 
         #[test]
         fn named() {
-            let mut table = Table::default();
-            table.colours.users.user_you = Red.bold();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.user_you = Red.bold();
+
+            let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(1000);
             users.add_user(newser(1000, "enoch", 100));
-            table.users = users;
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let user = f::User(1000);
-            let expected = Cell::paint(Red.bold(), "enoch");
+            let expected = TextCell::paint_str(Red.bold(), "enoch");
             assert_eq!(expected, table.render_user(user))
         }
 
         #[test]
         fn unnamed() {
-            let mut table = Table::default();
-            table.colours.users.user_you = Cyan.bold();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.user_you = Cyan.bold();
+
+            let mut table = new_table(&columns, &details);
 
             let users = MockUsers::with_current_uid(1000);
-            table.users = users;
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let user = f::User(1000);
-            let expected = Cell::paint(Cyan.bold(), "1000");
+            let expected = TextCell::paint_str(Cyan.bold(), "1000");
             assert_eq!(expected, table.render_user(user));
         }
 
         #[test]
         fn different_named() {
-            let mut table = Table::default();
-            table.colours.users.user_someone_else = Green.bold();
-            table.users.add_user(newser(1000, "enoch", 100));
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.user_someone_else = Green.bold();
+
+            let table = new_table(&columns, &details);
+
+            table.env.users.lock().unwrap().add_user(newser(1000, "enoch", 100));
 
             let user = f::User(1000);
-            let expected = Cell::paint(Green.bold(), "enoch");
+            let expected = TextCell::paint_str(Green.bold(), "enoch");
             assert_eq!(expected, table.render_user(user));
         }
 
         #[test]
         fn different_unnamed() {
-            let mut table = Table::default();
-            table.colours.users.user_someone_else = Red.normal();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.user_someone_else = Red.normal();
+
+            let table = new_table(&columns, &details);
 
             let user = f::User(1000);
-            let expected = Cell::paint(Red.normal(), "1000");
+            let expected = TextCell::paint_str(Red.normal(), "1000");
             assert_eq!(expected, table.render_user(user));
         }
 
         #[test]
         fn overflow() {
-            let mut table = Table::default();
-            table.colours.users.user_someone_else = Blue.underline();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.user_someone_else = Blue.underline();
+
+            let table = new_table(&columns, &details);
 
             let user = f::User(2_147_483_648);
-            let expected = Cell::paint(Blue.underline(), "2147483648");
+            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
             assert_eq!(expected, table.render_user(user));
         }
     }
@@ -858,71 +848,87 @@ pub mod test {
     mod groups {
         #![allow(unused_results)]
         use super::*;
+        use std::sync::Arc;
 
         #[test]
         fn named() {
-            let mut table = Table::default();
-            table.colours.users.group_not_yours = Fixed(101).normal();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.group_not_yours = Fixed(101).normal();
+
+            let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(1000);
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
-            table.users = users;
+            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![] });
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(101).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
         #[test]
         fn unnamed() {
-            let mut table = Table::default();
-            table.colours.users.group_not_yours = Fixed(87).normal();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.group_not_yours = Fixed(87).normal();
+
+            let mut table = new_table(&columns, &details);
 
             let users = MockUsers::with_current_uid(1000);
-            table.users = users;
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(87).normal(), "100");
+            let expected = TextCell::paint_str(Fixed(87).normal(), "100");
             assert_eq!(expected, table.render_group(group));
         }
 
         #[test]
         fn primary() {
-            let mut table = Table::default();
-            table.colours.users.group_yours = Fixed(64).normal();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.group_yours = Fixed(64).normal();
+
+            let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(2);
             users.add_user(newser(2, "eve", 100));
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![] });
-            table.users = users;
+            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![] });
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(64).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
         #[test]
         fn secondary() {
-            let mut table = Table::default();
-            table.colours.users.group_yours = Fixed(31).normal();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.group_yours = Fixed(31).normal();
+
+            let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(2);
             users.add_user(newser(2, "eve", 666));
-            users.add_group(Group { gid: 100, name: "folk".to_string(), members: vec![ "eve".to_string() ] });
-            table.users = users;
+            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![ "eve".to_string() ] });
+            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
-            let expected = Cell::paint(Fixed(31).normal(), "folk");
+            let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
             assert_eq!(expected, table.render_group(group))
         }
 
         #[test]
         fn overflow() {
-            let mut table = Table::default();
-            table.colours.users.group_not_yours = Blue.underline();
+            let columns = Columns::default().for_dir(None);
+            let mut details = Details::default();
+            details.colours.users.group_not_yours = Blue.underline();
+
+            let table = new_table(&columns, &details);
 
             let group = f::Group(2_147_483_648);
-            let expected = Cell::paint(Blue.underline(), "2147483648");
+            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
             assert_eq!(expected, table.render_group(group));
         }
     }

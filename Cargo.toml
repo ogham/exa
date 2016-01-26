@@ -7,7 +7,7 @@ authors = [ "ogham@bsago.me" ]
 name = "exa"
 
 [dependencies]
-ansi_term = "0.7.0"
+ansi_term = "0.7.1"
 bitflags = "0.1"
 datetime = "0.4.1"
 getopts = "0.2.14"
