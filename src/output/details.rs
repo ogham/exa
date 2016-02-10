@@ -739,7 +739,7 @@ pub mod test {
                 current_year: 1234,
                 numeric:      locale::Numeric::english(),
                 time:         locale::Time::english(),
-                tz:           TimeZone::system().unwrap(),
+                tz:           TimeZone::get("Europe/London").unwrap(),
                 users:        Mutex::new(MockUsers::with_current_uid(0)),
             }
         }
