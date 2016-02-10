@@ -82,7 +82,7 @@ use ansi_term::Style;
 use datetime::fmt::DateFormat;
 use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
-use zoneinfo_compiled::CompiledData;
+use zoneinfo_compiled::{CompiledData, Result as TZResult};
 use zoneinfo_data::ZoneinfoData;
 
 use locale;
@@ -175,7 +175,7 @@ impl Default for Environment<UsersCache> {
     }
 }
 
-fn determine_time_zone() -> Result<TimeZone> {
+fn determine_time_zone() -> TZResult<TimeZone> {
     if let Some(system_zone) = TimeZone::system() {
         Ok(system_zone)
     }
