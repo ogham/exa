@@ -374,7 +374,7 @@ dependencies = [
 [[package]]
 name = "zoneinfo_compiled"
 version = "0.2.1"
-source = "git+https://github.com/rust-datetime/zoneinfo-compiled.git#4ba145058702e68c322e8c822c3cf067b2b201f9"
+source = "git+https://github.com/rust-datetime/zoneinfo-compiled.git#65df6994f363b1a5064cfb237e447e9efa53caa0"
 dependencies = [
  "byteorder 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "datetime 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
