@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use ansi_term::ANSIStrings;
-use users::OSUsers;
+use users::UsersCache;
 use term_grid as grid;
 
 use dir::Dir;
@@ -70,7 +70,7 @@ impl GridDetails {
         }
     }
 
-    fn make_table<'a>(&'a self, env: Arc<Environment<OSUsers>>, columns_for_dir: &'a [Column]) -> Table<OSUsers> {
+    fn make_table<'a>(&'a self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'a [Column]) -> Table<UsersCache> {
         let mut table = Table {
             columns: columns_for_dir,
             opts: &self.details,
@@ -83,7 +83,7 @@ impl GridDetails {
         table
     }
 
-    fn make_grid<'a>(&'a self, env: Arc<Environment<OSUsers>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>) -> grid::Grid {
+    fn make_grid<'a>(&'a self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>) -> grid::Grid {
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
             tables.push(self.make_table(env.clone(), columns_for_dir));

@@ -71,7 +71,6 @@
 //! are used in place of the filename.
 
 
-use std::error::Error;
 use std::io;
 use std::ops::Add;
 use std::path::PathBuf;
@@ -80,13 +79,14 @@ use std::sync::{Arc, Mutex};
 
 use ansi_term::Style;
 
-use datetime::format::DateFormat;
-use datetime::local::{LocalDateTime, DatePiece};
-use datetime::zoned::TimeZone;
+use datetime::fmt::DateFormat;
+use datetime::{LocalDateTime, DatePiece};
+use datetime::TimeZone;
+use zoneinfo_data::ZoneinfoData;
 
 use locale;
 
-use users::{OSUsers, Users, Groups};
+use users::{Users, Groups, UsersCache};
 
 use dir::Dir;
 use feature::xattr::{Attribute, FileAttributes};
@@ -162,14 +162,14 @@ pub struct Environment<U: Users+Groups> {
     users: Mutex<U>,
 }
 
-impl Default for Environment<OSUsers> {
+impl Default for Environment<UsersCache> {
     fn default() -> Self {
         Environment {
             current_year: LocalDateTime::now().year(),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            tz:           TimeZone::localtime().unwrap(),
-            users:        Mutex::new(OSUsers::empty_cache()),
+            tz:           TimeZone::system().expect("Unable to determine time zone"),
+            users:        Mutex::new(UsersCache::new()),
         }
     }
 }
@@ -188,7 +188,7 @@ impl Details {
         };
 
         // Then, retrieve various environment variables.
-        let env = Arc::new(Environment::<OSUsers>::default());
+        let env = Arc::new(Environment::<UsersCache>::default());
 
         // Build the table to put rows in.
         let mut table = Table {
@@ -577,7 +577,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
     #[allow(trivial_numeric_casts)]
     fn render_time(&self, timestamp: f::Time) -> TextCell {
-        let date = self.env.tz.at(LocalDateTime::at(timestamp.0 as i64));
+        let date = self.env.tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
 
         let datestamp = if date.year() == self.env.current_year {
                 DATE_AND_TIME.format(&date, &self.env.time)
@@ -613,7 +613,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
 
         let user_name = match users.get_user_by_uid(user.0) {
-            Some(user)  => (*user.name).clone(),
+            Some(user)  => user.name().to_owned(),
             None        => user.0.to_string(),
         };
 
@@ -623,6 +623,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     }
 
     fn render_group(&self, group: f::Group) -> TextCell {
+        use users::os::unix::GroupExt;
+
         let mut style = self.opts.colours.users.group_not_yours;
 
         let users = self.env.users.lock().unwrap();
@@ -633,13 +635,13 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
         let current_uid = users.get_current_uid();
         if let Some(current_user) = users.get_user_by_uid(current_uid) {
-            if current_user.primary_group == group.gid
-            || group.members.contains(&current_user.name) {
+            if current_user.primary_group_id() == group.gid()
+            || group.members().contains(&current_user.name().to_owned()) {
                 style = self.opts.colours.users.group_yours;
             }
         }
 
-        TextCell::paint(style, (*group.name).clone())
+        TextCell::paint(style, group.name().to_owned())
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
@@ -720,6 +722,7 @@ pub mod test {
 
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
+    pub use users::os::unix::{UserExt, GroupExt};
 
     pub use ansi_term::Style;
     pub use ansi_term::Colour::*;
@@ -727,7 +730,8 @@ pub mod test {
     impl Default for Environment<MockUsers> {
         fn default() -> Self {
             use locale;
-            use datetime::zoned::TimeZone;
+            use datetime::TimeZone;
+            use zoneinfo_data::ZoneinfoData;
             use users::mock::MockUsers;
             use std::sync::Mutex;
 
@@ -735,7 +739,7 @@ pub mod test {
                 current_year: 1234,
                 numeric:      locale::Numeric::english(),
                 time:         locale::Time::english(),
-                tz:           TimeZone::localtime().unwrap(),
+                tz:           TimeZone::system().unwrap(),
                 users:        Mutex::new(MockUsers::with_current_uid(0)),
             }
         }
@@ -749,19 +753,6 @@ pub mod test {
             opts: details,
             env: Arc::new(Environment::<MockUsers>::default()),
             rows: Vec::new(),
-        }
-    }
-
-
-    pub fn newser(uid: uid_t, name: &str, group: gid_t) -> User {
-        use std::sync::Arc;
-
-        User {
-            uid: uid,
-            name: Arc::new(name.to_string()),
-            primary_group: group,
-            home_dir: String::new(),
-            shell: String::new(),
         }
     }
 
@@ -779,7 +770,7 @@ pub mod test {
             let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(1000);
-            users.add_user(newser(1000, "enoch", 100));
+            users.add_user(User::new(1000, "enoch", 100));
             Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let user = f::User(1000);
@@ -811,7 +802,7 @@ pub mod test {
 
             let table = new_table(&columns, &details);
 
-            table.env.users.lock().unwrap().add_user(newser(1000, "enoch", 100));
+            table.env.users.lock().unwrap().add_user(User::new(1000, "enoch", 100));
 
             let user = f::User(1000);
             let expected = TextCell::paint_str(Green.bold(), "enoch");
@@ -859,7 +850,7 @@ pub mod test {
             let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(1000);
-            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![] });
+            users.add_group(Group::new(100, "folk"));
             Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
@@ -892,8 +883,8 @@ pub mod test {
             let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(2);
-            users.add_user(newser(2, "eve", 100));
-            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![] });
+            users.add_user(User::new(2, "eve", 100));
+            users.add_group(Group::new(100, "folk"));
             Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
@@ -910,8 +901,10 @@ pub mod test {
             let mut table = new_table(&columns, &details);
 
             let mut users = MockUsers::with_current_uid(2);
-            users.add_user(newser(2, "eve", 666));
-            users.add_group(Group { gid: 100, name: Arc::new("folk".to_string()), members: vec![ "eve".to_string() ] });
+            users.add_user(User::new(2, "eve", 666));
+
+            let test_group = Group::new(100, "folk").add_member("eve");
+            users.add_group(test_group);
             Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
 
             let group = f::Group(100);
