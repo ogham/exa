@@ -745,13 +745,13 @@ pub mod test {
         }
     }
 
-    pub fn new_table<'a>(columns: &'a [Column], details: &'a Details) -> Table<'a, MockUsers> {
+    pub fn new_table<'a>(columns: &'a [Column], details: &'a Details, users: MockUsers) -> Table<'a, MockUsers> {
         use std::sync::Arc;
 
         Table {
             columns: columns,
             opts: details,
-            env: Arc::new(Environment::<MockUsers>::default()),
+            env: Arc::new(Environment { users: Mutex::new(users), ..Environment::default() }),
             rows: Vec::new(),
         }
     }
@@ -759,7 +759,6 @@ pub mod test {
     mod users {
         #![allow(unused_results)]
         use super::*;
-        use std::sync::Arc;
 
         #[test]
         fn named() {
@@ -767,11 +766,10 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.user_you = Red.bold();
 
-            let mut table = new_table(&columns, &details);
-
             let mut users = MockUsers::with_current_uid(1000);
             users.add_user(User::new(1000, "enoch", 100));
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+
+            let table = new_table(&columns, &details, users);
 
             let user = f::User(1000);
             let expected = TextCell::paint_str(Red.bold(), "enoch");
@@ -784,10 +782,9 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.user_you = Cyan.bold();
 
-            let mut table = new_table(&columns, &details);
-
             let users = MockUsers::with_current_uid(1000);
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+
+            let table = new_table(&columns, &details, users);
 
             let user = f::User(1000);
             let expected = TextCell::paint_str(Cyan.bold(), "1000");
@@ -800,8 +797,7 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.user_someone_else = Green.bold();
 
-            let table = new_table(&columns, &details);
-
+            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
             table.env.users.lock().unwrap().add_user(User::new(1000, "enoch", 100));
 
             let user = f::User(1000);
@@ -815,7 +811,7 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.user_someone_else = Red.normal();
 
-            let table = new_table(&columns, &details);
+            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
 
             let user = f::User(1000);
             let expected = TextCell::paint_str(Red.normal(), "1000");
@@ -828,7 +824,7 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.user_someone_else = Blue.underline();
 
-            let table = new_table(&columns, &details);
+            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
 
             let user = f::User(2_147_483_648);
             let expected = TextCell::paint_str(Blue.underline(), "2147483648");
@@ -839,7 +835,6 @@ pub mod test {
     mod groups {
         #![allow(unused_results)]
         use super::*;
-        use std::sync::Arc;
 
         #[test]
         fn named() {
@@ -847,11 +842,9 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.group_not_yours = Fixed(101).normal();
 
-            let mut table = new_table(&columns, &details);
-
             let mut users = MockUsers::with_current_uid(1000);
             users.add_group(Group::new(100, "folk"));
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+            let table = new_table(&columns, &details, users);
 
             let group = f::Group(100);
             let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
@@ -864,10 +857,8 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.group_not_yours = Fixed(87).normal();
 
-            let mut table = new_table(&columns, &details);
-
             let users = MockUsers::with_current_uid(1000);
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+            let table = new_table(&columns, &details, users);
 
             let group = f::Group(100);
             let expected = TextCell::paint_str(Fixed(87).normal(), "100");
@@ -880,12 +871,11 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.group_yours = Fixed(64).normal();
 
-            let mut table = new_table(&columns, &details);
-
             let mut users = MockUsers::with_current_uid(2);
             users.add_user(User::new(2, "eve", 100));
             users.add_group(Group::new(100, "folk"));
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+
+            let table = new_table(&columns, &details, users);
 
             let group = f::Group(100);
             let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
@@ -898,14 +888,13 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.group_yours = Fixed(31).normal();
 
-            let mut table = new_table(&columns, &details);
-
             let mut users = MockUsers::with_current_uid(2);
             users.add_user(User::new(2, "eve", 666));
 
             let test_group = Group::new(100, "folk").add_member("eve");
             users.add_group(test_group);
-            Arc::get_mut(&mut table.env).unwrap().users = Mutex::new(users);
+
+            let table = new_table(&columns, &details, users);
 
             let group = f::Group(100);
             let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
@@ -918,7 +907,7 @@ pub mod test {
             let mut details = Details::default();
             details.colours.users.group_not_yours = Blue.underline();
 
-            let table = new_table(&columns, &details);
+            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
 
             let group = f::Group(2_147_483_648);
             let expected = TextCell::paint_str(Blue.underline(), "2147483648");
