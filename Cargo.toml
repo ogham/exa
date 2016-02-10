@@ -37,3 +37,6 @@ optional = true
 
 [dependencies.zoneinfo_data]
 git = "https://github.com/rust-datetime/zoneinfo-data.git"
+
+[dependencies.zoneinfo_compiled]
+git = "https://github.com/rust-datetime/zoneinfo-compiled.git"

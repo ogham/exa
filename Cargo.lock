@@ -17,6 +17,7 @@ dependencies = [
  "term_grid 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-width 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "users 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zoneinfo_compiled 0.2.1 (git+https://github.com/rust-datetime/zoneinfo-compiled.git)",
  "zoneinfo_data 0.1.0 (git+https://github.com/rust-datetime/zoneinfo-data.git)",
 ]
 
@@ -37,6 +38,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "bitflags"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "byteorder"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -133,7 +139,7 @@ dependencies = [
  "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "libssh2-sys 0.1.35 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl-sys 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.7.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -153,7 +159,7 @@ dependencies = [
  "cmake 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl-sys 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.7.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "ws2_32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -199,7 +205,7 @@ version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -222,7 +228,7 @@ dependencies = [
 
 [[package]]
 name = "openssl-sys"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gdi32-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -265,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "rustc-serialize"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -316,7 +322,7 @@ version = "0.2.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "matches 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -343,7 +349,7 @@ version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.18 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -363,6 +369,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "winapi 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "zoneinfo_compiled"
+version = "0.2.1"
+source = "git+https://github.com/rust-datetime/zoneinfo-compiled.git#4ba145058702e68c322e8c822c3cf067b2b201f9"
+dependencies = [
+ "byteorder 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "datetime 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

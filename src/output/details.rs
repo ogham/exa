@@ -82,6 +82,7 @@ use ansi_term::Style;
 use datetime::fmt::DateFormat;
 use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
+use zoneinfo_compiled::CompiledData;
 use zoneinfo_data::ZoneinfoData;
 
 use locale;
@@ -168,9 +169,18 @@ impl Default for Environment<UsersCache> {
             current_year: LocalDateTime::now().year(),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            tz:           TimeZone::system().expect("Unable to determine time zone"),
+            tz:           determine_time_zone().expect("Unable to determine time zone"),
             users:        Mutex::new(UsersCache::new()),
         }
+    }
+}
+
+fn determine_time_zone() -> Result<TimeZone> {
+    if let Some(system_zone) = TimeZone::system() {
+        Ok(system_zone)
+    }
+    else {
+        TimeZone::from_file("/etc/localtime")
     }
 }
 
