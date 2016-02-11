@@ -165,11 +165,21 @@ pub struct Environment<U: Users+Groups> {
 
 impl Default for Environment<UsersCache> {
     fn default() -> Self {
+        use std::process::exit;
+
+        let tz = match determine_time_zone() {
+            Ok(tz) => tz,
+            Err(e) => {
+                println!("Unable to determine time zone: {}", e);
+                exit(1);
+            },
+        };
+
         Environment {
             current_year: LocalDateTime::now().year(),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            tz:           determine_time_zone().expect("Unable to determine time zone"),
+            tz:           tz,
             users:        Mutex::new(UsersCache::new()),
         }
     }
