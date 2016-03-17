@@ -1,20 +1,7 @@
 use file::File;
 
 
-pub trait FileTypes {
-    fn is_immediate(&self) -> bool;
-    fn is_image(&self) -> bool;
-    fn is_video(&self) -> bool;
-    fn is_music(&self) -> bool;
-    fn is_lossless(&self) -> bool;
-    fn is_crypto(&self) -> bool;
-    fn is_document(&self) -> bool;
-    fn is_compressed(&self) -> bool;
-    fn is_temp(&self) -> bool;
-    fn is_compiled(&self) -> bool;
-}
-
-impl<'_> FileTypes for File<'_> {
+impl<'_> File<'_> {
     fn is_immediate(&self) -> bool {
         self.name.starts_with("README") || self.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
@@ -95,7 +82,6 @@ impl<'_> FileTypes for File<'_> {
 
 #[cfg(broken_test)]
 mod test {
-    use super::*;
     use file::test::{dummy_stat, new_file};
 
     #[test]

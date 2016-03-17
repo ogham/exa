@@ -51,7 +51,6 @@ fn symlink_filename(file: File, colours: &Colours) -> TextCellContents {
 }
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
-    use filetype::FileTypes;
 
     match file {
         f if f.is_directory()        => colours.filetypes.directory,
