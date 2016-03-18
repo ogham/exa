@@ -2,7 +2,7 @@ use file::File;
 
 
 impl<'_> File<'_> {
-    fn is_immediate(&self) -> bool {
+    pub fn is_immediate(&self) -> bool {
         self.name.starts_with("README") || self.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "Rakefile", "Gruntfile.js",
@@ -10,7 +10,7 @@ impl<'_> File<'_> {
         ])
     }
 
-    fn is_image(&self) -> bool {
+    pub fn is_image(&self) -> bool {
         self.extension_is_one_of( &[
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
@@ -19,33 +19,33 @@ impl<'_> File<'_> {
         ])
     }
 
-    fn is_video(&self) -> bool {
+    pub fn is_video(&self) -> bool {
         self.extension_is_one_of( &[
             "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
             "mpg", "ogm", "ogv", "vob", "wmv",
         ])
     }
 
-    fn is_music(&self) -> bool {
+    pub fn is_music(&self) -> bool {
         self.extension_is_one_of( &[
             "aac", "m4a", "mp3", "ogg", "wma",
         ])
     }
 
-    fn is_lossless(&self) -> bool {
+    pub fn is_lossless(&self) -> bool {
         self.extension_is_one_of( &[
             "alac", "ape", "flac", "wav",
         ])
     }
 
-    fn is_crypto(&self) -> bool {
+    pub fn is_crypto(&self) -> bool {
         self.extension_is_one_of( &[
             "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par",
         ])
     }
 
-    fn is_document(&self) -> bool {
+    pub fn is_document(&self) -> bool {
         self.extension_is_one_of( &[
             "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd",
             "odp", "odt", "pdf", "ppt", "pptx", "rtf",
@@ -53,20 +53,20 @@ impl<'_> File<'_> {
         ])
     }
 
-    fn is_compressed(&self) -> bool {
+    pub fn is_compressed(&self) -> bool {
         self.extension_is_one_of( &[
             "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par"
         ])
     }
 
-    fn is_temp(&self) -> bool {
+    pub fn is_temp(&self) -> bool {
         self.name.ends_with("~")
             || (self.name.starts_with("#") && self.name.ends_with("#"))
             || self.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak" ])
     }
 
-    fn is_compiled(&self) -> bool {
+    pub fn is_compiled(&self) -> bool {
         if self.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
             true
         }

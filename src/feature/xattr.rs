@@ -1,4 +1,5 @@
 //! Extended attribute support for Darwin and Linux systems.
+#![allow(trivial_casts)]  // for ARM
 extern crate libc;
 
 use std::io;
