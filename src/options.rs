@@ -363,15 +363,18 @@ impl FileFilter {
     }
 
     pub fn compare_files(&self, a: &File, b: &File) -> cmp::Ordering {
+        use self::SortCase::{Sensitive, Insensitive};
+
         match self.sort_field {
-            SortField::Unsorted      => cmp::Ordering::Equal,
-            SortField::Name          => natord::compare(&*a.name, &*b.name),
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
-            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
-            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
-            SortField::Extension     => match a.ext.cmp(&b.ext) {
+            SortField::Unsorted          => cmp::Ordering::Equal,
+            SortField::Name(Sensitive)   => natord::compare(&a.name, &b.name),
+            SortField::Name(Insensitive) => natord::compare_ignore_case(&a.name, &b.name),
+            SortField::Size              => a.metadata.len().cmp(&b.metadata.len()),
+            SortField::FileInode         => a.metadata.ino().cmp(&b.metadata.ino()),
+            SortField::ModifiedDate      => a.metadata.mtime().cmp(&b.metadata.mtime()),
+            SortField::AccessedDate      => a.metadata.atime().cmp(&b.metadata.atime()),
+            SortField::CreatedDate       => a.metadata.ctime().cmp(&b.metadata.ctime()),
+            SortField::Extension         => match a.ext.cmp(&b.ext) {
                 cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order                 => order,
             },
@@ -459,13 +462,22 @@ impl RecurseOptions {
 /// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortField {
-    Unsorted, Name, Extension, Size, FileInode,
+    Unsorted, Name(SortCase), Extension, Size, FileInode,
     ModifiedDate, AccessedDate, CreatedDate,
+}
+
+/// Whether a field should be sorted case-sensitively or case-insensitively.
+/// 
+/// This determines which of the `natord` functions to use.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum SortCase {
+    Sensitive,
+    Insensitive,
 }
 
 impl Default for SortField {
     fn default() -> SortField {
-        SortField::Name
+        SortField::Name(SortCase::Sensitive)
     }
 }
 
@@ -473,7 +485,8 @@ impl OptionSet for SortField {
     fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
         if let Some(word) = matches.opt_str("sort") {
             match &*word {
-                "name" | "filename"   => Ok(SortField::Name),
+                "name" | "filename"   => Ok(SortField::Name(SortCase::Sensitive)),
+                "Name" | "Filename"   => Ok(SortField::Name(SortCase::Insensitive)),
                 "size" | "filesize"   => Ok(SortField::Size),
                 "ext"  | "extension"  => Ok(SortField::Extension),
                 "mod"  | "modified"   => Ok(SortField::ModifiedDate),
@@ -732,8 +745,7 @@ static EXTENDED_HELP: &'static str = r##"  -@, --extended     display extended a
 
 #[cfg(test)]
 mod test {
-    use super::Options;
-    use super::Misfire;
+    use super::{Options, Misfire, SortField, SortCase};
     use feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
@@ -825,6 +837,24 @@ mod test {
     fn just_blocks() {
         let opts = Options::getopts(&[ "--blocks".to_string() ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
+    }
+
+    #[test]
+    fn test_sort_size() {
+        let opts = Options::getopts(&[ "--sort=size".to_string() ]);
+        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Size);
+    }
+
+    #[test]
+    fn test_sort_name() {
+        let opts = Options::getopts(&[ "--sort=name".to_string() ]);
+        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Sensitive));
+    }
+
+    #[test]
+    fn test_sort_name_lowercase() {
+        let opts = Options::getopts(&[ "--sort=Name".to_string() ]);
+        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Insensitive));
     }
 
     #[test]
