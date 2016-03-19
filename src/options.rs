@@ -366,16 +366,24 @@ impl FileFilter {
         use self::SortCase::{Sensitive, Insensitive};
 
         match self.sort_field {
-            SortField::Unsorted          => cmp::Ordering::Equal,
-            SortField::Name(Sensitive)   => natord::compare(&a.name, &b.name),
-            SortField::Name(Insensitive) => natord::compare_ignore_case(&a.name, &b.name),
-            SortField::Size              => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode         => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate      => a.metadata.mtime().cmp(&b.metadata.mtime()),
-            SortField::AccessedDate      => a.metadata.atime().cmp(&b.metadata.atime()),
-            SortField::CreatedDate       => a.metadata.ctime().cmp(&b.metadata.ctime()),
-            SortField::Extension         => match a.ext.cmp(&b.ext) {
+            SortField::Unsorted  => cmp::Ordering::Equal,
+
+            SortField::Name(Sensitive)    => natord::compare(&a.name, &b.name),
+            SortField::Name(Insensitive)  => natord::compare_ignore_case(&a.name, &b.name),
+
+            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
+            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
+            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
+            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
+
+            SortField::Extension(Sensitive) => match a.ext.cmp(&b.ext) {
                 cmp::Ordering::Equal  => natord::compare(&*a.name, &*b.name),
+                order                 => order,
+            },
+
+            SortField::Extension(Insensitive) => match a.ext.cmp(&b.ext) {
+                cmp::Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
                 order                 => order,
             },
         }
@@ -462,12 +470,14 @@ impl RecurseOptions {
 /// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortField {
-    Unsorted, Name(SortCase), Extension, Size, FileInode,
+    Unsorted,
+    Name(SortCase), Extension(SortCase),
+    Size, FileInode,
     ModifiedDate, AccessedDate, CreatedDate,
 }
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
-/// 
+///
 /// This determines which of the `natord` functions to use.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortCase {
@@ -488,7 +498,8 @@ impl OptionSet for SortField {
                 "name" | "filename"   => Ok(SortField::Name(SortCase::Sensitive)),
                 "Name" | "Filename"   => Ok(SortField::Name(SortCase::Insensitive)),
                 "size" | "filesize"   => Ok(SortField::Size),
-                "ext"  | "extension"  => Ok(SortField::Extension),
+                "ext"  | "extension"  => Ok(SortField::Extension(SortCase::Sensitive)),
+                "Ext"  | "Extension"  => Ok(SortField::Extension(SortCase::Insensitive)),
                 "mod"  | "modified"   => Ok(SortField::ModifiedDate),
                 "acc"  | "accessed"   => Ok(SortField::AccessedDate),
                 "cr"   | "created"    => Ok(SortField::CreatedDate),
