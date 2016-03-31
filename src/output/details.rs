@@ -83,7 +83,6 @@ use datetime::fmt::DateFormat;
 use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
-use zoneinfo_data::ZoneinfoData;
 
 use locale;
 
@@ -157,7 +156,7 @@ pub struct Environment<U: Users+Groups> {
 
     /// The computer's current time zone. This gets used to determine how to
     /// offset files' timestamps.
-    tz: TimeZone,
+    tz: Option<TimeZone>,
 
     /// Mapping cache of user IDs to usernames.
     users: Mutex<U>,
@@ -165,33 +164,24 @@ pub struct Environment<U: Users+Groups> {
 
 impl Default for Environment<UsersCache> {
     fn default() -> Self {
-        use std::process::exit;
+        let tz = determine_time_zone();
 
-        let tz = match determine_time_zone() {
-            Ok(tz) => tz,
-            Err(e) => {
-                println!("Unable to determine time zone: {}", e);
-                exit(1);
-            },
-        };
+        if let Err(ref e) = tz {
+            println!("Unable to determine time zone: {}", e);
+        }
 
         Environment {
             current_year: LocalDateTime::now().year(),
             numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
             time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            tz:           tz,
+            tz:           tz.ok(),
             users:        Mutex::new(UsersCache::new()),
         }
     }
 }
 
 fn determine_time_zone() -> TZResult<TimeZone> {
-    if let Some(system_zone) = TimeZone::system() {
-        Ok(system_zone)
-    }
-    else {
-        TimeZone::from_file("/etc/localtime")
-    }
+    TimeZone::from_file("/etc/localtime")
 }
 
 impl Details {
@@ -597,16 +587,34 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
     #[allow(trivial_numeric_casts)]
     fn render_time(&self, timestamp: f::Time) -> TextCell {
-        let date = self.env.tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
+        // TODO(ogham): This method needs some serious de-duping!
+        // zoned and local times have different types at the moment,
+        // so it's tricky.
 
-        let datestamp = if date.year() == self.env.current_year {
+        if let Some(ref tz) = self.env.tz {
+            let date = tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
+
+            let datestamp = if date.year() == self.env.current_year {
                 DATE_AND_TIME.format(&date, &self.env.time)
             }
             else {
                 DATE_AND_YEAR.format(&date, &self.env.time)
             };
 
-        TextCell::paint(self.opts.colours.date, datestamp)
+            TextCell::paint(self.opts.colours.date, datestamp)
+        }
+        else {
+            let date = LocalDateTime::at(timestamp.0 as i64);
+
+            let datestamp = if date.year() == self.env.current_year {
+                DATE_AND_TIME.format(&date, &self.env.time)
+            }
+            else {
+                DATE_AND_YEAR.format(&date, &self.env.time)
+            };
+
+            TextCell::paint(self.opts.colours.date, datestamp)
+        }
     }
 
     fn render_git_status(&self, git: f::Git) -> TextCell {
@@ -750,8 +758,6 @@ pub mod test {
     impl Default for Environment<MockUsers> {
         fn default() -> Self {
             use locale;
-            use datetime::TimeZone;
-            use zoneinfo_data::ZoneinfoData;
             use users::mock::MockUsers;
             use std::sync::Mutex;
 
@@ -759,7 +765,7 @@ pub mod test {
                 current_year: 1234,
                 numeric:      locale::Numeric::english(),
                 time:         locale::Time::english(),
-                tz:           TimeZone::get("Europe/London").unwrap(),
+                tz:           None,
                 users:        Mutex::new(MockUsers::with_current_uid(0)),
             }
         }
