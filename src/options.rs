@@ -349,8 +349,10 @@ impl FileFilter {
     }
 
     /// Sort the files in the given vector based on the sort field option.
-    pub fn sort_files(&self, files: &mut Vec<File>) {
-        files.sort_by(|a, b| self.compare_files(a, b));
+    pub fn sort_files<'_, F>(&self, files: &mut Vec<F>)
+    where F: AsRef<File<'_>> {
+
+        files.sort_by(|a, b| self.compare_files(a.as_ref(), b.as_ref()));
 
         if self.reverse {
             files.reverse();
@@ -358,7 +360,7 @@ impl FileFilter {
 
         if self.list_dirs_first {
             // This relies on the fact that `sort_by` is stable.
-            files.sort_by(|a, b| b.is_directory().cmp(&a.is_directory()));
+            files.sort_by(|a, b| b.as_ref().is_directory().cmp(&a.as_ref().is_directory()));
         }
     }
 

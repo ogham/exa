@@ -229,12 +229,18 @@ impl Details {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
 
-        struct Egg<'_> {
+        struct Egg<'a> {
             cells:   Vec<TextCell>,
             xattrs:  Vec<Attribute>,
             errors:  Vec<(io::Error, Option<PathBuf>)>,
             dir:     Option<Dir>,
-            file:    File<'_>,
+            file:    File<'a>,
+        }
+
+        impl<'a> AsRef<File<'a>> for Egg<'a> {
+            fn as_ref(&self) -> &File<'a> {
+                &self.file
+            }
         }
 
         pool.scoped(|scoped| {
@@ -285,7 +291,7 @@ impl Details {
             }
         });
 
-        file_eggs.sort_by(|a, b| self.filter.compare_files(&a.file, &b.file));
+        self.filter.sort_files(&mut file_eggs);
 
         let num_eggs = file_eggs.len();
         for (index, egg) in file_eggs.into_iter().enumerate() {

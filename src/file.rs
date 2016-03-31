@@ -399,6 +399,12 @@ impl<'dir> File<'dir> {
     }
 }
 
+impl<'a> AsRef<File<'a>> for File<'a> {
+    fn as_ref(&self) -> &File<'a> {
+        &self
+    }
+}
+
 /// Extract the filename to display from a path, converting it from UTF-8
 /// lossily, into a String.
 ///
