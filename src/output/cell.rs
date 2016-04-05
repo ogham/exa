@@ -1,6 +1,6 @@
 //! The `TextCell` type for the details and lines views.
 
-use std::ops::{Deref, DerefMut};
+use std::ops::{Add, Deref, DerefMut};
 
 use ansi_term::{Style, ANSIString, ANSIStrings};
 use unicode_width::UnicodeWidthStr;
@@ -201,5 +201,52 @@ impl Deref for DisplayWidth {
 impl DerefMut for DisplayWidth {
     fn deref_mut<'a>(&'a mut self) -> &'a mut Self::Target {
         &mut self.0
+    }
+}
+
+impl Add for DisplayWidth {
+    type Output = DisplayWidth;
+
+    fn add(self, rhs: DisplayWidth) -> Self::Output {
+        DisplayWidth(self.0 + rhs.0)
+    }
+}
+
+impl Add<usize> for DisplayWidth {
+    type Output = DisplayWidth;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        DisplayWidth(self.0 + rhs)
+    }
+}
+
+
+#[cfg(test)]
+mod width_unit_test {
+    use super::DisplayWidth;
+
+    #[test]
+    fn empty_string() {
+        let cell = DisplayWidth::from("");
+        assert_eq!(*cell, 0);
+    }
+
+    #[test]
+    fn test_string() {
+        let cell = DisplayWidth::from("Diss Playwidth");
+        assert_eq!(*cell, 14);
+    }
+
+    #[test]
+    fn addition() {
+        let cell_one = DisplayWidth::from("/usr/bin/");
+        let cell_two = DisplayWidth::from("drinking");
+        assert_eq!(*(cell_one + cell_two), 17);
+    }
+
+    #[test]
+    fn addition_usize() {
+        let cell = DisplayWidth::from("/usr/bin/");
+        assert_eq!(*(cell + 8), 17);
     }
 }
