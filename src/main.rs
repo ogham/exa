@@ -69,11 +69,12 @@ impl Exa {
         }
 
         let no_files = files.is_empty();
+        let is_only_dir = dirs.len() == 1 && no_files;
+
         if !no_files {
             self.print_files(None, files);
         }
 
-        let is_only_dir = dirs.len() == 1;
         self.print_dirs(dirs, no_files, is_only_dir);
     }
 
