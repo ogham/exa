@@ -5,7 +5,7 @@ use std::env::current_dir;
 use std::fs;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use dir::Dir;
 
@@ -50,23 +50,30 @@ mod modes {
 /// start and hold on to all the information.
 pub struct File<'dir> {
 
-    /// This file's name, as a UTF-8 encoded String.
+    /// The filename portion of this file's path, including the extension.
+    ///
+    /// This is used to compare against certain filenames (such as checking if
+    /// it’s “Makefile” or something) and to highlight only the filename in
+    /// colour when displaying the path.
     pub name: String,
 
-    /// The file's name's extension, if present, extracted from the name. This
-    /// is queried a lot, so it's worth being cached.
+    /// The file’s name’s extension, if present, extracted from the name.
+    ///
+    /// This is queried many times over, so it’s worth caching it.
     pub ext: Option<String>,
 
-    /// The path that begat this file. Even though the file's name is
-    /// extracted, the path needs to be kept around, as certain operations
-    /// involve looking up the file's absolute location (such as the Git
-    /// status, or searching for compiled files).
+    /// The path that begat this file.
+    ///
+    /// Even though the file's name is extracted, the path needs to be kept
+    /// around, as certain operations involve looking up the file's absolute
+    /// location (such as the Git status, or searching for compiled files).
     pub path: PathBuf,
 
-    /// A cached `metadata` call for this file. This is queried multiple
-    /// times, and is *not* cached by the OS, as it could easily change
-    /// between invocations - but exa is so short-lived it's better to just
-    /// cache it.
+    /// A cached `metadata` call for this file.
+    ///
+    /// This too is queried multiple times, and is *not* cached by the OS, as
+    /// it could easily change between invocations - but exa is so short-lived
+    /// it's better to just cache it.
     pub metadata: fs::Metadata,
 
     /// A reference to the directory that contains this file, if present.
@@ -93,14 +100,17 @@ impl<'dir> File<'dir> {
 
     /// Create a new File object from the given metadata result, and other data.
     pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
-        let filename = path_filename(path);
+        let filename = match path.file_name() {
+            Some(name) => name.to_string_lossy().to_string(),
+            None       => String::new(),
+        };
 
         File {
             path:      path.to_path_buf(),
             dir:       parent,
             metadata:  metadata,
-            ext:       ext(&filename),
-            name:      filename.to_string(),
+            ext:       ext(path),
+            name:      filename,
         }
     }
 
@@ -150,34 +160,6 @@ impl<'dir> File<'dir> {
         self.name.starts_with(".")
     }
 
-    /// Constructs the 'path prefix' of this file, which is the portion of the
-    /// path up to, but not including, the file name.
-    ///
-    /// This gets used when displaying the path a symlink points to. In
-    /// certain cases, it may return an empty-length string. Examples:
-    ///
-    /// - `code/exa/file.rs` has `code/exa/` as its prefix, including the
-    ///   trailing slash.
-    /// - `code/exa` has just `code/` as its prefix.
-    /// - `code` has the empty string as its prefix.
-    /// - `/` also has the empty string as its prefix. It does not have a
-    ///   trailing slash, as the slash constitutes the 'name' of this file.
-    pub fn path_prefix(&self) -> String {
-        let components: Vec<Component> = self.path.components().collect();
-        let mut path_prefix = String::new();
-
-        // This slicing is safe as components always has the RootComponent
-        // as the first element.
-        for component in components[..(components.len() - 1)].iter() {
-            path_prefix.push_str(&*component.as_os_str().to_string_lossy());
-
-            if component != &Component::RootDir {
-                path_prefix.push_str("/");
-            }
-        }
-        path_prefix
-    }
-
     /// Assuming the current file is a symlink, follows the link and
     /// returns a File object from the path the link points to.
     ///
@@ -195,7 +177,10 @@ impl<'dir> File<'dir> {
             None       => path
         };
 
-        let filename = path_filename(&target_path);
+        let filename = match target_path.file_name() {
+            Some(name) => name.to_string_lossy().to_string(),
+            None       => String::new(),
+        };
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
         if let Ok(metadata) = fs::metadata(&target_path) {
@@ -203,12 +188,12 @@ impl<'dir> File<'dir> {
                 path:      target_path.to_path_buf(),
                 dir:       self.dir,
                 metadata:  metadata,
-                ext:       ext(&filename),
-                name:      filename.to_string(),
+                ext:       ext(&target_path),
+                name:      filename,
             })
         }
         else {
-            Err(filename.to_string())
+            Err(target_path.display().to_string())
         }
     }
 
@@ -405,20 +390,8 @@ impl<'a> AsRef<File<'a>> for File<'a> {
     }
 }
 
-/// Extract the filename to display from a path, converting it from UTF-8
-/// lossily, into a String.
-///
-/// The filename to display is the last component of the path. However,
-/// the path has no components for `.`, `..`, and `/`, so in these
-/// cases, the entire path is used.
-fn path_filename(path: &Path) -> String {
-    match path.iter().last() {
-        Some(os_str) => os_str.to_string_lossy().to_string(),
-        None => ".".to_string(),  // can this even be reached?
-    }
-}
 
-/// Extract an extension from a string, if one is present, in lowercase.
+/// Extract an extension from a file path, if one is present, in lowercase.
 ///
 /// The extension is the series of characters after the last dot. This
 /// deliberately counts dotfiles, so the ".git" folder has the extension "git".
@@ -426,7 +399,12 @@ fn path_filename(path: &Path) -> String {
 /// ASCII lowercasing is used because these extensions are only compared
 /// against a pre-compiled list of extensions which are known to only exist
 /// within ASCII, so it's alright.
-fn ext(name: &str) -> Option<String> {
+fn ext(path: &Path) -> Option<String> {
+    let name = match path.file_name() {
+        Some(f) => f.to_string_lossy().to_string(),
+        None => return None,
+    };
+
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
@@ -505,45 +483,20 @@ pub mod fields {
 #[cfg(test)]
 mod test {
     use super::ext;
-    use super::File;
     use std::path::Path;
 
     #[test]
     fn extension() {
-        assert_eq!(Some("dat".to_string()), ext("fester.dat"))
+        assert_eq!(Some("dat".to_string()), ext(Path::new("fester.dat")))
     }
 
     #[test]
     fn dotfile() {
-        assert_eq!(Some("vimrc".to_string()), ext(".vimrc"))
+        assert_eq!(Some("vimrc".to_string()), ext(Path::new(".vimrc")))
     }
 
     #[test]
     fn no_extension() {
-        assert_eq!(None, ext("jarlsberg"))
-    }
-
-    #[test]
-    fn test_prefix_empty() {
-        let f = File::from_path(Path::new("Cargo.toml"), None).unwrap();
-        assert_eq!("", f.path_prefix());
-    }
-
-    #[test]
-    fn test_prefix_file() {
-        let f = File::from_path(Path::new("src/main.rs"), None).unwrap();
-        assert_eq!("src/", f.path_prefix());
-    }
-
-    #[test]
-    fn test_prefix_path() {
-        let f = File::from_path(Path::new("src"), None).unwrap();
-        assert_eq!("", f.path_prefix());
-    }
-
-    #[test]
-    fn test_prefix_root() {
-        let f = File::from_path(Path::new("/"), None).unwrap();
-        assert_eq!("", f.path_prefix());
+        assert_eq!(None, ext(Path::new("jarlsberg")))
     }
 }

@@ -18,40 +18,54 @@ mod cell;
 mod colours;
 mod tree;
 
-pub fn filename(file: File, colours: &Colours, links: bool) -> TextCellContents {
+
+pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents {
+    let mut bits = Vec::new();
+
+    if file.dir.is_none() {
+        if let Some(ref parent) = file.path.parent() {
+            if parent.components().count() > 0 {
+                bits.push(Style::default().paint(parent.to_string_lossy().to_string()));
+                bits.push(Style::default().paint("/"));
+            }
+        }
+    }
+
+    bits.push(file_colour(colours, &file).paint(file.name.clone()));
+
     if links && file.is_link() {
-        symlink_filename(file, colours)
-    }
-    else {
-        vec![
-            file_colour(colours, &file).paint(file.name)
-        ].into()
-    }
-}
+        match file.link_target() {
+            Ok(target) => {
+                bits.push(Style::default().paint(" "));
+                bits.push(colours.punctuation.paint("->"));
+                bits.push(Style::default().paint(" "));
 
-fn symlink_filename(file: File, colours: &Colours) -> TextCellContents {
-    match file.link_target() {
-        Ok(target) => vec![
-            file_colour(colours, &file).paint(file.name),
-            Style::default().paint(" "),
-            colours.punctuation.paint("->"),
-            Style::default().paint(" "),
-            colours.symlink_path.paint(target.path_prefix()),
-            file_colour(colours, &target).paint(target.name)
-        ].into(),
+                if let Some(ref parent) = target.path.parent() {
+                    let coconut = parent.components().count();
+                    if coconut != 0 {
+                        if !(coconut == 1 && parent.has_root()) {
+                            bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
+                        }
+                        bits.push(colours.symlink_path.paint("/"));
+                    }
+                }
 
-        Err(filename) => vec![
-            file_colour(colours, &file).paint(file.name),
-            Style::default().paint(" "),
-            colours.broken_arrow.paint("->"),
-            Style::default().paint(" "),
-            colours.broken_filename.paint(filename),
-        ].into(),
+                bits.push(file_colour(colours, &target).paint(target.name));
+            },
+
+            Err(filename) => {
+                bits.push(Style::default().paint(" "));
+                bits.push(colours.broken_arrow.paint("->"));
+                bits.push(Style::default().paint(" "));
+                bits.push(colours.broken_filename.paint(filename));
+            },
+        }
     }
+
+    bits.into()
 }
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
-
     match file {
         f if f.is_directory()        => colours.filetypes.directory,
         f if f.is_executable_file()  => colours.filetypes.executable,

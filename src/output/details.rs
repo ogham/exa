@@ -297,10 +297,16 @@ impl Details {
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
-            let width = DisplayWidth::from(&*egg.file.name);
+            let mut width = DisplayWidth::from(&*egg.file.name);
+
+            if egg.file.dir.is_none() {
+                if let Some(ref parent) = egg.file.path.parent() {
+                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
+                }
+            }
 
             let name = TextCell {
-                contents: filename(egg.file, &self.colours, true),
+                contents: filename(&egg.file, &self.colours, true),
                 width:    width,
             };
 
@@ -441,10 +447,16 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     }
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let width = DisplayWidth::from(&*file.name);
+        let mut width = DisplayWidth::from(&*file.name);
+
+        if file.dir.is_none() {
+            if let Some(ref parent) = file.path.parent() {
+                width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
+            }
+        }
 
         TextCell {
-            contents: filename(file, &self.opts.colours, links),
+            contents: filename(&file, &self.opts.colours, links),
             width:    width,
         }
     }

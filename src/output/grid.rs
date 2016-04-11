@@ -3,7 +3,7 @@ use term_grid as grid;
 use file::File;
 use output::DisplayWidth;
 use output::colours::Colours;
-use super::file_colour;
+use super::filename;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -26,9 +26,17 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
+            let mut width = DisplayWidth::from(&*file.name);
+
+            if file.dir.is_none() {
+                if let Some(ref parent) = file.path.parent() {
+                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
+                }
+            }
+
             grid.add(grid::Cell {
-                contents:  file_colour(&self.colours, file).paint(&*file.name).to_string(),
-                width:     *DisplayWidth::from(&*file.name),
+                contents:  filename(file, &self.colours, false).strings().to_string(),
+                width:     *width,
             });
         }
 
@@ -38,7 +46,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                println!("{}", file_colour(&self.colours, file).paint(&*file.name));
+                println!("{}", filename(file, &self.colours, false).strings());
             }
         }
     }

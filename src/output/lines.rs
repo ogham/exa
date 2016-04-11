@@ -15,7 +15,7 @@ pub struct Lines {
 impl Lines {
     pub fn view(&self, files: Vec<File>) {
         for file in files {
-            println!("{}", ANSIStrings(&filename(file, &self.colours, true)));
+            println!("{}", ANSIStrings(&filename(&file, &self.colours, true)));
         }
     }
 }
