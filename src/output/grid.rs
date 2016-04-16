@@ -1,6 +1,6 @@
 use term_grid as grid;
 
-use file::File;
+use fs::File;
 use output::DisplayWidth;
 use output::colours::Colours;
 use super::filename;

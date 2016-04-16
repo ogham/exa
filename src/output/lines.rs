@@ -1,6 +1,6 @@
 use ansi_term::ANSIStrings;
 
-use file::File;
+use fs::File;
 
 use super::filename;
 use super::colours::Colours;

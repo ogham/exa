@@ -1,6 +1,6 @@
 use ansi_term::Style;
 
-use file::File;
+use fs::File;
 
 pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
 pub use self::colours::Colours;

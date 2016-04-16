@@ -1,4 +1,4 @@
-use file::File;
+use fs::File;
 
 
 impl<'_> File<'_> {

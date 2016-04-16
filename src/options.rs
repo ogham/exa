@@ -7,8 +7,8 @@ use std::os::unix::fs::MetadataExt;
 use getopts;
 use natord;
 
-use feature::xattr;
-use file::File;
+use fs::feature::xattr;
+use fs::File;
 use output::{Grid, Details, GridDetails, Lines};
 use output::Colours;
 use output::column::{Columns, TimeTypes, SizeFormat};
@@ -759,7 +759,7 @@ static EXTENDED_HELP: &'static str = r##"  -@, --extended     display extended a
 #[cfg(test)]
 mod test {
     use super::{Options, Misfire, SortField, SortCase};
-    use feature::xattr;
+    use fs::feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
         match misfire {

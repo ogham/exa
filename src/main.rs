@@ -23,14 +23,10 @@ use std::env;
 use std::path::{Component, Path};
 use std::process;
 
-use dir::Dir;
-use file::File;
+use fs::{Dir, File};
 use options::{Options, View};
 
-mod dir;
-mod feature;
-mod file;
-mod filetype;
+mod fs;
 mod options;
 mod output;
 mod term;

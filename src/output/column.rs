@@ -1,4 +1,4 @@
-use dir::Dir;
+use fs::Dir;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]

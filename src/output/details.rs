@@ -88,10 +88,8 @@ use locale;
 
 use users::{Users, Groups, UsersCache};
 
-use dir::Dir;
-use feature::xattr::{Attribute, FileAttributes};
-use file::fields as f;
-use file::File;
+use fs::{Dir, File, fields as f};
+use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
@@ -224,7 +222,7 @@ impl Details {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
-        use feature::xattr;
+        use fs::feature::xattr;
 
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
@@ -761,8 +759,7 @@ pub mod test {
     pub use super::{Table, Environment, Details};
     pub use std::sync::Mutex;
 
-    pub use file::File;
-    pub use file::fields as f;
+    pub use fs::{File, fields as f};
     pub use output::column::{Column, Columns};
     pub use output::cell::TextCell;
 

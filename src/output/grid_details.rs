@@ -4,9 +4,8 @@ use ansi_term::ANSIStrings;
 use users::UsersCache;
 use term_grid as grid;
 
-use dir::Dir;
-use feature::xattr::FileAttributes;
-use file::File;
+use fs::{Dir, File};
+use fs::feature::xattr::FileAttributes;
 
 use output::cell::TextCell;
 use output::column::Column;

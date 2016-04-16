@@ -3,8 +3,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use feature::Git;
-use file::{File, fields};
+use fs::feature::Git;
+use fs::{File, fields};
 
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
