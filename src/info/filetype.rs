@@ -51,8 +51,7 @@ impl<'_> File<'_> {
 
     pub fn is_crypto(&self) -> bool {
         self.extension_is_one_of( &[
-            "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
-            "iso", "dmg", "tc", "rar", "par",
+            "asc", "enc", "gpg", "pgp", "sig", "signature", "pfx", "p12",
         ])
     }
 
