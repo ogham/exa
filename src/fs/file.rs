@@ -270,7 +270,7 @@ impl<'dir> File<'dir> {
     /// This is used in the leftmost column of the permissions column.
     /// Although the file type can usually be guessed from the colour of the
     /// file, `ls` puts this character there, so people will expect it.
-    fn type_char(&self) -> f::Type {
+    pub fn type_char(&self) -> f::Type {
         if self.is_file() {
             f::Type::File
         }
@@ -298,7 +298,6 @@ impl<'dir> File<'dir> {
         let has_bit = |bit| { bits & bit == bit };
 
         f::Permissions {
-            file_type:      self.type_char(),
             user_read:      has_bit(modes::USER_READ),
             user_write:     has_bit(modes::USER_WRITE),
             user_execute:   has_bit(modes::USER_EXECUTE),

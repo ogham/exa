@@ -44,10 +44,18 @@ pub enum Type {
     File, Directory, Pipe, Link, Special,
 }
 
+impl Type {
+    pub fn is_regular_file(&self) -> bool {
+        match *self {
+            Type::File  => true,
+            _           => false,
+        }
+    }
+}
+
+
 /// The file’s Unix permission bitfield, with one entry per bit.
 pub struct Permissions {
-    pub file_type:      Type,
-
     pub user_read:      bool,
     pub user_write:     bool,
     pub user_execute:   bool,

@@ -482,7 +482,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         use output::column::TimeType::*;
 
         match *column {
-            Column::Permissions          => self.render_permissions(file.permissions(), xattrs),
+            Column::Permissions          => self.render_permissions(file.type_char(), file.permissions(), xattrs),
             Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
             Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
             Column::Timestamp(Created)   => self.render_time(file.created_time()),
@@ -496,7 +496,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         }
     }
 
-    fn render_permissions(&self, permissions: f::Permissions, xattrs: bool) -> TextCell {
+    fn render_permissions(&self, file_type: f::Type, permissions: f::Permissions, xattrs: bool) -> TextCell {
         let perms = self.opts.colours.perms;
         let types = self.opts.colours.filetypes;
 
@@ -504,7 +504,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             if bit { style.paint(chr) } else { self.opts.colours.punctuation.paint("-") }
         };
 
-        let file_type = match permissions.file_type {
+        let type_char = match file_type {
             f::Type::File       => types.normal.paint("."),
             f::Type::Directory  => types.directory.paint("d"),
             f::Type::Pipe       => types.special.paint("|"),
@@ -512,11 +512,11 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             f::Type::Special    => types.special.paint("?"),
         };
 
-        let x_colour = if let f::Type::File = permissions.file_type { perms.user_execute_file }
-                                                               else { perms.user_execute_other };
+        let x_colour = if file_type.is_regular_file() { perms.user_execute_file }
+                                                 else { perms.user_execute_other };
 
         let mut chars = vec![
-            file_type,
+            type_char,
             bit(permissions.user_read,     "r", perms.user_read),
             bit(permissions.user_write,    "w", perms.user_write),
             bit(permissions.user_execute,  "x", x_colour),
