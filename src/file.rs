@@ -15,9 +15,9 @@ use self::fields as f;
 /// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
 /// which is currently unstable and lacks vision for stabilization,
 /// see https://github.com/rust-lang/rust/issues/27712
-#[allow(dead_code)]
+#[allow(dead_code, non_camel_case_types)]
 mod modes {
-    use libc::mode_t;
+    pub type mode_t = u32;
 
     pub const USER_READ: mode_t = 0o400;
     pub const USER_WRITE: mode_t = 0o200;
@@ -415,8 +415,14 @@ fn ext(path: &Path) -> Option<String> {
 /// return raw numbers representing timestamps or user IDs. Instead, they will
 /// return an object in this `fields` module. These objects are later rendered
 /// into formatted strings in the `output/details` module.
+#[allow(non_camel_case_types)]
 pub mod fields {
-    use libc::{blkcnt_t, gid_t, ino_t, nlink_t, time_t, uid_t};
+    pub type blkcnt_t = u64;
+    pub type gid_t = u32;
+    pub type ino_t = u64;
+    pub type nlink_t = u64;
+    pub type time_t = i64;
+    pub type uid_t = u32;
 
     pub enum Type {
         File, Directory, Pipe, Link, Special,
