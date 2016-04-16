@@ -124,9 +124,7 @@ impl Options {
             _ => false,
         }
     }
-}
 
-impl OptionSet for Options {
     fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
         let dir_action = try!(DirAction::deduce(&matches));
         let filter = try!(FileFilter::deduce(&matches));
@@ -309,11 +307,6 @@ impl View {
 }
 
 
-trait OptionSet: Sized {
-    fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire>;
-}
-
-
 /// The **file filter** processes a vector of files before outputting them,
 /// filtering and sorting the files depending on the user’s command-line
 /// flags.
@@ -325,7 +318,7 @@ pub struct FileFilter {
     sort_field: SortField,
 }
 
-impl OptionSet for FileFilter {
+impl FileFilter {
     fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
         let sort_field = try!(SortField::deduce(&matches));
 
@@ -336,9 +329,6 @@ impl OptionSet for FileFilter {
             sort_field:      sort_field,
         })
     }
-}
-
-impl FileFilter {
 
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate.
@@ -493,7 +483,7 @@ impl Default for SortField {
     }
 }
 
-impl OptionSet for SortField {
+impl SortField {
     fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
         if let Some(word) = matches.opt_str("sort") {
             match &*word {
@@ -523,7 +513,7 @@ enum TerminalWidth {
     Unset,
 }
 
-impl OptionSet for TerminalWidth {
+impl TerminalWidth {
     fn deduce(_: &getopts::Matches) -> Result<TerminalWidth, Misfire> {
         if let Some(columns) = var_os("COLUMNS").and_then(|s| s.into_string().ok()) {
             match columns.parse() {
@@ -554,7 +544,7 @@ impl Default for TerminalColours {
     }
 }
 
-impl OptionSet for TerminalColours {
+impl TerminalColours {
     fn deduce(matches: &getopts::Matches) -> Result<TerminalColours, Misfire> {
         if let Some(word) = matches.opt_str("color").or(matches.opt_str("colour")) {
             match &*word {
@@ -571,7 +561,7 @@ impl OptionSet for TerminalColours {
 }
 
 
-impl OptionSet for Columns {
+impl Columns {
     fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
             size_format: try!(SizeFormat::deduce(matches)),
@@ -586,7 +576,7 @@ impl OptionSet for Columns {
 }
 
 
-impl OptionSet for SizeFormat {
+impl SizeFormat {
 
     /// Determine which file size to use in the file size column based on
     /// the user’s options.
@@ -610,7 +600,7 @@ impl OptionSet for SizeFormat {
 }
 
 
-impl OptionSet for TimeTypes {
+impl TimeTypes {
 
     /// Determine which of a file’s time fields should be displayed for it
     /// based on the user’s options.
