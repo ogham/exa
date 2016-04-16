@@ -27,6 +27,7 @@ use fs::{Dir, File};
 use options::{Options, View};
 
 mod fs;
+mod info;
 mod options;
 mod output;
 mod term;

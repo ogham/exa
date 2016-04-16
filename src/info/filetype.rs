@@ -1,7 +1,17 @@
+//! Tests for various types of file (video, image, compressed, etc).
+//!
+//! Currently this is dependent on the file’s name and extension, because
+//! those are the only metadata that we have access to without reading the
+//! file’s contents.
+
 use fs::File;
 
 
 impl<'_> File<'_> {
+
+    /// An “immediate” file is something that can be run or activated somehow
+    /// in order to kick off the build of a project. It’s usually only present
+    /// in directories full of source code.
     pub fn is_immediate(&self) -> bool {
         self.name.starts_with("README") || self.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
@@ -32,6 +42,7 @@ impl<'_> File<'_> {
         ])
     }
 
+    // Lossless music, rather than any other kind of data...
     pub fn is_lossless(&self) -> bool {
         self.extension_is_one_of( &[
             "alac", "ape", "flac", "wav",
