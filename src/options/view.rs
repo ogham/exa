@@ -83,7 +83,7 @@ impl View {
 
         let other_options_scan = || {
             let term_colours = try!(TerminalColours::deduce(matches));
-            let term_width   = try!(TerminalWidth::deduce(matches));
+            let term_width   = try!(TerminalWidth::deduce());
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
@@ -200,7 +200,7 @@ impl TerminalWidth {
     /// Determine a requested terminal width from the command-line arguments.
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce(_: &getopts::Matches) -> Result<TerminalWidth, Misfire> {
+    fn deduce() -> Result<TerminalWidth, Misfire> {
         if let Some(columns) = var_os("COLUMNS").and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(width)  => Ok(TerminalWidth::Set(width)),
