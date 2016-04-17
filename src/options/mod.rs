@@ -1,3 +1,5 @@
+use std::ffi::OsStr;
+
 use getopts;
 
 use fs::feature::xattr;
@@ -39,7 +41,8 @@ impl Options {
 
     /// Call getopts on the given slice of command-line strings.
     #[allow(unused_results)]
-    pub fn getopts(args: &[String]) -> Result<(Options, Vec<String>), Misfire> {
+    pub fn getopts<S>(args: &[S]) -> Result<(Options, Vec<String>), Misfire>
+    where S: AsRef<OsStr> {
         let mut opts = getopts::Options::new();
 
         opts.optflag("v", "version",   "display version of exa");
@@ -177,106 +180,107 @@ mod test {
 
     #[test]
     fn no_args() {
-        let args = Options::getopts(&[]).unwrap().1;
+        let nothing: Vec<String> = Vec::new();
+        let args = Options::getopts(&nothing).unwrap().1;
         assert!(args.is_empty());  // Listing the `.` directory is done in main.rs
     }
 
     #[test]
     fn file_sizes() {
-        let opts = Options::getopts(&[ "--long".to_string(), "--binary".to_string(), "--bytes".to_string() ]);
+        let opts = Options::getopts(&[ "--long", "--binary", "--bytes" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Conflict("binary", "bytes"))
     }
 
     #[test]
     fn just_binary() {
-        let opts = Options::getopts(&[ "--binary".to_string() ]);
+        let opts = Options::getopts(&[ "--binary" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("binary", false, "long"))
     }
 
     #[test]
     fn just_bytes() {
-        let opts = Options::getopts(&[ "--bytes".to_string() ]);
+        let opts = Options::getopts(&[ "--bytes" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("bytes", false, "long"))
     }
 
     #[test]
     fn long_across() {
-        let opts = Options::getopts(&[ "--long".to_string(), "--across".to_string() ]);
+        let opts = Options::getopts(&[ "--long", "--across" ]);
         assert_eq!(opts, Err(Misfire::Useless("across", true, "long")))
     }
 
     #[test]
     fn oneline_across() {
-        let opts = Options::getopts(&[ "--oneline".to_string(), "--across".to_string() ]);
+        let opts = Options::getopts(&[ "--oneline", "--across" ]);
         assert_eq!(opts, Err(Misfire::Useless("across", true, "oneline")))
     }
 
     #[test]
     fn just_header() {
-        let opts = Options::getopts(&[ "--header".to_string() ]);
+        let opts = Options::getopts(&[ "--header" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("header", false, "long"))
     }
 
     #[test]
     fn just_group() {
-        let opts = Options::getopts(&[ "--group".to_string() ]);
+        let opts = Options::getopts(&[ "--group" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("group", false, "long"))
     }
 
     #[test]
     fn just_inode() {
-        let opts = Options::getopts(&[ "--inode".to_string() ]);
+        let opts = Options::getopts(&[ "--inode" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("inode", false, "long"))
     }
 
     #[test]
     fn just_links() {
-        let opts = Options::getopts(&[ "--links".to_string() ]);
+        let opts = Options::getopts(&[ "--links" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("links", false, "long"))
     }
 
     #[test]
     fn just_blocks() {
-        let opts = Options::getopts(&[ "--blocks".to_string() ]);
+        let opts = Options::getopts(&[ "--blocks" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("blocks", false, "long"))
     }
 
     #[test]
     fn test_sort_size() {
-        let opts = Options::getopts(&[ "--sort=size".to_string() ]);
+        let opts = Options::getopts(&[ "--sort=size" ]);
         assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Size);
     }
 
     #[test]
     fn test_sort_name() {
-        let opts = Options::getopts(&[ "--sort=name".to_string() ]);
+        let opts = Options::getopts(&[ "--sort=name" ]);
         assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Sensitive));
     }
 
     #[test]
     fn test_sort_name_lowercase() {
-        let opts = Options::getopts(&[ "--sort=Name".to_string() ]);
+        let opts = Options::getopts(&[ "--sort=Name" ]);
         assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Insensitive));
     }
 
     #[test]
     #[cfg(feature="git")]
     fn just_git() {
-        let opts = Options::getopts(&[ "--git".to_string() ]);
+        let opts = Options::getopts(&[ "--git" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless("git", false, "long"))
     }
 
     #[test]
     fn extended_without_long() {
         if xattr::ENABLED {
-            let opts = Options::getopts(&[ "--extended".to_string() ]);
+            let opts = Options::getopts(&[ "--extended" ]);
             assert_eq!(opts.unwrap_err(), Misfire::Useless("extended", false, "long"))
         }
     }
 
     #[test]
     fn level_without_recurse_or_tree() {
-        let opts = Options::getopts(&[ "--level".to_string(), "69105".to_string() ]);
+        let opts = Options::getopts(&[ "--level", "69105" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
     }
 }
