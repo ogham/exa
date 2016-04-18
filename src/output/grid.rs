@@ -1,3 +1,5 @@
+use std::io::{Write, Result as IOResult};
+
 use term_grid as grid;
 
 use fs::File;
@@ -14,7 +16,7 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn view(&self, files: &[File]) {
+    pub fn view<W: Write>(&self, files: &[File], w: &mut W) -> IOResult<()> {
         let direction = if self.across { grid::Direction::LeftToRight }
                                   else { grid::Direction::TopToBottom };
 
@@ -41,13 +43,14 @@ impl Grid {
         }
 
         if let Some(display) = grid.fit_into_width(self.console_width) {
-            print!("{}", display);
+            write!(w, "{}", display)
         }
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                println!("{}", filename(file, &self.colours, false).strings());
+                try!(writeln!(w, "{}", filename(file, &self.colours, false).strings()));
             }
+            Ok(())
         }
     }
 }

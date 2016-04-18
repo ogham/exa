@@ -20,6 +20,7 @@ extern crate zoneinfo_compiled;
 #[macro_use] extern crate lazy_static;
 
 use std::env;
+use std::io::{Write, stdout, Result as IOResult};
 use std::path::{Component, Path};
 use std::process;
 
@@ -33,12 +34,20 @@ mod output;
 mod term;
 
 
-struct Exa {
+/// The main program wrapper.
+struct Exa<'w, W: Write + 'w> {
+
+    /// List of command-line options, having been successfully parsed.
     options: Options,
+
+    /// The output handle that we write to. When running the program normally,
+    /// this will be `std::io::Stdout`, but it can accept any struct that’s
+    /// `Write` so we can write into, say, a vector for testing.
+    writer: &'w mut W,
 }
 
-impl Exa {
-    fn run(&mut self, mut args_file_names: Vec<String>) {
+impl<'w, W: Write + 'w> Exa<'w, W> {
+    fn run(&mut self, mut args_file_names: Vec<String>) -> IOResult<()> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
 
@@ -49,13 +58,13 @@ impl Exa {
         for file_name in args_file_names.iter() {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
-                    println!("{}: {}", file_name, e);
+                    try!(writeln!(self.writer, "{}: {}", file_name, e));
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
                         match f.to_dir(self.options.should_scan_for_git()) {
                             Ok(d) => dirs.push(d),
-                            Err(e) => println!("{}: {}", file_name, e),
+                            Err(e) => try!(writeln!(self.writer, "{}: {}", file_name, e)),
                         }
                     }
                     else {
@@ -69,13 +78,13 @@ impl Exa {
         let is_only_dir = dirs.len() == 1 && no_files;
 
         if !no_files {
-            self.print_files(None, files);
+            try!(self.print_files(None, files));
         }
 
-        self.print_dirs(dirs, no_files, is_only_dir);
+        self.print_dirs(dirs, no_files, is_only_dir)
     }
 
-    fn print_dirs(&self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) {
+    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) -> IOResult<()> {
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and the
@@ -84,18 +93,18 @@ impl Exa {
                 first = false;
             }
             else {
-                print!("\n");
+                try!(write!(self.writer, "\n"));
             }
 
             if !is_only_dir {
-                println!("{}:", dir.path.display());
+                try!(writeln!(self.writer, "{}:", dir.path.display()));
             }
 
             let mut children = Vec::new();
             for file in dir.files() {
                 match file {
                     Ok(file)       => children.push(file),
-                    Err((path, e)) => println!("[{}: {}]", path.display(), e),
+                    Err((path, e)) => try!(writeln!(self.writer, "[{}: {}]", path.display(), e)),
                 }
             };
 
@@ -110,31 +119,32 @@ impl Exa {
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
                         match child_dir.to_dir(false) {
                             Ok(d)  => child_dirs.push(d),
-                            Err(e) => println!("{}: {}", child_dir.path.display(), e),
+                            Err(e) => try!(writeln!(self.writer, "{}: {}", child_dir.path.display(), e)),
                         }
                     }
 
-                    self.print_files(Some(&dir), children);
+                    try!(self.print_files(Some(&dir), children));
 
                     if !child_dirs.is_empty() {
-                        self.print_dirs(child_dirs, false, false);
+                        try!(self.print_dirs(child_dirs, false, false));
                     }
 
                     continue;
                 }
             }
 
-            self.print_files(Some(&dir), children);
-
+            try!(self.print_files(Some(&dir), children));
         }
+
+        Ok(())
     }
 
-    fn print_files(&self, dir: Option<&Dir>, files: Vec<File>) {
+    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         match self.options.view {
-            View::Grid(g)         => g.view(&files),
-            View::Details(d)      => d.view(dir, files),
-            View::GridDetails(gd) => gd.view(dir, files),
-            View::Lines(l)        => l.view(files),
+            View::Grid(g)         => g.view(&files, self.writer),
+            View::Details(d)      => d.view(dir, files, self.writer),
+            View::GridDetails(gd) => gd.view(dir, files, self.writer),
+            View::Lines(l)        => l.view(files, self.writer),
         }
     }
 }
@@ -145,8 +155,9 @@ fn main() {
 
     match Options::getopts(&args) {
         Ok((options, paths)) => {
-            let mut exa = Exa { options: options };
-            exa.run(paths);
+            let mut stdout = stdout();
+            let mut exa = Exa { options: options, writer: &mut stdout };
+            exa.run(paths).expect("IO error");
         },
         Err(e) => {
             println!("{}", e);

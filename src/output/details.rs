@@ -71,7 +71,7 @@
 //! are used in place of the filename.
 
 
-use std::io;
+use std::io::{Write, Error as IOError, Result as IOResult};
 use std::ops::Add;
 use std::path::PathBuf;
 use std::string::ToString;
@@ -186,7 +186,7 @@ impl Details {
 
     /// Print the details of the given vector of files -- all of which will
     /// have been read from the given directory, if present -- to stdout.
-    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+    pub fn view<W: Write>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W) -> IOResult<()> {
 
         // First, transform the Columns object into a vector of columns for
         // the current directory.
@@ -212,8 +212,10 @@ impl Details {
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
         for cell in table.print_table() {
-            println!("{}", cell.strings());
+            try!(writeln!(w, "{}", cell.strings()));
         }
+
+        Ok(())
     }
 
     /// Adds files to the table, possibly recursively. This is easily
@@ -230,7 +232,7 @@ impl Details {
         struct Egg<'a> {
             cells:   Vec<TextCell>,
             xattrs:  Vec<Attribute>,
-            errors:  Vec<(io::Error, Option<PathBuf>)>,
+            errors:  Vec<(IOError, Option<PathBuf>)>,
             dir:     Option<Dir>,
             file:    File<'a>,
         }
@@ -417,7 +419,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    fn add_error(&mut self, error: &io::Error, depth: usize, last: bool, path: Option<PathBuf>) {
+    fn add_error(&mut self, error: &IOError, depth: usize, last: bool, path: Option<PathBuf>) {
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
             None       => format!("<{}>", error),

@@ -1,3 +1,4 @@
+use std::io::{Write, Result as IOResult};
 use std::sync::Arc;
 
 use ansi_term::ANSIStrings;
@@ -26,7 +27,8 @@ fn file_has_xattrs(file: &File) -> bool {
 }
 
 impl GridDetails {
-    pub fn view(&self, dir: Option<&Dir>, files: Vec<File>) {
+    pub fn view<W>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W) -> IOResult<()>
+    where W: Write {
         let columns_for_dir = match self.details.columns {
             Some(cols) => cols.for_dir(dir),
             None => Vec::new(),
@@ -63,10 +65,11 @@ impl GridDetails {
                 last_working_table = grid;
             }
             else {
-                print!("{}", last_working_table.fit_into_columns(column_count - 1));
-                return;
+                return write!(w, "{}", last_working_table.fit_into_columns(column_count - 1));
             }
         }
+
+        Ok(())
     }
 
     fn make_table<'a>(&'a self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'a [Column]) -> Table<UsersCache> {

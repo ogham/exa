@@ -1,3 +1,5 @@
+use std::io::{Write, Result as IOResult};
+
 use ansi_term::ANSIStrings;
 
 use fs::File;
@@ -13,9 +15,10 @@ pub struct Lines {
 
 /// The lines view literally just displays each file, line-by-line.
 impl Lines {
-    pub fn view(&self, files: Vec<File>) {
+    pub fn view<W: Write>(&self, files: Vec<File>, w: &mut W) -> IOResult<()> {
         for file in files {
-            println!("{}", ANSIStrings(&filename(&file, &self.colours, true)));
+            try!(writeln!(w, "{}", ANSIStrings(&filename(&file, &self.colours, true))));
         }
+        Ok(())
     }
 }
