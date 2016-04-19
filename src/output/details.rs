@@ -12,6 +12,7 @@
 //! You will probably recognise it from the `ls --long` command. It looks like
 //! this:
 //!
+//! ```text
 //!     .rw-r--r--  9.6k ben 29 Jun 16:16 Cargo.lock
 //!     .rw-r--r--   547 ben 23 Jun 10:54 Cargo.toml
 //!     .rw-r--r--  1.1k ben 23 Nov  2014 LICENCE
@@ -19,6 +20,7 @@
 //!     .rw-r--r--  382k ben  8 Jun 21:00 screenshot.png
 //!     drwxr-xr-x     - ben 29 Jun 14:50 src
 //!     drwxr-xr-x     - ben 28 Jun 19:53 target
+//! ```
 //!
 //! The table is constructed by creating a `Table` value, which produces a `Row`
 //! value for each file. These rows can contain a vector of `Cell`s, or they can
@@ -41,6 +43,7 @@
 //!
 //! To illustrate the above:
 //!
+//! ```text
 //!     ┌─────────────────────────────────────────────────────────────────────────┐
 //!     │ columns: [ Permissions,  Size,   User,  Date(Modified) ]                │
 //!     ├─────────────────────────────────────────────────────────────────────────┤
@@ -50,6 +53,7 @@
 //!     │   row 3: [ "drwxr-xr-x",    "-", "ben", "29 Jun 14:50" ]   src          │
 //!     │   row 4: [ "drwxr-xr-x",    "-", "ben", "28 Jun 19:53" ]   target       │
 //!     └─────────────────────────────────────────────────────────────────────────┘
+//! ```
 //!
 //! Each column in the table needs to be resized to fit its widest argument. This
 //! means that we must wait until every row has been added to the table before it
@@ -61,11 +65,13 @@
 //! Finally, files' extended attributes and any errors that occur while statting
 //! them can also be displayed as their children. It looks like this:
 //!
+//! ```text
 //!     .rw-r--r--  0 ben  3 Sep 13:26 forbidden
 //!                                    └── <Permission denied (os error 13)>
 //!     .rw-r--r--@ 0 ben  3 Sep 13:26 file_with_xattrs
 //!                                    ├── another_greeting (len 2)
 //!                                    └── greeting (len 5)
+//! ```
 //!
 //! These lines also have `None` cells, and the error string or attribute details
 //! are used in place of the filename.

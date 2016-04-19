@@ -5,6 +5,11 @@ authors = [ "ogham@bsago.me" ]
 
 [[bin]]
 name = "exa"
+path = "src/bin/main.rs"
+
+[lib]
+name = "exa"
+path = "src/exa.rs"
 
 [dependencies]
 ansi_term = "0.7.1"

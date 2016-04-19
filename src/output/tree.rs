@@ -12,6 +12,7 @@
 //! affect the file’s information; it’s just used to display a different set of
 //! Unicode tree characters! The resulting table looks like this:
 //!
+//! ```text
 //!     ┌───────┬───────┬───────────────────────┐
 //!     │ Depth │ Last  │ Output                │
 //!     ├───────┼───────┼───────────────────────┤
@@ -28,6 +29,7 @@
 //!     │     2 │ false │    ├── library.png    │
 //!     │     2 │ true  │    └── space.tiff     │
 //!     └───────┴───────┴───────────────────────┘
+//! ```
 //!
 //! Creating the table like this means that each file has to be tested to see
 //! if it’s the last one in the group. This is usually done by putting all the

@@ -19,13 +19,13 @@ extern crate zoneinfo_compiled;
 #[cfg(feature="git")] extern crate git2;
 #[macro_use] extern crate lazy_static;
 
-use std::env;
-use std::io::{Write, stdout, Result as IOResult};
+use std::ffi::OsStr;
+use std::io::{Write, Result as IOResult};
 use std::path::{Component, Path};
-use std::process;
 
 use fs::{Dir, File};
 use options::{Options, View};
+pub use options::Misfire;
 
 mod fs;
 mod info;
@@ -35,27 +35,41 @@ mod term;
 
 
 /// The main program wrapper.
-struct Exa<'w, W: Write + 'w> {
+pub struct Exa<'w, W: Write + 'w> {
 
     /// List of command-line options, having been successfully parsed.
-    options: Options,
+    pub options: Options,
 
     /// The output handle that we write to. When running the program normally,
     /// this will be `std::io::Stdout`, but it can accept any struct that’s
     /// `Write` so we can write into, say, a vector for testing.
-    writer: &'w mut W,
+    pub writer: &'w mut W,
+
+    /// List of the free command-line arguments that should correspond to file
+    /// names (anything that isn’t an option).
+    pub args: Vec<String>,
 }
 
 impl<'w, W: Write + 'w> Exa<'w, W> {
-    fn run(&mut self, mut args_file_names: Vec<String>) -> IOResult<()> {
+    pub fn new<S>(args: &[S], writer: &'w mut W) -> Result<Exa<'w, W>, Misfire>
+    where S: AsRef<OsStr> {
+        Options::getopts(args).map(move |(opts, args)| Exa {
+            options: opts,
+            writer:  writer,
+            args:    args,
+        })
+    }
+
+    pub fn run(&mut self) -> IOResult<()> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
 
-        if args_file_names.is_empty() {
-            args_file_names.push(".".to_owned());
+        // List the current directory by default, like ls.
+        if self.args.is_empty() {
+            self.args.push(".".to_owned());
         }
 
-        for file_name in args_file_names.iter() {
+        for file_name in self.args.iter() {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
                     try!(writeln!(self.writer, "{}: {}", file_name, e));
@@ -74,6 +88,10 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             }
         }
 
+        // We want to print a directory’s name before we list it, *except* in
+        // the case where it’s the only directory, *except* if there are any
+        // files to print as well. (It’s a double negative)
+
         let no_files = files.is_empty();
         let is_only_dir = dirs.len() == 1 && no_files;
 
@@ -87,8 +105,8 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) -> IOResult<()> {
         for dir in dir_files {
 
-            // Put a gap between directories, or between the list of files and the
-            // first directory.
+            // Put a gap between directories, or between the list of files and
+            // the first directory.
             if first {
                 first = false;
             }
@@ -139,6 +157,9 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         Ok(())
     }
 
+    /// Prints the list of files using whichever view is selected.
+    /// For various annoying logistical reasons, each one handles
+    /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         match self.options.view {
             View::Grid(g)         => g.view(&files, self.writer),
@@ -147,21 +168,4 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             View::Lines(l)        => l.view(files, self.writer),
         }
     }
-}
-
-
-fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
-
-    match Options::getopts(&args) {
-        Ok((options, paths)) => {
-            let mut stdout = stdout();
-            let mut exa = Exa { options: options, writer: &mut stdout };
-            exa.run(paths).expect("IO error");
-        },
-        Err(e) => {
-            println!("{}", e);
-            process::exit(e.error_code());
-        },
-    };
 }
