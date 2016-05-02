@@ -8,7 +8,7 @@ pub mod xattr;
 
 #[cfg(not(feature="git"))] pub struct Git;
 #[cfg(not(feature="git"))] use std::path::Path;
-#[cfg(not(feature="git"))] use file::fields;
+#[cfg(not(feature="git"))] use fs::fields;
 
 #[cfg(not(feature="git"))]
 impl Git {
