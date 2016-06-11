@@ -101,32 +101,38 @@ chmod 000 "$DIR/permissions/forbidden-directory"
 
 ## -- extended attributes --
 
+# These tests are optional but the presence of the *directory* is used
+# elsewhere! Yes I know this is a bad practice.
 mkdir "$DIR/attributes"
 
-touch "$DIR/attributes/none"
+if hash xattr; then
+    touch "$DIR/attributes/none"
 
-touch "$DIR/attributes/one"
-xattr -w greeting hello "$DIR/attributes/one"
+    touch "$DIR/attributes/one"
+    xattr -w greeting hello "$DIR/attributes/one"
 
-touch "$DIR/attributes/two"
-xattr -w greeting hello "$DIR/attributes/two"
-xattr -w another_greeting hi "$DIR/attributes/two"
+    touch "$DIR/attributes/two"
+    xattr -w greeting hello "$DIR/attributes/two"
+    xattr -w another_greeting hi "$DIR/attributes/two"
 
-touch "$DIR/attributes/forbidden"
-xattr -w greeting hello "$DIR/attributes/forbidden"
-chmod +a "$YOU deny readextattr" "$DIR/attributes/forbidden"
+    touch "$DIR/attributes/forbidden"
+    xattr -w greeting hello "$DIR/attributes/forbidden"
+    chmod +a "$YOU deny readextattr" "$DIR/attributes/forbidden"
 
-mkdir "$DIR/attributes/dirs"
+    mkdir "$DIR/attributes/dirs"
 
-mkdir "$DIR/attributes/dirs/empty-with-attribute"
-xattr -w greeting hello "$DIR/attributes/dirs/empty-with-attribute"
+    mkdir "$DIR/attributes/dirs/empty-with-attribute"
+    xattr -w greeting hello "$DIR/attributes/dirs/empty-with-attribute"
 
-mkdir "$DIR/attributes/dirs/full-with-attribute"
-touch "$DIR/attributes/dirs/full-with-attribute/file"
-xattr -w greeting hello "$DIR/attributes/dirs/full-with-attribute"
+    mkdir "$DIR/attributes/dirs/full-with-attribute"
+    touch "$DIR/attributes/dirs/full-with-attribute/file"
+    xattr -w greeting hello "$DIR/attributes/dirs/full-with-attribute"
 
-mkdir "$DIR/attributes/dirs/full-but-forbidden"
-touch "$DIR/attributes/dirs/full-but-forbidden/file"
-xattr -w greeting hello "$DIR/attributes/dirs/full-but-forbidden"
-chmod 000 "$DIR/attributes/dirs/full-but-forbidden"
-chmod +a "$YOU deny readextattr" "$DIR/attributes/dirs/full-but-forbidden"
+    mkdir "$DIR/attributes/dirs/full-but-forbidden"
+    touch "$DIR/attributes/dirs/full-but-forbidden/file"
+    xattr -w greeting hello "$DIR/attributes/dirs/full-but-forbidden"
+    chmod 000 "$DIR/attributes/dirs/full-but-forbidden"
+    chmod +a "$YOU deny readextattr" "$DIR/attributes/dirs/full-but-forbidden"
+else
+    echo "Skipping xattr tests"
+fi
