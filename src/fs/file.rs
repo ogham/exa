@@ -163,12 +163,12 @@ impl<'dir> File<'dir> {
     /// returns a File object from the path the link points to.
     ///
     /// If statting the file fails (usually because the file on the
-    /// other end doesn't exist), returns the *filename* of the file
+    /// other end doesn't exist), returns the path to the file
     /// that should be there.
-    pub fn link_target(&self) -> Result<File<'dir>, String> {
+    pub fn link_target(&self) -> Result<File<'dir>, PathBuf> {
         let path = match fs::read_link(&self.path) {
             Ok(path)  => path,
-            Err(_)    => return Err(self.name.clone()),
+            Err(_)    => panic!("This was not a link!"),
         };
 
         let target_path = match self.dir {
@@ -192,7 +192,7 @@ impl<'dir> File<'dir> {
             })
         }
         else {
-            Err(target_path.display().to_string())
+            Err(target_path)
         }
     }
 

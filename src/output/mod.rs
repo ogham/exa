@@ -24,14 +24,21 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
 
     if file.dir.is_none() {
         if let Some(ref parent) = file.path.parent() {
-            if parent.components().count() > 0 {
-                bits.push(Style::default().paint(parent.to_string_lossy().to_string()));
-                bits.push(Style::default().paint("/"));
+            let coconut = parent.components().count();
+
+            if coconut == 1 && parent.has_root() {
+                bits.push(colours.symlink_path.paint("/"));
+            }
+            else if coconut > 1 {
+                bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
+                bits.push(colours.symlink_path.paint("/"));
             }
         }
     }
 
-    bits.push(file_colour(colours, &file).paint(file.name.clone()));
+    if !file.name.is_empty() {
+        bits.push(file_colour(colours, &file).paint(file.name.clone()));
+    }
 
     if links && file.is_link() {
         match file.link_target() {
@@ -42,22 +49,29 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
 
                 if let Some(ref parent) = target.path.parent() {
                     let coconut = parent.components().count();
-                    if coconut != 0 {
-                        if !(coconut == 1 && parent.has_root()) {
-                            bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
-                        }
+
+                    if coconut == 1 && parent.has_root() {
+                        bits.push(colours.symlink_path.paint("/"));
+                    }
+                    else if coconut > 1 {
+                        bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
                         bits.push(colours.symlink_path.paint("/"));
                     }
                 }
+                else {
+                    bits.push(colours.symlink_path.paint("/"));
+                }
 
-                bits.push(file_colour(colours, &target).paint(target.name));
+                if !target.name.is_empty() {
+                    bits.push(file_colour(colours, &target).paint(target.name));
+                }
             },
 
-            Err(filename) => {
+            Err(broken_path) => {
                 bits.push(Style::default().paint(" "));
                 bits.push(colours.broken_arrow.paint("->"));
                 bits.push(Style::default().paint(" "));
-                bits.push(colours.broken_filename.paint(filename));
+                bits.push(colours.broken_filename.paint(broken_path.display().to_string()));
             },
         }
     }
