@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use fs::File;
 
 
-impl<'_> File<'_> {
+impl<'a> File<'a> {
 
     /// For this file, return a vector of alternate file paths that, if any of
     /// them exist, mean that *this* file should be coloured as “compiled”.

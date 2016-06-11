@@ -86,8 +86,8 @@ impl FileFilter {
     }
 
     /// Sort the files in the given vector based on the sort field option.
-    pub fn sort_files<'_, F>(&self, files: &mut Vec<F>)
-    where F: AsRef<File<'_>> {
+    pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
+    where F: AsRef<File<'a>> {
 
         files.sort_by(|a, b| self.compare_files(a.as_ref(), b.as_ref()));
 

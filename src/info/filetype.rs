@@ -7,7 +7,7 @@
 use fs::File;
 
 
-impl<'_> File<'_> {
+impl<'a> File<'a> {
 
     /// An “immediate” file is something that can be run or activated somehow
     /// in order to kick off the build of a project. It’s usually only present
