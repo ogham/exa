@@ -1,20 +1,24 @@
 #!/bin/bash
 
-# This is a script to generate "awkward" files and directories as test cases,
-# to check that exa can actually handle them: symlinks that point at
-# themselves, directories that you aren't allowed to view, files with strange
-# extended attributes, that sort of thing.
+# This is a script to generate “awkward” files and directories that the
+# testing scripts use as integration test cases.
+#
+# Tests like these verify that exa is doing the right thing at every step,
+# from command-line parsing to colourising the output properly -- especially
+# on multiple or weird platforms!
+#
+# Examples of the things it generates are:
+# - files with newlines in their name
+# - files with invalid UTF-8 in their name
+# - directories you aren’t allowed to open
+# - files with users and groups that don’t exist
+# - directories you aren’t allowed to read the xattrs for
+
 
 ## -- configuration --
 
 # Directory that the files should be generated in.
 DIR=testcases
-
-if [[ -e "$DIR" ]]
-then
-    echo "'$DIR' already exists - aborting" >&2
-    exit 2
-fi
 
 # You! Yes, you, the name of the user running this script.
 YOU=`whoami`
@@ -22,30 +26,39 @@ YOU=`whoami`
 # Someone with *higher* privileges than yourself, such as root.
 ROOT=root
 
-# A UID that doesn't map to any user on the system.
+# A UID that doesn’t map to any user on the system.
 INVALID_UID=666
 
-# A GID that doesn't map to any group on the system.
+# A GID that doesn’t map to any group on the system.
 INVALID_GID=616
 
-# List commands as they are run
-# set -x
+# Get confirmation from the user before running.
+echo "This script will generate files into the $DIR directory."
+echo "It requires sudo for the '$ROOT' user."
+echo "You may want to edit this file before running it."
+read -r -p "Continue? [y/N] " response
+if [[ ! $response =~ ^([yY][eE][sS]|[yY])$ ]]
+then
+    exit 2
+fi
 
-# Abort on any error!
+# First things first, don’t try to overwrite the testcases if they already
+# exist. It’s safer to just start again from scratch.
+if [[ -e "$DIR" ]]
+then
+    echo "'$DIR' already exists - aborting" >&2
+    echo "(you'll probably have to sudo rm it.)" >&2
+    exit 2
+fi
+
+# Abort if anything goes wrong past this point!
 abort() { echo 'Hit an error - aborting' >&2; exit 1; }
 trap 'abort' ERR
 
-# Get confirmation from the user before running.
+# List commands as they are run
+set -x
 
-# echo "This script will generate files into the $DIR directory."
-# echo "It requires sudo for the '$ROOT' user."
-# echo "You probably want to edit this file before running it."
-# read -r -p "Continue? [y/N] " response
-# if [[ ! $response =~ ^([yY][eE][sS]|[yY])$ ]]
-# then
-#     exit 2
-# fi
-
+# Let’s go!
 mkdir "$DIR"
 
 
@@ -61,8 +74,8 @@ ln -s nowhere "$DIR/links/broken"
 
 mkdir "$DIR/passwd"
 
-# sudo is needed for these because we technically aren't a member of the
-# groups (because they don't exist), and chown and chgrp are smart enough to
+# sudo is needed for these because we technically aren’t a member of the
+# groups (because they don’t exist), and chown and chgrp are smart enough to
 # disallow it!
 
 touch "$DIR/passwd/unknown-uid"
