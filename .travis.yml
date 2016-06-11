@@ -8,7 +8,7 @@ rust:
   - stable
 script:
     - cargo build --verbose
-    - sudo ./generate-testcases.sh
+    - yes | sudo ./generate-testcases.sh
     - cargo test --verbose
     - cargo run
     - cargo run -- --long
