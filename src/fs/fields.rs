@@ -41,7 +41,7 @@ pub type uid_t = u32;
 /// file’s contents. So “link” is a type, but “image” is just a type of
 /// regular file. (See the `filetype` module for those checks.)
 pub enum Type {
-    File, Directory, Pipe, Link, Special,
+    File, Directory, Pipe, Link, Socket, CharDevice, BlockDevice, Special,
 }
 
 impl Type {
