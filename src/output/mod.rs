@@ -84,7 +84,11 @@ pub fn file_colour(colours: &Colours, file: &File) -> Style {
         f if f.is_directory()        => colours.filetypes.directory,
         f if f.is_executable_file()  => colours.filetypes.executable,
         f if f.is_link()             => colours.filetypes.symlink,
-        f if !f.is_file()            => colours.filetypes.special,
+        f if f.is_pipe()               => colours.filetypes.pipe,
+        f if f.is_char_device() 
+           | f.is_block_device()     => colours.filetypes.device,
+        f if f.is_socket()           => colours.filetypes.socket,
+        f if !f.is_file()            => colours.filetypes.special,        
         f if f.is_immediate()        => colours.filetypes.immediate,
         f if f.is_image()            => colours.filetypes.image,
         f if f.is_video()            => colours.filetypes.video,

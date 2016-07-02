@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 use fs::dir::Dir;
 use fs::fields as f;
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+use std::os::unix::fs::FileTypeExt;
 
 /// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
 /// which is currently unstable and lacks vision for stabilization,
@@ -145,12 +147,7 @@ impl<'dir> File<'dir> {
     /// Whether this file is a symlink on the filesystem.
     pub fn is_link(&self) -> bool {
         self.metadata.file_type().is_symlink()
-    }
-
-    /// Whether this file is a named pipe on the filesystem.
-    pub fn is_pipe(&self) -> bool {
-        false  // TODO: Still waiting on this one...
-    }
+    }    
 
     /// Whether this file is a dotfile, based on its name. In Unix, file names
     /// beginning with a dot represent system or configuration files, and
@@ -283,6 +280,15 @@ impl<'dir> File<'dir> {
         else if self.is_link() {
             f::Type::Link
         }
+        else if self.is_char_device() {
+            f::Type::CharDevice
+        }
+        else if self.is_block_device() {
+            f::Type::BlockDevice
+        }
+        else if self.is_socket() {
+            f::Type::Socket
+        }
         else {
             f::Type::Special
         }
@@ -346,6 +352,53 @@ impl<'dir> File<'dir> {
         }
     }
 }
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+impl<'dir> File<'dir> {
+    /// Whether this file is a named pipe on the filesystem.
+    pub fn is_pipe(&self) -> bool {
+        self.metadata.file_type().is_fifo()
+    }
+    
+    /// Whether this file is a char device on the filesystem.
+    pub fn is_char_device(&self) -> bool {
+        self.metadata.file_type().is_char_device()
+    }
+    
+    /// Whether this file is a block device on the filesystem.
+    pub fn is_block_device(&self) -> bool {
+        self.metadata.file_type().is_block_device()
+    }
+    
+    /// Whether this file is a socket on the filesystem.
+    pub fn is_socket(&self) -> bool {
+        self.metadata.file_type().is_socket()
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+impl<'dir> File<'dir> {
+    /// Whether this file is a named pipe on the filesystem.
+    pub fn is_pipe(&self) -> bool {
+        false
+    }
+    
+    /// Whether this file is a char device on the filesystem.
+    pub fn is_char_device(&self) -> bool {
+        false
+    }
+    
+    /// Whether this file is a block device on the filesystem.
+    pub fn is_block_device(&self) -> bool {
+        false
+    }
+    
+    /// Whether this file is a socket on the filesystem.
+    pub fn is_socket(&self) -> bool {
+        false
+    }
+}
+
 
 impl<'a> AsRef<File<'a>> for File<'a> {
     fn as_ref(&self) -> &File<'a> {

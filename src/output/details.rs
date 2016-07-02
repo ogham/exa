@@ -515,8 +515,11 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         let type_char = match file_type {
             f::Type::File       => types.normal.paint("."),
             f::Type::Directory  => types.directory.paint("d"),
-            f::Type::Pipe       => types.special.paint("|"),
+            f::Type::Pipe       => types.pipe.paint("|"),
             f::Type::Link       => types.symlink.paint("l"),
+            f::Type::CharDevice => types.device.paint("c"),
+            f::Type::BlockDevice => types.device.paint("b"),
+            f::Type::Socket     => types.socket.paint("s"),
             f::Type::Special    => types.special.paint("?"),
         };
 
