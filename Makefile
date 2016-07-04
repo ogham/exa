@@ -4,13 +4,21 @@ BUILD = target/release/exa
 
 $(BUILD):
 	@which rustc > /dev/null || { echo "exa requires Rust to compile. For installation instructions, please visit http://rust-lang.org/"; exit 1; }
-	cargo build --release
+	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
+	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release; \
+	else\
+	    env -u CC cargo build --release; \
+	fi
 
 build: $(BUILD)
 
 build-no-git:
 	@which rustc > /dev/null || { echo "exa requires Rust to compile. For installation instructions, please visit http://rust-lang.org/"; exit 1; }
-	cargo build --release --no-default-features
+	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
+	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release --no-default-features; \
+	else\
+	    env -u CC cargo build --release --no-default-features; \
+	fi
 
 INSTALL = $(PREFIX)/bin/exa
 
