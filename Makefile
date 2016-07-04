@@ -3,7 +3,6 @@ PREFIX ?= /usr/local
 BUILD = target/release/exa
 
 $(BUILD):
-	@which rustc > /dev/null || { echo "exa requires Rust to compile. For installation instructions, please visit http://rust-lang.org/"; exit 1; }
 	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
 	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release; \
 	else\
@@ -13,7 +12,6 @@ $(BUILD):
 build: $(BUILD)
 
 build-no-git:
-	@which rustc > /dev/null || { echo "exa requires Rust to compile. For installation instructions, please visit http://rust-lang.org/"; exit 1; }
 	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
 	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release --no-default-features; \
 	else\
