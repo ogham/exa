@@ -16,9 +16,9 @@ INSTALL = $(PREFIX)/bin/exa
 
 $(INSTALL):
 	# BSD and OSX don't have -D to create leading directories
-	install -dm755 $(PREFIX)/bin/ $(PREFIX)/share/man/man1/
-	install -sm755 target/release/exa $(PREFIX)/bin/
-	install -m644 contrib/man/*.1 $(PREFIX)/share/man/man1/
+	install -dm755 -- "$(PREFIX)/bin/" "$(DESTDIR)$(PREFIX)/share/man/man1/"
+	install -sm755 -- target/release/exa "$(DESTDIR)$(PREFIX)/bin/"
+	install -m644  -- contrib/man/*.1 "$(DESTDIR)$(PREFIX)/share/man/man1/"
 
 install: build $(INSTALL)
 
