@@ -30,4 +30,7 @@ uninstall:
 	-rm    -- "$(DESTDIR)$(PREFIX)/bin/exa"
 	-rmdir -- "$(DESTDIR)$(PREFIX)/bin"
 
-.PHONY: install uninstall
+clean:
+	-rm -rf target
+
+.PHONY: install uninstall clean
