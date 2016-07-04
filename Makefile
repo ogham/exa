@@ -1,21 +1,18 @@
 PREFIX = /usr/local
 
-BUILD = target/release/exa
+CARGOFLAGS = --no-default-features
 
-$(BUILD):
+all: target/release/exa
+
+build: CARGOFLAGS=
+build: all
+build-no-git: all
+
+target/release/exa:
 	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
-	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release; \
+	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release $(CARGOFLAGS); \
 	else\
-	    env -u CC cargo build --release; \
-	fi
-
-build: $(BUILD)
-
-build-no-git:
-	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
-	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release --no-default-features; \
-	else\
-	    env -u CC cargo build --release --no-default-features; \
+	    env -u CC cargo build --release $(CARGOFLAGS); \
 	fi
 
 install: target/release/exa
@@ -33,4 +30,4 @@ uninstall:
 clean:
 	-rm -rf target
 
-.PHONY: install uninstall clean
+.PHONY: all build build-no-git install uninstall clean
