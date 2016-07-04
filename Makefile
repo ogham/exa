@@ -1,4 +1,4 @@
-PREFIX ?= /usr/local
+PREFIX = /usr/local
 
 BUILD = target/release/exa
 
