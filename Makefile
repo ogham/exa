@@ -18,7 +18,7 @@ target/release/exa:
 install: target/release/exa
 	# BSD and OSX don't have -D to create leading directories
 	install -dm755 -- "$(DESTDIR)$(PREFIX)/bin/" "$(DESTDIR)$(PREFIX)/share/man/man1/"
-	install -sm755 -- target/release/exa "$(DESTDIR)$(PREFIX)/bin/"
+	install -m755 -- target/release/exa "$(DESTDIR)$(PREFIX)/bin/"
 	install -m644  -- contrib/man/exa.1 "$(DESTDIR)$(PREFIX)/share/man/man1/"
 
 uninstall:
