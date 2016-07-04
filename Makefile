@@ -1,3 +1,33 @@
+SRC = \
+	src/info/sources.rs \
+	src/info/mod.rs \
+	src/info/filetype.rs \
+	src/bin/main.rs \
+	src/term.rs \
+	src/exa.rs \
+	src/output/grid_details.rs \
+	src/output/tree.rs \
+	src/output/colours.rs \
+	src/output/grid.rs \
+	src/output/cell.rs \
+	src/output/mod.rs \
+	src/output/details.rs \
+	src/output/lines.rs \
+	src/output/column.rs \
+	src/fs/file.rs \
+	src/fs/fields.rs \
+	src/fs/mod.rs \
+	src/fs/dir.rs \
+	src/fs/feature/xattr.rs \
+	src/fs/feature/git.rs \
+	src/fs/feature/mod.rs \
+	src/options/misfire.rs \
+	src/options/filter.rs \
+	src/options/dir_action.rs \
+	src/options/view.rs \
+	src/options/mod.rs \
+	src/options/help.rs
+
 PREFIX = /usr/local
 
 CARGOFLAGS = --no-default-features
@@ -8,7 +38,7 @@ build: CARGOFLAGS=
 build: all
 build-no-git: all
 
-target/release/exa:
+target/release/exa: $(SRC)
 	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
 	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release $(CARGOFLAGS); \
 	else\
