@@ -4,6 +4,16 @@ use std::num::ParseIntError;
 use getopts;
 
 
+/// A list of legal choices for an argument-taking option
+#[derive(PartialEq, Debug)]
+pub struct Choices(Vec<&'static str>);
+
+impl fmt::Display for Choices {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "(choices: {})", self.0.join(" "))
+    }
+}
+
 /// A **misfire** is a thing that can happen instead of listing files -- a
 /// catch-all for anything outside the program’s normal execution.
 #[derive(PartialEq, Debug)]
@@ -11,6 +21,9 @@ pub enum Misfire {
 
     /// The getopts crate didn’t like these arguments.
     InvalidOptions(getopts::Fail),
+
+    /// The user supplied an illegal choice to an argument
+    BadArgument(getopts::Fail, Choices),
 
     /// The user asked for help. This isn’t strictly an error, which is why
     /// this enum isn’t named Error!
@@ -46,8 +59,10 @@ impl Misfire {
     /// argument. This has to use one of the `getopts` failure
     /// variants--it’s meant to take just an option name, rather than an
     /// option *and* an argument, but it works just as well.
-    pub fn bad_argument(option: &str, otherwise: &str) -> Misfire {
-        Misfire::InvalidOptions(getopts::Fail::UnrecognizedOption(format!("--{} {}", option, otherwise)))
+    pub fn bad_argument(option: &str, otherwise: &str, legal: &[&'static str]) -> Misfire {
+        Misfire::BadArgument(getopts::Fail::UnrecognizedOption(format!(
+            "--{} {}",
+            option, otherwise)), Choices(legal.into()))
     }
 }
 
@@ -56,14 +71,15 @@ impl fmt::Display for Misfire {
         use self::Misfire::*;
 
         match *self {
-            InvalidOptions(ref e)  => write!(f, "{}", e),
-            Help(ref text)         => write!(f, "{}", text),
-            Version                => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
-            Conflict(a, b)         => write!(f, "Option --{} conflicts with option {}.", a, b),
-            Useless(a, false, b)   => write!(f, "Option --{} is useless without option --{}.", a, b),
-            Useless(a, true, b)    => write!(f, "Option --{} is useless given option --{}.", a, b),
-            Useless2(a, b1, b2)    => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
-            FailedParse(ref e)     => write!(f, "Failed to parse number: {}", e),
+            InvalidOptions(ref e)      => write!(f, "{}", e),
+            BadArgument(ref e, ref c)  => write!(f, "{} {}", e, c),
+            Help(ref text)             => write!(f, "{}", text),
+            Version                    => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
+            Conflict(a, b)             => write!(f, "Option --{} conflicts with option {}.", a, b),
+            Useless(a, false, b)       => write!(f, "Option --{} is useless without option --{}.", a, b),
+            Useless(a, true, b)        => write!(f, "Option --{} is useless given option --{}.", a, b),
+            Useless2(a, b1, b2)        => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
+            FailedParse(ref e)         => write!(f, "Failed to parse number: {}", e),
         }
     }
 }
