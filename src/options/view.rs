@@ -297,7 +297,8 @@ impl TimeTypes {
                 "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
                 "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
                 "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
-                otherwise           => Err(Misfire::bad_argument("time", otherwise)),
+                otherwise           => Err(Misfire::bad_argument("time", otherwise,
+                                                                 &["modified", "accessed", "created"])),
             }
         }
         else if modified || created || accessed {
@@ -345,7 +346,8 @@ impl TerminalColours {
                 "always"              => Ok(TerminalColours::Always),
                 "auto" | "automatic"  => Ok(TerminalColours::Automatic),
                 "never"               => Ok(TerminalColours::Never),
-                otherwise             => Err(Misfire::bad_argument("color", otherwise))
+                otherwise             => Err(Misfire::bad_argument("color", otherwise,
+                                                                   &["always", "auto", "never"]))
             }
         }
         else {

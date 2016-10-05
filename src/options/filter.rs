@@ -218,7 +218,10 @@ impl SortField {
                 "cr"   | "created"    => Ok(SortField::CreatedDate),
                 "none"                => Ok(SortField::Unsorted),
                 "inode"               => Ok(SortField::FileInode),
-                field                 => Err(Misfire::bad_argument("sort", field))
+                field                 => Err(Misfire::bad_argument("sort", field, &[
+                                            "name", "Name", "size", "extension", "Extension",
+                                            "modified", "accessed", "created", "inode", "none"]
+                ))
             }
         }
         else {

@@ -13,7 +13,9 @@ FILTERING AND SORTING OPTIONS
   -a, --all                  show dot-files
   -d, --list-dirs            list directories as regular files
   -r, --reverse              reverse order of files
-  -s, --sort WORD            field to sort by
+  -s, --sort SORT_FIELD      field to sort by. Choices: name,
+                                 size, extension, modified,
+                                 accessed, created, inode, none
   --group-directories-first  list directories before other files
 "##;
 
@@ -28,7 +30,8 @@ LONG VIEW OPTIONS
   -L, --level DEPTH  maximum depth of recursion
   -m, --modified     display timestamp of most recent modification
   -S, --blocks       show number of file system blocks
-  -t, --time WORD    which timestamp to show for a file
+  -t, --time FIELD   which timestamp to show for a file. Choices:
+                         modified, accessed, created
   -u, --accessed     display timestamp of last access for a file
   -U, --created      display timestamp of creation for a file
 "##;
