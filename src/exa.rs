@@ -20,7 +20,7 @@ extern crate zoneinfo_compiled;
 #[macro_use] extern crate lazy_static;
 
 use std::ffi::OsStr;
-use std::io::{Write, Result as IOResult};
+use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, Path};
 
 use fs::{Dir, File};
@@ -72,13 +72,13 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         for file_name in self.args.iter() {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
-                    try!(writeln!(self.writer, "{}: {}", file_name, e));
+                    try!(writeln!(stderr(), "{}: {}", file_name, e));
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
                         match f.to_dir(self.options.should_scan_for_git()) {
                             Ok(d) => dirs.push(d),
-                            Err(e) => try!(writeln!(self.writer, "{}: {}", file_name, e)),
+                            Err(e) => try!(writeln!(stderr(), "{}: {}", file_name, e)),
                         }
                     }
                     else {
@@ -122,7 +122,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             for file in dir.files() {
                 match file {
                     Ok(file)       => children.push(file),
-                    Err((path, e)) => try!(writeln!(self.writer, "[{}: {}]", path.display(), e)),
+                    Err((path, e)) => try!(writeln!(stderr(), "[{}: {}]", path.display(), e)),
                 }
             };
 
@@ -137,7 +137,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
                         match child_dir.to_dir(false) {
                             Ok(d)  => child_dirs.push(d),
-                            Err(e) => try!(writeln!(self.writer, "{}: {}", child_dir.path.display(), e)),
+                            Err(e) => try!(writeln!(stderr(), "{}: {}", child_dir.path.display(), e)),
                         }
                     }
 
