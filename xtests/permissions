@@ -1,0 +1,5 @@
+/home/vagrant/testcases/permissions/forbidden-directory: Permission denied (os error 13)
+[4mPermissions[0m [4mSize[0m [4mUser[0m    [4mGroup[0m   [4mDate Modified[0m [4mName[0m
+.[1;33mr[31mw[4;32mx[0m[33mr[31mw[32mx[33mr[31mw[32mx[0m     [1;32m0[0m [1;33mvagrant[0m [1;33mvagrant[0m [34m 1 Jan 12:34[0m  [1;32mall-permissions[0m
+[1;34md[0m[38;5;244m---------[0m     [38;5;244m-[0m [1;33mvagrant[0m [1;33mvagrant[0m [34m 1 Jan 12:34[0m  [1;34mforbidden-directory[0m
+.[38;5;244m---------[0m     [1;32m0[0m [1;33mvagrant[0m [1;33mvagrant[0m [34m 1 Jan 12:34[0m  no-permissions
