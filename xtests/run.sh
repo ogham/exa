@@ -46,5 +46,11 @@ $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions  || exit
 # File types
 $exa $testcases/file-types -1 2>&1 | diff -q - $results/file-types  || exit 1
 
+# Links
+$exa $testcases/links -1 2>&1 | diff -q - $results/links_1  || exit 1
+$exa $testcases/links -T 2>&1 | diff -q - $results/links_T  || exit 1
+
+COLUMNS=80 $exa $testcases/links 2>&1 | diff -q - $results/links  || exit 1
+
 
 echo "All the tests passed!"

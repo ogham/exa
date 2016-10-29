@@ -110,6 +110,7 @@ Vagrant.configure("2") do |config|
         ln -s / "#{test_dir}/links/root"
         ln -s /usr "#{test_dir}/links/usr"
         ln -s nowhere "#{test_dir}/links/broken"
+        ln -s /proc/1/root "#{test_dir}/links/forbidden"
     EOF
 
     # Awkward passwd testcases.
