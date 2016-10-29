@@ -1,5 +1,4 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
-#![warn(unused_qualifications)]
 #![warn(unused_results)]
 
 extern crate ansi_term;
