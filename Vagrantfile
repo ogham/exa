@@ -90,6 +90,7 @@ Vagrant.configure("2") do |config|
 
         touch "#{test_dir}/file-types/compressed.zip"
         touch "#{test_dir}/file-types/compressed.tar.gz"
+        touch "#{test_dir}/file-types/compressed.tgz"
 
         touch "#{test_dir}/file-types/backup~"
         touch "#{test_dir}/file-types/#SAVEFILE#"

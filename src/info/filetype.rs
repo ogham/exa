@@ -66,7 +66,7 @@ impl<'a> File<'a> {
     pub fn is_compressed(&self) -> bool {
         self.extension_is_one_of( &[
             "zip", "tar", "Z", "gz", "bz2", "a", "ar", "7z",
-            "iso", "dmg", "tc", "rar", "par"
+            "iso", "dmg", "tc", "rar", "par", "tgz",
         ])
     }
 
