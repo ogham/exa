@@ -18,6 +18,8 @@ $exa $testcases/files -lh  | diff -q - $results/files_lh    || exit 1
 $exa $testcases/files -lhb | diff -q - $results/files_lhb   || exit 1
 $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
 
+$exa $testcases/attributes/dirs/empty-with-attribute -lh | diff -q - $results/empty  || exit 1
+
 # Grid view tests
 COLUMNS=40  $exa $testcases/files | diff -q - $results/files_40   || exit 1
 COLUMNS=80  $exa $testcases/files | diff -q - $results/files_80   || exit 1

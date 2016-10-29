@@ -95,10 +95,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         let no_files = files.is_empty();
         let is_only_dir = dirs.len() == 1 && no_files;
 
-        if !no_files {
-            try!(self.print_files(None, files));
-        }
-
+        try!(self.print_files(None, files));
         self.print_dirs(dirs, no_files, is_only_dir)
     }
 
@@ -142,11 +139,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                     }
 
                     try!(self.print_files(Some(&dir), children));
-
-                    if !child_dirs.is_empty() {
-                        try!(self.print_dirs(child_dirs, false, false));
-                    }
-
+                    try!(self.print_dirs(child_dirs, false, false));
                     continue;
                 }
             }
@@ -161,11 +154,16 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     /// For various annoying logistical reasons, each one handles
     /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
-        match self.options.view {
-            View::Grid(g)         => g.view(&files, self.writer),
-            View::Details(d)      => d.view(dir, files, self.writer),
-            View::GridDetails(gd) => gd.view(dir, files, self.writer),
-            View::Lines(l)        => l.view(files, self.writer),
+        if !files.is_empty() {
+            match self.options.view {
+                View::Grid(g)         => g.view(&files, self.writer),
+                View::Details(d)      => d.view(dir, files, self.writer),
+                View::GridDetails(gd) => gd.view(dir, files, self.writer),
+                View::Lines(l)        => l.view(files, self.writer),
+            }
+        }
+        else {
+            Ok(())
         }
     }
 }
