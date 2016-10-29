@@ -63,6 +63,45 @@ Vagrant.configure("2") do |config|
         touch -t #{some_date} "#{test_dir}/files/"*
     EOF
 
+    # File name extension testcases.
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir "#{test_dir}/file-types"
+
+        touch "#{test_dir}/file-types/Makefile"
+
+        touch "#{test_dir}/file-types/image.png"
+        touch "#{test_dir}/file-types/image.svg"
+
+        touch "#{test_dir}/file-types/video.avi"
+        touch "#{test_dir}/file-types/video.wmv"
+
+        touch "#{test_dir}/file-types/music.mp3"
+        touch "#{test_dir}/file-types/music.ogg"
+
+        touch "#{test_dir}/file-types/lossless.flac"
+        touch "#{test_dir}/file-types/lossless.wav"
+
+        touch "#{test_dir}/file-types/crypto.asc"
+        touch "#{test_dir}/file-types/crypto.signature"
+
+        touch "#{test_dir}/file-types/document.pdf"
+        touch "#{test_dir}/file-types/document.xlsx"
+
+        touch "#{test_dir}/file-types/compressed.zip"
+        touch "#{test_dir}/file-types/compressed.tar.gz"
+
+        touch "#{test_dir}/file-types/backup~"
+        touch "#{test_dir}/file-types/#SAVEFILE#"
+        touch "#{test_dir}/file-types/file.tmp"
+
+        touch "#{test_dir}/file-types/compiled.class"
+        touch "#{test_dir}/file-types/compiled.o"
+        touch "#{test_dir}/file-types/compiled.js"
+        touch "#{test_dir}/file-types/compiled.coffee"
+
+    EOF
+
     # Awkward symlink testcases.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe

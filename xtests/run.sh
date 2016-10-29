@@ -43,5 +43,8 @@ $exa $testcases/passwd -lgh | diff -q - $results/passwd  || exit 1
 # Permissions
 $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions  || exit 1
 
+# File types
+$exa $testcases/file-types -1 2>&1 | diff -q - $results/file-types  || exit 1
+
 
 echo "All the tests passed!"
