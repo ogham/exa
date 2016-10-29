@@ -3,6 +3,7 @@
 use std::ascii::AsciiExt;
 use std::env::current_dir;
 use std::fs;
+use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
@@ -147,7 +148,7 @@ impl<'dir> File<'dir> {
     /// Whether this file is a symlink on the filesystem.
     pub fn is_link(&self) -> bool {
         self.metadata.file_type().is_symlink()
-    }    
+    }
 
     /// Whether this file is a dotfile, based on its name. In Unix, file names
     /// beginning with a dot represent system or configuration files, and
@@ -162,10 +163,10 @@ impl<'dir> File<'dir> {
     /// If statting the file fails (usually because the file on the
     /// other end doesn't exist), returns the path to the file
     /// that should be there.
-    pub fn link_target(&self) -> Result<File<'dir>, PathBuf> {
+    pub fn link_target(&self) -> FileTarget<'dir> {
         let path = match fs::read_link(&self.path) {
             Ok(path)  => path,
-            Err(_)    => panic!("This was not a link!"),
+            Err(e)    => return FileTarget::Err(e),
         };
 
         let target_path = match self.dir {
@@ -180,7 +181,7 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
         if let Ok(metadata) = fs::metadata(&target_path) {
-            Ok(File {
+            FileTarget::Ok(File {
                 path:      target_path.to_path_buf(),
                 dir:       self.dir,
                 metadata:  metadata,
@@ -189,7 +190,7 @@ impl<'dir> File<'dir> {
             })
         }
         else {
-            Err(target_path)
+            FileTarget::Broken(target_path)
         }
     }
 
@@ -359,17 +360,17 @@ impl<'dir> File<'dir> {
     pub fn is_pipe(&self) -> bool {
         self.metadata.file_type().is_fifo()
     }
-    
+
     /// Whether this file is a char device on the filesystem.
     pub fn is_char_device(&self) -> bool {
         self.metadata.file_type().is_char_device()
     }
-    
+
     /// Whether this file is a block device on the filesystem.
     pub fn is_block_device(&self) -> bool {
         self.metadata.file_type().is_block_device()
     }
-    
+
     /// Whether this file is a socket on the filesystem.
     pub fn is_socket(&self) -> bool {
         self.metadata.file_type().is_socket()
@@ -382,17 +383,17 @@ impl<'dir> File<'dir> {
     pub fn is_pipe(&self) -> bool {
         false
     }
-    
+
     /// Whether this file is a char device on the filesystem.
     pub fn is_char_device(&self) -> bool {
         false
     }
-    
+
     /// Whether this file is a block device on the filesystem.
     pub fn is_block_device(&self) -> bool {
         false
     }
-    
+
     /// Whether this file is a socket on the filesystem.
     pub fn is_socket(&self) -> bool {
         false
@@ -422,6 +423,23 @@ fn ext(path: &Path) -> Option<String> {
     };
 
     name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
+}
+
+
+/// The result of following a symlink.
+pub enum FileTarget<'dir> {
+
+    /// The symlink pointed at a file that exists.
+    Ok(File<'dir>),
+
+    /// The symlink pointed at a file that does not exist. Holds the path
+    /// where the file would be, if it existed.
+    Broken(PathBuf),
+
+    /// There was an IO error when following the link. This can happen if the
+    /// file isn't a link to begin with, but also if, say, we don't have
+    /// permission to follow it.
+    Err(IOError),
 }
 
 

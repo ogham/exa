@@ -1,6 +1,6 @@
 use ansi_term::Style;
 
-use fs::File;
+use fs::{File, FileTarget};
 
 pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
 pub use self::colours::Colours;
@@ -42,7 +42,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
 
     if links && file.is_link() {
         match file.link_target() {
-            Ok(target) => {
+            FileTarget::Ok(target) => {
                 bits.push(Style::default().paint(" "));
                 bits.push(colours.punctuation.paint("->"));
                 bits.push(Style::default().paint(" "));
@@ -67,12 +67,16 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
                 }
             },
 
-            Err(broken_path) => {
+            FileTarget::Broken(broken_path) => {
                 bits.push(Style::default().paint(" "));
                 bits.push(colours.broken_arrow.paint("->"));
                 bits.push(Style::default().paint(" "));
                 bits.push(colours.broken_filename.paint(broken_path.display().to_string()));
             },
+
+            FileTarget::Err(_) => {
+                // Do nothing -- the error gets displayed on the next line
+            }
         }
     }
 
@@ -84,11 +88,11 @@ pub fn file_colour(colours: &Colours, file: &File) -> Style {
         f if f.is_directory()        => colours.filetypes.directory,
         f if f.is_executable_file()  => colours.filetypes.executable,
         f if f.is_link()             => colours.filetypes.symlink,
-        f if f.is_pipe()               => colours.filetypes.pipe,
-        f if f.is_char_device() 
+        f if f.is_pipe()             => colours.filetypes.pipe,
+        f if f.is_char_device()
            | f.is_block_device()     => colours.filetypes.device,
         f if f.is_socket()           => colours.filetypes.socket,
-        f if !f.is_file()            => colours.filetypes.special,        
+        f if !f.is_file()            => colours.filetypes.special,
         f if f.is_immediate()        => colours.filetypes.immediate,
         f if f.is_image()            => colours.filetypes.image,
         f if f.is_video()            => colours.filetypes.video,
