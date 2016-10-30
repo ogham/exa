@@ -52,7 +52,7 @@ $exa $testcases/links -T 2>&1 | diff -q - $results/links_T  || exit 1
 
 COLUMNS=80 $exa $testcases/links 2>&1 | diff -q - $results/links  || exit 1
 
-$exa /proc/1/root -l 2>&1 | diff - $results/proc_1_root  || exit 1
+$exa /proc/1/root -T 2>&1 | diff -q - $results/proc_1_root  || exit 1
 
 
 echo "All the tests passed!"
