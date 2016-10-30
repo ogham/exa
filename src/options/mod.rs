@@ -23,7 +23,7 @@ pub use self::view::View;
 
 /// These **options** represent a parsed, error-checked versions of the
 /// user’s command-line options.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Options {
 
     /// The action to perform when encountering a directory rather than a
@@ -137,12 +137,12 @@ impl Options {
     fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
         let dir_action = try!(DirAction::deduce(&matches));
         let filter = try!(FileFilter::deduce(&matches));
-        let view = try!(View::deduce(&matches, filter, dir_action));
+        let view = try!(View::deduce(&matches, filter.clone(), dir_action));
 
         Ok(Options {
             dir_action: dir_action,
             view:       view,
-            filter:     filter,
+            filter:     filter,  // TODO: clone
         })
     }
 }

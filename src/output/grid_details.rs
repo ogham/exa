@@ -13,7 +13,7 @@ use output::column::Column;
 use output::details::{Details, Table, Environment};
 use output::grid::Grid;
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct GridDetails {
     pub grid: Grid,
     pub details: Details,

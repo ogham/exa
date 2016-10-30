@@ -11,7 +11,7 @@ use options::misfire::Misfire;
 /// The **file filter** processes a vector of files before outputting them,
 /// filtering and sorting the files depending on the user’s command-line
 /// flags.
-#[derive(Default, PartialEq, Debug, Copy, Clone)]
+#[derive(Default, PartialEq, Debug, Clone)]
 pub struct FileFilter {
 
     /// Whether directories should be listed first, and other types of file

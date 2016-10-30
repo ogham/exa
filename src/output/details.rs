@@ -115,7 +115,7 @@ use super::filename;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Copy, Clone, Default)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct Details {
 
     /// A Columns object that says which columns should be included in the

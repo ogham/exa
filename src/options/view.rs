@@ -11,7 +11,7 @@ use fs::feature::xattr;
 
 
 /// The **view** contains all information about how to format output.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum View {
     Details(Details),
     Grid(Grid),
@@ -51,7 +51,7 @@ impl View {
                     columns: Some(try!(Columns::deduce(matches))),
                     header: matches.opt_present("header"),
                     recurse: dir_action.recurse_options(),
-                    filter: filter,
+                    filter: filter.clone(),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                     colours: colours,
                 };
@@ -109,7 +109,7 @@ impl View {
                         columns: None,
                         header: false,
                         recurse: dir_action.recurse_options(),
-                        filter: filter,
+                        filter: filter.clone(),  // TODO: clone
                         xattr: false,
                         colours: colours,
                     };
@@ -142,7 +142,7 @@ impl View {
                         columns: None,
                         header: false,
                         recurse: dir_action.recurse_options(),
-                        filter: filter,
+                        filter: filter.clone(),
                         xattr: false,
                         colours: colours,
                     };

@@ -155,10 +155,10 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         if !files.is_empty() {
             match self.options.view {
-                View::Grid(g)         => g.view(&files, self.writer),
-                View::Details(d)      => d.view(dir, files, self.writer),
-                View::GridDetails(gd) => gd.view(dir, files, self.writer),
-                View::Lines(l)        => l.view(files, self.writer),
+                View::Grid(ref g)         => g.view(&files, self.writer),
+                View::Details(ref d)      => d.view(dir, files, self.writer),
+                View::GridDetails(ref gd) => gd.view(dir, files, self.writer),
+                View::Lines(ref l)        => l.view(files, self.writer),
             }
         }
         else {
