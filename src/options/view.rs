@@ -34,12 +34,13 @@ impl View {
             }
             else {
                 let term_colours = try!(TerminalColours::deduce(matches));
+                let scale        = true;
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Always    => Colours::colourful(scale),
                     TerminalColours::Never     => Colours::plain(),
                     TerminalColours::Automatic => {
                         if dimensions().is_some() {
-                            Colours::colourful()
+                            Colours::colourful(scale)
                         }
                         else {
                             Colours::plain()
@@ -84,12 +85,13 @@ impl View {
         let other_options_scan = || {
             let term_colours = try!(TerminalColours::deduce(matches));
             let term_width   = try!(TerminalWidth::deduce());
+            let scale        = true;
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Always    => Colours::colourful(scale),
                     TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => Colours::colourful(),
+                    TerminalColours::Automatic => Colours::colourful(scale),
                 };
 
                 if matches.opt_present("oneline") {
@@ -132,7 +134,7 @@ impl View {
                 // fallback to the lines view.
 
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(),
+                    TerminalColours::Always    => Colours::colourful(scale),
                     TerminalColours::Never     => Colours::plain(),
                     TerminalColours::Automatic => Colours::plain(),
                 };

@@ -4,6 +4,8 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Colours {
+    pub scale: bool,
+
     pub filetypes:  FileTypes,
     pub perms:      Permissions,
     pub size:       Size,
@@ -96,8 +98,10 @@ impl Colours {
         Colours::default()
     }
 
-    pub fn colourful() -> Colours {
+    pub fn colourful(scale: bool) -> Colours {
         Colours {
+            scale: scale,
+
             filetypes: FileTypes {
                 normal:      Style::default(),
                 directory:   Blue.bold(),
@@ -170,7 +174,26 @@ impl Colours {
         }
     }
 
-    pub fn file_size(&self, _size: u64) -> Style {
-        self.size.numbers
+    pub fn file_size(&self, size: u64) -> Style {
+        if self.scale {
+            if size < 1024 {
+                Fixed(118).normal()
+            }
+            else if size < 1024 * 1024 {
+                Fixed(190).normal()
+            }
+            else if size < 1024 * 1024 * 1024 {
+                Fixed(226).normal()
+            }
+            else if size < 1024 * 1024 * 1024 * 1024 {
+                Fixed(220).normal()
+            }
+            else {
+                Fixed(214).normal()
+            }
+        }
+        else {
+            self.size.numbers
+        }
     }
 }
