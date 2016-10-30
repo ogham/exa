@@ -60,10 +60,11 @@ impl Options {
 
         // Filtering and sorting options
         opts.optflag("",  "group-directories-first", "list directories before other files");
-        opts.optflag("a", "all",       "show dot-files");
-        opts.optflag("d", "list-dirs", "list directories as regular files");
-        opts.optflag("r", "reverse",   "reverse order of files");
-        opts.optopt ("s", "sort",      "field to sort by", "WORD");
+        opts.optflag("a", "all",         "show dot-files");
+        opts.optflag("d", "list-dirs",   "list directories as regular files");
+        opts.optflag("r", "reverse",     "reverse order of files");
+        opts.optopt ("s", "sort",        "field to sort by", "WORD");
+        opts.optopt ("I", "ignore-glob", "patterns (|-separated) of names to ignore", "GLOBS");
 
         // Long view options
         opts.optflag("b", "binary",    "use binary prefixes in file sizes");

@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::os::unix::fs::MetadataExt;
 
 use getopts;
+use glob;
 use natord;
 
 use fs::File;
@@ -60,6 +61,10 @@ pub struct FileFilter {
     ///   evaluation that goes through my home directory is slowed down by
     ///   this accumulated sludge.
     show_invisibles: bool,
+
+    /// Glob patterns to ignore. Any file name that matches *any* of these
+    /// patterns won't be displayed in the list.
+    ignore_patterns: IgnorePatterns,
 }
 
 impl FileFilter {
@@ -67,22 +72,36 @@ impl FileFilter {
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
     pub fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
-        let sort_field = try!(SortField::deduce(&matches));
-
         Ok(FileFilter {
             list_dirs_first: matches.opt_present("group-directories-first"),
             reverse:         matches.opt_present("reverse"),
+            sort_field:      try!(SortField::deduce(matches)),
             show_invisibles: matches.opt_present("all"),
-            sort_field:      sort_field,
+            ignore_patterns: try!(IgnorePatterns::deduce(matches)),
         })
     }
 
     /// Remove every file in the given vector that does *not* pass the
-    /// filter predicate.
-    pub fn filter_files(&self, files: &mut Vec<File>) {
+    /// filter predicate for files found inside a directory.
+    pub fn filter_child_files(&self, files: &mut Vec<File>) {
         if !self.show_invisibles {
             files.retain(|f| !f.is_dotfile());
         }
+
+        files.retain(|f| !self.ignore_patterns.is_ignored(f));
+    }
+
+    /// Remove every file in the given vector that does *not* pass the
+    /// filter predicate for file names specified on the command-line.
+    ///
+    /// The rules are different for these types of files than the other
+    /// type because the ignore rules can be used with globbing. For
+    /// example, running "exa -I='*.tmp' .vimrc" shouldn't filter out the
+    /// dotfile, because it's been directly specified. But running
+    /// "exa -I='*.ogg' music/*" should filter out the ogg files obtained
+    /// from the glob, even though the globbing is done by the shell!
+    pub fn filter_argument_files(&self, files: &mut Vec<File>) {
+        files.retain(|f| !self.ignore_patterns.is_ignored(f));
     }
 
     /// Sort the files in the given vector based on the sort field option.
@@ -227,5 +246,30 @@ impl SortField {
         else {
             Ok(SortField::default())
         }
+    }
+}
+
+
+#[derive(PartialEq, Default, Debug, Clone)]
+struct IgnorePatterns {
+    patterns: Vec<glob::Pattern>,
+}
+
+impl IgnorePatterns {
+    /// Determines the set of file filter options to use, based on the user’s
+    /// command-line arguments.
+    pub fn deduce(matches: &getopts::Matches) -> Result<IgnorePatterns, Misfire> {
+        let patterns = match matches.opt_str("ignore-glob") {
+            None => Ok(Vec::new()),
+            Some(is) => is.split('|').map(|a| glob::Pattern::new(a)).collect(),
+        };
+
+        Ok(IgnorePatterns {
+            patterns: try!(patterns),
+        })
+    }
+
+    fn is_ignored(&self, file: &File) -> bool {
+        self.patterns.iter().any(|p| p.matches(&file.name))
     }
 }

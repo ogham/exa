@@ -4,6 +4,7 @@
 extern crate ansi_term;
 extern crate datetime;
 extern crate getopts;
+extern crate glob;
 extern crate libc;
 extern crate locale;
 extern crate natord;
@@ -94,7 +95,9 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         let no_files = files.is_empty();
         let is_only_dir = dirs.len() == 1 && no_files;
 
+        self.options.filter.filter_argument_files(&mut files);
         try!(self.print_files(None, files));
+
         self.print_dirs(dirs, no_files, is_only_dir)
     }
 
@@ -122,7 +125,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                 }
             };
 
-            self.options.filter.filter_files(&mut children);
+            self.options.filter.filter_child_files(&mut children);
             self.options.filter.sort_files(&mut children);
 
             if let Some(recurse_opts) = self.options.dir_action.recurse_options() {

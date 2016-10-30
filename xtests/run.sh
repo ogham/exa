@@ -46,6 +46,10 @@ $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions  || exit
 # File types
 $exa $testcases/file-types -1 2>&1 | diff -q - $results/file-types  || exit 1
 
+# Ignores
+$exa $testcases/file-types/music.* -I "*.ogg"       -1 2>&1 | diff -q - $results/ignores_ogg  || exit 1
+$exa $testcases/file-types/music.* -I "*.ogg|*.mp3" -1 2>&1 | diff -q - $results/empty        || exit 1
+
 # Links
 $exa $testcases/links -1 2>&1 | diff -q - $results/links_1  || exit 1
 $exa $testcases/links -T 2>&1 | diff -q - $results/links_T  || exit 1

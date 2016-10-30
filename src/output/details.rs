@@ -333,7 +333,7 @@ impl Details {
                     }
                 }
 
-                self.filter.filter_files(&mut files);
+                self.filter.filter_child_files(&mut files);
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {

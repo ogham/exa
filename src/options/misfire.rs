@@ -2,6 +2,7 @@ use std::fmt;
 use std::num::ParseIntError;
 
 use getopts;
+use glob;
 
 
 /// A list of legal choices for an argument-taking option
@@ -45,6 +46,9 @@ pub enum Misfire {
 
     /// A numeric option was given that failed to be parsed as a number.
     FailedParse(ParseIntError),
+
+    /// A glob ignore was given that failed to be parsed as a pattern.
+    FailedGlobPattern(String),
 }
 
 impl Misfire {
@@ -66,6 +70,12 @@ impl Misfire {
     }
 }
 
+impl From<glob::PatternError> for Misfire {
+    fn from(error: glob::PatternError) -> Misfire {
+        Misfire::FailedGlobPattern(error.to_string())
+    }
+}
+
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Misfire::*;
@@ -80,6 +90,7 @@ impl fmt::Display for Misfire {
             Useless(a, true, b)        => write!(f, "Option --{} is useless given option --{}.", a, b),
             Useless2(a, b1, b2)        => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
             FailedParse(ref e)         => write!(f, "Failed to parse number: {}", e),
+            FailedGlobPattern(ref e)   => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
 }
