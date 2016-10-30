@@ -49,14 +49,16 @@ impl Options {
         opts.optflag("?", "help",      "show list of command-line options");
 
         // Display options
-        opts.optflag("1", "oneline",   "display one entry per line");
-        opts.optflag("G", "grid",      "display entries in a grid view (default)");
-        opts.optflag("l", "long",      "display extended details and attributes");
-        opts.optflag("R", "recurse",   "recurse into directories");
-        opts.optflag("T", "tree",      "recurse into subdirectories in a tree view");
-        opts.optflag("x", "across",    "sort multi-column view entries across");
-        opts.optopt ("",  "color",     "when to show anything in colours", "WHEN");
-        opts.optopt ("",  "colour",    "when to show anything in colours (alternate spelling)", "WHEN");
+        opts.optflag("1", "oneline",      "display one entry per line");
+        opts.optflag("G", "grid",         "display entries in a grid view (default)");
+        opts.optflag("l", "long",         "display extended details and attributes");
+        opts.optflag("R", "recurse",      "recurse into directories");
+        opts.optflag("T", "tree",         "recurse into subdirectories in a tree view");
+        opts.optflag("x", "across",       "sort multi-column view entries across");
+        opts.optopt ("",  "color",        "when to show anything in colours", "WHEN");
+        opts.optopt ("",  "colour",       "when to show anything in colours (alternate spelling)", "WHEN");
+        opts.optflag("",  "color-scale",  "use a colour scale when displaying file sizes (alternate spelling)");
+        opts.optflag("",  "colour-scale", "use a colour scale when displaying file sizes");
 
         // Filtering and sorting options
         opts.optflag("",  "group-directories-first", "list directories before other files");

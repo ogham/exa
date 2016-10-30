@@ -7,7 +7,9 @@ DISPLAY OPTIONS
   -R, --recurse      recurse into directories
   -T, --tree         recurse into subdirectories in a tree view
   -x, --across       sort multi-column view entries across
-  --color, --colour  when to colourise the output
+
+  --color=WHEN,  --colour=WHEN   when to colourise the output (always, auto, never)
+  --color-scale, --colour-scale  colour file sizes according to their magnitude
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show dot-files

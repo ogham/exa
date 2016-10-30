@@ -23,6 +23,7 @@ exa’s options are similar, but not exactly the same, as `ls`.
 - **-T**, **--tree**: recurse into subdirectories in a tree view
 - **-x**, **--across**: sort multi-column view entries across
 - **--color**, **--colour**: when to colourise the output
+- **--color-scale**, **--colour-scale**: colour file sizes according to their magnitude
 
 ### Filtering Options
 

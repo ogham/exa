@@ -25,6 +25,10 @@ impl View {
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
         use options::misfire::Misfire::*;
 
+        let colour_scale = || {
+            matches.opt_present("color-scale") || matches.opt_present("colour-scale")
+        };
+
         let long = || {
             if matches.opt_present("across") && !matches.opt_present("grid") {
                 Err(Useless("across", true, "long"))
@@ -34,13 +38,12 @@ impl View {
             }
             else {
                 let term_colours = try!(TerminalColours::deduce(matches));
-                let scale        = true;
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(scale),
+                    TerminalColours::Always    => Colours::colourful(colour_scale()),
                     TerminalColours::Never     => Colours::plain(),
                     TerminalColours::Automatic => {
                         if dimensions().is_some() {
-                            Colours::colourful(scale)
+                            Colours::colourful(colour_scale())
                         }
                         else {
                             Colours::plain()
@@ -85,13 +88,12 @@ impl View {
         let other_options_scan = || {
             let term_colours = try!(TerminalColours::deduce(matches));
             let term_width   = try!(TerminalWidth::deduce());
-            let scale        = true;
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(scale),
+                    TerminalColours::Always    => Colours::colourful(colour_scale()),
                     TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => Colours::colourful(scale),
+                    TerminalColours::Automatic => Colours::colourful(colour_scale()),
                 };
 
                 if matches.opt_present("oneline") {
@@ -134,7 +136,7 @@ impl View {
                 // fallback to the lines view.
 
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(scale),
+                    TerminalColours::Always    => Colours::colourful(colour_scale()),
                     TerminalColours::Never     => Colours::plain(),
                     TerminalColours::Automatic => Colours::plain(),
                 };
