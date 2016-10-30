@@ -17,6 +17,7 @@ FILTERING AND SORTING OPTIONS
                                  size, extension, modified,
                                  accessed, created, inode, none
   --group-directories-first  list directories before other files
+  -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
 "##;
 
 pub static LONG_OPTIONS: &'static str = r##"

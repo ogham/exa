@@ -32,6 +32,7 @@ exa’s options are similar, but not exactly the same, as `ls`.
 - **-r**, **--reverse**: reverse sort order
 - **-s**, **--sort=(field)**: field to sort by
 - **--group-directories-first**: list directories before other files
+- **-I**, **--ignore-glob=(globs)**: glob patterns (pipe-separated) of files to ignore
 
 ### Long View Options
 
