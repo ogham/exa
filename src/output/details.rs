@@ -586,12 +586,12 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             SizeFormat::BinaryBytes   => binary_prefix(size as f64),
             SizeFormat::JustBytes     => {
                 let string = self.env.numeric.format_int(size);
-                return TextCell::paint(self.opts.colours.size.numbers, string);
+                return TextCell::paint(self.opts.colours.file_size(size), string);
             },
         };
 
         let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(self.opts.colours.size.numbers, b.to_string()),
+            Standalone(b)  => return TextCell::paint(self.opts.colours.file_size(b as u64), b.to_string()),
             Prefixed(p, n) => (p, n)
         };
 
@@ -606,7 +606,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         TextCell {
             width:    width,
             contents: vec![
-                self.opts.colours.size.numbers.paint(number),
+                self.opts.colours.file_size(size).paint(number),
                 self.opts.colours.size.unit.paint(symbol),
             ].into(),
         }

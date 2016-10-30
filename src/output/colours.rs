@@ -169,4 +169,8 @@ impl Colours {
             broken_filename:  Red.underline()
         }
     }
+
+    pub fn file_size(&self, _size: u64) -> Style {
+        self.size.numbers
+    }
 }
