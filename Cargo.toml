@@ -38,7 +38,7 @@ debug = false
 lto = true
 
 [dependencies.git2]
-version = "0.3.2"
+version = "0.6.4"
 optional = true
 
 [dependencies.zoneinfo_compiled]
