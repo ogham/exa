@@ -60,9 +60,10 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         })
     }
 
-    pub fn run(&mut self) -> IOResult<()> {
+    pub fn run(&mut self) -> IOResult<i32> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
+        let mut exit_status = 0;
 
         // List the current directory by default, like ls.
         if self.args.is_empty() {
@@ -72,6 +73,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         for file_name in self.args.iter() {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
+                    exit_status = 2;
                     writeln!(stderr(), "{}: {}", file_name, e)?;
                 },
                 Ok(f) => {
@@ -98,10 +100,10 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         self.options.filter.filter_argument_files(&mut files);
         self.print_files(None, files)?;
 
-        self.print_dirs(dirs, no_files, is_only_dir)
+        self.print_dirs(dirs, no_files, is_only_dir, exit_status)
     }
 
-    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool) -> IOResult<()> {
+    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32) -> IOResult<i32> {
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and
@@ -141,7 +143,10 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                     }
 
                     self.print_files(Some(&dir), children)?;
-                    self.print_dirs(child_dirs, false, false)?;
+                    match self.print_dirs(child_dirs, false, false, exit_status) {
+                        Ok(_) => (),
+                        Err(e) => return Err(e),
+                    }
                     continue;
                 }
             }
@@ -149,7 +154,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             self.print_files(Some(&dir), children)?;
         }
 
-        Ok(())
+        Ok(exit_status)
     }
 
     /// Prints the list of files using whichever view is selected.
