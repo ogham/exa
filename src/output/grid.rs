@@ -48,7 +48,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                try!(writeln!(w, "{}", filename(file, &self.colours, false).strings()));
+                writeln!(w, "{}", filename(file, &self.colours, false).strings())?;
             }
             Ok(())
         }

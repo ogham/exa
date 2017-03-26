@@ -17,7 +17,7 @@ pub struct Lines {
 impl Lines {
     pub fn view<W: Write>(&self, files: Vec<File>, w: &mut W) -> IOResult<()> {
         for file in files {
-            try!(writeln!(w, "{}", ANSIStrings(&filename(&file, &self.colours, true))));
+            writeln!(w, "{}", ANSIStrings(&filename(&file, &self.colours, true)))?;
         }
         Ok(())
     }

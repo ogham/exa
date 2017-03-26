@@ -37,7 +37,7 @@ impl View {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let term_colours = try!(TerminalColours::deduce(matches));
+                let term_colours = TerminalColours::deduce(matches)?;
                 let colours = match term_colours {
                     TerminalColours::Always    => Colours::colourful(colour_scale()),
                     TerminalColours::Never     => Colours::plain(),
@@ -52,7 +52,7 @@ impl View {
                 };
 
                 let details = Details {
-                    columns: Some(try!(Columns::deduce(matches))),
+                    columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
                     recurse: dir_action.recurse_options(),
                     filter: filter.clone(),
@@ -86,8 +86,8 @@ impl View {
         };
 
         let other_options_scan = || {
-            let term_colours = try!(TerminalColours::deduce(matches));
-            let term_width   = try!(TerminalWidth::deduce());
+            let term_colours = TerminalColours::deduce(matches)?;
+            let term_width   = TerminalWidth::deduce()?;
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
@@ -164,7 +164,7 @@ impl View {
         };
 
         if matches.opt_present("long") {
-            let long_options = try!(long());
+            let long_options = long()?;
 
             if matches.opt_present("grid") {
                 match other_options_scan() {
@@ -178,7 +178,7 @@ impl View {
             }
         }
 
-        try!(long_options_scan());
+        long_options_scan()?;
 
         other_options_scan()
     }
@@ -232,8 +232,8 @@ impl TerminalWidth {
 impl Columns {
     fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
         Ok(Columns {
-            size_format: try!(SizeFormat::deduce(matches)),
-            time_types:  try!(TimeTypes::deduce(matches)),
+            size_format: SizeFormat::deduce(matches)?,
+            time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),
             links:  matches.opt_present("links"),
             blocks: matches.opt_present("blocks"),

@@ -218,7 +218,7 @@ impl Details {
         // Then add files to the table and print it out.
         self.add_files_to_table(&mut table, files, 0);
         for cell in table.print_table() {
-            try!(writeln!(w, "{}", cell.strings()));
+            writeln!(w, "{}", cell.strings())?;
         }
 
         Ok(())

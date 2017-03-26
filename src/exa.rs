@@ -72,13 +72,13 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         for file_name in self.args.iter() {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
-                    try!(writeln!(stderr(), "{}: {}", file_name, e));
+                    writeln!(stderr(), "{}: {}", file_name, e)?;
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
                         match f.to_dir(self.options.should_scan_for_git()) {
                             Ok(d) => dirs.push(d),
-                            Err(e) => try!(writeln!(stderr(), "{}: {}", file_name, e)),
+                            Err(e) => writeln!(stderr(), "{}: {}", file_name, e)?,
                         }
                     }
                     else {
@@ -96,7 +96,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         let is_only_dir = dirs.len() == 1 && no_files;
 
         self.options.filter.filter_argument_files(&mut files);
-        try!(self.print_files(None, files));
+        self.print_files(None, files)?;
 
         self.print_dirs(dirs, no_files, is_only_dir)
     }
@@ -110,18 +110,18 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                 first = false;
             }
             else {
-                try!(write!(self.writer, "\n"));
+                write!(self.writer, "\n")?;
             }
 
             if !is_only_dir {
-                try!(writeln!(self.writer, "{}:", dir.path.display()));
+                writeln!(self.writer, "{}:", dir.path.display())?;
             }
 
             let mut children = Vec::new();
             for file in dir.files() {
                 match file {
                     Ok(file)       => children.push(file),
-                    Err((path, e)) => try!(writeln!(stderr(), "[{}: {}]", path.display(), e)),
+                    Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
                 }
             };
 
@@ -136,17 +136,17 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
                         match child_dir.to_dir(false) {
                             Ok(d)  => child_dirs.push(d),
-                            Err(e) => try!(writeln!(stderr(), "{}: {}", child_dir.path.display(), e)),
+                            Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }
                     }
 
-                    try!(self.print_files(Some(&dir), children));
-                    try!(self.print_dirs(child_dirs, false, false));
+                    self.print_files(Some(&dir), children)?;
+                    self.print_dirs(child_dirs, false, false)?;
                     continue;
                 }
             }
 
-            try!(self.print_files(Some(&dir), children));
+            self.print_files(Some(&dir), children)?;
         }
 
         Ok(())

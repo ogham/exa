@@ -15,13 +15,13 @@ impl Git {
     /// Discover a Git repository on or above this directory, scanning it for
     /// the files' statuses if one is found.
     pub fn scan(path: &Path) -> Result<Git, git2::Error> {
-        let repo = try!(git2::Repository::discover(path));
+        let repo = git2::Repository::discover(path)?;
         let workdir = match repo.workdir() {
             Some(w) => w,
             None => return Ok(Git { statuses: vec![] }),  // bare repo
         };
 
-        let statuses = try!(repo.statuses(None)).iter()
+        let statuses = repo.statuses(None)?.iter()
                                                 .map(|e| (workdir.join(Path::new(e.path().unwrap())), e.status()))
                                                 .collect();
 

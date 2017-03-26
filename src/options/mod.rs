@@ -120,7 +120,7 @@ impl Options {
             return Err(Misfire::Version);
         }
 
-        let options = try!(Options::deduce(&matches));
+        let options = Options::deduce(&matches)?;
         Ok((options, matches.free))
     }
 
@@ -138,9 +138,9 @@ impl Options {
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
     fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
-        let dir_action = try!(DirAction::deduce(&matches));
-        let filter = try!(FileFilter::deduce(&matches));
-        let view = try!(View::deduce(&matches, filter.clone(), dir_action));
+        let dir_action = DirAction::deduce(&matches)?;
+        let filter = FileFilter::deduce(&matches)?;
+        let view = View::deduce(&matches, filter.clone(), dir_action)?;
 
         Ok(Options {
             dir_action: dir_action,

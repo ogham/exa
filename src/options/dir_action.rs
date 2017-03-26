@@ -36,8 +36,8 @@ impl DirAction {
             (true,  true,  _    )  => Err(Misfire::Conflict("recurse", "list-dirs")),
             (_,     true,  true )  => Err(Misfire::Conflict("tree", "list-dirs")),
 
-            (_   ,  _,     true )  => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, true)))),
-            (true,  false, false)  => Ok(DirAction::Recurse(try!(RecurseOptions::deduce(matches, false)))),
+            (_   ,  _,     true )  => Ok(DirAction::Recurse(RecurseOptions::deduce(matches, true)?)),
+            (true,  false, false)  => Ok(DirAction::Recurse(RecurseOptions::deduce(matches, false)?)),
             (false, true,  _    )  => Ok(DirAction::AsFile),
             (false, false, _    )  => Ok(DirAction::List),
         }

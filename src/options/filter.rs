@@ -75,9 +75,9 @@ impl FileFilter {
         Ok(FileFilter {
             list_dirs_first: matches.opt_present("group-directories-first"),
             reverse:         matches.opt_present("reverse"),
-            sort_field:      try!(SortField::deduce(matches)),
+            sort_field:      SortField::deduce(matches)?,
             show_invisibles: matches.opt_present("all"),
-            ignore_patterns: try!(IgnorePatterns::deduce(matches)),
+            ignore_patterns: IgnorePatterns::deduce(matches)?,
         })
     }
 
@@ -265,7 +265,7 @@ impl IgnorePatterns {
         };
 
         Ok(IgnorePatterns {
-            patterns: try!(patterns),
+            patterns: patterns?,
         })
     }
 
