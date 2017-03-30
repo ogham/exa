@@ -12,16 +12,15 @@ name = "exa"
 path = "src/exa.rs"
 
 [dependencies]
-ansi_term = "0.7.1"
-bitflags = "0.1"
+ansi_term = "0.8.0"
 datetime = "0.4.3"
 getopts = "0.2.14"
 glob = "0.2"
-lazy_static = "0.1.*"
+lazy_static = "0.2.5"
 libc = "0.2.9"
 locale = "0.2.1"
 natord = "1.0.7"
-num_cpus = "0.2.7"
+num_cpus = "1.3.0"
 number_prefix = "0.2.3"
 scoped_threadpool = "0.1.*"
 term_grid = "0.1.2"
@@ -38,7 +37,7 @@ debug = false
 lto = true
 
 [dependencies.git2]
-version = "0.3.2"
+version = "0.6.4"
 optional = true
 
 [dependencies.zoneinfo_compiled]
