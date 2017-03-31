@@ -45,7 +45,7 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir>(&'dir self) -> Files<'dir> {
+    pub fn files(&self) -> Files {
         Files {
             inner: self.contents.iter(),
             dir: self,
