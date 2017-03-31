@@ -481,7 +481,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     /// Use the list of columns to find which cells should be produced for
     /// this file, per-column.
     pub fn cells_for_file(&self, file: &File, xattrs: bool) -> Vec<TextCell> {
-        self.columns.clone().iter()
+        self.columns.iter()
                     .map(|c| self.display(file, c, xattrs))
                     .collect()
     }

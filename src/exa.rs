@@ -69,7 +69,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             self.args.push(".".to_owned());
         }
 
-        for file_name in self.args.iter() {
+        for file_name in &self.args {
             match File::from_path(Path::new(&file_name), None) {
                 Err(e) => {
                     writeln!(stderr(), "{}: {}", file_name, e)?;
