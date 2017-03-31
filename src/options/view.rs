@@ -344,7 +344,7 @@ impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
     fn deduce(matches: &getopts::Matches) -> Result<TerminalColours, Misfire> {
-        if let Some(word) = matches.opt_str("color").or(matches.opt_str("colour")) {
+        if let Some(word) = matches.opt_str("color").or_else(|| matches.opt_str("colour")) {
             match &*word {
                 "always"              => Ok(TerminalColours::Always),
                 "auto" | "automatic"  => Ok(TerminalColours::Automatic),
