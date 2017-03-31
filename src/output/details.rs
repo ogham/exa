@@ -207,7 +207,7 @@ impl Details {
         // Build the table to put rows in.
         let mut table = Table {
             columns: &*columns_for_dir,
-            opts: &self,
+            opts: self,
             env: env,
             rows: Vec::new(),
         };
@@ -306,7 +306,7 @@ impl Details {
             let mut width = DisplayWidth::from(&*egg.file.name);
 
             if egg.file.dir.is_none() {
-                if let Some(ref parent) = egg.file.path.parent() {
+                if let Some(parent) = egg.file.path.parent() {
                     width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
                 }
             }
@@ -456,7 +456,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         let mut width = DisplayWidth::from(&*file.name);
 
         if file.dir.is_none() {
-            if let Some(ref parent) = file.path.parent() {
+            if let Some(parent) = file.path.parent() {
                 width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
             }
         }

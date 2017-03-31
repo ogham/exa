@@ -23,7 +23,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
     let mut bits = Vec::new();
 
     if file.dir.is_none() {
-        if let Some(ref parent) = file.path.parent() {
+        if let Some(parent) = file.path.parent() {
             let coconut = parent.components().count();
 
             if coconut == 1 && parent.has_root() {
@@ -37,7 +37,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
     }
 
     if !file.name.is_empty() {
-        bits.push(file_colour(colours, &file).paint(file.name.clone()));
+        bits.push(file_colour(colours, file).paint(file.name.clone()));
     }
 
     if links && file.is_link() {
@@ -47,7 +47,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
                 bits.push(colours.punctuation.paint("->"));
                 bits.push(Style::default().paint(" "));
 
-                if let Some(ref parent) = target.path.parent() {
+                if let Some(parent) = target.path.parent() {
                     let coconut = parent.components().count();
 
                     if coconut == 1 && parent.has_root() {

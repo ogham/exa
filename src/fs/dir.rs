@@ -48,13 +48,13 @@ impl Dir {
     pub fn files<'dir>(&'dir self) -> Files<'dir> {
         Files {
             inner: self.contents.iter(),
-            dir: &self,
+            dir: self,
         }
     }
 
     /// Whether this directory contains a file with the given path.
     pub fn contains(&self, path: &Path) -> bool {
-        self.contents.iter().any(|ref p| p.as_path() == path)
+        self.contents.iter().any(|p| p.as_path() == path)
     }
 
     /// Append a path onto the path specified by this directory.

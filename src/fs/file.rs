@@ -403,7 +403,7 @@ impl<'dir> File<'dir> {
 
 impl<'a> AsRef<File<'a>> for File<'a> {
     fn as_ref(&self) -> &File<'a> {
-        &self
+        self
     }
 }
 

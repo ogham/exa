@@ -31,7 +31,7 @@ impl Grid {
             let mut width = DisplayWidth::from(&*file.name);
 
             if file.dir.is_none() {
-                if let Some(ref parent) = file.path.parent() {
+                if let Some(parent) = file.path.parent() {
                     width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
                 }
             }
