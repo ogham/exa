@@ -15,11 +15,11 @@ pub trait FileAttributes {
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 impl FileAttributes for Path {
     fn attributes(&self) -> io::Result<Vec<Attribute>> {
-        list_attrs(lister::Lister::new(FollowSymlinks::Yes), &self)
+        list_attrs(&lister::Lister::new(FollowSymlinks::Yes), self)
     }
 
     fn symlink_attributes(&self) -> io::Result<Vec<Attribute>> {
-        list_attrs(lister::Lister::new(FollowSymlinks::No), &self)
+        list_attrs(&lister::Lister::new(FollowSymlinks::No), self)
     }
 }
 
@@ -50,7 +50,7 @@ pub struct Attribute {
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn list_attrs(lister: lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
+pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
     use std::ffi::CString;
 
     let c_path = match path.to_str().and_then(|s| { CString::new(s).ok() }) {
