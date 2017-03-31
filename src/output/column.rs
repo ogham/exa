@@ -27,11 +27,11 @@ impl Column {
     /// Get the alignment this column should use.
     pub fn alignment(&self) -> Alignment {
         match *self {
-            Column::FileSize(_) => Alignment::Right,
-            Column::HardLinks   => Alignment::Right,
-            Column::Inode       => Alignment::Right,
-            Column::Blocks      => Alignment::Right,
-            Column::GitStatus   => Alignment::Right,
+            Column::FileSize(_)
+            | Column::HardLinks
+            | Column::Inode
+            | Column::Blocks
+            | Column::GitStatus => Alignment::Right,
             _                   => Alignment::Left,
         }
     }

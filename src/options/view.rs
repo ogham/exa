@@ -91,9 +91,9 @@ impl View {
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(colour_scale()),
+                    TerminalColours::Always
+                    | TerminalColours::Automatic => Colours::colourful(colour_scale()),
                     TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => Colours::colourful(colour_scale()),
                 };
 
                 if matches.opt_present("oneline") {
@@ -137,8 +137,7 @@ impl View {
 
                 let colours = match term_colours {
                     TerminalColours::Always    => Colours::colourful(colour_scale()),
-                    TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => Colours::plain(),
+                    TerminalColours::Never | TerminalColours::Automatic => Colours::plain(),
                 };
 
                 if matches.opt_present("tree") {
@@ -221,9 +220,9 @@ impl TerminalWidth {
 
     fn as_ref(&self) -> Option<&usize> {
         match *self {
-            TerminalWidth::Set(ref width)       => Some(width),
-            TerminalWidth::Terminal(ref width)  => Some(width),
-            TerminalWidth::Unset                => None,
+            TerminalWidth::Set(ref width)
+            | TerminalWidth::Terminal(ref width)    => Some(width),
+            TerminalWidth::Unset                    => None,
         }
     }
 }
