@@ -10,13 +10,18 @@ fn main() {
     let mut stdout = stdout();
 
     match Exa::new(&args, &mut stdout) {
-        Ok(mut exa) => if let Err(e) = exa.run() {
-            match e.kind() {
-                ErrorKind::BrokenPipe => exit(0),
-                _ => {
-                    writeln!(stderr(), "{}", e).unwrap();
-                    exit(1);
-                },
+        Ok(mut exa) => {
+            match exa.run() {
+                Ok(exit_status) => exit(exit_status),
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::BrokenPipe => exit(0),
+                        _ => {
+                            writeln!(stderr(), "{}", e).unwrap();
+                            exit(1);
+                        },
+                    };
+                }
             };
         },
         Err(e) => {
