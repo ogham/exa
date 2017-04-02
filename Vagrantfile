@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
 
     # Install the dependencies needed for exa to build.
     config.vm.provision :shell, privileged: true, inline:
-        %[apt-get install -y git cmake libgit2-dev libssh2-1-dev curl attr]
+        %[apt-get install -y git cmake libgit2-dev libssh2-1-dev curl attr pkg-config]
 
     # Guarantee that the timezone is UTC -- some of the tests
     # depend on this (for now).
