@@ -4,7 +4,7 @@ Vagrant.configure("2") do |config|
         v.cpus = 1
     end
 
-    config.vm.box = "debian/contrib-jessie64"
+    config.vm.box = "debian/jessie64"
     config.vm.hostname = "exa"
 
     # Install the dependencies needed for exa to build.
