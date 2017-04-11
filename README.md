@@ -2,9 +2,6 @@
 
 [exa](https://the.exa.website/) is a replacement for `ls` written in Rust.
 
-Works on all recent Rust versions >= 1.4.0.
-
-
 ## Screenshots
 
 ![Screenshots of exa](screenshots.png)
