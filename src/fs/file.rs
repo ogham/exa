@@ -154,7 +154,7 @@ impl<'dir> File<'dir> {
     /// beginning with a dot represent system or configuration files, and
     /// should be hidden by default.
     pub fn is_dotfile(&self) -> bool {
-        self.name.starts_with(".")
+        self.name.starts_with('.')
     }
 
     /// Assuming the current file is a symlink, follows the link and
@@ -403,7 +403,7 @@ impl<'dir> File<'dir> {
 
 impl<'a> AsRef<File<'a>> for File<'a> {
     fn as_ref(&self) -> &File<'a> {
-        &self
+        self
     }
 }
 

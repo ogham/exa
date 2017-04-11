@@ -71,8 +71,8 @@ impl<'a> File<'a> {
     }
 
     pub fn is_temp(&self) -> bool {
-        self.name.ends_with("~")
-            || (self.name.starts_with("#") && self.name.ends_with("#"))
+        self.name.ends_with('~')
+            || (self.name.starts_with('#') && self.name.ends_with('#'))
             || self.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak" ])
     }
 
