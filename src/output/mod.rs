@@ -19,7 +19,7 @@ mod colours;
 mod tree;
 
 
-pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents {
+pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> TextCellContents {
     let mut bits = Vec::new();
 
     if file.dir.is_none() {
@@ -77,6 +77,18 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
             FileTarget::Err(_) => {
                 // Do nothing -- the error gets displayed on the next line
             }
+        }
+    } else if classify {
+        if file.is_executable_file() {
+            bits.push(Style::default().paint("*"));
+        } else if file.is_directory() {
+            bits.push(Style::default().paint("/"));
+        } else if file.is_pipe() {
+            bits.push(Style::default().paint("|"));
+        } else if file.is_link() {
+            bits.push(Style::default().paint("@"));
+        } else if file.is_socket() {
+            bits.push(Style::default().paint("="));
         }
     }
 

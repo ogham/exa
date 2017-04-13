@@ -55,6 +55,7 @@ impl Options {
         opts.optflag("R", "recurse",      "recurse into directories");
         opts.optflag("T", "tree",         "recurse into subdirectories in a tree view");
         opts.optflag("x", "across",       "sort multi-column view entries across");
+        opts.optflag("F", "classify",     "show file type indicator (one of */=@|)");
         opts.optopt ("",  "color",        "when to show anything in colours", "WHEN");
         opts.optopt ("",  "colour",       "when to show anything in colours (alternate spelling)", "WHEN");
         opts.optflag("",  "color-scale",  "use a colour scale when displaying file sizes (alternate spelling)");
