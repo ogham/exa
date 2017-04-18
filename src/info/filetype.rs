@@ -25,7 +25,7 @@ impl<'a> File<'a> {
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
             "svg", "stl", "eps", "dvi", "ps", "cbr",
-            "cbz", "xpm", "ico",
+            "cbz", "xpm", "ico", "cr2",
         ])
     }
 
