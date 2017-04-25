@@ -29,7 +29,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
             if coconut == 1 && parent.has_root() {
                 bits.push(colours.symlink_path.paint("/"));
             }
-            else if coconut > 1 {
+            else if coconut >= 1 {
                 bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
                 bits.push(colours.symlink_path.paint("/"));
             }
@@ -53,7 +53,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool) -> TextCellContents
                     if coconut == 1 && parent.has_root() {
                         bits.push(colours.symlink_path.paint("/"));
                     }
-                    else if coconut > 1 {
+                    else if coconut >= 1 {
                         bits.push(colours.symlink_path.paint(parent.to_string_lossy().to_string()));
                         bits.push(colours.symlink_path.paint("/"));
                     }
