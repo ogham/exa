@@ -12,6 +12,11 @@ testcases=~/testcases
 results=/vagrant/xtests
 
 
+# Check that no files were created more than a year ago.
+# Files not from the current year use a different date format, meaning
+# that tests will fail until the VM gets re-provisioned.
+sudo find $testcases -mtime +365 -printf "File %p has not been modified since %TY! Consider re-provisioning; tests will probably fail.\n"
+
 # Long view tests
 $exa $testcases/files -l   | diff -q - $results/files_l     || exit 1
 $exa $testcases/files -lh  | diff -q - $results/files_lh    || exit 1

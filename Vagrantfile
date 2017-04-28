@@ -38,9 +38,15 @@ Vagrant.configure("2") do |config|
         %[id -u #{longuser} &>/dev/null || useradd #{longuser}]
 
     test_dir = "/home/vagrant/testcases"
+    # Because the timestamps are formatted differently depending on whether
+    # they’re in the current year or not (see `details.rs`), we have to make
+    # sure that the files are created in the current year, so they get shown
+    # in the format we expect.
+    current_year = Date.today.year
+    some_date = "#{current_year}01011234.56"  # 1st January, 12:34:56
+
     invalid_uid = 666
     invalid_gid = 616
-    some_date = "201601011234.56"  # 1st January 2016, 12:34:56
 
     # Delete old testcases if they exist already.
     # This needs root because the generator does some sudo-ing.
