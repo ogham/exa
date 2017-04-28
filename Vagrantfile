@@ -139,6 +139,17 @@ Vagrant.configure(2) do |config|
     EOF
 
 
+    # Special file testcases.
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir "#{test_dir}/specials"
+
+        sudo mknod "#{test_dir}/specials/block-device" b  3 60
+        sudo mknod "#{test_dir}/specials/char-device"  c 14 40
+        sudo mknod "#{test_dir}/specials/named-pipe"   p
+    EOF
+
+
     # Awkward symlink testcases.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
