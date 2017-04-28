@@ -102,40 +102,40 @@ Vagrant.configure(2) do |config|
     # owners or timestamps or anything.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
-        mkdir "#{test_dir}/file-types"
+        mkdir "#{test_dir}/file-names-exts"
 
-        touch "#{test_dir}/file-types/Makefile"
+        touch "#{test_dir}/file-names-exts/Makefile"
 
-        touch "#{test_dir}/file-types/image.png"
-        touch "#{test_dir}/file-types/image.svg"
+        touch "#{test_dir}/file-names-exts/image.png"
+        touch "#{test_dir}/file-names-exts/image.svg"
 
-        touch "#{test_dir}/file-types/video.avi"
-        touch "#{test_dir}/file-types/video.wmv"
+        touch "#{test_dir}/file-names-exts/video.avi"
+        touch "#{test_dir}/file-names-exts/video.wmv"
 
-        touch "#{test_dir}/file-types/music.mp3"
-        touch "#{test_dir}/file-types/music.ogg"
+        touch "#{test_dir}/file-names-exts/music.mp3"
+        touch "#{test_dir}/file-names-exts/music.ogg"
 
-        touch "#{test_dir}/file-types/lossless.flac"
-        touch "#{test_dir}/file-types/lossless.wav"
+        touch "#{test_dir}/file-names-exts/lossless.flac"
+        touch "#{test_dir}/file-names-exts/lossless.wav"
 
-        touch "#{test_dir}/file-types/crypto.asc"
-        touch "#{test_dir}/file-types/crypto.signature"
+        touch "#{test_dir}/file-names-exts/crypto.asc"
+        touch "#{test_dir}/file-names-exts/crypto.signature"
 
-        touch "#{test_dir}/file-types/document.pdf"
-        touch "#{test_dir}/file-types/document.xlsx"
+        touch "#{test_dir}/file-names-exts/document.pdf"
+        touch "#{test_dir}/file-names-exts/document.xlsx"
 
-        touch "#{test_dir}/file-types/compressed.zip"
-        touch "#{test_dir}/file-types/compressed.tar.gz"
-        touch "#{test_dir}/file-types/compressed.tgz"
+        touch "#{test_dir}/file-names-exts/compressed.zip"
+        touch "#{test_dir}/file-names-exts/compressed.tar.gz"
+        touch "#{test_dir}/file-names-exts/compressed.tgz"
 
-        touch "#{test_dir}/file-types/backup~"
-        touch "#{test_dir}/file-types/#SAVEFILE#"
-        touch "#{test_dir}/file-types/file.tmp"
+        touch "#{test_dir}/file-names-exts/backup~"
+        touch "#{test_dir}/file-names-exts/#SAVEFILE#"
+        touch "#{test_dir}/file-names-exts/file.tmp"
 
-        touch "#{test_dir}/file-types/compiled.class"
-        touch "#{test_dir}/file-types/compiled.o"
-        touch "#{test_dir}/file-types/compiled.js"
-        touch "#{test_dir}/file-types/compiled.coffee"
+        touch "#{test_dir}/file-names-exts/compiled.class"
+        touch "#{test_dir}/file-names-exts/compiled.o"
+        touch "#{test_dir}/file-names-exts/compiled.js"
+        touch "#{test_dir}/file-names-exts/compiled.coffee"
     EOF
 
 
