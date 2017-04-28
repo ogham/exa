@@ -7,6 +7,7 @@ DISPLAY OPTIONS
   -R, --recurse      recurse into directories
   -T, --tree         recurse into subdirectories in a tree view
   -x, --across       sort multi-column view entries across
+  -F, --classify     show file type indicator (one of */=@|)
 
   --color=WHEN,  --colour=WHEN   when to colourise the output (always, auto, never)
   --color-scale, --colour-scale  colour file sizes according to their magnitude
