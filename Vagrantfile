@@ -1,11 +1,15 @@
-Vagrant.configure("2") do |config|
-    config.vm.provider "virtualbox" do |v|
+Vagrant.configure(2) do |config|
+    config.vm.provider :virtualbox do |v|
+        v.name = 'exa'
         v.memory = 1024
         v.cpus = 1
     end
 
-    config.vm.box = "debian/jessie64"
-    config.vm.hostname = "exa"
+
+    # We use Ubuntu instead of Debian because the image comes with two-way
+    # shared folder support by default.
+    config.vm.box = 'ubuntu/xenial64'
+    config.vm.hostname = 'exa'
 
 
     # Install the dependencies needed for exa to build.
