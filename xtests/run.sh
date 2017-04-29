@@ -19,7 +19,7 @@ sudo find $testcases -mtime +365 -printf "File %p has not been modified since %T
 
 
 # Long view tests
-$exa $testcases/files -l   | diff    - $results/files_l     || exit 1
+$exa $testcases/files -l   | diff -q - $results/files_l     || exit 1
 $exa $testcases/files -lh  | diff -q - $results/files_lh    || exit 1
 $exa $testcases/files -lhb | diff -q - $results/files_lhb   || exit 1
 $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
