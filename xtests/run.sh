@@ -70,6 +70,7 @@ $exa $testcases/file-names-exts/music.* -I "*.ogg|*.mp3" -1 2>&1 | diff -q - $re
 # These directories are created in the VM user’s home directory (the default
 # location) when a Cargo build is done.
 (cd; $exa -1d target target/debug target/debug/build | diff -q - $results/dir_paths) || exit 1
+     $exa -1d . .. /                                 | diff -q - $results/dirs       || exit 1
 
 
 # Links
