@@ -102,8 +102,8 @@ impl<'dir> File<'dir> {
 
     /// Create a new File object from the given metadata result, and other data.
     pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
-        let filename = match path.file_name() {
-            Some(name) => name.to_string_lossy().to_string(),
+        let filename = match path.components().next_back() {
+            Some(comp) => comp.as_os_str().to_string_lossy().to_string(),
             None       => String::new(),
         };
 
@@ -174,8 +174,8 @@ impl<'dir> File<'dir> {
             None       => path
         };
 
-        let filename = match target_path.file_name() {
-            Some(name) => name.to_string_lossy().to_string(),
+        let filename = match target_path.components().next_back() {
+            Some(comp) => comp.as_os_str().to_string_lossy().to_string(),
             None       => String::new(),
         };
 
