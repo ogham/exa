@@ -47,7 +47,11 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
                 bits.push(colours.punctuation.paint("->"));
                 bits.push(Style::default().paint(" "));
 
-                if let Some(parent) = target.path.parent() {
+                if target.path.as_os_str() == "/" {
+                    // Do nothing when linking to the root directory.
+                    // The entirety of the path is the file name!
+                }
+                else if let Some(parent) = target.path.parent() {
                     let coconut = parent.components().count();
 
                     if coconut == 1 && parent.has_root() {
