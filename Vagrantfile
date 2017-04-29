@@ -147,6 +147,8 @@ Vagrant.configure(2) do |config|
         sudo mknod "#{test_dir}/specials/block-device" b  3 60
         sudo mknod "#{test_dir}/specials/char-device"  c 14 40
         sudo mknod "#{test_dir}/specials/named-pipe"   p
+
+        sudo touch -t #{some_date} "#{test_dir}/specials/"*
     EOF
 
 

@@ -57,6 +57,8 @@ sudo -u cassowary $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/pe
 
 # File types
 $exa $testcases/file-names-exts -1 2>&1 | diff -q - $results/file-names-exts  || exit 1
+$exa $testcases/specials        -l 2>&1 | diff -q - $results/specials         || exit 1
+$exa $testcases/specials     -F -l 2>&1 | diff -q - $results/specials_F       || exit 1
 
 
 # Ignores
