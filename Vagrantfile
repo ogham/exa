@@ -14,9 +14,10 @@ Vagrant.configure(2) do |config|
     config.vm.hostname = 'exa'
 
 
-    # Install the dependencies needed for exa to build.
+    # Install the dependencies needed for exa to build, as quietly as
+    # apt can do.
     config.vm.provision :shell, privileged: true, inline:
-        %[apt-get install -y git cmake libssl-dev libgit2-dev libssh2-1-dev curl attr pkg-config]
+        %[apt-get install -qq -o=Dpkg::Use-Pty=0 -y git cmake libssl-dev libgit2-dev libssh2-1-dev curl attr pkg-config]
 
 
     # Guarantee that the timezone is UTC -- some of the tests
