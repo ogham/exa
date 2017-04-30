@@ -159,10 +159,18 @@ Vagrant.configure(2) do |config|
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
         mkdir "#{test_dir}/links"
-        ln -s / "#{test_dir}/links/root"
-        ln -s /usr "#{test_dir}/links/usr"
-        ln -s nowhere "#{test_dir}/links/broken"
+
+        ln -s /            "#{test_dir}/links/root"
+        ln -s /usr         "#{test_dir}/links/usr"
+        ln -s nowhere      "#{test_dir}/links/broken"
         ln -s /proc/1/root "#{test_dir}/links/forbidden"
+
+        touch "#{test_dir}/links/some_file"
+        ln -s "#{test_dir}/links/some_file" "#{test_dir}/links/some_file_absolute"
+        (cd "#{test_dir}/links"; ln -s "some_file" "some_file_relative")
+        (cd "#{test_dir}/links"; ln -s "."         "current_dir")
+        (cd "#{test_dir}/links"; ln -s ".."        "parent_dir")
+        (cd "#{test_dir}/links"; ln -s "itself"    "itself")
     EOF
 
 
