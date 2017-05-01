@@ -61,7 +61,10 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        bits.push(FileName::new(&target, self.colours).style().paint(target.name));
+                        let target = FileName::new(&target, self.colours);
+                        for bit in target.coloured_file_name() {
+                            bits.push(bit);
+                        }
                     }
                 },
 
