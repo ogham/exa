@@ -4,6 +4,7 @@ pub use self::details::Details;
 pub use self::grid_details::GridDetails;
 pub use self::grid::Grid;
 pub use self::lines::Lines;
+pub use self::escape::escape;
 
 mod grid;
 pub mod details;
@@ -14,3 +15,4 @@ mod cell;
 mod colours;
 mod tree;
 pub mod file_name;
+mod escape;

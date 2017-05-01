@@ -2,6 +2,7 @@ use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
 use output::Colours;
+use output::escape;
 use output::cell::TextCellContents;
 
 
@@ -29,7 +30,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     bits.push(self.colours.symlink_path.paint("/"));
                 }
                 else if coconut >= 1 {
-                    bits.push(self.colours.symlink_path.paint(parent.to_string_lossy().to_string()));
+                    escape(parent.to_string_lossy().to_string(), &mut bits, self.colours.symlink_path, self.colours.control_char);
                     bits.push(self.colours.symlink_path.paint("/"));
                 }
             }
@@ -55,7 +56,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                             bits.push(self.colours.symlink_path.paint("/"));
                         }
                         else if coconut >= 1 {
-                            bits.push(self.colours.symlink_path.paint(parent.to_string_lossy().to_string()));
+                            escape(parent.to_string_lossy().to_string(), &mut bits, self.colours.symlink_path, self.colours.control_char);
                             bits.push(self.colours.symlink_path.paint("/"));
                         }
                     }
@@ -118,28 +119,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     fn coloured_file_name<'unused>(&self) -> Vec<ANSIString<'unused>> {
         let file_style = self.style();
         let mut bits = Vec::new();
-
-        if self.file.name.chars().all(|c| c >= 0x20 as char) {
-            bits.push(file_style.paint(self.file.name.clone()));
-        }
-        else {
-            for c in self.file.name.chars() {
-                // The `escape_default` method on `char` is *almost* what we want here, but
-                // it still escapes non-ASCII UTF-8 characters, which are still printable.
-
-                if c >= 0x20 as char {
-                    // TODO: This allocates way too much,
-                    // hence the `all` check above.
-                    let mut s = String::new();
-                    s.push(c);
-                    bits.push(file_style.paint(s));
-                } else {
-                    let s = c.escape_default().collect::<String>();
-                    bits.push(self.colours.control_char.paint(s));
-                }
-            }
-        }
-
+        escape(self.file.name.clone(), &mut bits, file_style, self.colours.control_char);
         bits
     }
 
