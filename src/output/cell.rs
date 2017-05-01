@@ -5,8 +5,6 @@ use std::ops::{Add, Deref, DerefMut};
 use ansi_term::{Style, ANSIString, ANSIStrings};
 use unicode_width::UnicodeWidthStr;
 
-use fs::File;
-
 
 /// An individual cell that holds text in a table, used in the details and
 /// lines views to store ANSI-terminal-formatted data before it is printed.
@@ -161,6 +159,11 @@ impl TextCellContents {
     pub fn strings(&self) -> ANSIStrings {
         ANSIStrings(&self.0)
     }
+
+    pub fn width(&self) -> DisplayWidth {
+        let foo = self.0.iter().map(|anstr| anstr.chars().count()).sum();
+        DisplayWidth(foo)
+    }
 }
 
 
@@ -179,19 +182,6 @@ impl TextCellContents {
 /// of this type, and will `Deref` to the contained `usize` value.
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
 pub struct DisplayWidth(usize);
-
-impl DisplayWidth {
-    pub fn from_file(file: &File, classify: bool) -> DisplayWidth {
-        let name_width = *DisplayWidth::from(&*file.name);
-        if classify {
-            if file.is_executable_file() || file.is_directory() ||
-                file.is_pipe() || file.is_link() || file.is_socket() {
-                return DisplayWidth(name_width + 1);
-            }
-        }
-        DisplayWidth(name_width)
-    }
-}
 
 impl<'a> From<&'a str> for DisplayWidth {
     fn from(input: &'a str) -> DisplayWidth {

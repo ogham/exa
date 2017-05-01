@@ -306,7 +306,9 @@ impl Details {
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
-            let mut width = DisplayWidth::from_file(&egg.file, self.classify);
+
+            let filename = filename(&egg.file, &self.colours, true, self.classify);
+            let mut width = filename.width();
 
             if egg.file.dir.is_none() {
                 if let Some(parent) = egg.file.path.parent() {
@@ -315,7 +317,7 @@ impl Details {
             }
 
             let name = TextCell {
-                contents: filename(&egg.file, &self.colours, true, self.classify),
+                contents: filename,
                 width:    width,
             };
 
@@ -456,7 +458,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     }
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let mut width = DisplayWidth::from_file(&file, self.opts.classify);
+        let filename = filename(&file, &self.opts.colours, links, self.opts.classify);
+        let mut width = filename.width();
 
         if file.dir.is_none() {
             if let Some(parent) = file.path.parent() {
@@ -465,7 +468,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         }
 
         TextCell {
-            contents: filename(&file, &self.opts.colours, links, self.opts.classify),
+            contents: filename,
             width:    width,
         }
     }

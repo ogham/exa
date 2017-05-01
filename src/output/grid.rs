@@ -29,8 +29,9 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let mut width = DisplayWidth::from_file(file, self.classify);
+            let filename = filename(file, &self.colours, false, self.classify);
 
+            let mut width = filename.width();
             if file.dir.is_none() {
                 if let Some(parent) = file.path.parent() {
                     width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
@@ -38,7 +39,7 @@ impl Grid {
             }
 
             grid.add(grid::Cell {
-                contents:  filename(file, &self.colours, false, self.classify).strings().to_string(),
+                contents:  filename.strings().to_string(),
                 width:     *width,
             });
         }
