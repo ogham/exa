@@ -5,7 +5,7 @@ use term_grid as grid;
 use fs::File;
 use output::DisplayWidth;
 use output::colours::Colours;
-use super::filename;
+use output::file_name::filename;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]

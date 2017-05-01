@@ -101,7 +101,7 @@ use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, DisplayWidth};
 use output::tree::TreeTrunk;
-use super::filename;
+use output::file_name::filename;
 
 
 /// With the **Details** view, the output gets formatted into columns, with

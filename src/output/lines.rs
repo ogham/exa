@@ -4,7 +4,7 @@ use ansi_term::ANSIStrings;
 
 use fs::File;
 
-use super::filename;
+use output::file_name::filename;
 use super::colours::Colours;
 
 
