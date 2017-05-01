@@ -5,7 +5,7 @@ use term_grid as grid;
 use fs::File;
 use output::DisplayWidth;
 use output::colours::Colours;
-use output::file_name::filename;
+use output::file_name::FileName;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -29,7 +29,7 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let filename = filename(file, &self.colours, false, self.classify);
+            let filename = FileName::new(file, &self.colours).file_name(false, self.classify);
 
             let mut width = filename.width();
             if file.dir.is_none() {
@@ -50,7 +50,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                writeln!(w, "{}", filename(file, &self.colours, false, self.classify).strings())?;
+                writeln!(w, "{}", FileName::new(file, &self.colours).file_name(false, self.classify).strings())?;
             }
             Ok(())
         }

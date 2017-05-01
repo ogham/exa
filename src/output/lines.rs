@@ -4,7 +4,7 @@ use ansi_term::ANSIStrings;
 
 use fs::File;
 
-use output::file_name::filename;
+use output::file_name::FileName;
 use super::colours::Colours;
 
 
@@ -18,7 +18,7 @@ pub struct Lines {
 impl Lines {
     pub fn view<W: Write>(&self, files: Vec<File>, w: &mut W) -> IOResult<()> {
         for file in files {
-            writeln!(w, "{}", ANSIStrings(&filename(&file, &self.colours, true, self.classify)))?;
+            writeln!(w, "{}", ANSIStrings(&FileName::new(&file, &self.colours).file_name(true, self.classify)))?;
         }
         Ok(())
     }
