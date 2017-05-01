@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
@@ -24,15 +26,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
 
         if self.file.dir.is_none() {
             if let Some(parent) = self.file.path.parent() {
-                let coconut = parent.components().count();
-
-                if coconut == 1 && parent.has_root() {
-                    bits.push(self.colours.symlink_path.paint("/"));
-                }
-                else if coconut >= 1 {
-                    escape(parent.to_string_lossy().to_string(), &mut bits, self.colours.symlink_path, self.colours.control_char);
-                    bits.push(self.colours.symlink_path.paint("/"));
-                }
+                self.add_parent_bits(&mut bits, parent);
             }
         }
 
@@ -50,15 +44,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     bits.push(Style::default().paint(" "));
 
                     if let Some(parent) = target.path.parent() {
-                        let coconut = parent.components().count();
-
-                        if coconut == 1 && parent.has_root() {
-                            bits.push(self.colours.symlink_path.paint("/"));
-                        }
-                        else if coconut >= 1 {
-                            escape(parent.to_string_lossy().to_string(), &mut bits, self.colours.symlink_path, self.colours.control_char);
-                            bits.push(self.colours.symlink_path.paint("/"));
-                        }
+                        self.add_parent_bits(&mut bits, parent);
                     }
 
                     if !target.name.is_empty() {
@@ -90,6 +76,22 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         bits.into()
     }
 
+    /// Adds the bits of the parent path to the given bits vector.
+    /// The path gets its characters escaped based on the colours.
+    fn add_parent_bits(&self, bits: &mut Vec<ANSIString>, parent: &Path) {
+        let coconut = parent.components().count();
+
+        if coconut == 1 && parent.has_root() {
+            bits.push(self.colours.symlink_path.paint("/"));
+        }
+        else if coconut >= 1 {
+            escape(parent.to_string_lossy().to_string(), bits, self.colours.symlink_path, self.colours.control_char);
+            bits.push(self.colours.symlink_path.paint("/"));
+        }
+    }
+
+    /// The character to be displayed after a file when classifying is on, if
+    /// the file’s type has one associated with it.
     fn classify_char(&self) -> Option<&'static str> {
         if self.file.is_executable_file() {
             Some("*")
