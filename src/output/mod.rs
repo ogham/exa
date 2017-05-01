@@ -1,4 +1,4 @@
-use ansi_term::Style;
+use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
 
@@ -22,6 +22,8 @@ mod tree;
 pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> TextCellContents {
     let mut bits = Vec::new();
 
+    // TODO: This long function could do with some splitting up.
+
     if file.dir.is_none() {
         if let Some(parent) = file.path.parent() {
             let coconut = parent.components().count();
@@ -37,7 +39,7 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     }
 
     if !file.name.is_empty() {
-        bits.push(file_colour(colours, file).paint(file.name.clone()));
+        bits.push(coloured_file_name(file, colours));
     }
 
     if links && file.is_link() {
@@ -90,6 +92,10 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     }
 
     bits.into()
+}
+
+fn coloured_file_name<'a>(file: &File, colours: &Colours) -> ANSIString<'a> {
+    file_colour(colours, file).paint(file.name.clone())
 }
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
