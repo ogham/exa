@@ -76,21 +76,30 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     // Do nothing -- the error gets displayed on the next line
                 }
             }
-        } else if classify {
-            if self.file.is_executable_file() {
-                bits.push(Style::default().paint("*"));
-            } else if self.file.is_directory() {
-                bits.push(Style::default().paint("/"));
-            } else if self.file.is_pipe() {
-                bits.push(Style::default().paint("|"));
-            } else if self.file.is_link() {
-                bits.push(Style::default().paint("@"));
-            } else if self.file.is_socket() {
-                bits.push(Style::default().paint("="));
+        }
+        else if classify {
+            if let Some(class) = self.classify_char() {
+                bits.push(Style::default().paint(class));
             }
         }
 
         bits.into()
+    }
+
+    fn classify_char(&self) -> Option<&'static str> {
+        if self.file.is_executable_file() {
+            Some("*")
+        } else if self.file.is_directory() {
+            Some("/")
+        } else if self.file.is_pipe() {
+            Some("|")
+        } else if self.file.is_link() {
+            Some("@")
+        } else if self.file.is_socket() {
+            Some("=")
+        } else {
+            None
+        }
     }
 
     /// Returns at least one ANSI-highlighted string representing this file’s
