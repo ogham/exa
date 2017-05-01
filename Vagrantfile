@@ -142,6 +142,39 @@ Vagrant.configure(2) do |config|
     EOF
 
 
+    # File name testcases.
+    # bash really doesn’t want you to create a file with escaped characters
+    # in its name, so we have to resort to the echo builtin and touch!
+    #
+    # The double backslashes are not strictly necessary; without them, Ruby
+    # will interpolate them instead of bash, but because Vagrant prints out
+    # each command it runs, your *own* terminal will go “ding” from the alarm!
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir "#{test_dir}/file-names"
+
+        echo -ne "#{test_dir}/file-names/ascii: hello" | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/emoji: [🆒]"  | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/utf-8: pâté"  | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/bell: [\\a]"         | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/backspace: [\\b]"    | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/form-feed: [\\f]"    | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line: [\\n]"     | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/return: [\\r]"       | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/tab: [\\t]"          | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/vertical-tab: [\\v]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/escape: [\\033]"               | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/ansi: [\\033[34mblue\\033[0m]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/invalid-utf8-1: [\\xFF]"                | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-2: [\\xc3\\x28]"           | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-3: [\\xe2\\x82\\x28]"      | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-4: [\\xf0\\x28\\x8c\\x28]" | xargs -0 touch
+    EOF
+
+
     # Special file testcases.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
