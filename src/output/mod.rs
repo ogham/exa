@@ -114,13 +114,21 @@ fn coloured_file_name<'a>(file: &File, colours: &Colours) -> Vec<ANSIString<'a>>
         bits.push(colour.paint(file.name.clone()));
     }
     else {
-        // The `escape_default` method on `char` is *almost* what we want here, but
-        // it still escapes non-ASCII UTF-8 characters, which are still printable.'
-        let escaped_name = file.name.chars()
-                                    .flat_map(char::escape_default)
-                                    .collect::<String>();
+        for c in file.name.chars() {
+            // The `escape_default` method on `char` is *almost* what we want here, but
+            // it still escapes non-ASCII UTF-8 characters, which are still printable.
 
-        bits.push(colours.broken_arrow.paint(escaped_name));
+            if c >= 0x20 as char {
+                // TODO: This allocates way too much,
+                // hence the `all` check above.
+                let mut s = String::new();
+                s.push(c);
+                bits.push(colour.paint(s));
+            } else {
+                let s = c.escape_default().collect::<String>();
+                bits.push(colours.broken_arrow.paint(s));
+            }
+        }
     }
 
     bits
