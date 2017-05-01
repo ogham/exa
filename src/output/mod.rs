@@ -39,7 +39,9 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     }
 
     if !file.name.is_empty() {
-        bits.push(coloured_file_name(file, colours));
+        for bit in coloured_file_name(file, colours) {
+            bits.push(bit);
+        }
     }
 
     if links && file.is_link() {
@@ -94,8 +96,34 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     bits.into()
 }
 
-fn coloured_file_name<'a>(file: &File, colours: &Colours) -> ANSIString<'a> {
-    file_colour(colours, file).paint(file.name.clone())
+/// Returns at least one ANSI-highlighted string representing this file’s
+/// name using the given set of colours.
+///
+/// Ordinarily, this will be just one string: the file’s complete name,
+/// coloured according to its file type. If the name contains control
+/// characters such as newlines or escapes, though, we can’t just print them
+/// to the screen directly, because then there’ll be newlines in weird places.
+///
+/// So in that situation, those characters will be escaped and highlighted in
+/// a different colour.
+fn coloured_file_name<'a>(file: &File, colours: &Colours) -> Vec<ANSIString<'a>> {
+    let colour = file_colour(colours, file);
+    let mut bits = Vec::new();
+
+    if file.name.chars().all(|c| c >= 0x20 as char) {
+        bits.push(colour.paint(file.name.clone()));
+    }
+    else {
+        // The `escape_default` method on `char` is *almost* what we want here, but
+        // it still escapes non-ASCII UTF-8 characters, which are still printable.'
+        let escaped_name = file.name.chars()
+                                    .flat_map(char::escape_default)
+                                    .collect::<String>();
+
+        bits.push(colours.broken_arrow.paint(escaped_name));
+    }
+
+    bits
 }
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
