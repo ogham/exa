@@ -126,7 +126,7 @@ fn coloured_file_name<'a>(file: &File, colours: &Colours) -> Vec<ANSIString<'a>>
                 bits.push(colour.paint(s));
             } else {
                 let s = c.escape_default().collect::<String>();
-                bits.push(colours.broken_arrow.paint(s));
+                bits.push(colours.control_char.paint(s));
             }
         }
     }
