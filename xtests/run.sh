@@ -54,6 +54,10 @@ $exa $testcases/passwd -lgh | diff -q - $results/passwd  || exit 1
 sudo -u cassowary $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions_sudo  || exit 1
                   $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions       || exit 1
 
+# File names
+COLUMNS=80 $exa $testcases/file-names    2>&1 | diff -q - $results/file_names   || exit 1
+COLUMNS=80 $exa $testcases/file-names -x 2>&1 | diff -q - $results/file_names_x || exit 1
+           $exa $testcases/file-names -1 2>&1 | diff -q - $results/file_names_1 || exit 1
 
 # File types
 $exa $testcases/file-names-exts -1 2>&1 | diff -q - $results/file-names-exts  || exit 1

@@ -1,4 +1,4 @@
-use ansi_term::Style;
+use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
 
@@ -22,6 +22,8 @@ mod tree;
 pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> TextCellContents {
     let mut bits = Vec::new();
 
+    // TODO: This long function could do with some splitting up.
+
     if file.dir.is_none() {
         if let Some(parent) = file.path.parent() {
             let coconut = parent.components().count();
@@ -37,7 +39,9 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     }
 
     if !file.name.is_empty() {
-        bits.push(file_colour(colours, file).paint(file.name.clone()));
+        for bit in coloured_file_name(file, colours) {
+            bits.push(bit);
+        }
     }
 
     if links && file.is_link() {
@@ -90,6 +94,44 @@ pub fn filename(file: &File, colours: &Colours, links: bool, classify: bool) -> 
     }
 
     bits.into()
+}
+
+/// Returns at least one ANSI-highlighted string representing this file’s
+/// name using the given set of colours.
+///
+/// Ordinarily, this will be just one string: the file’s complete name,
+/// coloured according to its file type. If the name contains control
+/// characters such as newlines or escapes, though, we can’t just print them
+/// to the screen directly, because then there’ll be newlines in weird places.
+///
+/// So in that situation, those characters will be escaped and highlighted in
+/// a different colour.
+fn coloured_file_name<'a>(file: &File, colours: &Colours) -> Vec<ANSIString<'a>> {
+    let colour = file_colour(colours, file);
+    let mut bits = Vec::new();
+
+    if file.name.chars().all(|c| c >= 0x20 as char) {
+        bits.push(colour.paint(file.name.clone()));
+    }
+    else {
+        for c in file.name.chars() {
+            // The `escape_default` method on `char` is *almost* what we want here, but
+            // it still escapes non-ASCII UTF-8 characters, which are still printable.
+
+            if c >= 0x20 as char {
+                // TODO: This allocates way too much,
+                // hence the `all` check above.
+                let mut s = String::new();
+                s.push(c);
+                bits.push(colour.paint(s));
+            } else {
+                let s = c.escape_default().collect::<String>();
+                bits.push(colours.control_char.paint(s));
+            }
+        }
+    }
+
+    bits
 }
 
 pub fn file_colour(colours: &Colours, file: &File) -> Style {
