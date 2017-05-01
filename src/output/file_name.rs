@@ -61,7 +61,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        bits.push(FileName::new(&target, self.colours).file_colour().paint(target.name));
+                        bits.push(FileName::new(&target, self.colours).style().paint(target.name));
                     }
                 },
 
@@ -113,11 +113,11 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     /// So in that situation, those characters will be escaped and highlighted in
     /// a different colour.
     fn coloured_file_name<'unused>(&self) -> Vec<ANSIString<'unused>> {
-        let colour = self.file_colour();
+        let file_style = self.style();
         let mut bits = Vec::new();
 
         if self.file.name.chars().all(|c| c >= 0x20 as char) {
-            bits.push(colour.paint(self.file.name.clone()));
+            bits.push(file_style.paint(self.file.name.clone()));
         }
         else {
             for c in self.file.name.chars() {
@@ -129,7 +129,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     // hence the `all` check above.
                     let mut s = String::new();
                     s.push(c);
-                    bits.push(colour.paint(s));
+                    bits.push(file_style.paint(s));
                 } else {
                     let s = c.escape_default().collect::<String>();
                     bits.push(self.colours.control_char.paint(s));
@@ -140,7 +140,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         bits
     }
 
-    pub fn file_colour(&self) -> Style {
+    pub fn style(&self) -> Style {
         match self.file {
             f if f.is_directory()        => self.colours.filetypes.directory,
             f if f.is_executable_file()  => self.colours.filetypes.executable,
