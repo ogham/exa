@@ -59,7 +59,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_arrow.paint("->"));
                     bits.push(Style::default().paint(" "));
-                    bits.push(self.colours.broken_filename.paint(broken_path.display().to_string()));
+                    escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename, self.colours.control_char.underline());
                 },
 
                 FileTarget::Err(_) => {

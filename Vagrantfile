@@ -176,9 +176,12 @@ Vagrant.configure(2) do |config|
         echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]"                | xargs -0 mkdir
         echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/subfile"        | xargs -0 touch
         echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/another: [\\n]" | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken"         | xargs -0 touch
 
         mkdir "#{test_dir}/file-names/links"
         ln -s "#{test_dir}/file-names/new-line-dir"*/* "#{test_dir}/file-names/links"
+
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken" | xargs -0 rm
     EOF
 
 

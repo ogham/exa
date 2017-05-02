@@ -6,7 +6,7 @@ emoji: [🆒]                       invalid-utf8-4: [�(�(]  utf-8: pâté
 escape: [[31m\u{1b}[0m]                 [1;34mlinks[0m                   vertical-tab: [[31m\u{b}[0m]
 
 /testcases/file-names/links:
-[36manother: [[31m\n[36m][0m  [36msubfile[0m
+[36manother: [[31m\n[36m][0m  [36mbroken[0m  [36msubfile[0m
 
 /testcases/file-names/new-line-dir: [\n]:
 another: [[31m\n[0m]  subfile
