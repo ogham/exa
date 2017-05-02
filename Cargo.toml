@@ -39,6 +39,7 @@ lto = true
 [dependencies.git2]
 version = "0.6.4"
 optional = true
+default-features = false
 
 [dependencies.zoneinfo_compiled]
 git = "https://github.com/rust-datetime/zoneinfo-compiled.git"
