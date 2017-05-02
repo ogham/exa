@@ -1,7 +1,5 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::ascii::AsciiExt;
-use std::env::current_dir;
 use std::fs;
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
@@ -13,6 +11,7 @@ use fs::fields as f;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::os::unix::fs::FileTypeExt;
+
 
 /// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
 /// which is currently unstable and lacks vision for stabilization,
@@ -344,6 +343,8 @@ impl<'dir> File<'dir> {
     /// directory, so will not work if this file has just been passed in on
     /// the command line.
     pub fn git_status(&self) -> f::Git {
+        use std::env::current_dir;
+
         match self.dir {
             None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
             Some(d) => {
@@ -421,6 +422,8 @@ impl<'a> AsRef<File<'a>> for File<'a> {
 /// against a pre-compiled list of extensions which are known to only exist
 /// within ASCII, so it's alright.
 fn ext(path: &Path) -> Option<String> {
+    use std::ascii::AsciiExt;
+
     let name = match path.file_name() {
         Some(f) => f.to_string_lossy().to_string(),
         None => return None,

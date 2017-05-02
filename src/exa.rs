@@ -23,9 +23,12 @@ use std::ffi::OsStr;
 use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, Path};
 
+use ansi_term::{ANSIStrings, Style};
+
 use fs::{Dir, File};
 use options::{Options, View};
 pub use options::Misfire;
+use output::escape;
 
 mod fs;
 mod info;
@@ -116,7 +119,9 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             }
 
             if !is_only_dir {
-                writeln!(self.writer, "{}:", dir.path.display())?;
+                let mut bits = Vec::new();
+                escape(dir.path.display().to_string(), &mut bits, Style::default(), Style::default());
+                writeln!(self.writer, "{}:", ANSIStrings(&bits))?;
             }
 
             let mut children = Vec::new();

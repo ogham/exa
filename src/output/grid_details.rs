@@ -45,7 +45,7 @@ impl GridDetails {
                               .collect::<Vec<_>>();
 
             let file_names = files.into_iter()
-                                  .map(|file| first_table.filename_cell(file, false))
+                                  .map(|file| first_table.filename(file, false).promote())
                                   .collect::<Vec<_>>();
 
             (cells, file_names)

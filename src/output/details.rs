@@ -99,9 +99,9 @@ use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
-use output::cell::{TextCell, DisplayWidth};
+use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
-use super::filename;
+use output::file_name::FileName;
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -307,24 +307,10 @@ impl Details {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
-            let filename = filename(&egg.file, &self.colours, true, self.classify);
-            let mut width = filename.width();
-
-            if egg.file.dir.is_none() {
-                if let Some(parent) = egg.file.path.parent() {
-                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-                }
-            }
-
-            let name = TextCell {
-                contents: filename,
-                width:    width,
-            };
-
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     name,
+                name:     FileName::new(&egg.file, &self.colours).paint(true, self.classify).promote(),
                 last:     index == num_eggs - 1,
             };
 
@@ -457,20 +443,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let filename = filename(&file, &self.opts.colours, links, self.opts.classify);
-        let mut width = filename.width();
-
-        if file.dir.is_none() {
-            if let Some(parent) = file.path.parent() {
-                width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-            }
-        }
-
-        TextCell {
-            contents: filename,
-            width:    width,
-        }
+    pub fn filename(&self, file: File, links: bool) -> TextCellContents {
+        FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify)
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {

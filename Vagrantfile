@@ -172,6 +172,16 @@ Vagrant.configure(2) do |config|
         echo -ne "#{test_dir}/file-names/invalid-utf8-2: [\\xc3\\x28]"           | xargs -0 touch
         echo -ne "#{test_dir}/file-names/invalid-utf8-3: [\\xe2\\x82\\x28]"      | xargs -0 touch
         echo -ne "#{test_dir}/file-names/invalid-utf8-4: [\\xf0\\x28\\x8c\\x28]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]"                | xargs -0 mkdir
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/subfile"        | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/another: [\\n]" | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken"         | xargs -0 touch
+
+        mkdir "#{test_dir}/file-names/links"
+        ln -s "#{test_dir}/file-names/new-line-dir"*/* "#{test_dir}/file-names/links"
+
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken" | xargs -0 rm
     EOF
 
 
