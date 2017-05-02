@@ -30,13 +30,7 @@ impl Grid {
 
         for file in files.iter() {
             let filename = FileName::new(file, &self.colours).paint(false, self.classify);
-
-            let mut width = filename.width();
-            if file.dir.is_none() {
-                if let Some(parent) = file.path.parent() {
-                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-                }
-            }
+            let width = filename.width();
 
             grid.add(grid::Cell {
                 contents:  filename.strings().to_string(),

@@ -308,13 +308,7 @@ impl Details {
             let mut errors = egg.errors;
 
             let filename = FileName::new(&egg.file, &self.colours).paint(true, self.classify);
-            let mut width = filename.width();
-
-            if egg.file.dir.is_none() {
-                if let Some(parent) = egg.file.path.parent() {
-                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-                }
-            }
+            let width = filename.width();
 
             let name = TextCell {
                 contents: filename,
@@ -459,13 +453,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
         let filename = FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify);
-        let mut width = filename.width();
-
-        if file.dir.is_none() {
-            if let Some(parent) = file.path.parent() {
-                width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-            }
-        }
+        let width = filename.width();
 
         TextCell {
             contents: filename,

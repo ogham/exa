@@ -33,6 +33,10 @@ COLUMNS=120 $exa $testcases/files | diff -q - $results/files_120  || exit 1
 COLUMNS=160 $exa $testcases/files | diff -q - $results/files_160  || exit 1
 COLUMNS=200 $exa $testcases/files | diff -q - $results/files_200  || exit 1
 
+COLUMNS=100 $exa $testcases/files/* | diff -q - $results/files_star_100   || exit 1
+COLUMNS=150 $exa $testcases/files/* | diff -q - $results/files_star_150  || exit 1
+COLUMNS=200 $exa $testcases/files/* | diff -q - $results/files_star_200  || exit 1
+
 
 # Long grid view tests
 COLUMNS=40  $exa $testcases/files -lG | diff -q - $results/files_lG_40   || exit 1
@@ -40,6 +44,10 @@ COLUMNS=80  $exa $testcases/files -lG | diff -q - $results/files_lG_80   || exit
 COLUMNS=120 $exa $testcases/files -lG | diff -q - $results/files_lG_120  || exit 1
 COLUMNS=160 $exa $testcases/files -lG | diff -q - $results/files_lG_160  || exit 1
 COLUMNS=200 $exa $testcases/files -lG | diff -q - $results/files_lG_200  || exit 1
+
+COLUMNS=100 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_100  || exit 1
+COLUMNS=150 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_150  || exit 1
+COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  || exit 1
 
 
 # Attributes
