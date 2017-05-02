@@ -99,7 +99,7 @@ use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
-use output::cell::{TextCell, DisplayWidth};
+use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
 use output::file_name::FileName;
 
@@ -307,18 +307,10 @@ impl Details {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
-            let filename = FileName::new(&egg.file, &self.colours).paint(true, self.classify);
-            let width = filename.width();
-
-            let name = TextCell {
-                contents: filename,
-                width:    width,
-            };
-
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     name,
+                name:     FileName::new(&egg.file, &self.colours).paint(true, self.classify).promote(),
                 last:     index == num_eggs - 1,
             };
 
@@ -451,14 +443,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let filename = FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify);
-        let width = filename.width();
-
-        TextCell {
-            contents: filename,
-            width:    width,
-        }
+    pub fn filename(&self, file: File, links: bool) -> TextCellContents {
+        FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify)
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {

@@ -160,9 +160,20 @@ impl TextCellContents {
         ANSIStrings(&self.0)
     }
 
+    /// Calculates the width that a cell with these contents would take up, by
+    /// counting the number of characters in each unformatted ANSI string.
     pub fn width(&self) -> DisplayWidth {
         let foo = self.0.iter().map(|anstr| anstr.chars().count()).sum();
         DisplayWidth(foo)
+    }
+
+    /// Promotes these contents to a full cell containing them alongside
+    /// their calculated width.
+    pub fn promote(self) -> TextCell {
+        TextCell {
+            width: self.width(),
+            contents: self,
+        }
     }
 }
 

@@ -3,7 +3,6 @@ use std::io::{Write, Result as IOResult};
 use term_grid as grid;
 
 use fs::File;
-use output::DisplayWidth;
 use output::colours::Colours;
 use output::file_name::FileName;
 
