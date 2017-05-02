@@ -21,7 +21,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         }
     }
 
-    pub fn file_name(&self, links: bool, classify: bool) -> TextCellContents {
+    pub fn paint(&self, links: bool, classify: bool) -> TextCellContents {
         let mut bits = Vec::new();
 
         if self.file.dir.is_none() {

@@ -29,7 +29,7 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let filename = FileName::new(file, &self.colours).file_name(false, self.classify);
+            let filename = FileName::new(file, &self.colours).paint(false, self.classify);
 
             let mut width = filename.width();
             if file.dir.is_none() {
@@ -50,7 +50,8 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                writeln!(w, "{}", FileName::new(file, &self.colours).file_name(false, self.classify).strings())?;
+                let name_cell = FileName::new(file, &self.colours).paint(false, self.classify);
+                writeln!(w, "{}", name_cell.strings())?;
             }
             Ok(())
         }

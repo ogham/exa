@@ -307,7 +307,7 @@ impl Details {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
-            let filename = FileName::new(&egg.file, &self.colours).file_name(true, self.classify);
+            let filename = FileName::new(&egg.file, &self.colours).paint(true, self.classify);
             let mut width = filename.width();
 
             if egg.file.dir.is_none() {
@@ -458,7 +458,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     }
 
     pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let filename = FileName::new(&file, &self.opts.colours).file_name(links, self.opts.classify);
+        let filename = FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify);
         let mut width = filename.width();
 
         if file.dir.is_none() {

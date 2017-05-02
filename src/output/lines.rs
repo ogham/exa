@@ -18,7 +18,8 @@ pub struct Lines {
 impl Lines {
     pub fn view<W: Write>(&self, files: Vec<File>, w: &mut W) -> IOResult<()> {
         for file in files {
-            writeln!(w, "{}", ANSIStrings(&FileName::new(&file, &self.colours).file_name(true, self.classify)))?;
+            let name_cell = FileName::new(&file, &self.colours).paint(true, self.classify);
+            writeln!(w, "{}", ANSIStrings(&name_cell))?;
         }
         Ok(())
     }
