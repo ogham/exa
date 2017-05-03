@@ -3,14 +3,11 @@
 use std::fs;
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 
 use fs::dir::Dir;
 use fs::fields as f;
-
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-use std::os::unix::fs::FileTypeExt;
 
 
 #[allow(trivial_numeric_casts)]
@@ -139,6 +136,27 @@ impl<'dir> File<'dir> {
     pub fn is_link(&self) -> bool {
         self.metadata.file_type().is_symlink()
     }
+
+    /// Whether this file is a named pipe on the filesystem.
+    pub fn is_pipe(&self) -> bool {
+       self.metadata.file_type().is_fifo()
+   }
+
+   /// Whether this file is a char device on the filesystem.
+   pub fn is_char_device(&self) -> bool {
+       self.metadata.file_type().is_char_device()
+   }
+
+   /// Whether this file is a block device on the filesystem.
+   pub fn is_block_device(&self) -> bool {
+       self.metadata.file_type().is_block_device()
+   }
+
+   /// Whether this file is a socket on the filesystem.
+   pub fn is_socket(&self) -> bool {
+       self.metadata.file_type().is_socket()
+   }
+
 
     /// Whether this file is a dotfile, based on its name. In Unix, file names
     /// beginning with a dot represent system or configuration files, and
@@ -347,52 +365,6 @@ impl<'dir> File<'dir> {
                 d.git_status(&cwd, self.is_directory())
             },
         }
-    }
-}
-
-#[cfg(any(target_os = "macos", target_os = "linux"))]
-impl<'dir> File<'dir> {
-    /// Whether this file is a named pipe on the filesystem.
-    pub fn is_pipe(&self) -> bool {
-        self.metadata.file_type().is_fifo()
-    }
-
-    /// Whether this file is a char device on the filesystem.
-    pub fn is_char_device(&self) -> bool {
-        self.metadata.file_type().is_char_device()
-    }
-
-    /// Whether this file is a block device on the filesystem.
-    pub fn is_block_device(&self) -> bool {
-        self.metadata.file_type().is_block_device()
-    }
-
-    /// Whether this file is a socket on the filesystem.
-    pub fn is_socket(&self) -> bool {
-        self.metadata.file_type().is_socket()
-    }
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
-impl<'dir> File<'dir> {
-    /// Whether this file is a named pipe on the filesystem.
-    pub fn is_pipe(&self) -> bool {
-        false
-    }
-
-    /// Whether this file is a char device on the filesystem.
-    pub fn is_char_device(&self) -> bool {
-        false
-    }
-
-    /// Whether this file is a block device on the filesystem.
-    pub fn is_block_device(&self) -> bool {
-        false
-    }
-
-    /// Whether this file is a socket on the filesystem.
-    pub fn is_socket(&self) -> bool {
-        false
     }
 }
 
