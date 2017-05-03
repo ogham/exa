@@ -13,32 +13,23 @@ use fs::fields as f;
 use std::os::unix::fs::FileTypeExt;
 
 
-/// Constant table copied from https://doc.rust-lang.org/src/std/sys/unix/ext/fs.rs.html#11-259
-/// which is currently unstable and lacks vision for stabilization,
-/// see https://github.com/rust-lang/rust/issues/27712
-#[allow(dead_code, non_camel_case_types)]
+#[allow(trivial_numeric_casts)]
 mod modes {
-    pub type mode_t = u32;
+    use libc;
 
-    pub const USER_READ: mode_t = 0o400;
-    pub const USER_WRITE: mode_t = 0o200;
-    pub const USER_EXECUTE: mode_t = 0o100;
-    pub const USER_RWX: mode_t = 0o700;
-    pub const GROUP_READ: mode_t = 0o040;
-    pub const GROUP_WRITE: mode_t = 0o020;
-    pub const GROUP_EXECUTE: mode_t = 0o010;
-    pub const GROUP_RWX: mode_t = 0o070;
-    pub const OTHER_READ: mode_t = 0o004;
-    pub const OTHER_WRITE: mode_t = 0o002;
-    pub const OTHER_EXECUTE: mode_t = 0o001;
-    pub const OTHER_RWX: mode_t = 0o007;
-    pub const ALL_READ: mode_t = 0o444;
-    pub const ALL_WRITE: mode_t = 0o222;
-    pub const ALL_EXECUTE: mode_t = 0o111;
-    pub const ALL_RWX: mode_t = 0o777;
-    pub const SETUID: mode_t = 0o4000;
-    pub const SETGID: mode_t = 0o2000;
-    pub const STICKY_BIT: mode_t = 0o1000;
+    pub type Mode = u32;
+    // The `libc::mode_t` type’s actual type varies, but the value returned
+    // from `metadata.permissions().mode()` is always `u32`.
+
+    pub const USER_READ: Mode     = libc::S_IRUSR as Mode;
+    pub const USER_WRITE: Mode    = libc::S_IWUSR as Mode;
+    pub const USER_EXECUTE: Mode  = libc::S_IXUSR as Mode;
+    pub const GROUP_READ: Mode    = libc::S_IRGRP as Mode;
+    pub const GROUP_WRITE: Mode   = libc::S_IWGRP as Mode;
+    pub const GROUP_EXECUTE: Mode = libc::S_IXGRP as Mode;
+    pub const OTHER_READ: Mode    = libc::S_IROTH as Mode;
+    pub const OTHER_WRITE: Mode   = libc::S_IWOTH as Mode;
+    pub const OTHER_EXECUTE: Mode = libc::S_IXOTH as Mode;
 }
 
 
