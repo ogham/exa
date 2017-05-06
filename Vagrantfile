@@ -64,7 +64,10 @@ Vagrant.configure(2) do |config|
 
     # Link the completion files so they’re “installed”.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
-        test -f /usr/share/fish/completions/exa.fish \
+        test -h /usr/share/zsh/vendor-completions/_exa \
+          || ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
+
+        test -h /usr/share/fish/completions/exa.fish \
           || ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
     EOF
 
