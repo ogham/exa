@@ -18,8 +18,11 @@ Vagrant.configure(2) do |config|
 
     # Install the dependencies needed for exa to build, as quietly as
     # apt can do.
-    config.vm.provision :shell, privileged: true, inline:
-        %[apt-get install -qq -o=Dpkg::Use-Pty=0 -y git cmake libgit2-dev curl attr pkg-config]
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+        apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
+          git cmake curl attr pkg-config libgit2-dev \
+          fish
+    EOF
 
 
     # Guarantee that the timezone is UTC -- some of the tests
@@ -45,10 +48,24 @@ Vagrant.configure(2) do |config|
           grep -q -F "$2" $1 || echo "$2" >> $1
         }
 
+        put_line ~/.bashrc 'export CARGO_TARGET_DIR=/home/#{developer}/target'
+    EOF
+
+
+    # Create "dexa" and "rexa" scripts that run the debug and release
+    # compiled versions of exa.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
         echo -e "#!/bin/sh\necho \"Use 'dexa' for debug exa, or 'rexa' for release exa\"" > /usr/bin/exa
         echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa" > /usr/bin/dexa
         echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa" > /usr/bin/rexa
         chmod +x /usr/bin/{exa,dexa,rexa}
+    EOF
+
+
+    # Link the completion files so they’re “installed”.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+        test -f /usr/share/fish/completions/exa.fish \
+          || ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
     EOF
 
 
