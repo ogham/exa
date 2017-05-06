@@ -7,6 +7,8 @@ Vagrant.configure(2) do |config|
         v.cpus = 1
     end
 
+    developer = 'ubuntu'
+
 
     # We use Ubuntu instead of Debian because the image comes with two-way
     # shared folder support by default.
@@ -43,15 +45,16 @@ Vagrant.configure(2) do |config|
           grep -q -F "$2" $1 || echo "$2" >> $1
         }
 
-        put_line ~/.bashrc 'export CARGO_TARGET_DIR=/home/ubuntu/target'
-        put_line ~/.bashrc 'alias dexa=~/target/debug/exa'
-        put_line ~/.bashrc 'alias rexa=~/target/release/exa'
+        echo -e "#!/bin/sh\necho \"Use 'dexa' for debug exa, or 'rexa' for release exa\"" > /usr/bin/exa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa" > /usr/bin/dexa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa" > /usr/bin/rexa
+        chmod +x /usr/bin/{exa,dexa,rexa}
     EOF
 
 
     # We create two users that own the test files.
-    # The first one just owns the ordinary ones, because we don’t want to
-    # depend on “vagrant” or “ubuntu” existing.
+    # The first one just owns the ordinary ones, because we don’t want the
+    # test outputs to depend on “vagrant” or “ubuntu” existing.
     user = "cassowary"
     config.vm.provision :shell, privileged: true, inline:
         %[id -u #{user} &>/dev/null || useradd #{user}]
