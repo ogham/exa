@@ -38,8 +38,15 @@ Vagrant.configure(2) do |config|
     # By default it just uses the one in /vagrant/target, which can
     # cause problems if it has different permissions than the other
     # directories, or contains object files compiled for the host.
-    config.vm.provision :shell, privileged: false, inline:
-        %[echo "export CARGO_TARGET_DIR=/home/ubuntu/target" >> ~/.bashrc]
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        function put_line() {
+          grep -q -F "$2" $1 || echo "$2" >> $1
+        }
+
+        put_line ~/.bashrc 'export CARGO_TARGET_DIR=/home/ubuntu/target'
+        put_line ~/.bashrc 'alias dexa=~/target/debug/exa'
+        put_line ~/.bashrc 'alias rexa=~/target/release/exa'
+    EOF
 
 
     # We create two users that own the test files.
