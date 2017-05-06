@@ -56,8 +56,8 @@ Vagrant.configure(2) do |config|
     # compiled versions of exa.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
         echo -e "#!/bin/sh\necho \"Use 'dexa' for debug exa, or 'rexa' for release exa\"" > /usr/bin/exa
-        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa" > /usr/bin/dexa
-        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa" > /usr/bin/rexa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \\$*" > /usr/bin/dexa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \\$*" > /usr/bin/rexa
         chmod +x /usr/bin/{exa,dexa,rexa}
     EOF
 
