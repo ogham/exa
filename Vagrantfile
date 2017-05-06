@@ -21,7 +21,7 @@ Vagrant.configure(2) do |config|
     config.vm.provision :shell, privileged: true, inline: <<-EOF
         apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
           git cmake curl attr pkg-config libgit2-dev \
-          fish
+          fish zsh bash bash-completion
     EOF
 
 
@@ -63,6 +63,9 @@ Vagrant.configure(2) do |config|
 
     # Link the completion files so they’re “installed”.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
+        test -h /etc/bash_completion.d/exa \
+          || ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
+
         test -h /usr/share/zsh/vendor-completions/_exa \
           || ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
 
