@@ -14,21 +14,21 @@ exa’s options are similar, but not exactly the same, as `ls`.
 ### Display Options
 
 - **-1**, **--oneline**: display one entry per line
-- **-G**, **--grid**: display entries in a grid view (default)
+- **-G**, **--grid**: display entries as a grid (default)
 - **-l**, **--long**: display extended details and attributes
 - **-R**, **--recurse**: recurse into directories
-- **-T**, **--tree**: recurse into subdirectories in a tree view
-- **-x**, **--across**: sort multi-column view entries across
-- **--color**, **--colour**: when to colourise the output
-- **--color-scale**, **--colour-scale**: colour file sizes according to their magnitude
+- **-T**, **--tree**: recurse into directories as a tree
+- **-x**, **--across**: sort the grid across, rather than downwards
+- **--colo[u]r**: when to use terminal colours
+- **--colo[u]r-scale**: highlight levels of file sizes distinctly
 
 ### Filtering Options
 
-- **-a**, **--all**: show dot files
-- **-d**, **--list-dirs**: list directories as regular files
-- **-L**, **--level=(depth)**: maximum depth of recursion
-- **-r**, **--reverse**: reverse sort order
-- **-s**, **--sort=(field)**: field to sort by
+- **-a**, **--all**: don't hide hidden and 'dot' files
+- **-d**, **--list-dirs**: list directories like regular files
+- **-L**, **--level=(depth)**: limit the depth of recursion
+- **-r**, **--reverse**: reverse the sort order
+- **-s**, **--sort=(field)**: which field to sort by
 - **--group-directories-first**: list directories before other files
 - **-I**, **--ignore-glob=(globs)**: glob patterns (pipe-separated) of files to ignore
 
@@ -36,23 +36,23 @@ exa’s options are similar, but not exactly the same, as `ls`.
 
 These options are available when running with --long (`-l`):
 
-- **-b**, **--binary**: use binary (power of two) file sizes
-- **-B**, **--bytes**: list file sizes in bytes, without prefixes
-- **-g**, **--group**: show group as well as user
-- **-h**, **--header**: show a header row
-- **-H**, **--links**: show number of hard links column
-- **-i**, **--inode**: show inode number column
-- **-m**, **--modified**: display timestamp of most recent modification
-- **-S**, **--blocks**: show number of file system blocks
-- **-t**, **--time=(field)**: which timestamp to show for a file
-- **-u**, **--accessed**: display timestamp of last access for a file
-- **-U**, **--created**: display timestamp of creation of a file
-- **-@**, **--extended**: display extended attribute keys and sizes
-- **--git**: show Git status for a file
+- **-b**, **--binary**: list file sizes with binary prefixes
+- **-B**, **--bytes**: list file sizes in bytes, without any prefixes
+- **-g**, **--group**: list each file's group
+- **-h**, **--header**: add a header row to each column
+- **-H**, **--links**: list each file's number of hard links
+- **-i**, **--inode**: list each file's inode number
+- **-m**, **--modified**: use the modified timestamp field
+- **-S**, **--blocks**: list each file's number of file system blocks
+- **-t**, **--time=(field)**: which timestamp field to use
+- **-u**, **--accessed**: use the accessed timestamp field
+- **-U**, **--created**: use the created timestamp field
+- **-@**, **--extended**: list each file's extended attributes and sizes
+- **--git**: list each file's Git status, if tracked
 
-Accepted **--color** options are **always**, **automatic**, and **never**.
-Valid sort fields are **name**, **size**, **extension**, **modified**, **accessed**, **created**, **inode**, and **none**.
-Valid time fields are **modified**, **accessed**, and **created**.
+- Valid **--color** options are **always**, **automatic**, and **never**.
+- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, and **none**. Fields starting with a capital letter are case-sensitive.
+- Valid time fields are **modified**, **accessed**, and **created**.
 
 
 ## Installation
