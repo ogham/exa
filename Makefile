@@ -60,4 +60,4 @@ uninstall:
 clean:
 	-rm -rf target
 
-.PHONY: all build build-no-git install uninstall clean
+.PHONY: all build install
