@@ -130,7 +130,7 @@ impl Options {
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
         match self.view {
-            View::Details(Details { columns: Some(cols), .. }) => cols.should_scan_for_git(),
+            View::Details(Details { columns: Some(cols), .. }) |
             View::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
             _ => false,
         }

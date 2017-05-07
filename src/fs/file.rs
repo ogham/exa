@@ -184,7 +184,7 @@ impl<'dir> File<'dir> {
             };
             let target_path = target_path_.as_ref().unwrap_or(&path);
             // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
-            (fs::metadata(&target_path), ext(&target_path))
+            (fs::metadata(&target_path), ext(target_path))
         };
 
         let filename = match path.components().next_back() {
@@ -418,9 +418,8 @@ impl<'dir> FileTarget<'dir> {
     /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
         match *self {
-            FileTarget::Ok(_)      => false,
-            FileTarget::Broken(_)  => true,
-            FileTarget::Err(_)     => true,
+            FileTarget::Ok(_)                           => false,
+            FileTarget::Broken(_) | FileTarget::Err(_)  => true,
         }
     }
 }

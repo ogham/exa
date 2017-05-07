@@ -24,12 +24,12 @@ impl<'a> File<'a> {
                 "o"     => vec![self.path.with_extension("c"),      self.path.with_extension("cpp")], // C, C++
                 "pyc"   => vec![self.path.with_extension("py")],    // Python
 
-                "aux" => vec![self.path.with_extension("tex")],  // TeX: auxiliary file
-                "bbl" => vec![self.path.with_extension("tex")],  // BibTeX bibliography file
-                "blg" => vec![self.path.with_extension("tex")],  // BibTeX log file
-                "lof" => vec![self.path.with_extension("tex")],  // TeX list of figures
-                "log" => vec![self.path.with_extension("tex")],  // TeX log file
-                "lot" => vec![self.path.with_extension("tex")],  // TeX list of tables
+                "aux" |                                          // TeX: auxiliary file
+                "bbl" |                                          // BibTeX bibliography file
+                "blg" |                                          // BibTeX log file
+                "lof" |                                          // TeX list of figures
+                "log" |                                          // TeX log file
+                "lot" |                                          // TeX list of tables
                 "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
 
                 _ => vec![],  // No source files if none of the above
