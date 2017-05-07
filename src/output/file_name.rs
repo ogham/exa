@@ -23,6 +23,9 @@ pub struct FileName<'a, 'dir: 'a> {
 
     /// How to handle displaying links.
     link_style: LinkStyle,
+
+    /// Whether to append file class characters to file names.
+    classify: Classify,
 }
 
 
@@ -30,7 +33,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
 
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
-    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, colours: &'a Colours) -> FileName<'a, 'dir> {
+    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, classify: Classify, colours: &'a Colours) -> FileName<'a, 'dir> {
         let target =  if file.is_link() { Some(file.link_target()) }
                                                        else { None };
         FileName {
@@ -38,6 +41,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             colours: colours,
             target: target,
             link_style: link_style,
+            classify: classify,
         }
     }
 
@@ -48,7 +52,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     /// This method returns some `TextCellContents`, rather than a `TextCell`,
     /// because for the last cell in a table, it doesn’t need to have its
     /// width calculated.
-    pub fn paint(&self, classify: bool) -> TextCellContents {
+    pub fn paint(&self) -> TextCellContents {
         let mut bits = Vec::new();
 
         if self.file.dir.is_none() {
@@ -75,7 +79,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(&target, LinkStyle::FullLinkPaths, self.colours);
+                        let target = FileName::new(&target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
@@ -94,7 +98,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                 },
             }
         }
-        else if classify {
+        else if let Classify::AddFileIndicators = self.classify {
             if let Some(class) = self.classify_char() {
                 bits.push(Style::default().paint(class));
             }
@@ -212,4 +216,23 @@ pub enum LinkStyle {
     /// arrow pointing to their path, colouring the path differently if it’s
     /// a broken link, and doing nothing if it can’t be followed.
     FullLinkPaths,
+}
+
+
+/// Whether to append file class characters to the file names.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum Classify {
+
+    /// Just display the file names, without any characters.
+    JustFilenames,
+
+    /// Add a character after the file name depending on what class of file
+    /// it is.
+    AddFileIndicators,
+}
+
+impl Default for Classify {
+    fn default() -> Classify {
+        Classify::JustFilenames
+    }
 }

@@ -101,7 +101,7 @@ use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
-use output::file_name::{FileName, LinkStyle};
+use output::file_name::{FileName, LinkStyle, Classify};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -142,7 +142,7 @@ pub struct Details {
     pub colours: Colours,
 
     /// Whether to show a file type indiccator.
-    pub classify: bool,
+    pub classify: Classify,
 }
 
 /// The **environment** struct contains any data that could change between
@@ -310,7 +310,7 @@ impl Details {
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, &self.colours).paint(self.classify).promote(),
+                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, &self.colours).paint().promote(),
                 last:     index == num_eggs - 1,
             };
 
@@ -444,7 +444,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
     }
 
     pub fn filename(&self, file: File, links: LinkStyle) -> TextCellContents {
-        FileName::new(&file, links, &self.opts.colours).paint(self.opts.classify)
+        FileName::new(&file, links, self.opts.classify, &self.opts.colours).paint()
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {
