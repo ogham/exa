@@ -11,13 +11,17 @@ use output::cell::TextCellContents;
 pub struct FileName<'a, 'dir: 'a> {
     file:    &'a File<'dir>,
     colours: &'a Colours,
+    target:  Option<FileTarget<'dir>>,
 }
 
 impl<'a, 'dir> FileName<'a, 'dir> {
     pub fn new(file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+        let target =  if file.is_link() { Some(file.link_target()) }
+                                                       else { None };
         FileName {
             file: file,
             colours: colours,
+            target: target,
         }
     }
 
@@ -36,9 +40,9 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
-        if links && self.file.is_link() {
-            match self.file.link_target() {
-                FileTarget::Ok(target) => {
+        if links && self.target.is_some() {
+            match self.target.as_ref().unwrap() {
+                &FileTarget::Ok(ref target) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.punctuation.paint("->"));
                     bits.push(Style::default().paint(" "));
@@ -55,16 +59,16 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
                 },
 
-                FileTarget::Broken(broken_path) => {
+                &FileTarget::Broken(ref broken_path) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_arrow.paint("->"));
                     bits.push(Style::default().paint(" "));
                     escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename, self.colours.control_char.underline());
                 },
 
-                FileTarget::Err(_) => {
+                &FileTarget::Err(_) => {
                     // Do nothing -- the error gets displayed on the next line
-                }
+                },
             }
         }
         else if classify {
