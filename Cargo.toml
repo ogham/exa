@@ -35,6 +35,7 @@ git = [ "git2" ]
 opt-level = 3
 debug = false
 lto = true
+panic = "abort"
 
 [dependencies.git2]
 version = "0.6.4"
