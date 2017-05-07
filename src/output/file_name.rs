@@ -8,24 +8,32 @@ use output::escape;
 use output::cell::TextCellContents;
 
 
+pub enum LinkStyle {
+    JustFilenames,
+    FullLinkPaths,
+}
+
+
 pub struct FileName<'a, 'dir: 'a> {
     file:    &'a File<'dir>,
     colours: &'a Colours,
     target:  Option<FileTarget<'dir>>,
+    link_style: LinkStyle,
 }
 
 impl<'a, 'dir> FileName<'a, 'dir> {
-    pub fn new(file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, colours: &'a Colours) -> FileName<'a, 'dir> {
         let target =  if file.is_link() { Some(file.link_target()) }
                                                        else { None };
         FileName {
             file: file,
             colours: colours,
             target: target,
+            link_style: link_style,
         }
     }
 
-    pub fn paint(&self, links: bool, classify: bool) -> TextCellContents {
+    pub fn paint(&self, classify: bool) -> TextCellContents {
         let mut bits = Vec::new();
 
         if self.file.dir.is_none() {
@@ -40,9 +48,9 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
-        if links && self.target.is_some() {
-            match self.target.as_ref().unwrap() {
-                &FileTarget::Ok(ref target) => {
+        if let (&LinkStyle::FullLinkPaths, Some(ref target)) = (&self.link_style, self.target.as_ref()) {
+            match **target {
+                FileTarget::Ok(ref target) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.punctuation.paint("->"));
                     bits.push(Style::default().paint(" "));
@@ -52,21 +60,21 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(&target, self.colours);
+                        let target = FileName::new(&target, LinkStyle::FullLinkPaths, self.colours);
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
                     }
                 },
 
-                &FileTarget::Broken(ref broken_path) => {
+                FileTarget::Broken(ref broken_path) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_arrow.paint("->"));
                     bits.push(Style::default().paint(" "));
                     escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename, self.colours.control_char.underline());
                 },
 
-                &FileTarget::Err(_) => {
+                FileTarget::Err(_) => {
                     // Do nothing -- the error gets displayed on the next line
                 },
             }

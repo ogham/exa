@@ -101,7 +101,7 @@ use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
 use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
-use output::file_name::FileName;
+use output::file_name::{FileName, LinkStyle};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -310,7 +310,7 @@ impl Details {
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     FileName::new(&egg.file, &self.colours).paint(true, self.classify).promote(),
+                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, &self.colours).paint(self.classify).promote(),
                 last:     index == num_eggs - 1,
             };
 
@@ -443,8 +443,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    pub fn filename(&self, file: File, links: bool) -> TextCellContents {
-        FileName::new(&file, &self.opts.colours).paint(links, self.opts.classify)
+    pub fn filename(&self, file: File, links: LinkStyle) -> TextCellContents {
+        FileName::new(&file, links, &self.opts.colours).paint(self.opts.classify)
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {

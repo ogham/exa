@@ -12,6 +12,8 @@ use output::cell::TextCell;
 use output::column::Column;
 use output::details::{Details, Table, Environment};
 use output::grid::Grid;
+use output::file_name::LinkStyle;
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct GridDetails {
@@ -45,7 +47,7 @@ impl GridDetails {
                               .collect::<Vec<_>>();
 
             let file_names = files.into_iter()
-                                  .map(|file| first_table.filename(file, false).promote())
+                                  .map(|file| first_table.filename(file, LinkStyle::JustFilenames).promote())
                                   .collect::<Vec<_>>();
 
             (cells, file_names)
