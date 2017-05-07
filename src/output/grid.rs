@@ -3,9 +3,8 @@ use std::io::{Write, Result as IOResult};
 use term_grid as grid;
 
 use fs::File;
-use output::DisplayWidth;
 use output::colours::Colours;
-use super::filename;
+use output::file_name::{FileName, LinkStyle, Classify};
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -13,7 +12,7 @@ pub struct Grid {
     pub across: bool,
     pub console_width: usize,
     pub colours: Colours,
-    pub classify: bool,
+    pub classify: Classify,
 }
 
 impl Grid {
@@ -29,16 +28,11 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let mut width = DisplayWidth::from_file(file, self.classify);
-
-            if file.dir.is_none() {
-                if let Some(parent) = file.path.parent() {
-                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-                }
-            }
+            let filename = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
+            let width = filename.width();
 
             grid.add(grid::Cell {
-                contents:  filename(file, &self.colours, false, self.classify).strings().to_string(),
+                contents:  filename.strings().to_string(),
                 width:     *width,
             });
         }
@@ -49,7 +43,8 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                writeln!(w, "{}", filename(file, &self.colours, false, self.classify).strings())?;
+                let name_cell = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
+                writeln!(w, "{}", name_cell.strings())?;
             }
             Ok(())
         }

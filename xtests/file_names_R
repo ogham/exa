@@ -1,0 +1,12 @@
+ansi: [[31m\u{1b}[0m[34mblue[31m\u{1b}[0m[0m]  form-feed: [[31m\u{c}[0m]      [1;34mnew-line-dir: [[0m[31m\n[1;34m][0m
+ascii: hello                     invalid-utf8-1: [�]     new-line: [[31m\n[0m]
+backspace: [[31m\u{8}[0m]               invalid-utf8-2: [�(]    return: [[31m\r[0m]
+bell: [[31m\u{7}[0m]                    invalid-utf8-3: [�(]    tab: [[31m\t[0m]
+emoji: [🆒]                       invalid-utf8-4: [�(�(]  utf-8: pâté
+escape: [[31m\u{1b}[0m]                 [1;34mlinks[0m                   vertical-tab: [[31m\u{b}[0m]
+
+/testcases/file-names/links:
+[36manother: [[31m\n[36m][0m  [31mbroken[0m  [36msubfile[0m
+
+/testcases/file-names/new-line-dir: [\n]:
+another: [[31m\n[0m]  subfile

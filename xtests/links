@@ -1,2 +1,2 @@
-[36mbroken[0m       [36mforbidden[0m  [36mparent_dir[0m  some_file           [36msome_file_relative[0m
-[36mcurrent_dir[0m  [36mitself[0m     [36mroot[0m        [36msome_file_absolute[0m  [36musr[0m
+[31mbroken[0m       [31mforbidden[0m  [36mparent_dir[0m  some_file           [36msome_file_relative[0m
+[36mcurrent_dir[0m  [31mitself[0m     [36mroot[0m        [36msome_file_absolute[0m  [36musr[0m

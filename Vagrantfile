@@ -7,6 +7,8 @@ Vagrant.configure(2) do |config|
         v.cpus = 1
     end
 
+    developer = 'ubuntu'
+
 
     # We use Ubuntu instead of Debian because the image comes with two-way
     # shared folder support by default.
@@ -16,8 +18,11 @@ Vagrant.configure(2) do |config|
 
     # Install the dependencies needed for exa to build, as quietly as
     # apt can do.
-    config.vm.provision :shell, privileged: true, inline:
-        %[apt-get install -qq -o=Dpkg::Use-Pty=0 -y git cmake libssl-dev libgit2-dev libssh2-1-dev curl attr pkg-config]
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+        apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
+          git cmake curl attr pkg-config libgit2-dev \
+          fish zsh bash bash-completion
+    EOF
 
 
     # Guarantee that the timezone is UTC -- some of the tests
@@ -38,13 +43,40 @@ Vagrant.configure(2) do |config|
     # By default it just uses the one in /vagrant/target, which can
     # cause problems if it has different permissions than the other
     # directories, or contains object files compiled for the host.
-    config.vm.provision :shell, privileged: false, inline:
-        %[echo "export CARGO_TARGET_DIR=/home/ubuntu/target" >> ~/.bashrc]
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        function put_line() {
+          grep -q -F "$2" $1 || echo "$2" >> $1
+        }
+
+        put_line ~/.bashrc 'export CARGO_TARGET_DIR=/home/#{developer}/target'
+    EOF
+
+
+    # Create "dexa" and "rexa" scripts that run the debug and release
+    # compiled versions of exa.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \\$*" > /usr/bin/exa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \\$*" > /usr/bin/rexa
+        chmod +x /usr/bin/{exa,rexa}
+    EOF
+
+
+    # Link the completion files so they’re “installed”.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+        test -h /etc/bash_completion.d/exa \
+          || ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
+
+        test -h /usr/share/zsh/vendor-completions/_exa \
+          || ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
+
+        test -h /usr/share/fish/completions/exa.fish \
+          || ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
+    EOF
 
 
     # We create two users that own the test files.
-    # The first one just owns the ordinary ones, because we don’t want to
-    # depend on “vagrant” or “ubuntu” existing.
+    # The first one just owns the ordinary ones, because we don’t want the
+    # test outputs to depend on “vagrant” or “ubuntu” existing.
     user = "cassowary"
     config.vm.provision :shell, privileged: true, inline:
         %[id -u #{user} &>/dev/null || useradd #{user}]
@@ -139,6 +171,49 @@ Vagrant.configure(2) do |config|
         touch "#{test_dir}/file-names-exts/compiled.o"
         touch "#{test_dir}/file-names-exts/compiled.js"
         touch "#{test_dir}/file-names-exts/compiled.coffee"
+    EOF
+
+
+    # File name testcases.
+    # bash really doesn’t want you to create a file with escaped characters
+    # in its name, so we have to resort to the echo builtin and touch!
+    #
+    # The double backslashes are not strictly necessary; without them, Ruby
+    # will interpolate them instead of bash, but because Vagrant prints out
+    # each command it runs, your *own* terminal will go “ding” from the alarm!
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir "#{test_dir}/file-names"
+
+        echo -ne "#{test_dir}/file-names/ascii: hello" | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/emoji: [🆒]"  | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/utf-8: pâté"  | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/bell: [\\a]"         | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/backspace: [\\b]"    | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/form-feed: [\\f]"    | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line: [\\n]"     | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/return: [\\r]"       | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/tab: [\\t]"          | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/vertical-tab: [\\v]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/escape: [\\033]"               | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/ansi: [\\033[34mblue\\033[0m]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/invalid-utf8-1: [\\xFF]"                | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-2: [\\xc3\\x28]"           | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-3: [\\xe2\\x82\\x28]"      | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/invalid-utf8-4: [\\xf0\\x28\\x8c\\x28]" | xargs -0 touch
+
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]"                | xargs -0 mkdir
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/subfile"        | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/another: [\\n]" | xargs -0 touch
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken"         | xargs -0 touch
+
+        mkdir "#{test_dir}/file-names/links"
+        ln -s "#{test_dir}/file-names/new-line-dir"*/* "#{test_dir}/file-names/links"
+
+        echo -ne "#{test_dir}/file-names/new-line-dir: [\\n]/broken" | xargs -0 rm
     EOF
 
 

@@ -4,8 +4,9 @@ use getopts;
 
 use output::Colours;
 use output::{Grid, Details, GridDetails, Lines};
-use options::{FileFilter, DirAction, Misfire};
 use output::column::{Columns, TimeTypes, SizeFormat};
+use output::file_name::Classify;
+use options::{FileFilter, DirAction, Misfire};
 use term::dimensions;
 use fs::feature::xattr;
 
@@ -58,7 +59,7 @@ impl View {
                     filter: filter.clone(),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                     colours: colours,
-                    classify: matches.opt_present("classify"),
+                    classify: Classify::deduce(matches),
                 };
 
                 Ok(details)
@@ -87,8 +88,7 @@ impl View {
         };
 
         let other_options_scan = || {
-            let classify = matches.opt_present("classify");
-
+            let classify     = Classify::deduce(matches);
             let term_colours = TerminalColours::deduce(matches)?;
             let term_width   = TerminalWidth::deduce()?;
 
@@ -364,5 +364,14 @@ impl TerminalColours {
         else {
             Ok(TerminalColours::default())
         }
+    }
+}
+
+
+
+impl Classify {
+    fn deduce(matches: &getopts::Matches) -> Classify {
+        if matches.opt_present("classify") { Classify::AddFileIndicators }
+                                      else { Classify::JustFilenames }
     }
 }

@@ -1,0 +1,18 @@
+ansi: [[31m\u{1b}[0m[34mblue[31m\u{1b}[0m[0m]
+ascii: hello
+backspace: [[31m\u{8}[0m]
+bell: [[31m\u{7}[0m]
+emoji: [🆒]
+escape: [[31m\u{1b}[0m]
+form-feed: [[31m\u{c}[0m]
+invalid-utf8-1: [�]
+invalid-utf8-2: [�(]
+invalid-utf8-3: [�(]
+invalid-utf8-4: [�(�(]
+[1;34mlinks[0m
+[1;34mnew-line-dir: [[0m[31m\n[1;34m][0m
+new-line: [[31m\n[0m]
+return: [[31m\r[0m]
+tab: [[31m\t[0m]
+utf-8: pâté
+vertical-tab: [[31m\u{b}[0m]

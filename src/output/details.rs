@@ -99,9 +99,9 @@ use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns, SizeFormat};
-use output::cell::{TextCell, DisplayWidth};
+use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
-use super::filename;
+use output::file_name::{FileName, LinkStyle, Classify};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -142,7 +142,7 @@ pub struct Details {
     pub colours: Colours,
 
     /// Whether to show a file type indiccator.
-    pub classify: bool,
+    pub classify: Classify,
 }
 
 /// The **environment** struct contains any data that could change between
@@ -306,23 +306,11 @@ impl Details {
         for (index, egg) in file_eggs.into_iter().enumerate() {
             let mut files = Vec::new();
             let mut errors = egg.errors;
-            let mut width = DisplayWidth::from_file(&egg.file, self.classify);
-
-            if egg.file.dir.is_none() {
-                if let Some(parent) = egg.file.path.parent() {
-                    width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-                }
-            }
-
-            let name = TextCell {
-                contents: filename(&egg.file, &self.colours, true, self.classify),
-                width:    width,
-            };
 
             let row = Row {
                 depth:    depth,
                 cells:    Some(egg.cells),
-                name:     name,
+                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, &self.colours).paint().promote(),
                 last:     index == num_eggs - 1,
             };
 
@@ -455,19 +443,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    pub fn filename_cell(&self, file: File, links: bool) -> TextCell {
-        let mut width = DisplayWidth::from_file(&file, self.opts.classify);
-
-        if file.dir.is_none() {
-            if let Some(parent) = file.path.parent() {
-                width = width + 1 + DisplayWidth::from(parent.to_string_lossy().as_ref());
-            }
-        }
-
-        TextCell {
-            contents: filename(&file, &self.opts.colours, links, self.opts.classify),
-            width:    width,
-        }
+    pub fn filename(&self, file: File, links: LinkStyle) -> TextCellContents {
+        FileName::new(&file, links, self.opts.classify, &self.opts.colours).paint()
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {

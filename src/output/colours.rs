@@ -22,6 +22,7 @@ pub struct Colours {
     pub symlink_path:     Style,
     pub broken_arrow:     Style,
     pub broken_filename:  Style,
+    pub control_char:     Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -170,7 +171,8 @@ impl Colours {
 
             symlink_path:     Cyan.normal(),
             broken_arrow:     Red.normal(),
-            broken_filename:  Red.underline()
+            broken_filename:  Red.underline(),
+            control_char:     Red.normal(),
         }
     }
 

@@ -45,50 +45,50 @@ impl Options {
     where S: AsRef<OsStr> {
         let mut opts = getopts::Options::new();
 
-        opts.optflag("v", "version",   "display version of exa");
+        opts.optflag("v", "version",   "show version of exa");
         opts.optflag("?", "help",      "show list of command-line options");
 
         // Display options
         opts.optflag("1", "oneline",      "display one entry per line");
-        opts.optflag("G", "grid",         "display entries in a grid view (default)");
-        opts.optflag("l", "long",         "display extended details and attributes");
+        opts.optflag("l", "long",         "display extended file metadata in a table");
+        opts.optflag("G", "grid",         "display entries as a grid (default)");
+        opts.optflag("x", "across",       "sort the grid across, rather than downwards");
         opts.optflag("R", "recurse",      "recurse into directories");
-        opts.optflag("T", "tree",         "recurse into subdirectories in a tree view");
-        opts.optflag("x", "across",       "sort multi-column view entries across");
-        opts.optflag("F", "classify",     "show file type indicator (one of */=@|)");
-        opts.optopt ("",  "color",        "when to show anything in colours", "WHEN");
-        opts.optopt ("",  "colour",       "when to show anything in colours (alternate spelling)", "WHEN");
-        opts.optflag("",  "color-scale",  "use a colour scale when displaying file sizes (alternate spelling)");
-        opts.optflag("",  "colour-scale", "use a colour scale when displaying file sizes");
+        opts.optflag("T", "tree",         "recurse into directories as a tree");
+        opts.optflag("F", "classify",     "display type indicator by file names (one of */=@|)");
+        opts.optopt ("",  "color",        "when to use terminal colours", "WHEN");
+        opts.optopt ("",  "colour",       "when to use terminal colours", "WHEN");
+        opts.optflag("",  "color-scale",  "highlight levels of file sizes distinctly");
+        opts.optflag("",  "colour-scale", "highlight levels of file sizes distinctly");
 
         // Filtering and sorting options
-        opts.optflag("",  "group-directories-first", "list directories before other files");
-        opts.optflag("a", "all",         "show dot-files");
-        opts.optflag("d", "list-dirs",   "list directories as regular files");
-        opts.optflag("r", "reverse",     "reverse order of files");
-        opts.optopt ("s", "sort",        "field to sort by", "WORD");
-        opts.optopt ("I", "ignore-glob", "patterns (|-separated) of names to ignore", "GLOBS");
+        opts.optflag("",  "group-directories-first", "sort directories before other files");
+        opts.optflag("a", "all",         "don't hide hidden and 'dot' files");
+        opts.optflag("d", "list-dirs",   "list directories like regular files");
+        opts.optopt ("L", "level",       "limit the depth of recursion", "DEPTH");
+        opts.optflag("r", "reverse",     "reverse the sert order");
+        opts.optopt ("s", "sort",        "which field to sort by", "WORD");
+        opts.optopt ("I", "ignore-glob", "ignore files that match these glob patterns", "GLOB1|GLOB2...");
 
         // Long view options
-        opts.optflag("b", "binary",    "use binary prefixes in file sizes");
+        opts.optflag("b", "binary",    "list file sizes with binary prefixes");
         opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
-        opts.optflag("g", "group",     "show group as well as user");
-        opts.optflag("h", "header",    "show a header row at the top");
-        opts.optflag("H", "links",     "show number of hard links");
-        opts.optflag("i", "inode",     "show each file's inode number");
-        opts.optopt ("L", "level",     "maximum depth of recursion", "DEPTH");
-        opts.optflag("m", "modified",  "display timestamp of most recent modification");
-        opts.optflag("S", "blocks",    "show number of file system blocks");
-        opts.optopt ("t", "time",      "which timestamp to show for a file", "WORD");
-        opts.optflag("u", "accessed",  "display timestamp of last access for a file");
-        opts.optflag("U", "created",   "display timestamp of creation for a file");
+        opts.optflag("g", "group",     "list each file's group");
+        opts.optflag("h", "header",    "add a header row to each column");
+        opts.optflag("H", "links",     "list each file's number of hard links");
+        opts.optflag("i", "inode",     "list each file's inode number");
+        opts.optflag("m", "modified",  "use the modified timestamp field");
+        opts.optflag("S", "blocks",    "list each file's number of file system blocks");
+        opts.optopt ("t", "time",      "which timestamp field to show", "WORD");
+        opts.optflag("u", "accessed",  "use the accessed timestamp field");
+        opts.optflag("U", "created",   "use the created timestamp field");
 
         if cfg!(feature="git") {
-            opts.optflag("", "git", "show git status");
+            opts.optflag("", "git", "list each file's git status");
         }
 
         if xattr::ENABLED {
-            opts.optflag("@", "extended", "display extended attribute keys and sizes");
+            opts.optflag("@", "extended", "list each file's extended attribute keys and sizes");
         }
 
         let matches = match opts.parse(args) {

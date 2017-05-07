@@ -33,6 +33,10 @@ COLUMNS=120 $exa $testcases/files | diff -q - $results/files_120  || exit 1
 COLUMNS=160 $exa $testcases/files | diff -q - $results/files_160  || exit 1
 COLUMNS=200 $exa $testcases/files | diff -q - $results/files_200  || exit 1
 
+COLUMNS=100 $exa $testcases/files/* | diff -q - $results/files_star_100   || exit 1
+COLUMNS=150 $exa $testcases/files/* | diff -q - $results/files_star_150  || exit 1
+COLUMNS=200 $exa $testcases/files/* | diff -q - $results/files_star_200  || exit 1
+
 
 # Long grid view tests
 COLUMNS=40  $exa $testcases/files -lG | diff -q - $results/files_lG_40   || exit 1
@@ -40,6 +44,10 @@ COLUMNS=80  $exa $testcases/files -lG | diff -q - $results/files_lG_80   || exit
 COLUMNS=120 $exa $testcases/files -lG | diff -q - $results/files_lG_120  || exit 1
 COLUMNS=160 $exa $testcases/files -lG | diff -q - $results/files_lG_160  || exit 1
 COLUMNS=200 $exa $testcases/files -lG | diff -q - $results/files_lG_200  || exit 1
+
+COLUMNS=100 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_100  || exit 1
+COLUMNS=150 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_150  || exit 1
+COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  || exit 1
 
 
 # Attributes
@@ -54,6 +62,13 @@ $exa $testcases/passwd -lgh | diff -q - $results/passwd  || exit 1
 sudo -u cassowary $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions_sudo  || exit 1
                   $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/permissions       || exit 1
 
+# File names
+# (Mostly escaping control characters in file names)
+COLUMNS=80 $exa $testcases/file-names    2>&1 | diff -q - $results/file_names   || exit 1
+COLUMNS=80 $exa $testcases/file-names -x 2>&1 | diff -q - $results/file_names_x || exit 1
+COLUMNS=80 $exa $testcases/file-names -R 2>&1 | diff -q - $results/file_names_R || exit 1
+           $exa $testcases/file-names -1 2>&1 | diff -q - $results/file_names_1 || exit 1
+           $exa $testcases/file-names -T 2>&1 | diff -q - $results/file_names_T || exit 1
 
 # File types
 $exa $testcases/file-names-exts -1 2>&1 | diff -q - $results/file-names-exts  || exit 1

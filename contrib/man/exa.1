@@ -1,5 +1,5 @@
 .hy
-.TH "exa" "1" "2015\-10\-18" "exa 0.4.0" ""
+.TH "exa" "1" "2017\-05\-06" "exa 0.5.0" ""
 .SH NAME
 .PP
 exa \- a modern replacement for ls
@@ -23,12 +23,17 @@ display one entry per line
 .RE
 .TP
 .B \-G, \-\-grid
-display entries in a grid view (default)
+display entries as a grid (default)
 .RS
 .RE
 .TP
 .B \-l, \-\-long
-display extended details and attributes
+display extended file metadata as a table
+.RS
+.RE
+.TP
+.B \-x, \-\-across
+sort the grid across, rather than downwards
 .RS
 .RE
 .TP
@@ -38,39 +43,45 @@ recurse into directories
 .RE
 .TP
 .B \-T, \-\-tree
-recurse into subdirectories in a tree view
-.RS
-.RE
-.TP
-.B \-x, \-\-across
-sort multi\-column view entries across
+recurse into directories as a tree
 .RS
 .RE
 .TP
 .B \-\-color, \-\-colour=\f[I]WHEN\f[]
-when to colourise the output (always, automatic, never)
+when to use terminal colours (always, automatic, never)
+.RS
+.RE
+.TP
+.B \-\-color-scale, \-\-colour-scale
+highlight levels of file sizes distinctly
 .RS
 .RE
 .SH FILTERING AND SORTING OPTIONS
 .TP
 .B \-a, \-\-all
-show dot\-files
+don\[aq]t hide hidden and \[aq]dot\[aq] files
 .RS
 .RE
 .TP
 .B \-d, \-\-list\-dirs
-list directories as regular files
+list directories like regular files
 .RS
 .RE
 .TP
 .B \-r, \-\-reverse
-reverse order of files
+reverse the sort order
 .RS
 .RE
 .TP
-.B \-s, \-\-sort=\f[I]WORD\f[]
-field to sort by (name, size, extension, modified, accessed, created,
-inode, none)
+.B \-s, \-\-sort=\f[I]SORT_FIELD\f[]
+which field to sort by.
+Valid fields are name, Name, extension, Extension, size, modified, accessed, created, inode, and none.
+Fields starting with a capital letter are case-sensitive.
+.RS
+.RE
+.TP
+.B \-I, \-\-ignore\-glob=\f[I]GLOBS\f[]
+Glob patterns, pipe-separated, of files to ignore
 .RS
 .RE
 .TP
@@ -84,72 +95,72 @@ These options are available when running with \f[C]\-\-long\f[]
 (\f[C]\-l\f[]):
 .TP
 .B \-b, \-\-binary
-use binary prefixes in file sizes
+list file sizes with binary prefixes
 .RS
 .RE
 .TP
 .B \-B, \-\-bytes
-list file sizes in bytes, without prefixes
+list file sizes in bytes, without any prefixes
 .RS
 .RE
 .TP
 .B \-g, \-\-group
-show group as well as user
+list each file\[aq]s group
 .RS
 .RE
 .TP
 .B \-h, \-\-header
-show a header row at the top
+add a header row to each column
 .RS
 .RE
 .TP
 .B \-H, \-\-links
-show number of hard links
+list each file\[aq]s number of hard links
 .RS
 .RE
 .TP
 .B \-i, \-\-inode
-show each file\[aq]s inode number
+list each file\[aq]s inode number
 .RS
 .RE
 .TP
 .B \-L, \-\-level=\f[I]DEPTH\f[]
-maximum depth of recursion
+limit the depth of recursion
 .RS
 .RE
 .TP
 .B \-m, \-\-modified
-display timestamp of most recent modification
+use the modified timestamp field
 .RS
 .RE
 .TP
 .B \-S, \-\-blocks
-show number of file system blocks
+list each file\[aq]s number of file system blocks
 .RS
 .RE
 .TP
 .B \-t, \-\-time=\f[I]WORD\f[]
-which timestamp to show for a file (modified, accessed, created)
+which timestamp field to list (modified, accessed, created)
 .RS
 .RE
 .TP
 .B \-u, \-\-accessed
-display timestamp of last access for a file
+use the accessed timestamp field
 .RS
 .RE
 .TP
 .B \-U, \-\-created
-display timestamp of creation for a file
+use the created timestamp field
 .RS
 .RE
 .TP
 .B \-\@, \-\-extended
-display extended attribute keys and sizes
+list each file\[aq]s extended attributes and sizes
 .RS
 .RE
 .TP
 .B \-\-git
-display Git status for a file, if available
+list each file\[aq]s Git status, if tracked
 .RS
 .RE
 .SH EXAMPLES
