@@ -29,7 +29,7 @@ pub struct TextCell {
 impl Deref for TextCell {
     type Target = TextCellContents;
 
-    fn deref<'a>(&'a self) -> &'a Self::Target {
+    fn deref(&self) -> &Self::Target {
         &self.contents
     }
 }
@@ -143,7 +143,7 @@ impl From<Vec<ANSIString<'static>>> for TextCellContents {
 impl Deref for TextCellContents {
     type Target = [ANSIString<'static>];
 
-    fn deref<'a>(&'a self) -> &'a Self::Target {
+    fn deref(&self) -> &Self::Target {
         &*self.0
     }
 }
@@ -163,8 +163,11 @@ impl TextCellContents {
     /// Calculates the width that a cell with these contents would take up, by
     /// counting the number of characters in each unformatted ANSI string.
     pub fn width(&self) -> DisplayWidth {
-        let foo = self.0.iter().map(|anstr| anstr.chars().count()).sum();
-        DisplayWidth(foo)
+        let sum = self.0.iter()
+                      .map(|anstr| anstr.chars().count())
+                      .sum();
+
+        DisplayWidth(sum)
     }
 
     /// Promotes these contents to a full cell containing them alongside
@@ -209,13 +212,13 @@ impl From<usize> for DisplayWidth {
 impl Deref for DisplayWidth {
     type Target = usize;
 
-    fn deref<'a>(&'a self) -> &'a Self::Target {
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl DerefMut for DisplayWidth {
-    fn deref_mut<'a>(&'a mut self) -> &'a mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }

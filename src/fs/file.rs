@@ -417,10 +417,10 @@ impl<'dir> FileTarget<'dir> {
     /// Whether this link doesn’t lead to a file, for whatever reason. This
     /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
-        match self {
-            &FileTarget::Ok(_)      => false,
-            &FileTarget::Broken(_)  => true,
-            &FileTarget::Err(_)     => true,
+        match *self {
+            FileTarget::Ok(_)      => false,
+            FileTarget::Broken(_)  => true,
+            FileTarget::Err(_)     => true,
         }
     }
 }

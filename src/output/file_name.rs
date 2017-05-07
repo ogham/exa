@@ -67,8 +67,8 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
-        if let (LinkStyle::FullLinkPaths, Some(ref target)) = (self.link_style, self.target.as_ref()) {
-            match **target {
+        if let (LinkStyle::FullLinkPaths, Some(target)) = (self.link_style, self.target.as_ref()) {
+            match *target {
                 FileTarget::Ok(ref target) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.punctuation.paint("->"));
@@ -79,7 +79,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(&target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
+                        let target = FileName::new(target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
