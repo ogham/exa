@@ -407,12 +407,15 @@ pub enum FileTarget<'dir> {
     Broken(PathBuf),
 
     /// There was an IO error when following the link. This can happen if the
-    /// file isn't a link to begin with, but also if, say, we don't have
+    /// file isn’t a link to begin with, but also if, say, we don’t have
     /// permission to follow it.
     Err(IOError),
 }
 
 impl<'dir> FileTarget<'dir> {
+
+    /// Whether this link doesn’t lead to a file, for whatever reason. This
+    /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
         match self {
             &FileTarget::Ok(_)      => false,

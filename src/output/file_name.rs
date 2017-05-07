@@ -8,21 +8,28 @@ use output::escape;
 use output::cell::TextCellContents;
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum LinkStyle {
-    JustFilenames,
-    FullLinkPaths,
-}
-
-
+/// A **file name** holds all the information necessary to display the name
+/// of the given file. This is used in all of the views.
 pub struct FileName<'a, 'dir: 'a> {
-    file:    &'a File<'dir>,
+
+    /// A reference to the file that we're getting the name of.
+    file: &'a File<'dir>,
+
+    /// The colours used to paint the file name and its surrounding text.
     colours: &'a Colours,
-    target:  Option<FileTarget<'dir>>,
+
+    /// The file that this file points to if it's a link.
+    target: Option<FileTarget<'dir>>,
+
+    /// How to handle displaying links.
     link_style: LinkStyle,
 }
 
+
 impl<'a, 'dir> FileName<'a, 'dir> {
+
+    /// Create a new `FileName` that prints the given file’s name, painting it
+    /// with the remaining arguments.
     pub fn new(file: &'a File<'dir>, link_style: LinkStyle, colours: &'a Colours) -> FileName<'a, 'dir> {
         let target =  if file.is_link() { Some(file.link_target()) }
                                                        else { None };
@@ -34,6 +41,13 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         }
     }
 
+
+    /// Paints the name of the file using the colours, resulting in a vector
+    /// of coloured cells that can be printed to the terminal.
+    ///
+    /// This method returns some `TextCellContents`, rather than a `TextCell`,
+    /// because for the last cell in a table, it doesn’t need to have its
+    /// width calculated.
     pub fn paint(&self, classify: bool) -> TextCellContents {
         let mut bits = Vec::new();
 
@@ -89,6 +103,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         bits.into()
     }
 
+
     /// Adds the bits of the parent path to the given bits vector.
     /// The path gets its characters escaped based on the colours.
     fn add_parent_bits(&self, bits: &mut Vec<ANSIString>, parent: &Path) {
@@ -102,6 +117,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             bits.push(self.colours.symlink_path.paint("/"));
         }
     }
+
 
     /// The character to be displayed after a file when classifying is on, if
     /// the file’s type has one associated with it.
@@ -121,6 +137,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         }
     }
 
+
     /// Returns at least one ANSI-highlighted string representing this file’s
     /// name using the given set of colours.
     ///
@@ -138,7 +155,15 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         bits
     }
 
+
+    /// Figures out which colour to paint the filename part of the output,
+    /// depending on which “type” of file it appears to be -- either from the
+    /// class on the filesystem or from its name.
     pub fn style(&self) -> Style {
+
+        // Override the style with the “broken link” style when this file is
+        // a link that we can’t follow for whatever reason. This is used when
+        // there’s no other place to show that the link doesn’t work.
         if let LinkStyle::JustFilenames = self.link_style {
             if let Some(ref target) = self.target {
                 if target.is_broken() {
@@ -147,6 +172,8 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
+        // Otherwise, just apply a bunch of rules in order. For example,
+        // executable image files should be executable rather than images.
         match self.file {
             f if f.is_directory()        => self.colours.filetypes.directory,
             f if f.is_executable_file()  => self.colours.filetypes.executable,
@@ -169,4 +196,20 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             _                            => self.colours.filetypes.normal,
         }
     }
+}
+
+
+/// When displaying a file name, there needs to be some way to handle broken
+/// links, depending on how long the resulting Cell can be.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum LinkStyle {
+
+    /// Just display the file names, but colour them differently if they’re
+    /// a broken link or can’t be followed.
+    JustFilenames,
+
+    /// Display all files in their usual style, but follow each link with an
+    /// arrow pointing to their path, colouring the path differently if it’s
+    /// a broken link, and doing nothing if it can’t be followed.
+    FullLinkPaths,
 }
