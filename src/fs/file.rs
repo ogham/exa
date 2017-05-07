@@ -412,6 +412,16 @@ pub enum FileTarget<'dir> {
     Err(IOError),
 }
 
+impl<'dir> FileTarget<'dir> {
+    pub fn is_broken(&self) -> bool {
+        match self {
+            &FileTarget::Ok(_)      => false,
+            &FileTarget::Broken(_)  => true,
+            &FileTarget::Err(_)     => true,
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod test {

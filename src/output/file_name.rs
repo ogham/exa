@@ -8,6 +8,7 @@ use output::escape;
 use output::cell::TextCellContents;
 
 
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum LinkStyle {
     JustFilenames,
     FullLinkPaths,
@@ -48,7 +49,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
-        if let (&LinkStyle::FullLinkPaths, Some(ref target)) = (&self.link_style, self.target.as_ref()) {
+        if let (LinkStyle::FullLinkPaths, Some(ref target)) = (self.link_style, self.target.as_ref()) {
             match **target {
                 FileTarget::Ok(ref target) => {
                     bits.push(Style::default().paint(" "));
@@ -138,6 +139,14 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     }
 
     pub fn style(&self) -> Style {
+        if let LinkStyle::JustFilenames = self.link_style {
+            if let Some(ref target) = self.target {
+                if target.is_broken() {
+                    return self.colours.broken_arrow;
+                }
+            }
+        }
+
         match self.file {
             f if f.is_directory()        => self.colours.filetypes.directory,
             f if f.is_executable_file()  => self.colours.filetypes.executable,
