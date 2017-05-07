@@ -19,8 +19,9 @@ Vagrant.configure(2) do |config|
     # Install the dependencies needed for exa to build, as quietly as
     # apt can do.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
+        set -xe
         apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
-          git cmake curl attr pkg-config libgit2-dev \
+          git cmake curl attr libgit2-dev \
           fish zsh bash bash-completion
     EOF
 
@@ -49,12 +50,15 @@ Vagrant.configure(2) do |config|
         }
 
         put_line ~/.bashrc 'export CARGO_TARGET_DIR=/home/#{developer}/target'
+        put_line ~/.bashrc 'export PATH=$PATH:/home/#{developer}/.cargo/bin'
     EOF
 
 
     # Create "dexa" and "rexa" scripts that run the debug and release
     # compiled versions of exa.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
+        set -xe
+
         echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \\$*" > /usr/bin/exa
         echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \\$*" > /usr/bin/rexa
         chmod +x /usr/bin/{exa,rexa}
@@ -63,6 +67,8 @@ Vagrant.configure(2) do |config|
 
     # Link the completion files so they’re “installed”.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
+        set -xe
+
         test -h /etc/bash_completion.d/exa \
           || ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
 
@@ -331,4 +337,22 @@ Vagrant.configure(2) do |config|
 
         sudo chown #{user}:#{user} -R "#{test_dir}/attributes"
     EOF
+
+
+    # Install kcov for test coverage
+    # This doesn’t run coverage over the xtests so it’s less useful for now
+    if ENV.key?('INSTALL_KCOV')
+        config.vm.provision :shell, privileged: false, inline: <<-EOF
+            set -xe
+
+            test -e ~/.cargo/bin/cargo-kcov \
+              || cargo install cargo-kcov
+
+            sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
+              cmake g++ pkg-config \
+              libcurl4-openssl-dev libdw-dev binutils-dev libiberty-dev
+
+            cargo kcov --print-install-kcov-sh | sudo sh
+        EOF
+    end
 end
