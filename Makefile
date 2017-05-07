@@ -1,63 +1,53 @@
-SRC = \
-	src/info/sources.rs \
-	src/info/mod.rs \
-	src/info/filetype.rs \
-	src/bin/main.rs \
-	src/term.rs \
-	src/exa.rs \
-	src/output/grid_details.rs \
-	src/output/tree.rs \
-	src/output/colours.rs \
-	src/output/grid.rs \
-	src/output/cell.rs \
-	src/output/mod.rs \
-	src/output/details.rs \
-	src/output/lines.rs \
-	src/output/column.rs \
-	src/fs/file.rs \
-	src/fs/fields.rs \
-	src/fs/mod.rs \
-	src/fs/dir.rs \
-	src/fs/feature/xattr.rs \
-	src/fs/feature/git.rs \
-	src/fs/feature/mod.rs \
-	src/options/misfire.rs \
-	src/options/filter.rs \
-	src/options/dir_action.rs \
-	src/options/view.rs \
-	src/options/mod.rs \
-	src/options/help.rs
+DESTDIR =
+PREFIX  = /usr/local
 
-PREFIX = /usr/local
+BASHDIR = /etc/bash_completion.d
+ZSHDIR  = /usr/share/zsh/vendor-completions
+FISHDIR = /usr/share/fish/completions
 
-CARGOFLAGS = --no-default-features
+FEATURES ?= default
+
 
 all: target/release/exa
+build: target/release/exa
 
-build: CARGOFLAGS=
-build: all
-build-no-git: all
+target/release/exa:
+	cargo build --release --features "${ENABLE_FEATURES}"
 
-target/release/exa: $(SRC)
-	if test -n "$$(echo "$$CC" | cut -d \  -f 1)"; then \
-	    env CC="$$(echo "$$CC" | cut -d \  -f 1)" cargo build --release $(CARGOFLAGS); \
-	else\
-	    env -u CC cargo build --release $(CARGOFLAGS); \
-	fi
+install: install-exa install-man
 
-install: target/release/exa
-	# BSD and OSX don't have -D to create leading directories
-	install -dm755 -- "$(DESTDIR)$(PREFIX)/bin/" "$(DESTDIR)$(PREFIX)/share/man/man1/"
+install-exa: target/release/exa
 	install -m755 -- target/release/exa "$(DESTDIR)$(PREFIX)/bin/"
+
+install-man:
+	install -dm755 -- "$(DESTDIR)$(PREFIX)/bin/" "$(DESTDIR)$(PREFIX)/share/man/man1/"
 	install -m644  -- contrib/man/exa.1 "$(DESTDIR)$(PREFIX)/share/man/man1/"
 
+install-bash-completions:
+	install -m644 -- contrib/completions.bash "$(BASHDIR)/exa"
+
+install-zsh-completions:
+	install -m644 -- contrib/completions.zsh "$(ZSHDIR)/_exa"
+
+install-fish-completions:
+	install -m644 -- contrib/completions.fish "$(FISHDIR)/exa.fish"
+
+
 uninstall:
-	-rm    -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
-	-rmdir -- "$(DESTDIR)$(PREFIX)/share/man/man1"
-	-rm    -- "$(DESTDIR)$(PREFIX)/bin/exa"
-	-rmdir -- "$(DESTDIR)$(PREFIX)/bin"
+	-rm -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
+	-rm -- "$(DESTDIR)$(PREFIX)/bin/exa"
+	-rm -- "$(BASHDIR)/exa"
+	-rm -- "$(ZSHDIR)/_exa"
+	-rm -- "$(FISHDIR)/exa.fish"
 
 clean:
-	-rm -rf target
+	cargo clean
 
-.PHONY: all build install
+
+preview-man:
+	nroff -man contrib/man/exa.1 | less
+
+
+.PHONY: all build install-exa install-man preview-man \
+	install-bash-completions install-zsh-completions install-fish-completions \
+	clean uninstall
