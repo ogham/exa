@@ -8,20 +8,51 @@ use output::escape;
 use output::cell::TextCellContents;
 
 
+/// A **file name** holds all the information necessary to display the name
+/// of the given file. This is used in all of the views.
 pub struct FileName<'a, 'dir: 'a> {
-    file:    &'a File<'dir>,
+
+    /// A reference to the file that we're getting the name of.
+    file: &'a File<'dir>,
+
+    /// The colours used to paint the file name and its surrounding text.
     colours: &'a Colours,
+
+    /// The file that this file points to if it's a link.
+    target: Option<FileTarget<'dir>>,
+
+    /// How to handle displaying links.
+    link_style: LinkStyle,
+
+    /// Whether to append file class characters to file names.
+    classify: Classify,
 }
 
+
 impl<'a, 'dir> FileName<'a, 'dir> {
-    pub fn new(file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+
+    /// Create a new `FileName` that prints the given file’s name, painting it
+    /// with the remaining arguments.
+    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, classify: Classify, colours: &'a Colours) -> FileName<'a, 'dir> {
+        let target =  if file.is_link() { Some(file.link_target()) }
+                                                       else { None };
         FileName {
             file: file,
             colours: colours,
+            target: target,
+            link_style: link_style,
+            classify: classify,
         }
     }
 
-    pub fn paint(&self, links: bool, classify: bool) -> TextCellContents {
+
+    /// Paints the name of the file using the colours, resulting in a vector
+    /// of coloured cells that can be printed to the terminal.
+    ///
+    /// This method returns some `TextCellContents`, rather than a `TextCell`,
+    /// because for the last cell in a table, it doesn’t need to have its
+    /// width calculated.
+    pub fn paint(&self) -> TextCellContents {
         let mut bits = Vec::new();
 
         if self.file.dir.is_none() {
@@ -36,9 +67,9 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             }
         }
 
-        if links && self.file.is_link() {
-            match self.file.link_target() {
-                FileTarget::Ok(target) => {
+        if let (LinkStyle::FullLinkPaths, Some(ref target)) = (self.link_style, self.target.as_ref()) {
+            match **target {
+                FileTarget::Ok(ref target) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.punctuation.paint("->"));
                     bits.push(Style::default().paint(" "));
@@ -48,14 +79,14 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(&target, self.colours);
+                        let target = FileName::new(&target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
                     }
                 },
 
-                FileTarget::Broken(broken_path) => {
+                FileTarget::Broken(ref broken_path) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_arrow.paint("->"));
                     bits.push(Style::default().paint(" "));
@@ -64,10 +95,10 @@ impl<'a, 'dir> FileName<'a, 'dir> {
 
                 FileTarget::Err(_) => {
                     // Do nothing -- the error gets displayed on the next line
-                }
+                },
             }
         }
-        else if classify {
+        else if let Classify::AddFileIndicators = self.classify {
             if let Some(class) = self.classify_char() {
                 bits.push(Style::default().paint(class));
             }
@@ -75,6 +106,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
 
         bits.into()
     }
+
 
     /// Adds the bits of the parent path to the given bits vector.
     /// The path gets its characters escaped based on the colours.
@@ -89,6 +121,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             bits.push(self.colours.symlink_path.paint("/"));
         }
     }
+
 
     /// The character to be displayed after a file when classifying is on, if
     /// the file’s type has one associated with it.
@@ -108,6 +141,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         }
     }
 
+
     /// Returns at least one ANSI-highlighted string representing this file’s
     /// name using the given set of colours.
     ///
@@ -125,7 +159,25 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         bits
     }
 
+
+    /// Figures out which colour to paint the filename part of the output,
+    /// depending on which “type” of file it appears to be -- either from the
+    /// class on the filesystem or from its name.
     pub fn style(&self) -> Style {
+
+        // Override the style with the “broken link” style when this file is
+        // a link that we can’t follow for whatever reason. This is used when
+        // there’s no other place to show that the link doesn’t work.
+        if let LinkStyle::JustFilenames = self.link_style {
+            if let Some(ref target) = self.target {
+                if target.is_broken() {
+                    return self.colours.broken_arrow;
+                }
+            }
+        }
+
+        // Otherwise, just apply a bunch of rules in order. For example,
+        // executable image files should be executable rather than images.
         match self.file {
             f if f.is_directory()        => self.colours.filetypes.directory,
             f if f.is_executable_file()  => self.colours.filetypes.executable,
@@ -147,5 +199,40 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             f if f.is_compiled()         => self.colours.filetypes.compiled,
             _                            => self.colours.filetypes.normal,
         }
+    }
+}
+
+
+/// When displaying a file name, there needs to be some way to handle broken
+/// links, depending on how long the resulting Cell can be.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum LinkStyle {
+
+    /// Just display the file names, but colour them differently if they’re
+    /// a broken link or can’t be followed.
+    JustFilenames,
+
+    /// Display all files in their usual style, but follow each link with an
+    /// arrow pointing to their path, colouring the path differently if it’s
+    /// a broken link, and doing nothing if it can’t be followed.
+    FullLinkPaths,
+}
+
+
+/// Whether to append file class characters to the file names.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum Classify {
+
+    /// Just display the file names, without any characters.
+    JustFilenames,
+
+    /// Add a character after the file name depending on what class of file
+    /// it is.
+    AddFileIndicators,
+}
+
+impl Default for Classify {
+    fn default() -> Classify {
+        Classify::JustFilenames
     }
 }

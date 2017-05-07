@@ -4,7 +4,7 @@ use term_grid as grid;
 
 use fs::File;
 use output::colours::Colours;
-use output::file_name::FileName;
+use output::file_name::{FileName, LinkStyle, Classify};
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -12,7 +12,7 @@ pub struct Grid {
     pub across: bool,
     pub console_width: usize,
     pub colours: Colours,
-    pub classify: bool,
+    pub classify: Classify,
 }
 
 impl Grid {
@@ -28,7 +28,7 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let filename = FileName::new(file, &self.colours).paint(false, self.classify);
+            let filename = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
             let width = filename.width();
 
             grid.add(grid::Cell {
@@ -43,7 +43,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                let name_cell = FileName::new(file, &self.colours).paint(false, self.classify);
+                let name_cell = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
             Ok(())
