@@ -94,5 +94,9 @@ COLUMNS=80 $exa $testcases/links    2>&1 | diff -q - $results/links        || ex
            $exa $testcases/links -T 2>&1 | diff -q - $results/links_T      || exit 1
            $exa /proc/1/root     -T 2>&1 | diff -q - $results/proc_1_root  || exit 1
 
+# There’ve been bugs where the target file wasn’t printed properly when the
+# symlink file was specified on the command-line directly.
+$exa $testcases/links/* -1 | diff -q - $results/links_1_files || exit 1
+
 
 echo "All the tests passed!"

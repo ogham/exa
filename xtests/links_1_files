@@ -1,0 +1,10 @@
+[36m/testcases/links/broken[0m [31m->[0m [4;31mnowhere[0m
+[36m/testcases/links/current_dir[0m [38;5;244m->[0m [1;34m.[0m
+[36m/testcases/links/forbidden[0m [31m->[0m [4;31m/proc/1/root[0m
+[36m/testcases/links/itself[0m [31m->[0m [4;31mitself[0m
+[36m/testcases/links/parent_dir[0m [38;5;244m->[0m [1;34m..[0m
+[36m/testcases/links/root[0m [38;5;244m->[0m [1;34m/[0m
+[36m/testcases/links/[0msome_file
+[36m/testcases/links/some_file_absolute[0m [38;5;244m->[0m [36m/testcases/links/[0msome_file
+[36m/testcases/links/some_file_relative[0m [38;5;244m->[0m some_file
+[36m/testcases/links/usr[0m [38;5;244m->[0m [36m/[1;34musr[0m

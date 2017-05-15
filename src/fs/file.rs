@@ -165,44 +165,54 @@ impl<'dir> File<'dir> {
         self.name.starts_with('.')
     }
 
-    /// Assuming the current file is a symlink, follows the link and
-    /// returns a File object from the path the link points to.
+    /// Re-prefixes the path pointed to by this file, if it's a symlink, to
+    /// make it an absolute path that can be accessed from whichever
+    /// directory exa is being run from.
+    fn reorient_target_path(&self, path: &Path) -> PathBuf {
+        if path.is_absolute() {
+            path.to_path_buf()
+        }
+        else if let Some(dir) = self.dir {
+            dir.join(&*path)
+        }
+        else if let Some(parent) = self.path.parent() {
+            parent.join(&*path)
+        }
+        else {
+            self.path.join(&*path)
+        }
+    }
+
+    /// Again assuming this file is a symlink, follows that link and returns
+    /// the result of following it.
     ///
-    /// If statting the file fails (usually because the file on the
-    /// other end doesn't exist), returns the path to the file
-    /// that should be there.
+    /// For a working symlink that the user is allowed to follow,
+    /// this will be the `File` object at the other end, which can then have
+    /// its name, colour, and other details read.
+    ///
+    /// For a broken symlink, returns where the file *would* be, if it
+    /// existed. If this file cannot be read at all, returns the error that
+    /// we got when we tried to read it.
     pub fn link_target(&self) -> FileTarget<'dir> {
-        let path = match fs::read_link(&self.path) {
+
+        // We need to be careful to treat the path actually pointed to by
+        // this file -- which could be absolute or relative -- to the path
+        // we actually look up and turn into a `File` -- which needs to be
+        // absolute to be accessible from any directory.
+        let display_path = match fs::read_link(&self.path) {
             Ok(path)  => path,
             Err(e)    => return FileTarget::Err(e),
         };
 
-        let (metadata, ext) = {
-            let target_path_ = match self.dir {
-                Some(dir) if dir.path != Path::new(".") => Some(dir.join(&*path)),
-                _                                       => None
-            };
-            let target_path = target_path_.as_ref().unwrap_or(&path);
-            // Use plain `metadata` instead of `symlink_metadata` - we *want* to follow links.
-            (fs::metadata(&target_path), ext(target_path))
-        };
+        let target_path = self.reorient_target_path(&*display_path);
 
-        let filename = match path.components().next_back() {
-            Some(comp) => comp.as_os_str().to_string_lossy().to_string(),
-            None       => String::new(),
-        };
-
-        if let Ok(metadata) = metadata {
-            FileTarget::Ok(File {
-                path:      path,
-                dir:       self.dir,
-                metadata:  metadata,
-                ext:       ext,
-                name:      filename,
-            })
+        // Use plain `metadata` instead of `symlink_metadata` - we *want* to
+        // follow links.
+        if let Ok(metadata) = fs::metadata(&target_path) {
+            FileTarget::Ok(File::with_metadata(metadata, &*display_path, None))
         }
         else {
-            FileTarget::Broken(path)
+            FileTarget::Broken(display_path)
         }
     }
 
@@ -410,6 +420,10 @@ pub enum FileTarget<'dir> {
     /// file isn’t a link to begin with, but also if, say, we don’t have
     /// permission to follow it.
     Err(IOError),
+
+    // Err is its own variant, instead of having the whole thing be inside an
+    // `IOResult`, because being unable to follow a symlink is not a serious
+    // error -- we just display the error message and move on.
 }
 
 impl<'dir> FileTarget<'dir> {
