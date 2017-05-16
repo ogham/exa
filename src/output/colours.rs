@@ -69,6 +69,12 @@ pub struct Permissions {
 pub struct Size {
     pub numbers: Style,
     pub unit: Style,
+
+    pub scale_byte: Style,
+    pub scale_kilo: Style,
+    pub scale_mega: Style,
+    pub scale_giga: Style,
+    pub scale_huge: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -141,6 +147,12 @@ impl Colours {
             size: Size {
                 numbers:  Green.bold(),
                 unit:     Green.normal(),
+
+                scale_byte: Fixed(118).normal(),
+                scale_kilo: Fixed(190).normal(),
+                scale_mega: Fixed(226).normal(),
+                scale_giga: Fixed(220).normal(),
+                scale_huge: Fixed(214).normal(),
             },
 
             users: Users {
@@ -179,19 +191,19 @@ impl Colours {
     pub fn file_size(&self, size: u64) -> Style {
         if self.scale {
             if size < 1024 {
-                Fixed(118).normal()
+                self.size.scale_byte
             }
             else if size < 1024 * 1024 {
-                Fixed(190).normal()
+                self.size.scale_kilo
             }
             else if size < 1024 * 1024 * 1024 {
-                Fixed(226).normal()
+                self.size.scale_mega
             }
             else if size < 1024 * 1024 * 1024 * 1024 {
-                Fixed(220).normal()
+                self.size.scale_giga
             }
             else {
-                Fixed(214).normal()
+                self.size.scale_huge
             }
         }
         else {
