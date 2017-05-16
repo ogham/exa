@@ -1,9 +1,9 @@
 DESTDIR =
 PREFIX  = /usr/local
 
-BASHDIR = /etc/bash_completion.d
+BASHDIR = $(PREFIX)/etc/bash_completion.d
 ZSHDIR  = /usr/share/zsh/vendor-completions
-FISHDIR = /usr/share/fish/completions
+FISHDIR = $(PREFIX)/share/fish/vendor_completions.d
 
 FEATURES ?= default
 
@@ -12,7 +12,7 @@ all: target/release/exa
 build: target/release/exa
 
 target/release/exa:
-	cargo build --release --features "${ENABLE_FEATURES}"
+	cargo build --release --no-default-features --features "$(FEATURES)"
 
 install: install-exa install-man
 
@@ -32,22 +32,43 @@ install-zsh-completions:
 install-fish-completions:
 	install -m644 -- contrib/completions.fish "$(FISHDIR)/exa.fish"
 
-
 uninstall:
-	-rm -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
-	-rm -- "$(DESTDIR)$(PREFIX)/bin/exa"
-	-rm -- "$(BASHDIR)/exa"
-	-rm -- "$(ZSHDIR)/_exa"
-	-rm -- "$(FISHDIR)/exa.fish"
+	-rm -f -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
+	-rm -f -- "$(DESTDIR)$(PREFIX)/bin/exa"
+	-rm -f -- "$(BASHDIR)/exa"
+	-rm -f -- "$(ZSHDIR)/_exa"
+	-rm -f -- "$(FISHDIR)/exa.fish"
 
 clean:
 	cargo clean
 
-
 preview-man:
-	nroff -man contrib/man/exa.1 | less
+	man contrib/man/exa.1
 
+help:
+	@echo 'Available make targets:'
+	@echo '  all         - build exa (default)'
+	@echo '  build       - build exa'
+	@echo '  clean       - run `cargo clean`'
+	@echo '  install     - build and install exa and manpage'
+	@echo '  install-exa - build and install exa'
+	@echo '  install-man - install the manpage'
+	@echo '  uninstall   - uninstall fish, manpage, and completions'
+	@echo '  preview-man - preview the manpage without installing'
+	@echo '  help        - print this help'
+	@echo
+	@echo '  install-bash-completions - install bash completions into $$BASHDIR'
+	@echo '  install-zsh-completions  - install zsh completions into $$ZSHDIR'
+	@echo '  install-fish-completions - install fish completions into $$FISHDIR'
+	@echo
+	@echo 'Variables:'
+	@echo '  DESTDIR  - A path that'\''s prepended to installation paths (default: "")'
+	@echo '  PREFIX   - The installation prefix for everything except zsh completions (default: /usr/local)'
+	@echo '  BASHDIR  - The directory to install bash completions in (default: $$PREFIX/etc/bash_completion.d)'
+	@echo '  ZSHDIR   - The directory to install zsh completions in (default: /usr/share/zsh/vendor-completions)'
+	@echo '  FISHDIR  - The directory to install fish completions in (default: $$PREFIX/share/fish/vendor_completions.d)'
+	@echo '  FEATURES - The cargo feature flags to use. Set to an empty string to disable git support'
 
-.PHONY: all build install-exa install-man preview-man \
+.PHONY: all build target/release/exa install-exa install-man preview-man \
 	install-bash-completions install-zsh-completions install-fish-completions \
-	clean uninstall
+	clean uninstall help
