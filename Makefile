@@ -24,20 +24,20 @@ install-man:
 	install -m644  -- contrib/man/exa.1 "$(DESTDIR)$(PREFIX)/share/man/man1/"
 
 install-bash-completions:
-	install -m644 -- contrib/completions.bash "$(BASHDIR)/exa"
+	install -m644 -- contrib/completions.bash "$(DESTDIR)$(BASHDIR)/exa"
 
 install-zsh-completions:
-	install -m644 -- contrib/completions.zsh "$(ZSHDIR)/_exa"
+	install -m644 -- contrib/completions.zsh "$(DESTDIR)$(ZSHDIR)/_exa"
 
 install-fish-completions:
-	install -m644 -- contrib/completions.fish "$(FISHDIR)/exa.fish"
+	install -m644 -- contrib/completions.fish "$(DESTDIR)$(FISHDIR)/exa.fish"
 
 uninstall:
 	-rm -f -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
 	-rm -f -- "$(DESTDIR)$(PREFIX)/bin/exa"
-	-rm -f -- "$(BASHDIR)/exa"
-	-rm -f -- "$(ZSHDIR)/_exa"
-	-rm -f -- "$(FISHDIR)/exa.fish"
+	-rm -f -- "$(DESTDIR)$(BASHDIR)/exa"
+	-rm -f -- "$(DESTDIR)$(ZSHDIR)/_exa"
+	-rm -f -- "$(DESTDIR)$(FISHDIR)/exa.fish"
 
 clean:
 	cargo clean
