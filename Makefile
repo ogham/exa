@@ -1,9 +1,15 @@
 DESTDIR =
 PREFIX  = /usr/local
 
-BASHDIR = $(PREFIX)/etc/bash_completion.d
+override define compdir
+ifndef $(1)
+$(1) := $$(or $$(shell pkg-config --variable=completionsdir $(2) 2>/dev/null),$(3))
+endif
+endef
+
+$(eval $(call compdir,BASHDIR,bash-completion,$(PREFIX)/etc/bash_completion.d))
 ZSHDIR  = /usr/share/zsh/vendor-completions
-FISHDIR = $(PREFIX)/share/fish/vendor_completions.d
+$(eval $(call compdir,FISHDIR,fish,$(PREFIX)/share/fish/vendor_completions.d))
 
 FEATURES ?= default
 
