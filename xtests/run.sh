@@ -25,6 +25,8 @@ $exa $testcases/files -lhb | diff -q - $results/files_lhb   || exit 1
 $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
 $exa $testcases/attributes/dirs/empty-with-attribute -lh | diff -q - $results/empty  || exit 1
 
+$exa $testcases/files -l --color-scale  | diff -q - $results/files_l_scale  || exit 1
+
 
 # Grid view tests
 COLUMNS=40  $exa $testcases/files | diff -q - $results/files_40   || exit 1
