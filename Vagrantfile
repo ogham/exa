@@ -339,6 +339,37 @@ Vagrant.configure(2) do |config|
     EOF
 
 
+    # A sample Git repository
+    # This uses cd because it's easier than telling Git where to go each time
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir "#{test_dir}/git"
+        cd    "#{test_dir}/git"
+        git init
+
+        mkdir edits additions moves
+
+        echo "original content" | tee edits/{staged,unstaged,both}
+        echo "this file gets moved" > moves/hither
+
+        git add edits moves
+        git commit -m "Automated test commit"
+
+
+        echo "modifications!" | tee edits/{staged,both}
+        touch additions/{staged,edited}
+        mv moves/{hither,thither}
+
+        git add edits moves additions
+        echo "more modifications!" | tee edits/unstaged edits/both additions/edited
+        touch additions/unstaged
+
+
+        touch -t #{some_date} "#{test_dir}/git/"*/*
+        sudo chown #{user}:#{user} -R "#{test_dir}/git"
+    EOF
+
+
     # Install kcov for test coverage
     # This doesn’t run coverage over the xtests so it’s less useful for now
     if ENV.key?('INSTALL_KCOV')

@@ -101,4 +101,9 @@ COLUMNS=80 $exa $testcases/links    2>&1 | diff -q - $results/links        || ex
 $exa $testcases/links/* -1 | diff -q - $results/links_1_files || exit 1
 
 
+# Git
+$exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  || exit 1
+$exa $testcases/git/edits     -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
+
+
 echo "All the tests passed!"
