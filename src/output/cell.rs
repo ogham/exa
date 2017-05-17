@@ -1,5 +1,6 @@
 //! The `TextCell` type for the details and lines views.
 
+use std::iter::Sum;
 use std::ops::{Add, Deref, DerefMut};
 
 use ansi_term::{Style, ANSIString, ANSIStrings};
@@ -163,11 +164,9 @@ impl TextCellContents {
     /// Calculates the width that a cell with these contents would take up, by
     /// counting the number of characters in each unformatted ANSI string.
     pub fn width(&self) -> DisplayWidth {
-        let sum = self.0.iter()
-                      .map(|anstr| anstr.chars().count())
-                      .sum();
-
-        DisplayWidth(sum)
+        self.0.iter()
+            .map(|anstr| DisplayWidth::from(anstr.deref()))
+            .sum()
     }
 
     /// Promotes these contents to a full cell containing them alongside
@@ -236,6 +235,12 @@ impl Add<usize> for DisplayWidth {
 
     fn add(self, rhs: usize) -> Self::Output {
         DisplayWidth(self.0 + rhs)
+    }
+}
+
+impl Sum for DisplayWidth {
+    fn sum<I>(iter: I) -> Self where I: Iterator<Item=Self> {
+        iter.fold(DisplayWidth(0), Add::add)
     }
 }
 
