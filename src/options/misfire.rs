@@ -55,8 +55,11 @@ impl Misfire {
 
     /// The OS return code this misfire should signify.
     pub fn error_code(&self) -> i32 {
-        if let Misfire::Help(_) = *self { 2 }
-                                   else { 3 }
+        match *self {
+            Misfire::Help(_) => 0,
+            Misfire::Version => 0,
+            _                => 3,
+        }
     }
 
     /// The Misfire that happens when an option gets given the wrong
