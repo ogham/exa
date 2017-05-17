@@ -1,9 +1,15 @@
 DESTDIR =
 PREFIX  = /usr/local
 
-BASHDIR = $(PREFIX)/etc/bash_completion.d
+override define compdir
+ifndef $(1)
+$(1) := $$(or $$(shell pkg-config --variable=completionsdir $(2) 2>/dev/null),$(3))
+endif
+endef
+
+$(eval $(call compdir,BASHDIR,bash-completion,$(PREFIX)/etc/bash_completion.d))
 ZSHDIR  = /usr/share/zsh/vendor-completions
-FISHDIR = $(PREFIX)/share/fish/vendor_completions.d
+$(eval $(call compdir,FISHDIR,fish,$(PREFIX)/share/fish/vendor_completions.d))
 
 FEATURES ?= default
 
@@ -24,20 +30,20 @@ install-man:
 	install -m644  -- contrib/man/exa.1 "$(DESTDIR)$(PREFIX)/share/man/man1/"
 
 install-bash-completions:
-	install -m644 -- contrib/completions.bash "$(BASHDIR)/exa"
+	install -m644 -- contrib/completions.bash "$(DESTDIR)$(BASHDIR)/exa"
 
 install-zsh-completions:
-	install -m644 -- contrib/completions.zsh "$(ZSHDIR)/_exa"
+	install -m644 -- contrib/completions.zsh "$(DESTDIR)$(ZSHDIR)/_exa"
 
 install-fish-completions:
-	install -m644 -- contrib/completions.fish "$(FISHDIR)/exa.fish"
+	install -m644 -- contrib/completions.fish "$(DESTDIR)$(FISHDIR)/exa.fish"
 
 uninstall:
 	-rm -f -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
 	-rm -f -- "$(DESTDIR)$(PREFIX)/bin/exa"
-	-rm -f -- "$(BASHDIR)/exa"
-	-rm -f -- "$(ZSHDIR)/_exa"
-	-rm -f -- "$(FISHDIR)/exa.fish"
+	-rm -f -- "$(DESTDIR)$(BASHDIR)/exa"
+	-rm -f -- "$(DESTDIR)$(ZSHDIR)/_exa"
+	-rm -f -- "$(DESTDIR)$(FISHDIR)/exa.fish"
 
 clean:
 	cargo clean
