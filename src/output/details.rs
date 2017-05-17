@@ -90,6 +90,7 @@ use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
+use unicode_width::UnicodeWidthStr;
 use locale;
 
 use users::{Users, Groups, UsersCache};
@@ -161,6 +162,12 @@ pub struct Environment<U: Users+Groups> {
     /// Localisation rules for formatting timestamps.
     time: locale::Time,
 
+    /// Date format for printing out timestamps that are in the current year.
+    date_and_time: DateFormat<'static>,
+
+    /// Date format for printing out timestamps that *aren’t*.
+    date_and_year: DateFormat<'static>,
+
     /// The computer's current time zone. This gets used to determine how to
     /// offset files' timestamps.
     tz: Option<TimeZone>,
@@ -177,12 +184,34 @@ impl Default for Environment<UsersCache> {
             println!("Unable to determine time zone: {}", e);
         }
 
+        let numeric = locale::Numeric::load_user_locale()
+                          .unwrap_or_else(|_| locale::Numeric::english());
+
+        let time = locale::Time::load_user_locale()
+                       .unwrap_or_else(|_| locale::Time::english());
+
+        // Some locales use a three-character wide month name (Jan to Dec);
+        // others vary between three and four (1月 to 12月). We assume that
+        // December is the month with the maximum width, and use the width of
+        let december_width = UnicodeWidthStr::width(&*time.short_month_name(11));
+        let date_and_time = match december_width {
+            4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
+            _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
+        };
+
+        let date_and_year = match december_width {
+            4 => DateFormat::parse("{2>:D} {4>:M} {5>:Y}").unwrap(),
+            _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
+        };
+
         Environment {
-            current_year: LocalDateTime::now().year(),
-            numeric:      locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english()),
-            time:         locale::Time::load_user_locale().unwrap_or_else(|_| locale::Time::english()),
-            tz:           tz.ok(),
-            users:        Mutex::new(UsersCache::new()),
+            current_year:  LocalDateTime::now().year(),
+            numeric:       numeric,
+            date_and_time: date_and_time,
+            date_and_year: date_and_year,
+            time:          time,
+            tz:            tz.ok(),
+            users:         Mutex::new(UsersCache::new()),
         }
     }
 }
@@ -602,10 +631,10 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             let date = tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
 
             let datestamp = if date.year() == self.env.current_year {
-                DATE_AND_TIME.format(&date, &self.env.time)
+                self.env.date_and_time.format(&date, &self.env.time)
             }
             else {
-                DATE_AND_YEAR.format(&date, &self.env.time)
+                self.env.date_and_year.format(&date, &self.env.time)
             };
 
             TextCell::paint(self.opts.colours.date, datestamp)
@@ -614,10 +643,10 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             let date = LocalDateTime::at(timestamp.0 as i64);
 
             let datestamp = if date.year() == self.env.current_year {
-                DATE_AND_TIME.format(&date, &self.env.time)
+                self.env.date_and_time.format(&date, &self.env.time)
             }
             else {
-                DATE_AND_YEAR.format(&date, &self.env.time)
+                self.env.date_and_year.format(&date, &self.env.time)
             };
 
             TextCell::paint(self.opts.colours.date, datestamp)
@@ -736,15 +765,6 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 }
 
 
-lazy_static! {
-    static ref DATE_AND_TIME: DateFormat<'static> =
-        DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap();
-
-    static ref DATE_AND_YEAR: DateFormat<'static> =
-        DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap();
-}
-
-
 #[cfg(test)]
 pub mod test {
     pub use super::{Table, Environment, Details};
@@ -757,7 +777,7 @@ pub mod test {
     pub use users::{User, Group, uid_t, gid_t};
     pub use users::mock::MockUsers;
     pub use users::os::unix::{UserExt, GroupExt};
-
+    pub use datetime::fmt::DateFormat;
     pub use ansi_term::Style;
     pub use ansi_term::Colour::*;
 
@@ -768,11 +788,13 @@ pub mod test {
             use std::sync::Mutex;
 
             Environment {
-                current_year: 1234,
-                numeric:      locale::Numeric::english(),
-                time:         locale::Time::english(),
-                tz:           None,
-                users:        Mutex::new(MockUsers::with_current_uid(0)),
+                current_year:  1234,
+                numeric:       locale::Numeric::english(),
+                time:          locale::Time::english(),
+                date_and_time: DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
+                date_and_year: DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap(),
+                tz:            None,
+                users:         Mutex::new(MockUsers::with_current_uid(0)),
             }
         }
     }
