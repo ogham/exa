@@ -17,7 +17,6 @@ extern crate users;
 extern crate zoneinfo_compiled;
 
 #[cfg(feature="git")] extern crate git2;
-#[macro_use] extern crate lazy_static;
 
 use std::ffi::OsStr;
 use std::io::{stderr, Write, Result as IOResult};
