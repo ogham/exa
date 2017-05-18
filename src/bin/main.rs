@@ -1,15 +1,15 @@
 extern crate exa;
 use exa::Exa;
 
-use std::env::args;
+use std::env::args_os;
 use std::io::{stdout, stderr, Write, ErrorKind};
 use std::process::exit;
 
 fn main() {
-    let args: Vec<String> = args().skip(1).collect();
+    let args = args_os().skip(1);
     let mut stdout = stdout();
 
-    match Exa::new(&args, &mut stdout) {
+    match Exa::new(args, &mut stdout) {
         Ok(mut exa) => {
             match exa.run() {
                 Ok(exit_status) => exit(exit_status),

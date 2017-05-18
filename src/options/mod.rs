@@ -39,10 +39,16 @@ pub struct Options {
 
 impl Options {
 
+    // Even though the arguments go in as OsStrings, they come out
+    // as Strings. Invalid UTF-8 won’t be parsed, but it won’t make
+    // exa core dump either.
+    //
+    // https://github.com/rust-lang-nursery/getopts/pull/29
+
     /// Call getopts on the given slice of command-line strings.
     #[allow(unused_results)]
-    pub fn getopts<S>(args: &[S]) -> Result<(Options, Vec<String>), Misfire>
-    where S: AsRef<OsStr> {
+    pub fn getopts<C>(args: C) -> Result<(Options, Vec<String>), Misfire>
+    where C: IntoIterator, C::Item: AsRef<OsStr> {
         let mut opts = getopts::Options::new();
 
         opts.optflag("v", "version",   "show version of exa");

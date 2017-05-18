@@ -53,8 +53,8 @@ pub struct Exa<'w, W: Write + 'w> {
 }
 
 impl<'w, W: Write + 'w> Exa<'w, W> {
-    pub fn new<S>(args: &[S], writer: &'w mut W) -> Result<Exa<'w, W>, Misfire>
-    where S: AsRef<OsStr> {
+    pub fn new<C>(args: C, writer: &'w mut W) -> Result<Exa<'w, W>, Misfire>
+    where C: IntoIterator, C::Item: AsRef<OsStr> {
         Options::getopts(args).map(move |(options, args)| {
             Exa { options, writer, args }
         })
