@@ -316,14 +316,7 @@ impl Details {
                         }
                     };
 
-                    let egg = Egg {
-                        cells: cells,
-                        xattrs: xattrs,
-                        errors: errors,
-                        dir: dir,
-                        file: file,
-                    };
-
+                    let egg = Egg { cells, xattrs, errors, dir, file };
                     file_eggs.lock().unwrap().push(egg);
                 });
             }

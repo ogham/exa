@@ -143,11 +143,7 @@ impl Options {
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, filter.clone(), dir_action)?;
 
-        Ok(Options {
-            dir_action: dir_action,
-            view:       view,
-            filter:     filter,  // TODO: clone
-        })
+        Ok(Options { dir_action, view, filter })
     }
 }
 

@@ -94,9 +94,9 @@ impl View {
 
             if let Some(&width) = term_width.as_ref() {
                 let colours = match term_colours {
-                    TerminalColours::Always
-                    | TerminalColours::Automatic => Colours::colourful(colour_scale()),
-                    TerminalColours::Never     => Colours::plain(),
+                    TerminalColours::Always     |
+                    TerminalColours::Automatic  => Colours::colourful(colour_scale()),
+                    TerminalColours::Never      => Colours::plain(),
                 };
 
                 if matches.opt_present("oneline") {
@@ -104,12 +104,7 @@ impl View {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
-                        let lines = Lines {
-                             colours: colours,
-                             classify: classify,
-                        };
-
-                        Ok(View::Lines(lines))
+                        Ok(View::Lines(Lines { colours, classify }))
                     }
                 }
                 else if matches.opt_present("tree") {
@@ -160,28 +155,23 @@ impl View {
                     Ok(View::Details(details))
                 }
                 else {
-                    let lines = Lines {
-                         colours: colours,
-                         classify: classify,
-                    };
-
-                    Ok(View::Lines(lines))
+                    Ok(View::Lines(Lines { colours, classify }))
                 }
             }
         };
 
         if matches.opt_present("long") {
-            let long_options = long()?;
+            let details = long()?;
 
             if matches.opt_present("grid") {
                 match other_options_scan() {
-                    Ok(View::Grid(grid)) => return Ok(View::GridDetails(GridDetails { grid: grid, details: long_options })),
+                    Ok(View::Grid(grid)) => return Ok(View::GridDetails(GridDetails { grid, details })),
                     Ok(lines)            => return Ok(lines),
                     Err(e)               => return Err(e),
                 };
             }
             else {
-                return Ok(View::Details(long_options));
+                return Ok(View::Details(details));
             }
         }
 
@@ -313,7 +303,7 @@ impl TimeTypes {
             }
         }
         else if modified || created || accessed {
-            Ok(TimeTypes { accessed: accessed, modified: modified, created: created })
+            Ok(TimeTypes { accessed, modified, created })
         }
         else {
             Ok(TimeTypes::default())

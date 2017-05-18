@@ -89,10 +89,7 @@ impl RecurseOptions {
             None
         };
 
-        Ok(RecurseOptions {
-            tree: tree,
-            max_depth: max_depth,
-        })
+        Ok(RecurseOptions { tree, max_depth })
     }
 
     /// Returns whether a directory of the given depth would be too deep.

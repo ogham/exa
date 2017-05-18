@@ -34,15 +34,9 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
     pub fn new(file: &'a File<'dir>, link_style: LinkStyle, classify: Classify, colours: &'a Colours) -> FileName<'a, 'dir> {
-        let target =  if file.is_link() { Some(file.link_target()) }
-                                                       else { None };
-        FileName {
-            file: file,
-            colours: colours,
-            target: target,
-            link_style: link_style,
-            classify: classify,
-        }
+        let target = if file.is_link() { Some(file.link_target()) }
+                                                      else { None };
+        FileName { file, colours, target, link_style, classify }
     }
 
 
