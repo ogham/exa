@@ -1,5 +1,5 @@
 
-pub static OPTIONS: &'static str = r##"
+pub static OPTIONS: &str = r##"
   -?, --help         show list of command-line options
   -v, --version      show version of exa
 
@@ -26,7 +26,7 @@ FILTERING AND SORTING OPTIONS
 
 "##;
 
-pub static LONG_OPTIONS: &'static str = r##"
+pub static LONG_OPTIONS: &str = r##"
 LONG VIEW OPTIONS
   -b, --binary       list file sizes with binary prefixes
   -B, --bytes        list file sizes in bytes, without any prefixes
@@ -42,5 +42,5 @@ LONG VIEW OPTIONS
   -U, --created      use the created timestamp field
 "##;
 
-pub static GIT_HELP:      &'static str = r##"  --git              list each file's Git status, if tracked"##;
-pub static EXTENDED_HELP: &'static str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
+pub static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
+pub static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
