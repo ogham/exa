@@ -70,6 +70,9 @@ pub struct Size {
     pub numbers: Style,
     pub unit: Style,
 
+    pub major: Style,
+    pub minor: Style,
+
     pub scale_byte: Style,
     pub scale_kilo: Style,
     pub scale_mega: Style,
@@ -147,6 +150,9 @@ impl Colours {
             size: Size {
                 numbers:  Green.bold(),
                 unit:     Green.normal(),
+
+                major:  Green.bold(),
+                minor:  Green.normal(),
 
                 scale_byte: Fixed(118).normal(),
                 scale_kilo: Fixed(190).normal(),

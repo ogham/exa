@@ -129,6 +129,16 @@ pub enum Size {
     ///
     /// See this answer for more: http://unix.stackexchange.com/a/68266
     None,
+
+    /// This file is a block or character device, so instead of a size, print
+    /// out the file’s major and minor device IDs.
+    ///
+    /// This is what ls does as well. Without it, the devices will just have
+    /// file sizes of zero.
+    DeviceIDs {
+        major: u8,
+        minor: u8,
+    }
 }
 
 

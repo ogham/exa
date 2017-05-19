@@ -268,6 +268,13 @@ impl<'dir> File<'dir> {
         if self.is_directory() {
             f::Size::None
         }
+        else if self.is_char_device() || self.is_block_device() {
+            let dev = self.metadata.rdev();
+            f::Size::DeviceIDs {
+                major: (dev / 256) as u8,
+                minor: (dev % 256) as u8,
+            }
+        }
         else {
             f::Size::Some(self.metadata.len())
         }

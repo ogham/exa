@@ -579,8 +579,9 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         use number_prefix::{Prefixed, Standalone, PrefixNames};
 
         let size = match size {
-            f::Size::Some(s) => s,
-            f::Size::None => return TextCell::blank(self.opts.colours.punctuation),
+            f::Size::Some(s)                     => s,
+            f::Size::None                        => return TextCell::blank(self.opts.colours.punctuation),
+            f::Size::DeviceIDs { major, minor }  => return self.render_device_ids(major, minor),
         };
 
         let result = match size_format {
@@ -610,6 +611,20 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             contents: vec![
                 self.opts.colours.file_size(size).paint(number),
                 self.opts.colours.size.unit.paint(symbol),
+            ].into(),
+        }
+    }
+
+    fn render_device_ids(&self, major: u8, minor: u8) -> TextCell {
+        let major = major.to_string();
+        let minor = minor.to_string();
+
+        TextCell {
+            width: DisplayWidth::from(major.len() + 1 + minor.len()),
+            contents: vec![
+                self.opts.colours.size.major.paint(major),
+                self.opts.colours.punctuation.paint(","),
+                self.opts.colours.size.minor.paint(minor),
             ].into(),
         }
     }
