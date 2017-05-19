@@ -135,6 +135,10 @@ pub enum Size {
     ///
     /// This is what ls does as well. Without it, the devices will just have
     /// file sizes of zero.
+    ///
+    /// You can see what these device numbers mean:
+    /// - http://www.lanana.org/docs/device-list/
+    /// - http://www.lanana.org/docs/device-list/devices-2.6+.txt
     DeviceIDs {
         major: u8,
         minor: u8,

@@ -259,11 +259,14 @@ impl<'dir> File<'dir> {
         f::Group(self.metadata.gid())
     }
 
-    /// This file's size, if it's a regular file.
+    /// This file’s size, if it’s a regular file.
     ///
     /// For directories, no size is given. Although they do have a size on
-    /// some filesystems, I've never looked at one of those numbers and gained
-    /// any information from it. So it's going to be hidden instead.
+    /// some filesystems, I’ve never looked at one of those numbers and gained
+    /// any information from it. So it’s going to be hidden instead.
+    ///
+    /// Block and character devices return their device IDs, because they
+    /// usually just have a file size of zero.
     pub fn size(&self) -> f::Size {
         if self.is_directory() {
             f::Size::None
