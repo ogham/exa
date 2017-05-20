@@ -16,3 +16,4 @@ mod colours;
 mod tree;
 pub mod file_name;
 mod escape;
+mod users;
