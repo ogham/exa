@@ -83,8 +83,6 @@ use std::path::PathBuf;
 use std::string::ToString;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use ansi_term::Style;
-
 use datetime::fmt::DateFormat;
 use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
@@ -498,7 +496,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         use output::column::TimeType::*;
 
         match *column {
-            Column::Permissions          => self.render_permissions(file.type_char(), file.permissions(), xattrs),
+            Column::Permissions          => file.permissions().render(&self.opts.colours, file.type_char(), xattrs),
             Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
             Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
             Column::Timestamp(Created)   => self.render_time(file.created_time()),
@@ -509,56 +507,6 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             Column::User                 => file.user().render(&self.opts.colours, &*self.env.lock_users()),
             Column::Group                => file.group().render(&self.opts.colours, &*self.env.lock_users()),
             Column::GitStatus            => self.render_git_status(file.git_status()),
-        }
-    }
-
-    fn render_permissions(&self, file_type: f::Type, permissions: f::Permissions, xattrs: bool) -> TextCell {
-        let perms = self.opts.colours.perms;
-        let types = self.opts.colours.filetypes;
-
-        let bit = |bit, chr: &'static str, style: Style| {
-            if bit { style.paint(chr) } else { self.opts.colours.punctuation.paint("-") }
-        };
-
-        let type_char = match file_type {
-            f::Type::File       => types.normal.paint("."),
-            f::Type::Directory  => types.directory.paint("d"),
-            f::Type::Pipe       => types.pipe.paint("|"),
-            f::Type::Link       => types.symlink.paint("l"),
-            f::Type::CharDevice => types.device.paint("c"),
-            f::Type::BlockDevice => types.device.paint("b"),
-            f::Type::Socket     => types.socket.paint("s"),
-            f::Type::Special    => types.special.paint("?"),
-        };
-
-        let x_colour = if file_type.is_regular_file() { perms.user_execute_file }
-                                                 else { perms.user_execute_other };
-
-        let mut chars = vec![
-            type_char,
-            bit(permissions.user_read,     "r", perms.user_read),
-            bit(permissions.user_write,    "w", perms.user_write),
-            bit(permissions.user_execute,  "x", x_colour),
-            bit(permissions.group_read,    "r", perms.group_read),
-            bit(permissions.group_write,   "w", perms.group_write),
-            bit(permissions.group_execute, "x", perms.group_execute),
-            bit(permissions.other_read,    "r", perms.other_read),
-            bit(permissions.other_write,   "w", perms.other_write),
-            bit(permissions.other_execute, "x", perms.other_execute),
-        ];
-
-        if xattrs {
-            chars.push(perms.attribute.paint("@"));
-        }
-
-        // As these are all ASCII characters, we can guarantee that they’re
-        // all going to be one character wide, and don’t need to compute the
-        // cell’s display width.
-        let width = DisplayWidth::from(chars.len());
-
-        TextCell {
-            contents: chars.into(),
-            width:    width,
         }
     }
 
@@ -739,32 +687,5 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         }
 
         cells
-    }
-}
-
-
-#[cfg(test)]
-pub mod test {
-    use super::Environment;
-
-    use users::mock::MockUsers;
-    use datetime::fmt::DateFormat;
-
-    impl Default for Environment<MockUsers> {
-        fn default() -> Self {
-            use locale;
-            use users::mock::MockUsers;
-            use std::sync::Mutex;
-
-            Environment {
-                current_year:  1234,
-                numeric:       locale::Numeric::english(),
-                time:          locale::Time::english(),
-                date_and_time: DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
-                date_and_year: DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap(),
-                tz:            None,
-                users:         Mutex::new(MockUsers::with_current_uid(0)),
-            }
-        }
     }
 }
