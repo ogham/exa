@@ -177,7 +177,7 @@ pub struct Environment<U> {  // where U: Users+Groups
 }
 
 impl<U> Environment<U> {
-    pub fn users(&self) -> MutexGuard<U> {
+    pub fn lock_users(&self) -> MutexGuard<U> {
         self.users.lock().unwrap()
     }
 }
@@ -506,8 +506,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
             Column::HardLinks            => self.render_links(file.links()),
             Column::Inode                => self.render_inode(file.inode()),
             Column::Blocks               => self.render_blocks(file.blocks()),
-            Column::User                 => self.render_user(file.user()),
-            Column::Group                => self.render_group(file.group()),
+            Column::User                 => file.user().render(&self.opts.colours, &*self.env.lock_users()),
+            Column::Group                => file.group().render(&self.opts.colours, &*self.env.lock_users()),
             Column::GitStatus            => self.render_git_status(file.git_status()),
         }
     }
@@ -745,10 +745,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
 #[cfg(test)]
 pub mod test {
-    use super::{Table, Environment, Details};
-    use std::sync::Mutex;
-
-    use output::column::Column;
+    use super::Environment;
 
     use users::mock::MockUsers;
     use datetime::fmt::DateFormat;
@@ -768,17 +765,6 @@ pub mod test {
                 tz:            None,
                 users:         Mutex::new(MockUsers::with_current_uid(0)),
             }
-        }
-    }
-
-    pub fn new_table<'a>(columns: &'a [Column], details: &'a Details, users: MockUsers) -> Table<'a, MockUsers> {
-        use std::sync::Arc;
-
-        Table {
-            columns: columns,
-            opts: details,
-            env: Arc::new(Environment { users: Mutex::new(users), ..Environment::default() }),
-            rows: Vec::new(),
         }
     }
 }
