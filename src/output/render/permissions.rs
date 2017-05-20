@@ -1,7 +1,7 @@
 use fs::fields as f;
 use output::colours::Colours;
 use output::cell::{TextCell, DisplayWidth};
-use ansi_term::Style;
+use ansi_term::{ANSIString, Style};
 
 
 impl f::Permissions {
@@ -10,22 +10,11 @@ impl f::Permissions {
            if bit { style.paint(chr) } else { colours.punctuation.paint("-") }
        };
 
-       let type_char = match file_type {
-           f::Type::File        => colours.filetypes.normal.paint("."),
-           f::Type::Directory   => colours.filetypes.directory.paint("d"),
-           f::Type::Pipe        => colours.filetypes.pipe.paint("|"),
-           f::Type::Link        => colours.filetypes.symlink.paint("l"),
-           f::Type::CharDevice  => colours.filetypes.device.paint("c"),
-           f::Type::BlockDevice => colours.filetypes.device.paint("b"),
-           f::Type::Socket      => colours.filetypes.socket.paint("s"),
-           f::Type::Special     => colours.filetypes.special.paint("?"),
-       };
-
        let x_colour = if file_type.is_regular_file() { colours.perms.user_execute_file }
                                                 else { colours.perms.user_execute_other };
 
        let mut chars = vec![
-           type_char,
+           file_type.render(colours),
            bit(self.user_read,     "r", colours.perms.user_read),
            bit(self.user_write,    "w", colours.perms.user_write),
            bit(self.user_execute,  "x", x_colour),
@@ -52,6 +41,22 @@ impl f::Permissions {
        }
    }
 }
+
+impl f::Type {
+    pub fn render(&self, colours: &Colours) -> ANSIString<'static> {
+        match *self {
+            f::Type::File        => colours.filetypes.normal.paint("."),
+            f::Type::Directory   => colours.filetypes.directory.paint("d"),
+            f::Type::Pipe        => colours.filetypes.pipe.paint("|"),
+            f::Type::Link        => colours.filetypes.symlink.paint("l"),
+            f::Type::CharDevice  => colours.filetypes.device.paint("c"),
+            f::Type::BlockDevice => colours.filetypes.device.paint("b"),
+            f::Type::Socket      => colours.filetypes.socket.paint("s"),
+            f::Type::Special     => colours.filetypes.special.paint("?"),
+        }
+    }
+}
+
 
 
 #[cfg(test)]
