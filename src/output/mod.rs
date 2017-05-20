@@ -19,3 +19,4 @@ mod escape;
 mod users;
 mod groups;
 mod permissions;
+mod size;

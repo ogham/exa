@@ -97,7 +97,7 @@ use fs::{Dir, File, fields as f};
 use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
-use output::column::{Alignment, Column, Columns, SizeFormat};
+use output::column::{Alignment, Column, Columns};
 use output::cell::{TextCell, TextCellContents, DisplayWidth};
 use output::tree::TreeTrunk;
 use output::file_name::{FileName, LinkStyle, Classify};
@@ -497,7 +497,7 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
         match *column {
             Column::Permissions          => file.permissions().render(&self.opts.colours, file.type_char(), xattrs),
-            Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
+            Column::FileSize(fmt)        => file.size().render(&self.opts.colours, fmt, &self.env.numeric),
             Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
             Column::Timestamp(Created)   => self.render_time(file.created_time()),
             Column::Timestamp(Accessed)  => self.render_time(file.accessed_time()),
@@ -526,61 +526,6 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
 
     fn render_inode(&self, inode: f::Inode) -> TextCell {
         TextCell::paint(self.opts.colours.inode, inode.0.to_string())
-    }
-
-    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> TextCell {
-        use number_prefix::{binary_prefix, decimal_prefix};
-        use number_prefix::{Prefixed, Standalone, PrefixNames};
-
-        let size = match size {
-            f::Size::Some(s)                     => s,
-            f::Size::None                        => return TextCell::blank(self.opts.colours.punctuation),
-            f::Size::DeviceIDs { major, minor }  => return self.render_device_ids(major, minor),
-        };
-
-        let result = match size_format {
-            SizeFormat::DecimalBytes  => decimal_prefix(size as f64),
-            SizeFormat::BinaryBytes   => binary_prefix(size as f64),
-            SizeFormat::JustBytes     => {
-                let string = self.env.numeric.format_int(size);
-                return TextCell::paint(self.opts.colours.file_size(size), string);
-            },
-        };
-
-        let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(self.opts.colours.file_size(b as u64), b.to_string()),
-            Prefixed(p, n) => (p, n)
-        };
-
-        let symbol = prefix.symbol();
-        let number = if n < 10f64 { self.env.numeric.format_float(n, 1) }
-                             else { self.env.numeric.format_int(n as isize) };
-
-        // The numbers and symbols are guaranteed to be written in ASCII, so
-        // we can skip the display width calculation.
-        let width = DisplayWidth::from(number.len() + symbol.len());
-
-        TextCell {
-            width:    width,
-            contents: vec![
-                self.opts.colours.file_size(size).paint(number),
-                self.opts.colours.size.unit.paint(symbol),
-            ].into(),
-        }
-    }
-
-    fn render_device_ids(&self, major: u8, minor: u8) -> TextCell {
-        let major = major.to_string();
-        let minor = minor.to_string();
-
-        TextCell {
-            width: DisplayWidth::from(major.len() + 1 + minor.len()),
-            contents: vec![
-                self.opts.colours.size.major.paint(major),
-                self.opts.colours.punctuation.paint(","),
-                self.opts.colours.size.minor.paint(minor),
-            ].into(),
-        }
     }
 
     #[allow(trivial_numeric_casts)]
