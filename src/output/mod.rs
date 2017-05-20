@@ -16,7 +16,4 @@ mod colours;
 mod tree;
 pub mod file_name;
 mod escape;
-mod users;
-mod groups;
-mod permissions;
-mod size;
+mod render;
