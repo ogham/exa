@@ -11,9 +11,9 @@ impl f::Size {
         use number_prefix::{Prefixed, Standalone, PrefixNames};
 
         let size = match *self {
-            f::Size::Some(s)                     => s,
-            f::Size::None                        => return TextCell::blank(colours.punctuation),
-            f::Size::DeviceIDs { major, minor }  => return render_device_ids(colours, major, minor),
+            f::Size::Some(s)             => s,
+            f::Size::None                => return TextCell::blank(colours.punctuation),
+            f::Size::DeviceIDs(ref ids)  => return ids.render(colours),
         };
 
         let result = match size_format {
@@ -48,16 +48,18 @@ impl f::Size {
     }
 }
 
-fn render_device_ids(colours: &Colours, major: u8, minor: u8) -> TextCell {
-    let major = major.to_string();
-    let minor = minor.to_string();
+impl f::DeviceIDs {
+    fn render(&self, colours: &Colours) -> TextCell {
+        let major = self.major.to_string();
+        let minor = self.minor.to_string();
 
-    TextCell {
-        width: DisplayWidth::from(major.len() + 1 + minor.len()),
-        contents: vec![
-            colours.size.major.paint(major),
-            colours.punctuation.paint(","),
-            colours.size.minor.paint(minor),
-        ].into(),
+        TextCell {
+            width: DisplayWidth::from(major.len() + 1 + minor.len()),
+            contents: vec![
+                colours.size.major.paint(major),
+                colours.punctuation.paint(","),
+                colours.size.minor.paint(minor),
+            ].into(),
+        }
     }
 }
