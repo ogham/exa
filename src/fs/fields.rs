@@ -69,6 +69,15 @@ pub struct Permissions {
     pub other_execute:  bool,
 }
 
+/// The three pieces of information that are displayed as a single column in
+/// the details view. These values are fused together to make the output a
+/// little more compressed.
+pub struct PermissionsPlus {
+    pub file_type:   Type,
+    pub permissions: Permissions,
+    pub xattrs:      bool,
+}
+
 
 /// A file’s number of hard links on the filesystem.
 ///

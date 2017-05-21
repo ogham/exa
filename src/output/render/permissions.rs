@@ -4,42 +4,48 @@ use output::cell::{TextCell, DisplayWidth};
 use ansi_term::{ANSIString, Style};
 
 
-impl f::Permissions {
-    pub fn render(&self, colours: &Colours, file_type: f::Type, xattrs: bool) -> TextCell {
-       let bit = |bit, chr: &'static str, style: Style| {
-           if bit { style.paint(chr) } else { colours.punctuation.paint("-") }
-       };
+impl f::PermissionsPlus {
+    pub fn render(&self, colours: &Colours) -> TextCell {
+        let x_colour = if self.file_type.is_regular_file() { colours.perms.user_execute_file }
+                                                      else { colours.perms.user_execute_other };
 
-       let x_colour = if file_type.is_regular_file() { colours.perms.user_execute_file }
-                                                else { colours.perms.user_execute_other };
+        let mut chars = vec![ self.file_type.render(colours) ];
+        chars.extend(self.permissions.render(colours, x_colour));
 
-       let mut chars = vec![
-           file_type.render(colours),
-           bit(self.user_read,     "r", colours.perms.user_read),
-           bit(self.user_write,    "w", colours.perms.user_write),
-           bit(self.user_execute,  "x", x_colour),
-           bit(self.group_read,    "r", colours.perms.group_read),
-           bit(self.group_write,   "w", colours.perms.group_write),
-           bit(self.group_execute, "x", colours.perms.group_execute),
-           bit(self.other_read,    "r", colours.perms.other_read),
-           bit(self.other_write,   "w", colours.perms.other_write),
-           bit(self.other_execute, "x", colours.perms.other_execute),
-       ];
-
-       if xattrs {
+        if self.xattrs {
            chars.push(colours.perms.attribute.paint("@"));
-       }
+        }
 
-       // As these are all ASCII characters, we can guarantee that they’re
-       // all going to be one character wide, and don’t need to compute the
-       // cell’s display width.
-       let width = DisplayWidth::from(chars.len());
+        // As these are all ASCII characters, we can guarantee that they’re
+        // all going to be one character wide, and don’t need to compute the
+        // cell’s display width.
+        let width = DisplayWidth::from(chars.len());
 
-       TextCell {
-           contents: chars.into(),
-           width:    width,
-       }
-   }
+        TextCell {
+            contents: chars.into(),
+            width:    width,
+        }
+    }
+}
+
+impl f::Permissions {
+    pub fn render(&self, colours: &Colours, x_colour: Style) -> Vec<ANSIString<'static>> {
+        let bit = |bit, chr: &'static str, style: Style| {
+            if bit { style.paint(chr) } else { colours.punctuation.paint("-") }
+        };
+
+        vec![
+            bit(self.user_read,     "r", colours.perms.user_read),
+            bit(self.user_write,    "w", colours.perms.user_write),
+            bit(self.user_execute,  "x", x_colour),
+            bit(self.group_read,    "r", colours.perms.group_read),
+            bit(self.group_write,   "w", colours.perms.group_write),
+            bit(self.group_execute, "x", colours.perms.group_execute),
+            bit(self.other_read,    "r", colours.perms.other_read),
+            bit(self.other_write,   "w", colours.perms.other_write),
+            bit(self.other_execute, "x", colours.perms.other_execute),
+        ]
+    }
 }
 
 impl f::Type {
@@ -63,78 +69,59 @@ impl f::Type {
 #[allow(unused_results)]
 pub mod test {
     use output::details::Details;
-
+    use output::cell::TextCellContents;
     use fs::fields as f;
-    use output::cell::TextCell;
 
-    use users::{User, Group};
-    use users::mock::MockUsers;
-    use users::os::unix::GroupExt;
     use ansi_term::Colour::*;
 
 
     #[test]
-    fn named() {
+    fn negate() {
         let mut details = Details::default();
-        details.colours.users.group_not_yours = Fixed(101).normal();
+        details.colours.punctuation = Fixed(44).normal();
 
-        let mut users = MockUsers::with_current_uid(1000);
-        users.add_group(Group::new(100, "folk"));
+        let bits = f::Permissions {
+            user_read:  false,  user_write:  false,  user_execute:  false,
+            group_read: false,  group_write: false,  group_execute: false,
+            other_read: false,  other_write: false,  other_execute: false,
+        };
 
-        let group = f::Group(100);
-        let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
+        let expected = TextCellContents::from(vec![
+            Fixed(44).paint("-"),  Fixed(44).paint("-"),  Fixed(44).paint("-"),
+            Fixed(44).paint("-"),  Fixed(44).paint("-"),  Fixed(44).paint("-"),
+            Fixed(44).paint("-"),  Fixed(44).paint("-"),  Fixed(44).paint("-"),
+        ]);
+
+        assert_eq!(expected, bits.render(&details.colours, Fixed(66).normal()).into())
     }
 
-    #[test]
-    fn unnamed() {
-        let mut details = Details::default();
-        details.colours.users.group_not_yours = Fixed(87).normal();
-
-        let users = MockUsers::with_current_uid(1000);
-
-        let group = f::Group(100);
-        let expected = TextCell::paint_str(Fixed(87).normal(), "100");
-        assert_eq!(expected, group.render(&details.colours, &users));
-    }
 
     #[test]
-    fn primary() {
+    fn affirm() {
         let mut details = Details::default();
-        details.colours.users.group_yours = Fixed(64).normal();
+        details.colours.perms.user_read    = Fixed(101).normal();
+        details.colours.perms.user_write   = Fixed(102).normal();
 
-        let mut users = MockUsers::with_current_uid(2);
-        users.add_user(User::new(2, "eve", 100));
-        users.add_group(Group::new(100, "folk"));
+        details.colours.perms.group_read    = Fixed(104).normal();
+        details.colours.perms.group_write   = Fixed(105).normal();
+        details.colours.perms.group_execute = Fixed(106).normal();
 
-        let group = f::Group(100);
-        let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
-    }
+        details.colours.perms.other_read    = Fixed(107).normal();
+        details.colours.perms.other_write   = Fixed(108).normal();
+        details.colours.perms.other_execute = Fixed(109).normal();
 
-    #[test]
-    fn secondary() {
-        let mut details = Details::default();
-        details.colours.users.group_yours = Fixed(31).normal();
+        let bits = f::Permissions {
+            user_read:  true,  user_write:  true,  user_execute:  true,
+            group_read: true,  group_write: true,  group_execute: true,
+            other_read: true,  other_write: true,  other_execute: true,
+        };
 
-        let mut users = MockUsers::with_current_uid(2);
-        users.add_user(User::new(2, "eve", 666));
+        let expected = TextCellContents::from(vec![
+            Fixed(101).paint("r"),  Fixed(102).paint("w"),  Fixed(103).paint("x"),
+            Fixed(104).paint("r"),  Fixed(105).paint("w"),  Fixed(106).paint("x"),
+            Fixed(107).paint("r"),  Fixed(108).paint("w"),  Fixed(109).paint("x"),
+        ]);
 
-        let test_group = Group::new(100, "folk").add_member("eve");
-        users.add_group(test_group);
-
-        let group = f::Group(100);
-        let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
-    }
-
-    #[test]
-    fn overflow() {
-        let mut details = Details::default();
-        details.colours.users.group_not_yours = Blue.underline();
-
-        let group = f::Group(2_147_483_648);
-        let expected = TextCell::paint_str(Blue.underline(), "2147483648");
-        assert_eq!(expected, group.render(&details.colours, &MockUsers::with_current_uid(0)));
+        assert_eq!(expected, bits.render(&details.colours, Fixed(103).normal()).into())
     }
 }

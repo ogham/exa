@@ -492,11 +492,19 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
                     .collect()
     }
 
+    fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
+        f::PermissionsPlus {
+            file_type: file.type_char(),
+            permissions: file.permissions(),
+            xattrs: xattrs,
+        }
+    }
+
     fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
         use output::column::TimeType::*;
 
         match *column {
-            Column::Permissions          => file.permissions().render(&self.opts.colours, file.type_char(), xattrs),
+            Column::Permissions          => self.permissions_plus(file, xattrs).render(&self.opts.colours),
             Column::FileSize(fmt)        => file.size().render(&self.opts.colours, fmt, &self.env.numeric),
             Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
             Column::Timestamp(Created)   => self.render_time(file.created_time()),

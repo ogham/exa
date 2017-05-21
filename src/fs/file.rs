@@ -10,26 +10,6 @@ use fs::dir::Dir;
 use fs::fields as f;
 
 
-#[allow(trivial_numeric_casts)]
-mod modes {
-    use libc;
-
-    pub type Mode = u32;
-    // The `libc::mode_t` type’s actual type varies, but the value returned
-    // from `metadata.permissions().mode()` is always `u32`.
-
-    pub const USER_READ: Mode     = libc::S_IRUSR as Mode;
-    pub const USER_WRITE: Mode    = libc::S_IWUSR as Mode;
-    pub const USER_EXECUTE: Mode  = libc::S_IXUSR as Mode;
-    pub const GROUP_READ: Mode    = libc::S_IRGRP as Mode;
-    pub const GROUP_WRITE: Mode   = libc::S_IWGRP as Mode;
-    pub const GROUP_EXECUTE: Mode = libc::S_IXGRP as Mode;
-    pub const OTHER_READ: Mode    = libc::S_IROTH as Mode;
-    pub const OTHER_WRITE: Mode   = libc::S_IWOTH as Mode;
-    pub const OTHER_EXECUTE: Mode = libc::S_IXOTH as Mode;
-}
-
-
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
 ///
@@ -327,11 +307,7 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file's permissions, with flags for each bit.
-    ///
-    /// The extended-attribute '@' character that you see in here is in fact
-    /// added in later, to avoid querying the extended attributes more than
-    /// once. (Yes, it's a little hacky.)
+    /// This file’s permissions, with flags for each bit.
     pub fn permissions(&self) -> f::Permissions {
         let bits = self.metadata.permissions().mode();
         let has_bit = |bit| { bits & bit == bit };
@@ -446,6 +422,27 @@ impl<'dir> FileTarget<'dir> {
             FileTarget::Broken(_) | FileTarget::Err(_)  => true,
         }
     }
+}
+
+
+/// More readable aliases for the permission bits exposed by libc.
+#[allow(trivial_numeric_casts)]
+mod modes {
+    use libc;
+
+    pub type Mode = u32;
+    // The `libc::mode_t` type’s actual type varies, but the value returned
+    // from `metadata.permissions().mode()` is always `u32`.
+
+    pub const USER_READ: Mode     = libc::S_IRUSR as Mode;
+    pub const USER_WRITE: Mode    = libc::S_IWUSR as Mode;
+    pub const USER_EXECUTE: Mode  = libc::S_IXUSR as Mode;
+    pub const GROUP_READ: Mode    = libc::S_IRGRP as Mode;
+    pub const GROUP_WRITE: Mode   = libc::S_IWGRP as Mode;
+    pub const GROUP_EXECUTE: Mode = libc::S_IXGRP as Mode;
+    pub const OTHER_READ: Mode    = libc::S_IROTH as Mode;
+    pub const OTHER_WRITE: Mode   = libc::S_IWOTH as Mode;
+    pub const OTHER_EXECUTE: Mode = libc::S_IXOTH as Mode;
 }
 
 
