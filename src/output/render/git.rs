@@ -1,3 +1,5 @@
+use ansi_term::ANSIString;
+
 use output::cell::{TextCell, DisplayWidth};
 use output::colours::Colours;
 use fs::fields as f;
@@ -5,21 +7,25 @@ use fs::fields as f;
 
 impl f::Git {
     pub fn render(&self, colours: &Colours) -> TextCell {
-        let git_char = |status| match status {
-            &f::GitStatus::NotModified  => colours.punctuation.paint("-"),
-            &f::GitStatus::New          => colours.git.new.paint("N"),
-            &f::GitStatus::Modified     => colours.git.modified.paint("M"),
-            &f::GitStatus::Deleted      => colours.git.deleted.paint("D"),
-            &f::GitStatus::Renamed      => colours.git.renamed.paint("R"),
-            &f::GitStatus::TypeChange   => colours.git.typechange.paint("T"),
-        };
-
         TextCell {
             width: DisplayWidth::from(2),
             contents: vec![
-                git_char(&self.staged),
-                git_char(&self.unstaged)
+                self.staged.render(colours),
+                self.unstaged.render(colours),
             ].into(),
+        }
+    }
+}
+
+impl f::GitStatus {
+    fn render(&self, colours: &Colours) -> ANSIString<'static> {
+        match *self {
+            f::GitStatus::NotModified  => colours.punctuation.paint("-"),
+            f::GitStatus::New          => colours.git.new.paint("N"),
+            f::GitStatus::Modified     => colours.git.modified.paint("M"),
+            f::GitStatus::Deleted      => colours.git.deleted.paint("D"),
+            f::GitStatus::Renamed      => colours.git.renamed.paint("R"),
+            f::GitStatus::TypeChange   => colours.git.typechange.paint("T"),
         }
     }
 }
