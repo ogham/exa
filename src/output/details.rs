@@ -87,7 +87,6 @@ use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
-use unicode_width::UnicodeWidthStr;
 use locale;
 
 use users::{Users, Groups, UsersCache};
@@ -181,8 +180,9 @@ impl<U> Environment<U> {
 
 impl Default for Environment<UsersCache> {
     fn default() -> Self {
-        let tz = determine_time_zone();
+        use unicode_width::UnicodeWidthStr;
 
+        let tz = determine_time_zone();
         if let Err(ref e) = tz {
             println!("Unable to determine time zone: {}", e);
         }
@@ -196,6 +196,7 @@ impl Default for Environment<UsersCache> {
         // Some locales use a three-character wide month name (Jan to Dec);
         // others vary between three and four (1月 to 12月). We assume that
         // December is the month with the maximum width, and use the width of
+        // that to determine how to pad the other months.
         let december_width = UnicodeWidthStr::width(&*time.short_month_name(11));
         let date_and_time = match december_width {
             4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
