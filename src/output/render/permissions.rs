@@ -19,11 +19,9 @@ impl f::PermissionsPlus {
         // As these are all ASCII characters, we can guarantee that they’re
         // all going to be one character wide, and don’t need to compute the
         // cell’s display width.
-        let width = DisplayWidth::from(chars.len());
-
         TextCell {
+            width:    DisplayWidth::from(chars.len()),
             contents: chars.into(),
-            width:    width,
         }
     }
 }
