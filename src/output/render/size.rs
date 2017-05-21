@@ -63,3 +63,102 @@ impl f::DeviceIDs {
         }
     }
 }
+
+
+#[cfg(test)]
+pub mod test {
+    use output::details::Details;
+    use output::column::SizeFormat;
+    use output::cell::{TextCell, DisplayWidth};
+    use fs::fields as f;
+
+    use locale;
+    use ansi_term::Colour::*;
+
+
+    #[test]
+    fn directory() {
+        let mut details = Details::default();
+        details.colours.punctuation = Green.italic();
+
+        let directory = f::Size::None;
+        let expected = TextCell::blank(Green.italic());
+        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+    }
+
+
+    #[test]
+    fn file_decimal() {
+        let mut details = Details::default();
+        details.colours.size.numbers = Blue.on(Red);
+        details.colours.size.unit    = Yellow.bold();
+
+        let directory = f::Size::Some(2_100_000);
+        let expected = TextCell {
+            width: DisplayWidth::from(4),
+            contents: vec![
+                Blue.on(Red).paint("2.1"),
+                Yellow.bold().paint("M"),
+            ].into(),
+        };
+
+        assert_eq!(expected, directory.render(&details.colours, SizeFormat::DecimalBytes, &locale::Numeric::english()))
+    }
+
+
+    #[test]
+    fn file_binary() {
+        let mut details = Details::default();
+        details.colours.size.numbers = Blue.on(Red);
+        details.colours.size.unit    = Yellow.bold();
+
+        let directory = f::Size::Some(1_048_576);
+        let expected = TextCell {
+            width: DisplayWidth::from(5),
+            contents: vec![
+                Blue.on(Red).paint("1.0"),
+                Yellow.bold().paint("Mi"),
+            ].into(),
+        };
+
+        assert_eq!(expected, directory.render(&details.colours, SizeFormat::BinaryBytes, &locale::Numeric::english()))
+    }
+
+
+    #[test]
+    fn file_bytes() {
+        let mut details = Details::default();
+        details.colours.size.numbers = Blue.on(Red);
+
+        let directory = f::Size::Some(1048576);
+        let expected = TextCell {
+            width: DisplayWidth::from(9),
+            contents: vec![
+                Blue.on(Red).paint("1,048,576"),
+            ].into(),
+        };
+
+        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+    }
+
+
+    #[test]
+    fn device_ids() {
+        let mut details = Details::default();
+        details.colours.size.major = Blue.on(Red);
+        details.colours.punctuation = Green.italic();
+        details.colours.size.minor = Cyan.on(Yellow);
+
+        let directory = f::Size::DeviceIDs(f::DeviceIDs { major: 10, minor: 80 });
+        let expected = TextCell {
+            width: DisplayWidth::from(5),
+            contents: vec![
+                Blue.on(Red).paint("10"),
+                Green.italic().paint(","),
+                Cyan.on(Yellow).paint("80"),
+            ].into(),
+        };
+
+        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+    }
+}
