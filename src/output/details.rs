@@ -80,7 +80,6 @@
 use std::io::{Write, Error as IOError, Result as IOResult};
 use std::ops::Add;
 use std::path::PathBuf;
-use std::string::ToString;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use datetime::fmt::DateFormat;
@@ -98,7 +97,7 @@ use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::{Alignment, Column, Columns};
-use output::cell::{TextCell, TextCellContents, DisplayWidth};
+use output::cell::{TextCell, TextCellContents};
 use output::tree::TreeTrunk;
 use output::file_name::{FileName, LinkStyle, Classify};
 
@@ -506,84 +505,15 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         match *column {
             Column::Permissions          => self.permissions_plus(file, xattrs).render(&self.opts.colours),
             Column::FileSize(fmt)        => file.size().render(&self.opts.colours, fmt, &self.env.numeric),
-            Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
-            Column::Timestamp(Created)   => self.render_time(file.created_time()),
-            Column::Timestamp(Accessed)  => self.render_time(file.accessed_time()),
-            Column::HardLinks            => self.render_links(file.links()),
-            Column::Inode                => self.render_inode(file.inode()),
-            Column::Blocks               => self.render_blocks(file.blocks()),
+            Column::Timestamp(Modified)  => file.modified_time().render(&self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::Timestamp(Created)   => file.created_time().render( &self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::HardLinks            => file.links().render(&self.opts.colours, &self.env.numeric),
+            Column::Inode                => file.inode().render(&self.opts.colours),
+            Column::Blocks               => file.blocks().render(&self.opts.colours),
             Column::User                 => file.user().render(&self.opts.colours, &*self.env.lock_users()),
             Column::Group                => file.group().render(&self.opts.colours, &*self.env.lock_users()),
-            Column::GitStatus            => self.render_git_status(file.git_status()),
-        }
-    }
-
-    fn render_links(&self, links: f::Links) -> TextCell {
-        let style = if links.multiple { self.opts.colours.links.multi_link_file }
-                                 else { self.opts.colours.links.normal };
-
-        TextCell::paint(style, self.env.numeric.format_int(links.count))
-    }
-
-    fn render_blocks(&self, blocks: f::Blocks) -> TextCell {
-        match blocks {
-            f::Blocks::Some(blk)  => TextCell::paint(self.opts.colours.blocks, blk.to_string()),
-            f::Blocks::None       => TextCell::blank(self.opts.colours.punctuation),
-        }
-    }
-
-    fn render_inode(&self, inode: f::Inode) -> TextCell {
-        TextCell::paint(self.opts.colours.inode, inode.0.to_string())
-    }
-
-    #[allow(trivial_numeric_casts)]
-    fn render_time(&self, timestamp: f::Time) -> TextCell {
-        // TODO(ogham): This method needs some serious de-duping!
-        // zoned and local times have different types at the moment,
-        // so it's tricky.
-
-        if let Some(ref tz) = self.env.tz {
-            let date = tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
-
-            let datestamp = if date.year() == self.env.current_year {
-                self.env.date_and_time.format(&date, &self.env.time)
-            }
-            else {
-                self.env.date_and_year.format(&date, &self.env.time)
-            };
-
-            TextCell::paint(self.opts.colours.date, datestamp)
-        }
-        else {
-            let date = LocalDateTime::at(timestamp.0 as i64);
-
-            let datestamp = if date.year() == self.env.current_year {
-                self.env.date_and_time.format(&date, &self.env.time)
-            }
-            else {
-                self.env.date_and_year.format(&date, &self.env.time)
-            };
-
-            TextCell::paint(self.opts.colours.date, datestamp)
-        }
-    }
-
-    fn render_git_status(&self, git: f::Git) -> TextCell {
-        let git_char = |status| match status {
-            f::GitStatus::NotModified  => self.opts.colours.punctuation.paint("-"),
-            f::GitStatus::New          => self.opts.colours.git.new.paint("N"),
-            f::GitStatus::Modified     => self.opts.colours.git.modified.paint("M"),
-            f::GitStatus::Deleted      => self.opts.colours.git.deleted.paint("D"),
-            f::GitStatus::Renamed      => self.opts.colours.git.renamed.paint("R"),
-            f::GitStatus::TypeChange   => self.opts.colours.git.typechange.paint("T"),
-        };
-
-        TextCell {
-            width: DisplayWidth::from(2),
-            contents: vec![
-                git_char(git.staged),
-                git_char(git.unstaged)
-            ].into(),
+            Column::GitStatus            => file.git_status().render(&self.opts.colours),
         }
     }
 
