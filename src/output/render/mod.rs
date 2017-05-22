@@ -1,5 +1,6 @@
 mod git;
 mod groups;
+mod links;
 mod permissions;
 mod size;
 mod users;
@@ -12,15 +13,6 @@ use datetime::{LocalDateTime, TimeZone, DatePiece};
 use datetime::fmt::DateFormat;
 use locale;
 
-
-impl f::Links {
-    pub fn render(&self, colours: &Colours, numeric: &locale::Numeric) -> TextCell {
-        let style = if self.multiple { colours.links.multi_link_file }
-                                else { colours.links.normal };
-
-        TextCell::paint(style, numeric.format_int(self.count))
-    }
-}
 
 
 impl f::Blocks {
