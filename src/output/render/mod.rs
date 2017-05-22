@@ -1,6 +1,7 @@
 mod blocks;
 mod git;
 mod groups;
+mod inode;
 mod links;
 mod permissions;
 mod size;
@@ -14,12 +15,6 @@ use datetime::{LocalDateTime, TimeZone, DatePiece};
 use datetime::fmt::DateFormat;
 use locale;
 
-
-impl f::Inode {
-    pub fn render(&self, colours: &Colours) -> TextCell {
-        TextCell::paint(colours.inode, self.0.to_string())
-    }
-}
 
 
 #[allow(trivial_numeric_casts)]
