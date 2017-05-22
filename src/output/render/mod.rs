@@ -1,3 +1,4 @@
+mod blocks;
 mod git;
 mod groups;
 mod links;
@@ -12,17 +13,6 @@ use fs::fields as f;
 use datetime::{LocalDateTime, TimeZone, DatePiece};
 use datetime::fmt::DateFormat;
 use locale;
-
-
-
-impl f::Blocks {
-    pub fn render(&self, colours: &Colours) -> TextCell {
-        match *self {
-            f::Blocks::Some(ref blk)  => TextCell::paint(colours.blocks, blk.to_string()),
-            f::Blocks::None           => TextCell::blank(colours.punctuation),
-        }
-    }
-}
 
 
 impl f::Inode {
