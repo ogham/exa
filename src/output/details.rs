@@ -80,17 +80,13 @@
 use std::io::{Write, Error as IOError, Result as IOResult};
 use std::ops::Add;
 use std::path::PathBuf;
-use std::string::ToString;
-use std::sync::{Arc, Mutex};
-
-use ansi_term::Style;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use datetime::fmt::DateFormat;
 use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
-use unicode_width::UnicodeWidthStr;
 use locale;
 
 use users::{Users, Groups, UsersCache};
@@ -99,8 +95,8 @@ use fs::{Dir, File, fields as f};
 use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
-use output::column::{Alignment, Column, Columns, SizeFormat};
-use output::cell::{TextCell, TextCellContents, DisplayWidth};
+use output::column::{Alignment, Column, Columns};
+use output::cell::{TextCell, TextCellContents};
 use output::tree::TreeTrunk;
 use output::file_name::{FileName, LinkStyle, Classify};
 
@@ -150,7 +146,7 @@ pub struct Details {
 /// running instances of exa, depending on the user's computer's configuration.
 ///
 /// Any environment field should be able to be mocked up for test runs.
-pub struct Environment<U: Users+Groups> {
+pub struct Environment<U> {  // where U: Users+Groups
 
     /// The year of the current time. This gets used to determine which date
     /// format to use.
@@ -176,10 +172,17 @@ pub struct Environment<U: Users+Groups> {
     users: Mutex<U>,
 }
 
+impl<U> Environment<U> {
+    pub fn lock_users(&self) -> MutexGuard<U> {
+        self.users.lock().unwrap()
+    }
+}
+
 impl Default for Environment<UsersCache> {
     fn default() -> Self {
-        let tz = determine_time_zone();
+        use unicode_width::UnicodeWidthStr;
 
+        let tz = determine_time_zone();
         if let Err(ref e) = tz {
             println!("Unable to determine time zone: {}", e);
         }
@@ -193,6 +196,7 @@ impl Default for Environment<UsersCache> {
         // Some locales use a three-character wide month name (Jan to Dec);
         // others vary between three and four (1月 to 12月). We assume that
         // December is the month with the maximum width, and use the width of
+        // that to determine how to pad the other months.
         let december_width = UnicodeWidthStr::width(&*time.short_month_name(11));
         let date_and_time = match december_width {
             4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
@@ -414,7 +418,7 @@ impl Row {
 
 /// A **Table** object gets built up by the view as it lists files and
 /// directories.
-pub struct Table<'a, U: Users+Groups+'a> {
+pub struct Table<'a, U: 'a> { // where U: Users+Groups
     pub rows: Vec<Row>,
 
     pub columns: &'a [Column],
@@ -488,232 +492,30 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
                     .collect()
     }
 
+    fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
+        f::PermissionsPlus {
+            file_type: file.type_char(),
+            permissions: file.permissions(),
+            xattrs: xattrs,
+        }
+    }
+
     fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
         use output::column::TimeType::*;
 
         match *column {
-            Column::Permissions          => self.render_permissions(file.type_char(), file.permissions(), xattrs),
-            Column::FileSize(fmt)        => self.render_size(file.size(), fmt),
-            Column::Timestamp(Modified)  => self.render_time(file.modified_time()),
-            Column::Timestamp(Created)   => self.render_time(file.created_time()),
-            Column::Timestamp(Accessed)  => self.render_time(file.accessed_time()),
-            Column::HardLinks            => self.render_links(file.links()),
-            Column::Inode                => self.render_inode(file.inode()),
-            Column::Blocks               => self.render_blocks(file.blocks()),
-            Column::User                 => self.render_user(file.user()),
-            Column::Group                => self.render_group(file.group()),
-            Column::GitStatus            => self.render_git_status(file.git_status()),
+            Column::Permissions          => self.permissions_plus(file, xattrs).render(&self.opts.colours),
+            Column::FileSize(fmt)        => file.size().render(&self.opts.colours, fmt, &self.env.numeric),
+            Column::Timestamp(Modified)  => file.modified_time().render(&self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::Timestamp(Created)   => file.created_time().render( &self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.opts.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
+            Column::HardLinks            => file.links().render(&self.opts.colours, &self.env.numeric),
+            Column::Inode                => file.inode().render(&self.opts.colours),
+            Column::Blocks               => file.blocks().render(&self.opts.colours),
+            Column::User                 => file.user().render(&self.opts.colours, &*self.env.lock_users()),
+            Column::Group                => file.group().render(&self.opts.colours, &*self.env.lock_users()),
+            Column::GitStatus            => file.git_status().render(&self.opts.colours),
         }
-    }
-
-    fn render_permissions(&self, file_type: f::Type, permissions: f::Permissions, xattrs: bool) -> TextCell {
-        let perms = self.opts.colours.perms;
-        let types = self.opts.colours.filetypes;
-
-        let bit = |bit, chr: &'static str, style: Style| {
-            if bit { style.paint(chr) } else { self.opts.colours.punctuation.paint("-") }
-        };
-
-        let type_char = match file_type {
-            f::Type::File       => types.normal.paint("."),
-            f::Type::Directory  => types.directory.paint("d"),
-            f::Type::Pipe       => types.pipe.paint("|"),
-            f::Type::Link       => types.symlink.paint("l"),
-            f::Type::CharDevice => types.device.paint("c"),
-            f::Type::BlockDevice => types.device.paint("b"),
-            f::Type::Socket     => types.socket.paint("s"),
-            f::Type::Special    => types.special.paint("?"),
-        };
-
-        let x_colour = if file_type.is_regular_file() { perms.user_execute_file }
-                                                 else { perms.user_execute_other };
-
-        let mut chars = vec![
-            type_char,
-            bit(permissions.user_read,     "r", perms.user_read),
-            bit(permissions.user_write,    "w", perms.user_write),
-            bit(permissions.user_execute,  "x", x_colour),
-            bit(permissions.group_read,    "r", perms.group_read),
-            bit(permissions.group_write,   "w", perms.group_write),
-            bit(permissions.group_execute, "x", perms.group_execute),
-            bit(permissions.other_read,    "r", perms.other_read),
-            bit(permissions.other_write,   "w", perms.other_write),
-            bit(permissions.other_execute, "x", perms.other_execute),
-        ];
-
-        if xattrs {
-            chars.push(perms.attribute.paint("@"));
-        }
-
-        // As these are all ASCII characters, we can guarantee that they’re
-        // all going to be one character wide, and don’t need to compute the
-        // cell’s display width.
-        let width = DisplayWidth::from(chars.len());
-
-        TextCell {
-            contents: chars.into(),
-            width:    width,
-        }
-    }
-
-    fn render_links(&self, links: f::Links) -> TextCell {
-        let style = if links.multiple { self.opts.colours.links.multi_link_file }
-                                 else { self.opts.colours.links.normal };
-
-        TextCell::paint(style, self.env.numeric.format_int(links.count))
-    }
-
-    fn render_blocks(&self, blocks: f::Blocks) -> TextCell {
-        match blocks {
-            f::Blocks::Some(blk)  => TextCell::paint(self.opts.colours.blocks, blk.to_string()),
-            f::Blocks::None       => TextCell::blank(self.opts.colours.punctuation),
-        }
-    }
-
-    fn render_inode(&self, inode: f::Inode) -> TextCell {
-        TextCell::paint(self.opts.colours.inode, inode.0.to_string())
-    }
-
-    fn render_size(&self, size: f::Size, size_format: SizeFormat) -> TextCell {
-        use number_prefix::{binary_prefix, decimal_prefix};
-        use number_prefix::{Prefixed, Standalone, PrefixNames};
-
-        let size = match size {
-            f::Size::Some(s)                     => s,
-            f::Size::None                        => return TextCell::blank(self.opts.colours.punctuation),
-            f::Size::DeviceIDs { major, minor }  => return self.render_device_ids(major, minor),
-        };
-
-        let result = match size_format {
-            SizeFormat::DecimalBytes  => decimal_prefix(size as f64),
-            SizeFormat::BinaryBytes   => binary_prefix(size as f64),
-            SizeFormat::JustBytes     => {
-                let string = self.env.numeric.format_int(size);
-                return TextCell::paint(self.opts.colours.file_size(size), string);
-            },
-        };
-
-        let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(self.opts.colours.file_size(b as u64), b.to_string()),
-            Prefixed(p, n) => (p, n)
-        };
-
-        let symbol = prefix.symbol();
-        let number = if n < 10f64 { self.env.numeric.format_float(n, 1) }
-                             else { self.env.numeric.format_int(n as isize) };
-
-        // The numbers and symbols are guaranteed to be written in ASCII, so
-        // we can skip the display width calculation.
-        let width = DisplayWidth::from(number.len() + symbol.len());
-
-        TextCell {
-            width:    width,
-            contents: vec![
-                self.opts.colours.file_size(size).paint(number),
-                self.opts.colours.size.unit.paint(symbol),
-            ].into(),
-        }
-    }
-
-    fn render_device_ids(&self, major: u8, minor: u8) -> TextCell {
-        let major = major.to_string();
-        let minor = minor.to_string();
-
-        TextCell {
-            width: DisplayWidth::from(major.len() + 1 + minor.len()),
-            contents: vec![
-                self.opts.colours.size.major.paint(major),
-                self.opts.colours.punctuation.paint(","),
-                self.opts.colours.size.minor.paint(minor),
-            ].into(),
-        }
-    }
-
-    #[allow(trivial_numeric_casts)]
-    fn render_time(&self, timestamp: f::Time) -> TextCell {
-        // TODO(ogham): This method needs some serious de-duping!
-        // zoned and local times have different types at the moment,
-        // so it's tricky.
-
-        if let Some(ref tz) = self.env.tz {
-            let date = tz.to_zoned(LocalDateTime::at(timestamp.0 as i64));
-
-            let datestamp = if date.year() == self.env.current_year {
-                self.env.date_and_time.format(&date, &self.env.time)
-            }
-            else {
-                self.env.date_and_year.format(&date, &self.env.time)
-            };
-
-            TextCell::paint(self.opts.colours.date, datestamp)
-        }
-        else {
-            let date = LocalDateTime::at(timestamp.0 as i64);
-
-            let datestamp = if date.year() == self.env.current_year {
-                self.env.date_and_time.format(&date, &self.env.time)
-            }
-            else {
-                self.env.date_and_year.format(&date, &self.env.time)
-            };
-
-            TextCell::paint(self.opts.colours.date, datestamp)
-        }
-    }
-
-    fn render_git_status(&self, git: f::Git) -> TextCell {
-        let git_char = |status| match status {
-            f::GitStatus::NotModified  => self.opts.colours.punctuation.paint("-"),
-            f::GitStatus::New          => self.opts.colours.git.new.paint("N"),
-            f::GitStatus::Modified     => self.opts.colours.git.modified.paint("M"),
-            f::GitStatus::Deleted      => self.opts.colours.git.deleted.paint("D"),
-            f::GitStatus::Renamed      => self.opts.colours.git.renamed.paint("R"),
-            f::GitStatus::TypeChange   => self.opts.colours.git.typechange.paint("T"),
-        };
-
-        TextCell {
-            width: DisplayWidth::from(2),
-            contents: vec![
-                git_char(git.staged),
-                git_char(git.unstaged)
-            ].into(),
-        }
-    }
-
-    fn render_user(&self, user: f::User) -> TextCell {
-        let users = self.env.users.lock().unwrap();
-
-
-        let user_name = match users.get_user_by_uid(user.0) {
-            Some(user)  => user.name().to_owned(),
-            None        => user.0.to_string(),
-        };
-
-        let style = if users.get_current_uid() == user.0 { self.opts.colours.users.user_you }
-                                                    else { self.opts.colours.users.user_someone_else };
-        TextCell::paint(style, user_name)
-    }
-
-    fn render_group(&self, group: f::Group) -> TextCell {
-        use users::os::unix::GroupExt;
-
-        let mut style = self.opts.colours.users.group_not_yours;
-
-        let users = self.env.users.lock().unwrap();
-        let group = match users.get_group_by_gid(group.0) {
-            Some(g) => (*g).clone(),
-            None    => return TextCell::paint(style, group.0.to_string()),
-        };
-
-        let current_uid = users.get_current_uid();
-        if let Some(current_user) = users.get_user_by_uid(current_uid) {
-            if current_user.primary_group_id() == group.gid()
-            || group.members().contains(&current_user.name().to_owned()) {
-                style = self.opts.colours.users.group_yours;
-            }
-        }
-
-        TextCell::paint(style, group.name().to_owned())
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
@@ -769,211 +571,5 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         }
 
         cells
-    }
-}
-
-
-#[cfg(test)]
-pub mod test {
-    pub use super::{Table, Environment, Details};
-    pub use std::sync::Mutex;
-
-    pub use fs::{File, fields as f};
-    pub use output::column::{Column, Columns};
-    pub use output::cell::TextCell;
-
-    pub use users::{User, Group, uid_t, gid_t};
-    pub use users::mock::MockUsers;
-    pub use users::os::unix::{UserExt, GroupExt};
-    pub use datetime::fmt::DateFormat;
-    pub use ansi_term::Style;
-    pub use ansi_term::Colour::*;
-
-    impl Default for Environment<MockUsers> {
-        fn default() -> Self {
-            use locale;
-            use users::mock::MockUsers;
-            use std::sync::Mutex;
-
-            Environment {
-                current_year:  1234,
-                numeric:       locale::Numeric::english(),
-                time:          locale::Time::english(),
-                date_and_time: DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
-                date_and_year: DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap(),
-                tz:            None,
-                users:         Mutex::new(MockUsers::with_current_uid(0)),
-            }
-        }
-    }
-
-    pub fn new_table<'a>(columns: &'a [Column], details: &'a Details, users: MockUsers) -> Table<'a, MockUsers> {
-        use std::sync::Arc;
-
-        Table {
-            columns: columns,
-            opts: details,
-            env: Arc::new(Environment { users: Mutex::new(users), ..Environment::default() }),
-            rows: Vec::new(),
-        }
-    }
-
-    mod users {
-        #![allow(unused_results)]
-        use super::*;
-
-        #[test]
-        fn named() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.user_you = Red.bold();
-
-            let mut users = MockUsers::with_current_uid(1000);
-            users.add_user(User::new(1000, "enoch", 100));
-
-            let table = new_table(&columns, &details, users);
-
-            let user = f::User(1000);
-            let expected = TextCell::paint_str(Red.bold(), "enoch");
-            assert_eq!(expected, table.render_user(user))
-        }
-
-        #[test]
-        fn unnamed() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.user_you = Cyan.bold();
-
-            let users = MockUsers::with_current_uid(1000);
-
-            let table = new_table(&columns, &details, users);
-
-            let user = f::User(1000);
-            let expected = TextCell::paint_str(Cyan.bold(), "1000");
-            assert_eq!(expected, table.render_user(user));
-        }
-
-        #[test]
-        fn different_named() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.user_someone_else = Green.bold();
-
-            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
-            table.env.users.lock().unwrap().add_user(User::new(1000, "enoch", 100));
-
-            let user = f::User(1000);
-            let expected = TextCell::paint_str(Green.bold(), "enoch");
-            assert_eq!(expected, table.render_user(user));
-        }
-
-        #[test]
-        fn different_unnamed() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.user_someone_else = Red.normal();
-
-            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
-
-            let user = f::User(1000);
-            let expected = TextCell::paint_str(Red.normal(), "1000");
-            assert_eq!(expected, table.render_user(user));
-        }
-
-        #[test]
-        fn overflow() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.user_someone_else = Blue.underline();
-
-            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
-
-            let user = f::User(2_147_483_648);
-            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
-            assert_eq!(expected, table.render_user(user));
-        }
-    }
-
-    mod groups {
-        #![allow(unused_results)]
-        use super::*;
-
-        #[test]
-        fn named() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.group_not_yours = Fixed(101).normal();
-
-            let mut users = MockUsers::with_current_uid(1000);
-            users.add_group(Group::new(100, "folk"));
-            let table = new_table(&columns, &details, users);
-
-            let group = f::Group(100);
-            let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
-            assert_eq!(expected, table.render_group(group))
-        }
-
-        #[test]
-        fn unnamed() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.group_not_yours = Fixed(87).normal();
-
-            let users = MockUsers::with_current_uid(1000);
-            let table = new_table(&columns, &details, users);
-
-            let group = f::Group(100);
-            let expected = TextCell::paint_str(Fixed(87).normal(), "100");
-            assert_eq!(expected, table.render_group(group));
-        }
-
-        #[test]
-        fn primary() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.group_yours = Fixed(64).normal();
-
-            let mut users = MockUsers::with_current_uid(2);
-            users.add_user(User::new(2, "eve", 100));
-            users.add_group(Group::new(100, "folk"));
-
-            let table = new_table(&columns, &details, users);
-
-            let group = f::Group(100);
-            let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
-            assert_eq!(expected, table.render_group(group))
-        }
-
-        #[test]
-        fn secondary() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.group_yours = Fixed(31).normal();
-
-            let mut users = MockUsers::with_current_uid(2);
-            users.add_user(User::new(2, "eve", 666));
-
-            let test_group = Group::new(100, "folk").add_member("eve");
-            users.add_group(test_group);
-
-            let table = new_table(&columns, &details, users);
-
-            let group = f::Group(100);
-            let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
-            assert_eq!(expected, table.render_group(group))
-        }
-
-        #[test]
-        fn overflow() {
-            let columns = Columns::default().for_dir(None);
-            let mut details = Details::default();
-            details.colours.users.group_not_yours = Blue.underline();
-
-            let table = new_table(&columns, &details, MockUsers::with_current_uid(0));
-
-            let group = f::Group(2_147_483_648);
-            let expected = TextCell::paint_str(Blue.underline(), "2147483648");
-            assert_eq!(expected, table.render_group(group));
-        }
     }
 }

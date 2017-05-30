@@ -69,6 +69,15 @@ pub struct Permissions {
     pub other_execute:  bool,
 }
 
+/// The three pieces of information that are displayed as a single column in
+/// the details view. These values are fused together to make the output a
+/// little more compressed.
+pub struct PermissionsPlus {
+    pub file_type:   Type,
+    pub permissions: Permissions,
+    pub xattrs:      bool,
+}
+
 
 /// A file’s number of hard links on the filesystem.
 ///
@@ -135,14 +144,17 @@ pub enum Size {
     ///
     /// This is what ls does as well. Without it, the devices will just have
     /// file sizes of zero.
-    ///
-    /// You can see what these device numbers mean:
-    /// - http://www.lanana.org/docs/device-list/
-    /// - http://www.lanana.org/docs/device-list/devices-2.6+.txt
-    DeviceIDs {
-        major: u8,
-        minor: u8,
-    }
+    DeviceIDs(DeviceIDs),
+}
+
+/// The major and minor device IDs that gets displayed for device files.
+///
+/// You can see what these device numbers mean:
+/// - http://www.lanana.org/docs/device-list/
+/// - http://www.lanana.org/docs/device-list/devices-2.6+.txt
+pub struct DeviceIDs {
+    pub major: u8,
+    pub minor: u8,
 }
 
 
