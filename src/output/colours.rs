@@ -62,7 +62,10 @@ pub struct Permissions {
     pub other_write:   Style,
     pub other_execute: Style,
 
-    pub attribute:  Style,
+    pub special_user_file: Style,
+    pub special_other:     Style,
+
+    pub attribute: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -138,12 +141,18 @@ impl Colours {
                 user_write:          Red.bold(),
                 user_execute_file:   Green.bold().underline(),
                 user_execute_other:  Green.bold(),
+
                 group_read:          Yellow.normal(),
                 group_write:         Red.normal(),
                 group_execute:       Green.normal(),
+
                 other_read:          Yellow.normal(),
                 other_write:         Red.normal(),
                 other_execute:       Green.normal(),
+
+                special_user_file:   Purple.normal(),
+                special_other:       Purple.normal(),
+
                 attribute:           Style::default(),
             },
 
