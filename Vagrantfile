@@ -274,26 +274,25 @@ Vagrant.configure(2) do |config|
 
 
     # Awkward permission testcases.
+    # Differences in the way ‘chmod’ handles setting ‘setuid’ and ‘setgid’
+    # when you don’t already own the file mean that we need to use ‘sudo’
+    # to change permissions to those.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
         mkdir "#{test_dir}/permissions"
 
-        touch     "#{test_dir}/permissions/all-permissions"
-        chmod 777 "#{test_dir}/permissions/all-permissions"
+        mkdir                      "#{test_dir}/permissions/forbidden-directory"
+        chmod 000                  "#{test_dir}/permissions/forbidden-directory"
+        touch -t #{some_date}      "#{test_dir}/permissions/forbidden-directory"
+        sudo chown #{user}:#{user} "#{test_dir}/permissions/forbidden-directory"
 
-        touch     "#{test_dir}/permissions/no-permissions"
-        chmod 000 "#{test_dir}/permissions/no-permissions"
-
-        mkdir     "#{test_dir}/permissions/forbidden-directory"
-        chmod 000 "#{test_dir}/permissions/forbidden-directory"
-
-        for perms in 001 002 004 010 020 040 100 200 400; do
-            touch        "#{test_dir}/permissions/$perms"
-            chmod $perms "#{test_dir}/permissions/$perms"
+        for perms in 000 001 002 004 010 020 040 100 200 400 644 755 777 1000 1001 2000 2010 4000 4100 7666 7777; do
+            touch                      "#{test_dir}/permissions/$perms"
+            sudo chown #{user}:#{user} "#{test_dir}/permissions/$perms"
+            sudo chmod $perms          "#{test_dir}/permissions/$perms"
+            sudo touch -t #{some_date} "#{test_dir}/permissions/$perms"
         done
 
-        touch -t #{some_date}      "#{test_dir}/permissions/"*
-        sudo chown #{user}:#{user} "#{test_dir}/permissions/"*
     EOF
 
 
