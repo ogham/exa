@@ -79,9 +79,9 @@ pub mod test {
         details.colours.punctuation = Fixed(44).normal();
 
         let bits = f::Permissions {
-            user_read:  false,  user_write:  false,  user_execute:  false,
-            group_read: false,  group_write: false,  group_execute: false,
-            other_read: false,  other_write: false,  other_execute: false,
+            user_read:  false,  user_write:  false,  user_execute:  false,  setuid: false,
+            group_read: false,  group_write: false,  group_execute: false,  setgid: false,
+            other_read: false,  other_write: false,  other_execute: false,  sticky: false,
         };
 
         let expected = TextCellContents::from(vec![
@@ -109,9 +109,9 @@ pub mod test {
         details.colours.perms.other_execute = Fixed(109).normal();
 
         let bits = f::Permissions {
-            user_read:  true,  user_write:  true,  user_execute:  true,
-            group_read: true,  group_write: true,  group_execute: true,
-            other_read: true,  other_write: true,  other_execute: true,
+            user_read:  true,  user_write:  true,  user_execute:  true,  setuid: false,
+            group_read: true,  group_write: true,  group_execute: true,  setgid: false,
+            other_read: true,  other_write: true,  other_execute: true,  sticky: false,
         };
 
         let expected = TextCellContents::from(vec![

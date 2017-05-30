@@ -67,6 +67,10 @@ pub struct Permissions {
     pub other_read:     bool,
     pub other_write:    bool,
     pub other_execute:  bool,
+
+    pub sticky:         bool,
+    pub setgid:         bool,
+    pub setuid:         bool,
 }
 
 /// The three pieces of information that are displayed as a single column in
