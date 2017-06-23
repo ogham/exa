@@ -109,5 +109,8 @@ $exa $testcases/links/* -1 | diff -q - $results/links_1_files || exit 1
 $exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  || exit 1
 $exa $testcases/git/edits     -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
 
+# And finally...
+$exa --help        | diff -q - $results/help      || exit 1
+$exa --help --long | diff -q - $results/help_long || exit 1
 
 echo "All the tests passed!"

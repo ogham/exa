@@ -1,7 +1,6 @@
-use std::fmt;
+Usage:
+  exa [options] [files...]
 
-
-static OPTIONS: &str = r##"
   -?, --help         show list of command-line options
   -v, --version      show version of exa
 
@@ -25,9 +24,7 @@ FILTERING AND SORTING OPTIONS
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
   Valid sort fields:         name, Name, extension, Extension, size,
                              modified, accessed, created, inode, none
-"##;
 
-static LONG_OPTIONS: &str = r##"
 LONG VIEW OPTIONS
   -b, --binary       list file sizes with binary prefixes
   -B, --bytes        list file sizes in bytes, without any prefixes
@@ -40,36 +37,6 @@ LONG VIEW OPTIONS
   -S, --blocks       show number of file system blocks
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
-  -U, --created      use the created timestamp field"##;
-
-static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
-static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
-
-#[derive(PartialEq, Debug)]
-pub struct HelpString {
-    pub only_long: bool,
-    pub git: bool,
-    pub xattrs: bool,
-}
-
-impl fmt::Display for HelpString {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(f, "Usage:\n  exa [options] [files...]\n"));
-
-        if !self.only_long {
-            try!(write!(f, "{}", OPTIONS));
-        }
-
-        try!(write!(f, "{}", LONG_OPTIONS));
-
-        if self.git {
-            try!(write!(f, "\n{}", GIT_HELP));
-        }
-
-        if self.xattrs {
-            try!(write!(f, "\n{}", EXTENDED_HELP));
-        }
-
-        Ok(())
-    }
-}
+  -U, --created      use the created timestamp field
+  --git              list each file's Git status, if tracked
+  -@, --extended     list each file's extended attributes and sizes

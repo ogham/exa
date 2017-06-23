@@ -12,7 +12,7 @@ mod filter;
 pub use self::filter::{FileFilter, SortField, SortCase};
 
 mod help;
-use self::help::*;
+use self::help::HelpString;
 
 mod misfire;
 pub use self::misfire::Misfire;
@@ -103,25 +103,13 @@ impl Options {
         };
 
         if matches.opt_present("help") {
-            let mut help_string = "Usage:\n  exa [options] [files...]\n".to_owned();
+            let help = HelpString {
+                only_long: matches.opt_present("long"),
+                git: cfg!(feature="git"),
+                xattrs: xattr::ENABLED,
+            };
 
-            if !matches.opt_present("long") {
-                help_string.push_str(OPTIONS);
-            }
-
-            help_string.push_str(LONG_OPTIONS);
-
-            if cfg!(feature="git") {
-                help_string.push_str(GIT_HELP);
-                help_string.push('\n');
-            }
-
-            if xattr::ENABLED {
-                help_string.push_str(EXTENDED_HELP);
-                help_string.push('\n');
-            }
-
-            return Err(Misfire::Help(help_string));
+            return Err(Misfire::Help(help));
         }
         else if matches.opt_present("version") {
             return Err(Misfire::Version);

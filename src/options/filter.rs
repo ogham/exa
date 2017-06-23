@@ -225,6 +225,11 @@ impl SortField {
     /// argument. This will return `Err` if the option is there, but does not
     /// correspond to a valid field.
     fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
+
+        const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
+                                  "Extension", "modified", "accessed",
+                                  "created", "inode", "none" ];
+
         if let Some(word) = matches.opt_str("sort") {
             match &*word {
                 "name" | "filename"   => Ok(SortField::Name(SortCase::Sensitive)),
@@ -237,10 +242,7 @@ impl SortField {
                 "cr"   | "created"    => Ok(SortField::CreatedDate),
                 "none"                => Ok(SortField::Unsorted),
                 "inode"               => Ok(SortField::FileInode),
-                field                 => Err(Misfire::bad_argument("sort", field, &[
-                                            "name", "Name", "size", "extension", "Extension",
-                                            "modified", "accessed", "created", "inode", "none"]
-                ))
+                field                 => Err(Misfire::bad_argument("sort", field, SORTS))
             }
         }
         else {

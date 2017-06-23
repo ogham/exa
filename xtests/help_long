@@ -1,0 +1,18 @@
+Usage:
+  exa [options] [files...]
+
+LONG VIEW OPTIONS
+  -b, --binary       list file sizes with binary prefixes
+  -B, --bytes        list file sizes in bytes, without any prefixes
+  -g, --group        list each file's group
+  -h, --header       add a header row to each column
+  -H, --links        list each file's number of hard links
+  -i, --inode        list each file's inode number
+  -L, --level DEPTH  limit the depth of recursion
+  -m, --modified     use the modified timestamp field
+  -S, --blocks       show number of file system blocks
+  -t, --time FIELD   which timestamp field to list (modified, accessed, created)
+  -u, --accessed     use the accessed timestamp field
+  -U, --created      use the created timestamp field
+  --git              list each file's Git status, if tracked
+  -@, --extended     list each file's extended attributes and sizes
