@@ -16,4 +16,3 @@ LONG VIEW OPTIONS
   -U, --created      use the created timestamp field
   --git              list each file's Git status, if tracked
   -@, --extended     list each file's extended attributes and sizes
-
