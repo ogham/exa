@@ -9,7 +9,7 @@ use options::help::HelpString;
 
 /// A list of legal choices for an argument-taking option
 #[derive(PartialEq, Debug)]
-pub struct Choices(Vec<&'static str>);
+pub struct Choices(&'static [&'static str]);
 
 impl fmt::Display for Choices {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -68,10 +68,10 @@ impl Misfire {
     /// argument. This has to use one of the `getopts` failure
     /// variants--it’s meant to take just an option name, rather than an
     /// option *and* an argument, but it works just as well.
-    pub fn bad_argument(option: &str, otherwise: &str, legal: &[&'static str]) -> Misfire {
+    pub fn bad_argument(option: &str, otherwise: &str, legal: &'static [&'static str]) -> Misfire {
         Misfire::BadArgument(getopts::Fail::UnrecognizedOption(format!(
             "--{} {}",
-            option, otherwise)), Choices(legal.into()))
+            option, otherwise)), Choices(legal))
     }
 }
 

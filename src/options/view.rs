@@ -294,12 +294,12 @@ impl TimeTypes {
                 return Err(Misfire::Useless("accessed", true, "time"));
             }
 
+            static TIMES: &[& str] = &["modified", "accessed", "created"];
             match &*word {
                 "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
                 "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
                 "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
-                otherwise           => Err(Misfire::bad_argument("time", otherwise,
-                                                                 &["modified", "accessed", "created"])),
+                otherwise           => Err(Misfire::bad_argument("time", otherwise, TIMES))
             }
         }
         else if modified || created || accessed {
@@ -342,13 +342,14 @@ impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
     fn deduce(matches: &getopts::Matches) -> Result<TerminalColours, Misfire> {
+        const COLOURS: &[&str] = &["always", "auto", "never"];
+
         if let Some(word) = matches.opt_str("color").or_else(|| matches.opt_str("colour")) {
             match &*word {
                 "always"              => Ok(TerminalColours::Always),
                 "auto" | "automatic"  => Ok(TerminalColours::Automatic),
                 "never"               => Ok(TerminalColours::Never),
-                otherwise             => Err(Misfire::bad_argument("color", otherwise,
-                                                                   &["always", "auto", "never"]))
+                otherwise             => Err(Misfire::bad_argument("color", otherwise, COLOURS))
             }
         }
         else {
