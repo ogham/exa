@@ -1,5 +1,5 @@
 extern crate exa;
-use exa::{Exa, Misfire};
+use exa::Exa;
 
 use std::env::args_os;
 use std::io::{stdout, stderr, Write, ErrorKind};
@@ -23,14 +23,14 @@ fn main() {
             };
         },
 
-        Err(e@Misfire::Help(_)) | Err(e@Misfire::Version) => {
-            writeln!(stdout(), "{}", e).unwrap();
-            exit(e.error_code());
+        Err(ref e) if e.is_error() => {
+            writeln!(stderr(), "{}", e).unwrap();
+            exit(3);
         },
 
-        Err(e) => {
-            writeln!(stderr(), "{}", e).unwrap();
-            exit(e.error_code());
+        Err(ref e) => {
+            writeln!(stdout(), "{}", e).unwrap();
+            exit(0);
         },
     };
 }
