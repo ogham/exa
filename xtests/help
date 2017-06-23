@@ -25,7 +25,6 @@ FILTERING AND SORTING OPTIONS
   Valid sort fields:         name, Name, extension, Extension, size,
                              modified, accessed, created, inode, none
 
-
 LONG VIEW OPTIONS
   -b, --binary       list file sizes with binary prefixes
   -B, --bytes        list file sizes in bytes, without any prefixes

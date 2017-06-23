@@ -25,7 +25,6 @@ FILTERING AND SORTING OPTIONS
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
   Valid sort fields:         name, Name, extension, Extension, size,
                              modified, accessed, created, inode, none
-
 "##;
 
 static LONG_OPTIONS: &str = r##"
