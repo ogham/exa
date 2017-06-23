@@ -5,6 +5,7 @@ use std::env::args_os;
 use std::io::{stdout, stderr, Write, ErrorKind};
 use std::process::exit;
 
+
 fn main() {
     let args = args_os().skip(1);
     match Exa::new(args, &mut stdout()) {
@@ -13,10 +14,10 @@ fn main() {
                 Ok(exit_status) => exit(exit_status),
                 Err(e) => {
                     match e.kind() {
-                        ErrorKind::BrokenPipe => exit(0),
+                        ErrorKind::BrokenPipe => exit(exits::SUCCESS),
                         _ => {
                             writeln!(stderr(), "{}", e).unwrap();
-                            exit(1);
+                            exit(exits::RUNTIME_ERROR);
                         },
                     };
                 }
@@ -25,12 +26,23 @@ fn main() {
 
         Err(ref e) if e.is_error() => {
             writeln!(stderr(), "{}", e).unwrap();
-            exit(3);
+            exit(exits::OPTIONS_ERROR);
         },
 
         Err(ref e) => {
             writeln!(stdout(), "{}", e).unwrap();
-            exit(0);
+            exit(exits::SUCCESS);
         },
     };
+}
+
+
+extern crate libc;
+#[allow(trivial_numeric_casts)]
+mod exits {
+    use libc::{self, c_int};
+
+    pub const SUCCESS:       c_int = libc::EXIT_SUCCESS;
+    pub const RUNTIME_ERROR: c_int = libc::EXIT_FAILURE;
+    pub const OPTIONS_ERROR: c_int = 3 as c_int;
 }
