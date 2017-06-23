@@ -1,5 +1,7 @@
+use getopts::Matches;
 
-pub static OPTIONS: &str = r##"
+
+static OPTIONS: &str = r##"
   -?, --help         show list of command-line options
   -v, --version      show version of exa
 
@@ -26,7 +28,7 @@ FILTERING AND SORTING OPTIONS
 
 "##;
 
-pub static LONG_OPTIONS: &str = r##"
+static LONG_OPTIONS: &str = r##"
 LONG VIEW OPTIONS
   -b, --binary       list file sizes with binary prefixes
   -B, --bytes        list file sizes in bytes, without any prefixes
@@ -42,5 +44,28 @@ LONG VIEW OPTIONS
   -U, --created      use the created timestamp field
 "##;
 
-pub static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
-pub static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
+static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
+static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
+
+
+pub fn help_string(matches: &Matches, git: bool, xattr: bool) -> String {
+    let mut help = String::from("Usage:\n  exa [options] [files...]\n");
+
+    if !matches.opt_present("long") {
+        help.push_str(OPTIONS);
+    }
+
+    help.push_str(LONG_OPTIONS);
+
+    if git {
+        help.push_str(GIT_HELP);
+        help.push('\n');
+    }
+
+    if xattr {
+        help.push_str(EXTENDED_HELP);
+        help.push('\n');
+    }
+
+    help
+}
