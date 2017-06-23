@@ -12,7 +12,7 @@ mod filter;
 pub use self::filter::{FileFilter, SortField, SortCase};
 
 mod help;
-use self::help::help_string;
+use self::help::HelpString;
 
 mod misfire;
 pub use self::misfire::Misfire;
@@ -103,7 +103,13 @@ impl Options {
         };
 
         if matches.opt_present("help") {
-            return Err(Misfire::Help(help_string(&matches, cfg!(feature="git"), xattr::ENABLED)));
+            let help = HelpString {
+                only_long: matches.opt_present("long"),
+                git: cfg!(feature="git"),
+                xattrs: xattr::ENABLED,
+            };
+
+            return Err(Misfire::Help(help));
         }
         else if matches.opt_present("version") {
             return Err(Misfire::Version);

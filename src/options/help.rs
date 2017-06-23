@@ -1,4 +1,4 @@
-use getopts::Matches;
+use std::fmt;
 
 
 static OPTIONS: &str = r##"
@@ -45,25 +45,31 @@ LONG VIEW OPTIONS
 static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
 static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
 
+#[derive(PartialEq, Debug)]
+pub struct HelpString {
+    pub only_long: bool,
+    pub git: bool,
+    pub xattrs: bool,
+}
 
-pub fn help_string(matches: &Matches, git: bool, xattr: bool) -> String {
-    let mut help = String::from("Usage:\n  exa [options] [files...]\n");
+impl fmt::Display for HelpString {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        try!(write!(f, "Usage:\n  exa [options] [files...]\n"));
 
-    if !matches.opt_present("long") {
-        help.push_str(OPTIONS);
+        if !self.only_long {
+            try!(write!(f, "{}", OPTIONS));
+        }
+
+        try!(write!(f, "{}", LONG_OPTIONS));
+
+        if self.git {
+            try!(write!(f, "\n{}", GIT_HELP));
+        }
+
+        if self.xattrs {
+            try!(write!(f, "\n{}", EXTENDED_HELP));
+        }
+
+        Ok(())
     }
-
-    help.push_str(LONG_OPTIONS);
-
-    if git {
-        help.push('\n');
-        help.push_str(GIT_HELP);
-    }
-
-    if xattr {
-        help.push('\n');
-        help.push_str(EXTENDED_HELP);
-    }
-
-    help
 }

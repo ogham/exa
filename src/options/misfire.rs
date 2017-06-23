@@ -4,6 +4,8 @@ use std::num::ParseIntError;
 use getopts;
 use glob;
 
+use options::help::HelpString;
+
 
 /// A list of legal choices for an argument-taking option
 #[derive(PartialEq, Debug)]
@@ -28,7 +30,7 @@ pub enum Misfire {
 
     /// The user asked for help. This isn’t strictly an error, which is why
     /// this enum isn’t named Error!
-    Help(String),
+    Help(HelpString),
 
     /// The user wanted the version number.
     Version,
