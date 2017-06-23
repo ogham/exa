@@ -110,6 +110,7 @@ $exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  
 $exa $testcases/git/edits     -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
 
 # And finally...
-$exa --help 2>&1 | diff -q - $results/help || exit 1
+$exa --help        2>&1 | diff -q - $results/help      || exit 1
+$exa --help --long 2>&1 | diff -q - $results/help_long || exit 1
 
 echo "All the tests passed!"
