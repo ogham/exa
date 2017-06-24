@@ -25,9 +25,9 @@ use std::path::{Component, Path};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
-use options::{Options, View};
+use options::{Options, View, Mode};
 pub use options::Misfire;
-use output::escape;
+use output::{escape, lines};
 
 mod fs;
 mod info;
@@ -164,11 +164,12 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         if !files.is_empty() {
-            match self.options.view {
-                View::Grid(ref g)         => g.view(&files, self.writer),
-                View::Details(ref d)      => d.view(dir, files, self.writer),
-                View::GridDetails(ref gd) => gd.view(dir, files, self.writer),
-                View::Lines(ref l)        => l.view(files, self.writer),
+            let View { ref mode, colours, classify } = self.options.view;
+            match *mode {
+                Mode::Grid(ref g)         => g.view(&files, self.writer, &colours, classify),
+                Mode::Details(ref d)      => d.view(dir, files, self.writer, &colours, classify),
+                Mode::GridDetails(ref gd) => gd.view(dir, files, self.writer, &colours, classify),
+                Mode::Lines               => lines::view(files, self.writer, &colours, classify),
             }
         }
         else {

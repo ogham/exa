@@ -10,9 +10,10 @@ use fs::feature::xattr::FileAttributes;
 
 use output::cell::TextCell;
 use output::column::Column;
+use output::colours::Colours;
 use output::details::{Details, Table, Environment};
 use output::grid::Grid;
-use output::file_name::LinkStyle;
+use output::file_name::{Classify, LinkStyle};
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -29,7 +30,7 @@ fn file_has_xattrs(file: &File) -> bool {
 }
 
 impl GridDetails {
-    pub fn view<W>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W) -> IOResult<()>
+    pub fn view<W>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W, colours: &Colours, classify: Classify) -> IOResult<()>
     where W: Write {
         let columns_for_dir = match self.details.columns {
             Some(cols) => cols.for_dir(dir),
@@ -40,7 +41,7 @@ impl GridDetails {
 
         let (cells, file_names) = {
 
-            let first_table = self.make_table(env.clone(), &*columns_for_dir);
+            let first_table = self.make_table(env.clone(), &*columns_for_dir, colours, classify);
 
             let cells = files.iter()
                               .map(|file| first_table.cells_for_file(file, file_has_xattrs(file)))
@@ -53,10 +54,10 @@ impl GridDetails {
             (cells, file_names)
         };
 
-        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone());
+        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone(), colours, classify);
 
         for column_count in 2.. {
-            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone());
+            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone(), colours, classify);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -74,12 +75,11 @@ impl GridDetails {
         Ok(())
     }
 
-    fn make_table<'a>(&'a self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'a [Column]) -> Table<UsersCache> {
+    fn make_table<'a>(&'a self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'a [Column], colours: &'a Colours, classify: Classify) -> Table<UsersCache> {
         let mut table = Table {
             columns: columns_for_dir,
-            opts: &self.details,
-            env: env,
-
+            colours, classify, env,
+            xattr: self.details.xattr,
             rows: Vec::new(),
         };
 
@@ -87,10 +87,10 @@ impl GridDetails {
         table
     }
 
-    fn make_grid<'a>(&'a self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>) -> grid::Grid {
+    fn make_grid<'a>(&'a self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>, colours: &'a Colours, classify: Classify) -> grid::Grid {
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
-            tables.push(self.make_table(env.clone(), columns_for_dir));
+            tables.push(self.make_table(env.clone(), columns_for_dir, colours, classify));
         }
 
         let mut num_cells = cells.len();

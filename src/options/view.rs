@@ -3,7 +3,7 @@ use std::env::var_os;
 use getopts;
 
 use output::Colours;
-use output::{Grid, Details, GridDetails, Lines};
+use output::{Grid, Details, GridDetails};
 use output::column::{Columns, TimeTypes, SizeFormat};
 use output::file_name::Classify;
 use options::{FileFilter, DirAction, Misfire};
@@ -13,11 +13,19 @@ use fs::feature::xattr;
 
 /// The **view** contains all information about how to format output.
 #[derive(PartialEq, Debug, Clone)]
-pub enum View {
+pub struct View {
+    pub mode: Mode,
+    pub colours: Colours,
+    pub classify: Classify,
+}
+
+/// The **mode** is the “type” of output.
+#[derive(PartialEq, Debug, Clone)]
+pub enum Mode {
     Details(Details),
     Grid(Grid),
     GridDetails(GridDetails),
-    Lines(Lines),
+    Lines,
 }
 
 impl View {
@@ -58,11 +66,11 @@ impl View {
                     recurse: dir_action.recurse_options(),
                     filter: filter.clone(),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
-                    colours: colours,
-                    classify: Classify::deduce(matches),
                 };
 
-                Ok(details)
+                let classify = Classify::deduce(matches);
+
+                Ok(View { mode: Mode::Details(details), colours, classify })
             }
         };
 
@@ -104,7 +112,7 @@ impl View {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
-                        Ok(View::Lines(Lines { colours, classify }))
+                        Ok(View { mode: Mode::Lines, colours, classify })
                     }
                 }
                 else if matches.opt_present("tree") {
@@ -114,21 +122,17 @@ impl View {
                         recurse: dir_action.recurse_options(),
                         filter: filter.clone(),  // TODO: clone
                         xattr: false,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Details(details))
+                    Ok(View { mode: Mode::Details(details), colours, classify })
                 }
                 else {
                     let grid = Grid {
                         across: matches.opt_present("across"),
                         console_width: width,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Grid(grid))
+                    Ok(View { mode: Mode::Grid(grid), colours, classify })
                 }
             }
             else {
@@ -148,30 +152,32 @@ impl View {
                         recurse: dir_action.recurse_options(),
                         filter: filter.clone(),
                         xattr: false,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Details(details))
+                    Ok(View { mode: Mode::Details(details), colours, classify })
                 }
                 else {
-                    Ok(View::Lines(Lines { colours, classify }))
+                    Ok(View { mode: Mode::Lines, colours, classify })
                 }
             }
         };
 
         if matches.opt_present("long") {
-            let details = long()?;
-
+            let view = long()?;
             if matches.opt_present("grid") {
-                match other_options_scan() {
-                    Ok(View::Grid(grid)) => return Ok(View::GridDetails(GridDetails { grid, details })),
-                    Ok(lines)            => return Ok(lines),
-                    Err(e)               => return Err(e),
-                };
+                if let View { colours: _, classify: _, mode: Mode::Details(details) } = view {
+                    let others = other_options_scan()?;
+                    match others.mode {
+                        Mode::Grid(grid) => return Ok(View { mode: Mode::GridDetails(GridDetails { grid: grid, details: details }), colours: others.colours, classify: others.classify }),
+                        _                => return Ok(others),
+                    };
+                }
+                else {
+                    unreachable!()
+                }
             }
             else {
-                return Ok(View::Details(details));
+                return Ok(view);
             }
         }
 

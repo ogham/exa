@@ -18,7 +18,7 @@ mod misfire;
 pub use self::misfire::Misfire;
 
 mod view;
-pub use self::view::View;
+pub use self::view::{View, Mode};
 
 
 /// These **options** represent a parsed, error-checked versions of the
@@ -123,9 +123,9 @@ impl Options {
     /// status column. It’s only worth trying to discover a repository if the
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
-        match self.view {
-            View::Details(Details { columns: Some(cols), .. }) |
-            View::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
+        match self.view.mode {
+            Mode::Details(Details { columns: Some(cols), .. }) |
+            Mode::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
             _ => false,
         }
     }

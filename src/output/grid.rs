@@ -11,12 +11,10 @@ use output::file_name::{FileName, LinkStyle, Classify};
 pub struct Grid {
     pub across: bool,
     pub console_width: usize,
-    pub colours: Colours,
-    pub classify: Classify,
 }
 
 impl Grid {
-    pub fn view<W: Write>(&self, files: &[File], w: &mut W) -> IOResult<()> {
+    pub fn view<W: Write>(&self, files: &[File], w: &mut W, colours: &Colours, classify: Classify) -> IOResult<()> {
         let direction = if self.across { grid::Direction::LeftToRight }
                                   else { grid::Direction::TopToBottom };
 
@@ -28,7 +26,7 @@ impl Grid {
         grid.reserve(files.len());
 
         for file in files.iter() {
-            let filename = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
+            let filename = FileName::new(file, LinkStyle::JustFilenames, classify, colours).paint();
             let width = filename.width();
 
             grid.add(grid::Cell {
@@ -43,7 +41,7 @@ impl Grid {
         else {
             // File names too long for a grid - drop down to just listing them!
             for file in files.iter() {
-                let name_cell = FileName::new(file, LinkStyle::JustFilenames, self.classify, &self.colours).paint();
+                let name_cell = FileName::new(file, LinkStyle::JustFilenames, classify, colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
             Ok(())

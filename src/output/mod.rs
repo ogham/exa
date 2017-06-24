@@ -3,12 +3,11 @@ pub use self::colours::Colours;
 pub use self::details::Details;
 pub use self::grid_details::GridDetails;
 pub use self::grid::Grid;
-pub use self::lines::Lines;
 pub use self::escape::escape;
 
 mod grid;
 pub mod details;
-mod lines;
+pub mod lines;
 mod grid_details;
 pub mod column;
 mod cell;

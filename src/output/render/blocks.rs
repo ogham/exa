@@ -15,7 +15,7 @@ impl f::Blocks {
 
 #[cfg(test)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::cell::TextCell;
     use fs::fields as f;
 
@@ -24,21 +24,21 @@ pub mod test {
 
     #[test]
     fn blocklessness() {
-        let mut details = Details::default();
-        details.colours.punctuation = Green.italic();
+        let mut colours = Colours::default();
+        colours.punctuation = Green.italic();
 
         let blox = f::Blocks::None;
         let expected = TextCell::blank(Green.italic());
-        assert_eq!(expected, blox.render(&details.colours).into());
+        assert_eq!(expected, blox.render(&colours).into());
     }
 
     #[test]
     fn blockfulity() {
-        let mut details = Details::default();
-        details.colours.blocks = Red.blink();
+        let mut colours = Colours::default();
+        colours.blocks = Red.blink();
 
         let blox = f::Blocks::Some(3005);
         let expected = TextCell::paint_str(Red.blink(), "3005");
-        assert_eq!(expected, blox.render(&details.colours).into());
+        assert_eq!(expected, blox.render(&colours).into());
     }
 }
