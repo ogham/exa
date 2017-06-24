@@ -34,6 +34,8 @@ impl View {
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
         use options::misfire::Misfire::*;
 
+        let classify = Classify::deduce(matches);
+
         let colour_scale = || {
             matches.opt_present("color-scale") || matches.opt_present("colour-scale")
         };
@@ -68,8 +70,6 @@ impl View {
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 };
 
-                let classify = Classify::deduce(matches);
-
                 Ok(View { mode: Mode::Details(details), colours, classify })
             }
         };
@@ -96,7 +96,6 @@ impl View {
         };
 
         let other_options_scan = || {
-            let classify     = Classify::deduce(matches);
             let term_colours = TerminalColours::deduce(matches)?;
             let term_width   = TerminalWidth::deduce()?;
 
