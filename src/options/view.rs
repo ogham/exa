@@ -108,7 +108,7 @@ impl Mode {
             let term_colours = TerminalColours::deduce(matches)?;
             let term_width   = TerminalWidth::deduce()?;
 
-            if let Some(&width) = term_width.as_ref() {
+            if let Some(width) = term_width.width() {
                 let colours = match term_colours {
                     TerminalColours::Always     |
                     TerminalColours::Automatic  => Colours::colourful(colour_scale()),
@@ -230,11 +230,11 @@ impl TerminalWidth {
         }
     }
 
-    fn as_ref(&self) -> Option<&usize> {
+    fn width(&self) -> Option<usize> {
         match *self {
-            TerminalWidth::Set(ref width)
-            | TerminalWidth::Terminal(ref width)    => Some(width),
-            TerminalWidth::Unset                    => None,
+            TerminalWidth::Set(width)       |
+            TerminalWidth::Terminal(width)  => Some(width),
+            TerminalWidth::Unset            => None,
         }
     }
 }
