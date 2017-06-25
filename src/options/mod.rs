@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 use getopts;
 
 use fs::feature::xattr;
-use output::{Details, GridDetails};
+use output::details;
 
 mod dir_action;
 pub use self::dir_action::{DirAction, RecurseOptions};
@@ -124,8 +124,8 @@ impl Options {
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
-            Mode::Details(Details { columns: Some(cols), .. }) |
-            Mode::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
+            Mode::Details(details::Options { columns: Some(cols), .. }) |
+            Mode::GridDetails(_, details::Options { columns: Some(cols), .. }) => cols.should_scan_for_git(),
             _ => false,
         }
     }

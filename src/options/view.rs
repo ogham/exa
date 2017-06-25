@@ -3,7 +3,7 @@ use std::env::var_os;
 use getopts;
 
 use output::Colours;
-use output::{Grid, Details, GridDetails};
+use output::{grid, details};
 use output::column::{Columns, TimeTypes, SizeFormat};
 use output::file_name::Classify;
 use options::{FileFilter, DirAction, Misfire};
@@ -33,9 +33,9 @@ impl View {
 /// The **mode** is the “type” of output.
 #[derive(PartialEq, Debug, Clone)]
 pub enum Mode {
-    Details(Details),
-    Grid(Grid),
-    GridDetails(GridDetails),
+    Grid(grid::Options),
+    Details(details::Options),
+    GridDetails(grid::Options, details::Options),
     Lines,
 }
 
@@ -53,7 +53,7 @@ impl Mode {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let details = Details {
+                let details = details::Options {
                     columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
                     recurse: dir_action.recurse_options(),
@@ -97,7 +97,7 @@ impl Mode {
                     }
                 }
                 else if matches.opt_present("tree") {
-                    let details = Details {
+                    let details = details::Options {
                         columns: None,
                         header: false,
                         recurse: dir_action.recurse_options(),
@@ -108,7 +108,7 @@ impl Mode {
                     Ok(Mode::Details(details))
                 }
                 else {
-                    let grid = Grid {
+                    let grid = grid::Options {
                         across: matches.opt_present("across"),
                         console_width: width,
                     };
@@ -122,7 +122,7 @@ impl Mode {
                 // fallback to the lines view.
 
                 if matches.opt_present("tree") {
-                    let details = Details {
+                    let details = details::Options {
                         columns: None,
                         header: false,
                         recurse: dir_action.recurse_options(),
@@ -144,7 +144,7 @@ impl Mode {
                 if let Mode::Details(details) = view {
                     let others = other_options_scan()?;
                     match others {
-                        Mode::Grid(grid) => return Ok(Mode::GridDetails(GridDetails { grid, details })),
+                        Mode::Grid(grid) => return Ok(Mode::GridDetails(grid, details)),
                         _                => return Ok(others),
                     };
                 }

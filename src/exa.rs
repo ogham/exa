@@ -31,7 +31,7 @@ use ansi_term::{ANSIStrings, Style};
 use fs::{Dir, File};
 use options::{Options, View, Mode};
 pub use options::Misfire;
-use output::{escape, lines};
+use output::{escape, lines, grid, grid_details, details};
 
 mod fs;
 mod info;
@@ -168,12 +168,13 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         if !files.is_empty() {
-            let View { ref mode, colours, classify } = self.options.view;
+            let View { ref mode, ref colours, classify } = self.options.view;
+
             match *mode {
-                Mode::Grid(ref g)         => g.view(&files, self.writer, &colours, classify),
-                Mode::Details(ref d)      => d.view(dir, files, self.writer, &colours, classify),
-                Mode::GridDetails(ref gd) => gd.view(dir, files, self.writer, &colours, classify),
-                Mode::Lines               => lines::view(files, self.writer, &colours, classify),
+                Mode::Lines                  => lines::Render { files, colours, classify }.render(self.writer),
+                Mode::Grid(ref opts)         => grid::Render { files, colours, classify, opts }.render(self.writer),
+                Mode::Details(ref opts)      => details::Render { dir, files, colours, classify, opts }.render(self.writer),
+                Mode::GridDetails(ref grid, ref details) => grid_details::Render { dir, files, colours, classify, grid, details }.render(self.writer),
             }
         }
         else {

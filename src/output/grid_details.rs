@@ -11,29 +11,25 @@ use fs::feature::xattr::FileAttributes;
 use output::cell::TextCell;
 use output::column::Column;
 use output::colours::Colours;
-use output::details::{Details, Table, Environment};
-use output::grid::Grid;
+use output::details::{Table, Environment, Options as DetailsOptions};
+use output::grid::Options as GridOptions;
 use output::file_name::{Classify, LinkStyle};
 
 
-#[derive(PartialEq, Debug, Clone)]
-pub struct GridDetails {
-    pub grid: Grid,
-    pub details: Details,
+pub struct Render<'a> {
+    pub dir: Option<&'a Dir>,
+    pub files: Vec<File<'a>>,
+    pub colours: &'a Colours,
+    pub classify: Classify,
+    pub grid: &'a GridOptions,
+    pub details: &'a DetailsOptions,
 }
 
-fn file_has_xattrs(file: &File) -> bool {
-    match file.path.attributes() {
-        Ok(attrs) => !attrs.is_empty(),
-        Err(_) => false,
-    }
-}
+impl<'a> Render<'a> {
+    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
 
-impl GridDetails {
-    pub fn view<W>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W, colours: &Colours, classify: Classify) -> IOResult<()>
-    where W: Write {
         let columns_for_dir = match self.details.columns {
-            Some(cols) => cols.for_dir(dir),
+            Some(cols) => cols.for_dir(self.dir),
             None => Vec::new(),
         };
 
@@ -41,23 +37,23 @@ impl GridDetails {
 
         let (cells, file_names) = {
 
-            let first_table = self.make_table(env.clone(), &*columns_for_dir, colours, classify);
+            let first_table = self.make_table(env.clone(), &*columns_for_dir, self.colours, self.classify);
 
-            let cells = files.iter()
+            let cells = self.files.iter()
                               .map(|file| first_table.cells_for_file(file, file_has_xattrs(file)))
                               .collect::<Vec<_>>();
 
-            let file_names = files.into_iter()
+            let file_names = self.files.iter()
                                   .map(|file| first_table.filename(file, LinkStyle::JustFilenames).promote())
                                   .collect::<Vec<_>>();
 
             (cells, file_names)
         };
 
-        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone(), colours, classify);
+        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone(), self.colours, self.classify);
 
         for column_count in 2.. {
-            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone(), colours, classify);
+            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone(), self.colours, self.classify);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -75,7 +71,7 @@ impl GridDetails {
         Ok(())
     }
 
-    fn make_table<'a>(&'a self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'a [Column], colours: &'a Colours, classify: Classify) -> Table<UsersCache> {
+    fn make_table<'g>(&'g self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'g [Column], colours: &'g Colours, classify: Classify) -> Table<UsersCache> {
         let mut table = Table {
             columns: columns_for_dir,
             colours, classify, env,
@@ -87,7 +83,7 @@ impl GridDetails {
         table
     }
 
-    fn make_grid<'a>(&'a self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>, colours: &'a Colours, classify: Classify) -> grid::Grid {
+    fn make_grid<'g>(&'g self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'g [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>, colours: &'g Colours, classify: Classify) -> grid::Grid {
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
             tables.push(self.make_table(env.clone(), columns_for_dir, colours, classify));
@@ -158,4 +154,12 @@ fn divide_rounding_up(a: usize, b: usize) -> usize {
     let mut result = a / b;
     if a % b != 0 { result += 1; }
     result
+}
+
+
+fn file_has_xattrs(file: &File) -> bool {
+    match file.path.attributes() {
+        Ok(attrs) => !attrs.is_empty(),
+        Err(_) => false,
+    }
 }

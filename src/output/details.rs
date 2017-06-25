@@ -113,7 +113,7 @@ use output::file_name::{FileName, LinkStyle, Classify};
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
 #[derive(PartialEq, Debug, Clone, Default)]
-pub struct Details {
+pub struct Options {
 
     /// A Columns object that says which columns should be included in the
     /// output in the general case. Directories themselves can pick which
@@ -217,16 +217,22 @@ fn determine_time_zone() -> TZResult<TimeZone> {
     TimeZone::from_file("/etc/localtime")
 }
 
-impl Details {
 
-    /// Print the details of the given vector of files -- all of which will
-    /// have been read from the given directory, if present -- to stdout.
-    pub fn view<W: Write>(&self, dir: Option<&Dir>, files: Vec<File>, w: &mut W, colours: &Colours, classify: Classify) -> IOResult<()> {
+pub struct Render<'a> {
+    pub dir: Option<&'a Dir>,
+    pub files: Vec<File<'a>>,
+    pub colours: &'a Colours,
+    pub classify: Classify,
+    pub opts: &'a Options,
+}
+
+impl<'a> Render<'a> {
+    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
 
         // First, transform the Columns object into a vector of columns for
         // the current directory.
-        let columns_for_dir = match self.columns {
-            Some(cols) => cols.for_dir(dir),
+        let columns_for_dir = match self.opts.columns {
+            Some(cols) => cols.for_dir(self.dir),
             None => Vec::new(),
         };
 
@@ -236,18 +242,18 @@ impl Details {
         // Build the table to put rows in.
         let mut table = Table {
             columns: &*columns_for_dir,
-            colours: colours,
-            classify: classify,
-            xattr: self.xattr,
+            colours: self.colours,
+            classify: self.classify,
+            xattr: self.opts.xattr,
             env: env,
             rows: Vec::new(),
         };
 
         // Next, add a header if the user requests it.
-        if self.header { table.add_header() }
+        if self.opts.header { table.add_header() }
 
         // Then add files to the table and print it out.
-        self.add_files_to_table(&mut table, files, 0);
+        self.add_files_to_table(&mut table, &self.files, 0);
         for cell in table.print_table() {
             writeln!(w, "{}", cell.strings())?;
         }
@@ -257,7 +263,7 @@ impl Details {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, U: Users+Groups+Send>(&self, mut table: &mut Table<U>, src: Vec<File<'dir>>, depth: usize) {
+    fn add_files_to_table<'dir, U: Users+Groups+Send>(&self, mut table: &mut Table<U>, src: &Vec<File<'dir>>, depth: usize) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
@@ -271,12 +277,12 @@ impl Details {
             xattrs:  Vec<Attribute>,
             errors:  Vec<(IOError, Option<PathBuf>)>,
             dir:     Option<Dir>,
-            file:    File<'a>,
+            file:    &'a File<'a>,
         }
 
         impl<'a> AsRef<File<'a>> for Egg<'a> {
             fn as_ref(&self) -> &File<'a> {
-                &self.file
+                self.file
             }
         }
 
@@ -287,6 +293,8 @@ impl Details {
             for file in src {
                 let file_eggs = file_eggs.clone();
                 let table = table.clone();
+
+                let recurse = self.opts.recurse;
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
@@ -307,7 +315,7 @@ impl Details {
 
                     let mut dir = None;
 
-                    if let Some(r) = self.recurse {
+                    if let Some(r) = recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth) {
                             if let Ok(d) = file.to_dir(false) {
                                 dir = Some(d);
@@ -321,7 +329,7 @@ impl Details {
             }
         });
 
-        self.filter.sort_files(&mut file_eggs);
+        self.opts.filter.sort_files(&mut file_eggs);
 
         let num_eggs = file_eggs.len();
         for (index, egg) in file_eggs.into_iter().enumerate() {
@@ -345,7 +353,7 @@ impl Details {
                     }
                 }
 
-                self.filter.filter_child_files(&mut files);
+                self.opts.filter.filter_child_files(&mut files);
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
@@ -356,7 +364,7 @@ impl Details {
                         table.add_error(&error, depth + 1, false, path);
                     }
 
-                    self.add_files_to_table(table, files, depth + 1);
+                    self.add_files_to_table(table, &files, depth + 1);
                     continue;
                 }
             }
@@ -465,8 +473,8 @@ impl<'a, U: Users+Groups+'a> Table<'a, U> {
         self.rows.push(row);
     }
 
-    pub fn filename(&self, file: File, links: LinkStyle) -> TextCellContents {
-        FileName::new(&file, links, self.classify, &self.colours).paint()
+    pub fn filename(&self, file: &File, links: LinkStyle) -> TextCellContents {
+        FileName::new(file, links, self.classify, &self.colours).paint()
     }
 
     pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {

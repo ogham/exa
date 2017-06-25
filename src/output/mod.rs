@@ -1,18 +1,16 @@
 pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
 pub use self::colours::Colours;
-pub use self::details::Details;
-pub use self::grid_details::GridDetails;
-pub use self::grid::Grid;
 pub use self::escape::escape;
 
-mod grid;
-pub mod details;
-pub mod lines;
-mod grid_details;
 pub mod column;
+pub mod details;
+pub mod file_name;
+pub mod grid_details;
+pub mod grid;
+pub mod lines;
+
 mod cell;
 mod colours;
-mod tree;
-pub mod file_name;
 mod escape;
 mod render;
+mod tree;
