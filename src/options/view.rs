@@ -7,7 +7,6 @@ use output::{Grid, Details, GridDetails};
 use output::column::{Columns, TimeTypes, SizeFormat};
 use output::file_name::Classify;
 use options::{FileFilter, DirAction, Misfire};
-use term::dimensions;
 use fs::feature::xattr;
 
 
@@ -45,10 +44,6 @@ impl Mode {
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<(Mode, Colours), Misfire> {
         use options::misfire::Misfire::*;
 
-        let colour_scale = || {
-            matches.opt_present("color-scale") || matches.opt_present("colour-scale")
-        };
-
         let long = || {
             if matches.opt_present("across") && !matches.opt_present("grid") {
                 Err(Useless("across", true, "long"))
@@ -57,19 +52,7 @@ impl Mode {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let term_colours = TerminalColours::deduce(matches)?;
-                let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(colour_scale()),
-                    TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => {
-                        if dimensions().is_some() {
-                            Colours::colourful(colour_scale())
-                        }
-                        else {
-                            Colours::plain()
-                        }
-                    },
-                };
+                let colours = Colours::deduce(matches)?;
 
                 let details = Details {
                     columns: Some(Columns::deduce(matches)?),
@@ -105,15 +88,8 @@ impl Mode {
         };
 
         let other_options_scan = || {
-            let term_colours = TerminalColours::deduce(matches)?;
-            let term_width   = TerminalWidth::deduce()?;
-
-            if let Some(width) = term_width.width() {
-                let colours = match term_colours {
-                    TerminalColours::Always     |
-                    TerminalColours::Automatic  => Colours::colourful(colour_scale()),
-                    TerminalColours::Never      => Colours::plain(),
-                };
+            if let Some(width) = TerminalWidth::deduce()?.width() {
+                let colours = Colours::deduce(matches)?;
 
                 if matches.opt_present("oneline") {
                     if matches.opt_present("across") {
@@ -148,10 +124,7 @@ impl Mode {
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
 
-                let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(colour_scale()),
-                    TerminalColours::Never | TerminalColours::Automatic => Colours::plain(),
-                };
+                let colours = Colours::deduce(matches)?;
 
                 if matches.opt_present("tree") {
                     let details = Details {
@@ -222,7 +195,7 @@ impl TerminalWidth {
                 Err(e)     => Err(Misfire::FailedParse(e)),
             }
         }
-        else if let Some((width, _)) = dimensions() {
+        else if let Some(width) = *TERM_WIDTH {
             Ok(TerminalWidth::Terminal(width))
         }
         else {
@@ -373,10 +346,37 @@ impl TerminalColours {
 }
 
 
+impl Colours {
+    fn deduce(matches: &getopts::Matches) -> Result<Colours, Misfire> {
+        use self::TerminalColours::*;
+
+        let tc = TerminalColours::deduce(matches)?;
+        if tc == Always || (tc == Automatic && TERM_WIDTH.is_some()) {
+            let scale = matches.opt_present("color-scale") || matches.opt_present("colour-scale");
+            Ok(Colours::colourful(scale))
+        }
+        else {
+            Ok(Colours::plain())
+        }
+    }
+}
+
+
 
 impl Classify {
     fn deduce(matches: &getopts::Matches) -> Classify {
         if matches.opt_present("classify") { Classify::AddFileIndicators }
                                       else { Classify::JustFilenames }
     }
+}
+
+
+// Gets, then caches, the width of the terminal that exa is running in.
+// This gets used multiple times above, with no real guarantee of order,
+// so it’s easier to just cache it the first time it runs.
+lazy_static! {
+    static ref TERM_WIDTH: Option<usize> = {
+        use term::dimensions;
+        dimensions().map(|t| t.0)
+    };
 }

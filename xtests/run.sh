@@ -29,8 +29,6 @@ $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
 $exa $testcases/attributes/dirs/empty-with-attribute -lh | diff -q - $results/empty  || exit 1
 
 $exa --color-scale         $testcases/files -l | diff -q - $results/files_l_scale  || exit 1
-$exa_binary                $testcases/files -l | diff -q - $results/files_l_bw     || exit 1
-$exa_binary --colour=never $testcases/files -l | diff -q - $results/files_l_bw     || exit 1
 
 
 # Grid view tests
@@ -108,6 +106,14 @@ COLUMNS=80 $exa $testcases/links    2>&1 | diff -q - $results/links        || ex
 # There’ve been bugs where the target file wasn’t printed properly when the
 # symlink file was specified on the command-line directly.
 $exa $testcases/links/* -1 | diff -q - $results/links_1_files || exit 1
+
+
+# Colours and terminals
+# Just because COLUMNS is present, doesn’t mean output is to a terminal
+COLUMNS=80 $exa_binary                    $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
+COLUMNS=80 $exa_binary --colour=always    $testcases/files -l | diff -q - $results/files_l     || exit 1
+COLUMNS=80 $exa_binary --colour=never     $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
+COLUMNS=80 $exa_binary --colour=automatic $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
 
 
 # Git
