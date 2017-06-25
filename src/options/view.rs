@@ -22,7 +22,8 @@ impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
-        let (mode, colours) = Mode::deduce(matches, filter, dir_action)?;
+        let mode     = Mode::deduce(matches, filter, dir_action)?;
+        let colours  = Colours::deduce(matches)?;
         let classify = Classify::deduce(matches);
         Ok(View { mode, colours, classify })
     }
@@ -40,8 +41,8 @@ pub enum Mode {
 
 impl Mode {
 
-    /// Determine both the mode and the colours at the same time.
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<(Mode, Colours), Misfire> {
+    /// Determine the mode from the command-line arguments.
+    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -52,8 +53,6 @@ impl Mode {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let colours = Colours::deduce(matches)?;
-
                 let details = Details {
                     columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
@@ -62,7 +61,7 @@ impl Mode {
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 };
 
-                Ok((Mode::Details(details), colours))
+                Ok(Mode::Details(details))
             }
         };
 
@@ -89,14 +88,12 @@ impl Mode {
 
         let other_options_scan = || {
             if let Some(width) = TerminalWidth::deduce()?.width() {
-                let colours = Colours::deduce(matches)?;
-
                 if matches.opt_present("oneline") {
                     if matches.opt_present("across") {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
-                        Ok((Mode::Lines, colours))
+                        Ok(Mode::Lines)
                     }
                 }
                 else if matches.opt_present("tree") {
@@ -108,7 +105,7 @@ impl Mode {
                         xattr: false,
                     };
 
-                    Ok((Mode::Details(details), colours))
+                    Ok(Mode::Details(details))
                 }
                 else {
                     let grid = Grid {
@@ -116,15 +113,13 @@ impl Mode {
                         console_width: width,
                     };
 
-                    Ok((Mode::Grid(grid), colours))
+                    Ok(Mode::Grid(grid))
                 }
             }
             else {
                 // If the terminal width couldn’t be matched for some reason, such
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
-
-                let colours = Colours::deduce(matches)?;
 
                 if matches.opt_present("tree") {
                     let details = Details {
@@ -135,10 +130,10 @@ impl Mode {
                         xattr: false,
                     };
 
-                    Ok((Mode::Details(details), colours))
+                    Ok(Mode::Details(details))
                 }
                 else {
-                    Ok((Mode::Lines, colours))
+                    Ok(Mode::Lines)
                 }
             }
         };
@@ -146,10 +141,10 @@ impl Mode {
         if matches.opt_present("long") {
             let view = long()?;
             if matches.opt_present("grid") {
-                if let (Mode::Details(details), _) = view {
+                if let Mode::Details(details) = view {
                     let others = other_options_scan()?;
-                    match others.0 {
-                        Mode::Grid(grid) => return Ok((Mode::GridDetails(GridDetails { grid, details }), others.1 )),
+                    match others {
+                        Mode::Grid(grid) => return Ok(Mode::GridDetails(GridDetails { grid, details })),
                         _                => return Ok(others),
                     };
                 }
