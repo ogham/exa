@@ -19,6 +19,17 @@ pub struct View {
     pub classify: Classify,
 }
 
+impl View {
+
+    /// Determine which view to use and all of that view’s arguments.
+    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
+        let (mode, colours) = Mode::deduce(matches, filter, dir_action)?;
+        let classify = Classify::deduce(matches);
+        Ok(View { mode, colours, classify })
+    }
+}
+
+
 /// The **mode** is the “type” of output.
 #[derive(PartialEq, Debug, Clone)]
 pub enum Mode {
@@ -28,13 +39,11 @@ pub enum Mode {
     Lines,
 }
 
-impl View {
+impl Mode {
 
-    /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
+    /// Determine both the mode and the colours at the same time.
+    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<(Mode, Colours), Misfire> {
         use options::misfire::Misfire::*;
-
-        let classify = Classify::deduce(matches);
 
         let colour_scale = || {
             matches.opt_present("color-scale") || matches.opt_present("colour-scale")
@@ -70,7 +79,7 @@ impl View {
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 };
 
-                Ok(View { mode: Mode::Details(details), colours, classify })
+                Ok((Mode::Details(details), colours))
             }
         };
 
@@ -111,7 +120,7 @@ impl View {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
-                        Ok(View { mode: Mode::Lines, colours, classify })
+                        Ok((Mode::Lines, colours))
                     }
                 }
                 else if matches.opt_present("tree") {
@@ -123,7 +132,7 @@ impl View {
                         xattr: false,
                     };
 
-                    Ok(View { mode: Mode::Details(details), colours, classify })
+                    Ok((Mode::Details(details), colours))
                 }
                 else {
                     let grid = Grid {
@@ -131,7 +140,7 @@ impl View {
                         console_width: width,
                     };
 
-                    Ok(View { mode: Mode::Grid(grid), colours, classify })
+                    Ok((Mode::Grid(grid), colours))
                 }
             }
             else {
@@ -153,10 +162,10 @@ impl View {
                         xattr: false,
                     };
 
-                    Ok(View { mode: Mode::Details(details), colours, classify })
+                    Ok((Mode::Details(details), colours))
                 }
                 else {
-                    Ok(View { mode: Mode::Lines, colours, classify })
+                    Ok((Mode::Lines, colours))
                 }
             }
         };
@@ -164,10 +173,10 @@ impl View {
         if matches.opt_present("long") {
             let view = long()?;
             if matches.opt_present("grid") {
-                if let View { colours: _, classify: _, mode: Mode::Details(details) } = view {
+                if let (Mode::Details(details), _) = view {
                     let others = other_options_scan()?;
-                    match others.mode {
-                        Mode::Grid(grid) => return Ok(View { mode: Mode::GridDetails(GridDetails { grid: grid, details: details }), colours: others.colours, classify: others.classify }),
+                    match others.0 {
+                        Mode::Grid(grid) => return Ok((Mode::GridDetails(GridDetails { grid, details }), others.1 )),
                         _                => return Ok(others),
                     };
                 }
