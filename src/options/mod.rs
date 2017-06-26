@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 use getopts;
 
 use fs::feature::xattr;
-use output::{Details, GridDetails};
+use output::details;
 
 mod dir_action;
 pub use self::dir_action::{DirAction, RecurseOptions};
@@ -18,7 +18,7 @@ mod misfire;
 pub use self::misfire::Misfire;
 
 mod view;
-pub use self::view::View;
+pub use self::view::{View, Mode};
 
 
 /// These **options** represent a parsed, error-checked versions of the
@@ -123,9 +123,9 @@ impl Options {
     /// status column. It’s only worth trying to discover a repository if the
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
-        match self.view {
-            View::Details(Details { columns: Some(cols), .. }) |
-            View::GridDetails(GridDetails { details: Details { columns: Some(cols), .. }, .. }) => cols.should_scan_for_git(),
+        match self.view.mode {
+            Mode::Details(details::Options { columns: Some(cols), .. }) |
+            Mode::GridDetails(_, details::Options { columns: Some(cols), .. }) => cols.should_scan_for_git(),
             _ => false,
         }
     }
@@ -135,7 +135,7 @@ impl Options {
     fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
-        let view = View::deduce(matches, filter.clone(), dir_action)?;
+        let view = View::deduce(matches)?;
 
         Ok(Options { dir_action, view, filter })
     }

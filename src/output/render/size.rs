@@ -67,7 +67,7 @@ impl f::DeviceIDs {
 
 #[cfg(test)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::column::SizeFormat;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
@@ -78,20 +78,20 @@ pub mod test {
 
     #[test]
     fn directory() {
-        let mut details = Details::default();
-        details.colours.punctuation = Green.italic();
+        let mut colours = Colours::default();
+        colours.punctuation = Green.italic();
 
         let directory = f::Size::None;
         let expected = TextCell::blank(Green.italic());
-        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
     }
 
 
     #[test]
     fn file_decimal() {
-        let mut details = Details::default();
-        details.colours.size.numbers = Blue.on(Red);
-        details.colours.size.unit    = Yellow.bold();
+        let mut colours = Colours::default();
+        colours.size.numbers = Blue.on(Red);
+        colours.size.unit    = Yellow.bold();
 
         let directory = f::Size::Some(2_100_000);
         let expected = TextCell {
@@ -102,15 +102,15 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&details.colours, SizeFormat::DecimalBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&colours, SizeFormat::DecimalBytes, &locale::Numeric::english()))
     }
 
 
     #[test]
     fn file_binary() {
-        let mut details = Details::default();
-        details.colours.size.numbers = Blue.on(Red);
-        details.colours.size.unit    = Yellow.bold();
+        let mut colours = Colours::default();
+        colours.size.numbers = Blue.on(Red);
+        colours.size.unit    = Yellow.bold();
 
         let directory = f::Size::Some(1_048_576);
         let expected = TextCell {
@@ -121,14 +121,14 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&details.colours, SizeFormat::BinaryBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&colours, SizeFormat::BinaryBytes, &locale::Numeric::english()))
     }
 
 
     #[test]
     fn file_bytes() {
-        let mut details = Details::default();
-        details.colours.size.numbers = Blue.on(Red);
+        let mut colours = Colours::default();
+    	colours.size.numbers = Blue.on(Red);
 
         let directory = f::Size::Some(1048576);
         let expected = TextCell {
@@ -138,16 +138,16 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
     }
 
 
     #[test]
     fn device_ids() {
-        let mut details = Details::default();
-        details.colours.size.major = Blue.on(Red);
-        details.colours.punctuation = Green.italic();
-        details.colours.size.minor = Cyan.on(Yellow);
+        let mut colours = Colours::default();
+        colours.size.major = Blue.on(Red);
+        colours.punctuation = Green.italic();
+        colours.size.minor = Cyan.on(Yellow);
 
         let directory = f::Size::DeviceIDs(f::DeviceIDs { major: 10, minor: 80 });
         let expected = TextCell {
@@ -159,6 +159,6 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&details.colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
     }
 }

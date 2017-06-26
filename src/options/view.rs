@@ -3,32 +3,47 @@ use std::env::var_os;
 use getopts;
 
 use output::Colours;
-use output::{Grid, Details, GridDetails, Lines};
+use output::{grid, details};
 use output::column::{Columns, TimeTypes, SizeFormat};
 use output::file_name::Classify;
-use options::{FileFilter, DirAction, Misfire};
-use term::dimensions;
+use options::Misfire;
 use fs::feature::xattr;
 
 
 /// The **view** contains all information about how to format output.
 #[derive(PartialEq, Debug, Clone)]
-pub enum View {
-    Details(Details),
-    Grid(Grid),
-    GridDetails(GridDetails),
-    Lines(Lines),
+pub struct View {
+    pub mode: Mode,
+    pub colours: Colours,
+    pub classify: Classify,
 }
 
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
-        use options::misfire::Misfire::*;
+    pub fn deduce(matches: &getopts::Matches) -> Result<View, Misfire> {
+        let mode     = Mode::deduce(matches)?;
+        let colours  = Colours::deduce(matches)?;
+        let classify = Classify::deduce(matches);
+        Ok(View { mode, colours, classify })
+    }
+}
 
-        let colour_scale = || {
-            matches.opt_present("color-scale") || matches.opt_present("colour-scale")
-        };
+
+/// The **mode** is the “type” of output.
+#[derive(PartialEq, Debug, Clone)]
+pub enum Mode {
+    Grid(grid::Options),
+    Details(details::Options),
+    GridDetails(grid::Options, details::Options),
+    Lines,
+}
+
+impl Mode {
+
+    /// Determine the mode from the command-line arguments.
+    pub fn deduce(matches: &getopts::Matches) -> Result<Mode, Misfire> {
+        use options::misfire::Misfire::*;
 
         let long = || {
             if matches.opt_present("across") && !matches.opt_present("grid") {
@@ -38,31 +53,11 @@ impl View {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let term_colours = TerminalColours::deduce(matches)?;
-                let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(colour_scale()),
-                    TerminalColours::Never     => Colours::plain(),
-                    TerminalColours::Automatic => {
-                        if dimensions().is_some() {
-                            Colours::colourful(colour_scale())
-                        }
-                        else {
-                            Colours::plain()
-                        }
-                    },
-                };
-
-                let details = Details {
+                Ok(details::Options {
                     columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
-                    recurse: dir_action.recurse_options(),
-                    filter: filter.clone(),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
-                    colours: colours,
-                    classify: Classify::deduce(matches),
-                };
-
-                Ok(details)
+                })
             }
         };
 
@@ -88,47 +83,31 @@ impl View {
         };
 
         let other_options_scan = || {
-            let classify     = Classify::deduce(matches);
-            let term_colours = TerminalColours::deduce(matches)?;
-            let term_width   = TerminalWidth::deduce()?;
-
-            if let Some(&width) = term_width.as_ref() {
-                let colours = match term_colours {
-                    TerminalColours::Always     |
-                    TerminalColours::Automatic  => Colours::colourful(colour_scale()),
-                    TerminalColours::Never      => Colours::plain(),
-                };
-
+            if let Some(width) = TerminalWidth::deduce()?.width() {
                 if matches.opt_present("oneline") {
                     if matches.opt_present("across") {
                         Err(Useless("across", true, "oneline"))
                     }
                     else {
-                        Ok(View::Lines(Lines { colours, classify }))
+                        Ok(Mode::Lines)
                     }
                 }
                 else if matches.opt_present("tree") {
-                    let details = Details {
+                    let details = details::Options {
                         columns: None,
                         header: false,
-                        recurse: dir_action.recurse_options(),
-                        filter: filter.clone(),  // TODO: clone
                         xattr: false,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Details(details))
+                    Ok(Mode::Details(details))
                 }
                 else {
-                    let grid = Grid {
+                    let grid = grid::Options {
                         across: matches.opt_present("across"),
                         console_width: width,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Grid(grid))
+                    Ok(Mode::Grid(grid))
                 }
             }
             else {
@@ -136,42 +115,31 @@ impl View {
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
 
-                let colours = match term_colours {
-                    TerminalColours::Always    => Colours::colourful(colour_scale()),
-                    TerminalColours::Never | TerminalColours::Automatic => Colours::plain(),
-                };
-
                 if matches.opt_present("tree") {
-                    let details = Details {
+                    let details = details::Options {
                         columns: None,
                         header: false,
-                        recurse: dir_action.recurse_options(),
-                        filter: filter.clone(),
                         xattr: false,
-                        colours: colours,
-                        classify: classify,
                     };
 
-                    Ok(View::Details(details))
+                    Ok(Mode::Details(details))
                 }
                 else {
-                    Ok(View::Lines(Lines { colours, classify }))
+                    Ok(Mode::Lines)
                 }
             }
         };
 
         if matches.opt_present("long") {
             let details = long()?;
-
             if matches.opt_present("grid") {
-                match other_options_scan() {
-                    Ok(View::Grid(grid)) => return Ok(View::GridDetails(GridDetails { grid, details })),
-                    Ok(lines)            => return Ok(lines),
-                    Err(e)               => return Err(e),
+                match other_options_scan()? {
+                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
+                    others            => return Ok(others),
                 };
             }
             else {
-                return Ok(View::Details(details));
+                return Ok(Mode::Details(details));
             }
         }
 
@@ -208,7 +176,7 @@ impl TerminalWidth {
                 Err(e)     => Err(Misfire::FailedParse(e)),
             }
         }
-        else if let Some((width, _)) = dimensions() {
+        else if let Some(width) = *TERM_WIDTH {
             Ok(TerminalWidth::Terminal(width))
         }
         else {
@@ -216,11 +184,11 @@ impl TerminalWidth {
         }
     }
 
-    fn as_ref(&self) -> Option<&usize> {
+    fn width(&self) -> Option<usize> {
         match *self {
-            TerminalWidth::Set(ref width)
-            | TerminalWidth::Terminal(ref width)    => Some(width),
-            TerminalWidth::Unset                    => None,
+            TerminalWidth::Set(width)       |
+            TerminalWidth::Terminal(width)  => Some(width),
+            TerminalWidth::Unset            => None,
         }
     }
 }
@@ -359,10 +327,37 @@ impl TerminalColours {
 }
 
 
+impl Colours {
+    fn deduce(matches: &getopts::Matches) -> Result<Colours, Misfire> {
+        use self::TerminalColours::*;
+
+        let tc = TerminalColours::deduce(matches)?;
+        if tc == Always || (tc == Automatic && TERM_WIDTH.is_some()) {
+            let scale = matches.opt_present("color-scale") || matches.opt_present("colour-scale");
+            Ok(Colours::colourful(scale))
+        }
+        else {
+            Ok(Colours::plain())
+        }
+    }
+}
+
+
 
 impl Classify {
     fn deduce(matches: &getopts::Matches) -> Classify {
         if matches.opt_present("classify") { Classify::AddFileIndicators }
                                       else { Classify::JustFilenames }
     }
+}
+
+
+// Gets, then caches, the width of the terminal that exa is running in.
+// This gets used multiple times above, with no real guarantee of order,
+// so it’s easier to just cache it the first time it runs.
+lazy_static! {
+    static ref TERM_WIDTH: Option<usize> = {
+        use term::dimensions;
+        dimensions().map(|t| t.0)
+    };
 }

@@ -12,7 +12,7 @@ impl f::Inode {
 
 #[cfg(test)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::cell::TextCell;
     use fs::fields as f;
 
@@ -21,11 +21,11 @@ pub mod test {
 
     #[test]
     fn blocklessness() {
-        let mut details = Details::default();
-        details.colours.inode = Cyan.underline();
+        let mut colours = Colours::default();
+        colours.inode = Cyan.underline();
 
         let io = f::Inode(1414213);
         let expected = TextCell::paint_str(Cyan.underline(), "1414213");
-        assert_eq!(expected, io.render(&details.colours).into());
+        assert_eq!(expected, io.render(&colours).into());
     }
 }

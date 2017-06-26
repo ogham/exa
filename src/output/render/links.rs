@@ -17,7 +17,7 @@ impl f::Links {
 
 #[cfg(test)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
 
@@ -27,8 +27,8 @@ pub mod test {
 
     #[test]
     fn regular_file() {
-        let mut details = Details::default();
-        details.colours.links.normal = Blue.normal();
+        let mut colours = Colours::default();
+        colours.links.normal = Blue.normal();
 
         let stati = f::Links {
             count:    1,
@@ -40,13 +40,13 @@ pub mod test {
             contents: vec![ Blue.paint("1") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&details.colours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&colours, &locale::Numeric::english()).into());
     }
 
     #[test]
     fn regular_directory() {
-        let mut details = Details::default();
-        details.colours.links.normal = Blue.normal();
+        let mut colours = Colours::default();
+        colours.links.normal = Blue.normal();
 
         let stati = f::Links {
             count:    3005,
@@ -58,13 +58,13 @@ pub mod test {
             contents: vec![ Blue.paint("3,005") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&details.colours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&colours, &locale::Numeric::english()).into());
     }
 
     #[test]
     fn popular_file() {
-        let mut details = Details::default();
-        details.colours.links.multi_link_file = Blue.on(Red);
+        let mut colours = Colours::default();
+        colours.links.multi_link_file = Blue.on(Red);
 
         let stati = f::Links {
             count:    3005,
@@ -76,6 +76,6 @@ pub mod test {
             contents: vec![ Blue.on(Red).paint("3,005") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&details.colours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&colours, &locale::Numeric::english()).into());
     }
 }

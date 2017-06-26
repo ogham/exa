@@ -18,6 +18,10 @@ extern crate zoneinfo_compiled;
 
 #[cfg(feature="git")] extern crate git2;
 
+#[macro_use]
+extern crate lazy_static;
+
+
 use std::ffi::OsStr;
 use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, Path};
@@ -25,9 +29,9 @@ use std::path::{Component, Path};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
-use options::{Options, View};
+use options::{Options, View, Mode};
 pub use options::Misfire;
-use output::escape;
+use output::{escape, lines, grid, grid_details, details};
 
 mod fs;
 mod info;
@@ -164,11 +168,13 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
     /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
         if !files.is_empty() {
-            match self.options.view {
-                View::Grid(ref g)         => g.view(&files, self.writer),
-                View::Details(ref d)      => d.view(dir, files, self.writer),
-                View::GridDetails(ref gd) => gd.view(dir, files, self.writer),
-                View::Lines(ref l)        => l.view(files, self.writer),
+            let View { ref mode, ref colours, classify } = self.options.view;
+
+            match *mode {
+                Mode::Lines                  => lines::Render { files, colours, classify }.render(self.writer),
+                Mode::Grid(ref opts)         => grid::Render { files, colours, classify, opts }.render(self.writer),
+                Mode::Details(ref opts)      => details::Render { dir, files, colours, classify, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer),
+                Mode::GridDetails(ref grid, ref details) => grid_details::Render { dir, files, colours, classify, grid, details }.render(self.writer),
             }
         }
         else {

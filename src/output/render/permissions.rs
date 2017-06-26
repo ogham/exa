@@ -92,7 +92,7 @@ impl f::Type {
 #[cfg(test)]
 #[allow(unused_results)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::cell::TextCellContents;
     use fs::fields as f;
 
@@ -101,8 +101,8 @@ pub mod test {
 
     #[test]
     fn negate() {
-        let mut details = Details::default();
-        details.colours.punctuation = Fixed(11).normal();
+        let mut colours = Colours::default();
+        colours.punctuation = Fixed(11).normal();
 
         let bits = f::Permissions {
             user_read:  false,  user_write:  false,  user_execute:  false,  setuid: false,
@@ -116,24 +116,24 @@ pub mod test {
             Fixed(11).paint("-"),  Fixed(11).paint("-"),  Fixed(11).paint("-"),
         ]);
 
-        assert_eq!(expected, bits.render(&details.colours, false).into())
+        assert_eq!(expected, bits.render(&colours, false).into())
     }
 
 
     #[test]
     fn affirm() {
-        let mut details = Details::default();
-        details.colours.perms.user_read    = Fixed(101).normal();
-        details.colours.perms.user_write   = Fixed(102).normal();
-        details.colours.perms.user_execute_file = Fixed(103).normal();
+        let mut colours = Colours::default();
+        colours.perms.user_read    = Fixed(101).normal();
+        colours.perms.user_write   = Fixed(102).normal();
+        colours.perms.user_execute_file = Fixed(103).normal();
 
-        details.colours.perms.group_read    = Fixed(104).normal();
-        details.colours.perms.group_write   = Fixed(105).normal();
-        details.colours.perms.group_execute = Fixed(106).normal();
+        colours.perms.group_read    = Fixed(104).normal();
+        colours.perms.group_write   = Fixed(105).normal();
+        colours.perms.group_execute = Fixed(106).normal();
 
-        details.colours.perms.other_read    = Fixed(107).normal();
-        details.colours.perms.other_write   = Fixed(108).normal();
-        details.colours.perms.other_execute = Fixed(109).normal();
+        colours.perms.other_read    = Fixed(107).normal();
+        colours.perms.other_write   = Fixed(108).normal();
+        colours.perms.other_execute = Fixed(109).normal();
 
         let bits = f::Permissions {
             user_read:  true,  user_write:  true,  user_execute:  true,  setuid: false,
@@ -147,16 +147,16 @@ pub mod test {
             Fixed(107).paint("r"),  Fixed(108).paint("w"),  Fixed(109).paint("x"),
         ]);
 
-        assert_eq!(expected, bits.render(&details.colours, true).into())
+        assert_eq!(expected, bits.render(&colours, true).into())
     }
 
 
     #[test]
     fn specials() {
-        let mut details = Details::default();
-        details.colours.punctuation = Fixed(11).normal();
-        details.colours.perms.special_user_file = Fixed(77).normal();
-        details.colours.perms.special_other = Fixed(88).normal();
+        let mut colours = Colours::default();
+        colours.punctuation = Fixed(11).normal();
+        colours.perms.special_user_file = Fixed(77).normal();
+        colours.perms.special_other = Fixed(88).normal();
 
         let bits = f::Permissions {
             user_read:  false,  user_write:  false,  user_execute:  true,  setuid: true,
@@ -170,15 +170,15 @@ pub mod test {
             Fixed(11).paint("-"),  Fixed(11).paint("-"),  Fixed(88).paint("t"),
         ]);
 
-        assert_eq!(expected, bits.render(&details.colours, true).into())
+        assert_eq!(expected, bits.render(&colours, true).into())
     }
 
 
     #[test]
     fn extra_specials() {
-        let mut details = Details::default();
-        details.colours.punctuation = Fixed(11).normal();
-        details.colours.perms.special_other = Fixed(88).normal();
+        let mut colours = Colours::default();
+        colours.punctuation = Fixed(11).normal();
+        colours.perms.special_other = Fixed(88).normal();
 
         let bits = f::Permissions {
             user_read:  false,  user_write:  false,  user_execute:  false,  setuid: true,
@@ -192,6 +192,6 @@ pub mod test {
             Fixed(11).paint("-"),  Fixed(11).paint("-"),  Fixed(88).paint("T"),
         ]);
 
-        assert_eq!(expected, bits.render(&details.colours, true).into())
+        assert_eq!(expected, bits.render(&colours, true).into())
     }
 }

@@ -32,10 +32,9 @@ impl f::Group {
 #[cfg(test)]
 #[allow(unused_results)]
 pub mod test {
-    use output::details::Details;
-
     use fs::fields as f;
     use output::cell::TextCell;
+    use output::colours::Colours;
 
     use users::{User, Group};
     use users::mock::MockUsers;
@@ -45,33 +44,33 @@ pub mod test {
 
     #[test]
     fn named() {
-        let mut details = Details::default();
-        details.colours.users.group_not_yours = Fixed(101).normal();
+        let mut colours = Colours::default();
+        colours.users.group_not_yours = Fixed(101).normal();
 
         let mut users = MockUsers::with_current_uid(1000);
         users.add_group(Group::new(100, "folk"));
 
         let group = f::Group(100);
         let expected = TextCell::paint_str(Fixed(101).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
+        assert_eq!(expected, group.render(&colours, &users))
     }
 
     #[test]
     fn unnamed() {
-        let mut details = Details::default();
-        details.colours.users.group_not_yours = Fixed(87).normal();
+        let mut colours = Colours::default();
+        colours.users.group_not_yours = Fixed(87).normal();
 
         let users = MockUsers::with_current_uid(1000);
 
         let group = f::Group(100);
         let expected = TextCell::paint_str(Fixed(87).normal(), "100");
-        assert_eq!(expected, group.render(&details.colours, &users));
+        assert_eq!(expected, group.render(&colours, &users));
     }
 
     #[test]
     fn primary() {
-        let mut details = Details::default();
-        details.colours.users.group_yours = Fixed(64).normal();
+        let mut colours = Colours::default();
+        colours.users.group_yours = Fixed(64).normal();
 
         let mut users = MockUsers::with_current_uid(2);
         users.add_user(User::new(2, "eve", 100));
@@ -79,13 +78,13 @@ pub mod test {
 
         let group = f::Group(100);
         let expected = TextCell::paint_str(Fixed(64).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
+        assert_eq!(expected, group.render(&colours, &users))
     }
 
     #[test]
     fn secondary() {
-        let mut details = Details::default();
-        details.colours.users.group_yours = Fixed(31).normal();
+        let mut colours = Colours::default();
+        colours.users.group_yours = Fixed(31).normal();
 
         let mut users = MockUsers::with_current_uid(2);
         users.add_user(User::new(2, "eve", 666));
@@ -95,16 +94,16 @@ pub mod test {
 
         let group = f::Group(100);
         let expected = TextCell::paint_str(Fixed(31).normal(), "folk");
-        assert_eq!(expected, group.render(&details.colours, &users))
+        assert_eq!(expected, group.render(&colours, &users))
     }
 
     #[test]
     fn overflow() {
-        let mut details = Details::default();
-        details.colours.users.group_not_yours = Blue.underline();
+        let mut colours = Colours::default();
+        colours.users.group_not_yours = Blue.underline();
 
         let group = f::Group(2_147_483_648);
         let expected = TextCell::paint_str(Blue.underline(), "2147483648");
-        assert_eq!(expected, group.render(&details.colours, &MockUsers::with_current_uid(0)));
+        assert_eq!(expected, group.render(&colours, &MockUsers::with_current_uid(0)));
     }
 }

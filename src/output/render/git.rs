@@ -33,7 +33,7 @@ impl f::GitStatus {
 
 #[cfg(test)]
 pub mod test {
-    use output::details::Details;
+    use output::colours::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
 
@@ -42,8 +42,8 @@ pub mod test {
 
     #[test]
     fn git_blank() {
-        let mut details = Details::default();
-        details.colours.punctuation = Fixed(44).normal();
+        let mut colours = Colours::default();
+        colours.punctuation = Fixed(44).normal();
 
         let stati = f::Git {
             staged:   f::GitStatus::NotModified,
@@ -58,15 +58,15 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&details.colours).into())
+        assert_eq!(expected, stati.render(&colours).into())
     }
 
 
     #[test]
     fn git_new_changed() {
-        let mut details = Details::default();
-        details.colours.git.new = Red.normal();
-        details.colours.git.modified = Purple.normal();
+        let mut colours = Colours::default();
+        colours.git.new = Red.normal();
+        colours.git.modified = Purple.normal();
 
         let stati = f::Git {
             staged:   f::GitStatus::New,
@@ -81,6 +81,6 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&details.colours).into())
+        assert_eq!(expected, stati.render(&colours).into())
     }
 }

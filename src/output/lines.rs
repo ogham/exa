@@ -8,19 +8,24 @@ use output::file_name::{FileName, LinkStyle, Classify};
 use super::colours::Colours;
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Lines {
-    pub colours: Colours,
+/// The lines view literally just displays each file, line-by-line.
+pub struct Render<'a> {
+    pub files: Vec<File<'a>>,
+    pub colours: &'a Colours,
     pub classify: Classify,
 }
 
-/// The lines view literally just displays each file, line-by-line.
-impl Lines {
-    pub fn view<W: Write>(&self, files: Vec<File>, w: &mut W) -> IOResult<()> {
-        for file in files {
-            let name_cell = FileName::new(&file, LinkStyle::FullLinkPaths, self.classify, &self.colours).paint();
+impl<'a> Render<'a> {
+    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+        for file in &self.files {
+            let name_cell = self.render_file(file).paint();
             writeln!(w, "{}", ANSIStrings(&name_cell))?;
         }
+
         Ok(())
+    }
+
+    fn render_file<'f>(&self, file: &'f File<'a>) -> FileName<'f, 'a> {
+        FileName::new(file, LinkStyle::FullLinkPaths, self.classify, self.colours)
     }
 }
