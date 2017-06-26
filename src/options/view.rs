@@ -53,13 +53,11 @@ impl Mode {
                 Err(Useless("oneline", true, "long"))
             }
             else {
-                let details = details::Options {
+                Ok(details::Options {
                     columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
-                };
-
-                Ok(Mode::Details(details))
+                })
             }
         };
 
@@ -133,21 +131,15 @@ impl Mode {
         };
 
         if matches.opt_present("long") {
-            let view = long()?;
+            let details = long()?;
             if matches.opt_present("grid") {
-                if let Mode::Details(details) = view {
-                    let others = other_options_scan()?;
-                    match others {
-                        Mode::Grid(grid) => return Ok(Mode::GridDetails(grid, details)),
-                        _                => return Ok(others),
-                    };
-                }
-                else {
-                    unreachable!()
-                }
+                match other_options_scan()? {
+                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
+                    others            => return Ok(others),
+                };
             }
             else {
-                return Ok(view);
+                return Ok(Mode::Details(details));
             }
         }
 
