@@ -120,14 +120,6 @@ pub struct Options {
     /// columns are *added* to this list, such as the Git column.
     pub columns: Option<Columns>,
 
-    /// Whether to recurse through directories with a tree view, and if so,
-    /// which options to use. This field is only relevant here if the `tree`
-    /// field of the RecurseOptions is `true`.
-    pub recurse: Option<RecurseOptions>,
-
-    /// How to sort and filter the files after getting their details.
-    pub filter: FileFilter,
-
     /// Whether to show a header line or not.
     pub header: bool,
 
@@ -224,6 +216,14 @@ pub struct Render<'a> {
     pub colours: &'a Colours,
     pub classify: Classify,
     pub opts: &'a Options,
+
+    /// Whether to recurse through directories with a tree view, and if so,
+    /// which options to use. This field is only relevant here if the `tree`
+    /// field of the RecurseOptions is `true`.
+    pub recurse: Option<RecurseOptions>,
+
+    /// How to sort and filter the files after getting their details.
+    pub filter: &'a FileFilter,
 }
 
 impl<'a> Render<'a> {
@@ -294,8 +294,6 @@ impl<'a> Render<'a> {
                 let file_eggs = file_eggs.clone();
                 let table = table.clone();
 
-                let recurse = self.opts.recurse;
-
                 scoped.execute(move || {
                     let mut errors = Vec::new();
                     let mut xattrs = Vec::new();
@@ -315,7 +313,7 @@ impl<'a> Render<'a> {
 
                     let mut dir = None;
 
-                    if let Some(r) = recurse {
+                    if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth) {
                             if let Ok(d) = file.to_dir(false) {
                                 dir = Some(d);
@@ -329,7 +327,7 @@ impl<'a> Render<'a> {
             }
         });
 
-        self.opts.filter.sort_files(&mut file_eggs);
+        self.filter.sort_files(&mut file_eggs);
 
         let num_eggs = file_eggs.len();
         for (index, egg) in file_eggs.into_iter().enumerate() {
@@ -353,7 +351,7 @@ impl<'a> Render<'a> {
                     }
                 }
 
-                self.opts.filter.filter_child_files(&mut files);
+                self.filter.filter_child_files(&mut files);
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {

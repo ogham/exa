@@ -135,7 +135,7 @@ impl Options {
     fn deduce(matches: &getopts::Matches) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
-        let view = View::deduce(matches, filter.clone(), dir_action)?;
+        let view = View::deduce(matches)?;
 
         Ok(Options { dir_action, view, filter })
     }

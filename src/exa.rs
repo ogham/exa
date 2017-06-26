@@ -173,7 +173,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             match *mode {
                 Mode::Lines                  => lines::Render { files, colours, classify }.render(self.writer),
                 Mode::Grid(ref opts)         => grid::Render { files, colours, classify, opts }.render(self.writer),
-                Mode::Details(ref opts)      => details::Render { dir, files, colours, classify, opts }.render(self.writer),
+                Mode::Details(ref opts)      => details::Render { dir, files, colours, classify, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer),
                 Mode::GridDetails(ref grid, ref details) => grid_details::Render { dir, files, colours, classify, grid, details }.render(self.writer),
             }
         }

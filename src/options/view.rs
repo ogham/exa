@@ -6,7 +6,7 @@ use output::Colours;
 use output::{grid, details};
 use output::column::{Columns, TimeTypes, SizeFormat};
 use output::file_name::Classify;
-use options::{FileFilter, DirAction, Misfire};
+use options::Misfire;
 use fs::feature::xattr;
 
 
@@ -21,8 +21,8 @@ pub struct View {
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<View, Misfire> {
-        let mode     = Mode::deduce(matches, filter, dir_action)?;
+    pub fn deduce(matches: &getopts::Matches) -> Result<View, Misfire> {
+        let mode     = Mode::deduce(matches)?;
         let colours  = Colours::deduce(matches)?;
         let classify = Classify::deduce(matches);
         Ok(View { mode, colours, classify })
@@ -42,7 +42,7 @@ pub enum Mode {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce(matches: &getopts::Matches, filter: FileFilter, dir_action: DirAction) -> Result<Mode, Misfire> {
+    pub fn deduce(matches: &getopts::Matches) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -56,8 +56,6 @@ impl Mode {
                 let details = details::Options {
                     columns: Some(Columns::deduce(matches)?),
                     header: matches.opt_present("header"),
-                    recurse: dir_action.recurse_options(),
-                    filter: filter.clone(),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 };
 
@@ -100,8 +98,6 @@ impl Mode {
                     let details = details::Options {
                         columns: None,
                         header: false,
-                        recurse: dir_action.recurse_options(),
-                        filter: filter.clone(),  // TODO: clone
                         xattr: false,
                     };
 
@@ -125,8 +121,6 @@ impl Mode {
                     let details = details::Options {
                         columns: None,
                         header: false,
-                        recurse: dir_action.recurse_options(),
-                        filter: filter.clone(),
                         xattr: false,
                     };
 
