@@ -60,7 +60,7 @@ pub struct FileFilter {
     ///   most of them are or whether they're still needed. Every file name
     ///   evaluation that goes through my home directory is slowed down by
     ///   this accumulated sludge.
-    show_invisibles: bool,
+    dot_filter: DotFilter,
 
     /// Glob patterns to ignore. Any file name that matches *any* of these
     /// patterns won't be displayed in the list.
@@ -76,7 +76,7 @@ impl FileFilter {
             list_dirs_first: matches.opt_present("group-directories-first"),
             reverse:         matches.opt_present("reverse"),
             sort_field:      SortField::deduce(matches)?,
-            show_invisibles: matches.opt_present("all"),
+            dot_filter:      DotFilter::deduce(matches),
             ignore_patterns: IgnorePatterns::deduce(matches)?,
         })
     }
@@ -84,8 +84,9 @@ impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
     pub fn filter_child_files(&self, files: &mut Vec<File>) {
-        if !self.show_invisibles {
-            files.retain(|f| !f.is_dotfile());
+        match self.dot_filter {
+            DotFilter::JustFiles => files.retain(|f| !f.is_dotfile()),
+            DotFilter::ShowDotfiles => {/* keep all elements */},
         }
 
         files.retain(|f| !self.ignore_patterns.is_ignored(f));
@@ -248,6 +249,31 @@ impl SortField {
         else {
             Ok(SortField::default())
         }
+    }
+}
+
+
+#[derive(PartialEq, Debug, Copy, Clone)]
+enum DotFilter {
+
+    /// Show files and dotfiles, but hide `.` and `..`.
+    ShowDotfiles,
+
+    /// Just show files, hiding anything beginning with a dot.
+    JustFiles,
+}
+
+impl Default for DotFilter {
+    fn default() -> DotFilter {
+        DotFilter::JustFiles
+    }
+}
+
+
+impl DotFilter {
+    pub fn deduce(matches: &getopts::Matches) -> DotFilter {
+        if matches.opt_present("all") { DotFilter::ShowDotfiles }
+                                 else { DotFilter::JustFiles }
     }
 }
 
