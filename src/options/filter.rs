@@ -60,7 +60,7 @@ pub struct FileFilter {
     ///   most of them are or whether they're still needed. Every file name
     ///   evaluation that goes through my home directory is slowed down by
     ///   this accumulated sludge.
-    dot_filter: DotFilter,
+    pub dot_filter: DotFilter,
 
     /// Glob patterns to ignore. Any file name that matches *any* of these
     /// patterns won't be displayed in the list.
@@ -87,6 +87,7 @@ impl FileFilter {
         match self.dot_filter {
             DotFilter::JustFiles => files.retain(|f| !f.is_dotfile()),
             DotFilter::ShowDotfiles => {/* keep all elements */},
+            DotFilter::ShowDotfilesAndDots => unimplemented!(),
         }
 
         files.retain(|f| !self.ignore_patterns.is_ignored(f));
@@ -253,8 +254,14 @@ impl SortField {
 }
 
 
+/// Usually files in Unix use a leading dot to be hidden or visible, but two
+/// entries in particular are "extra-hidden": `.` and `..`, which only become
+/// visible after an extra `-a` option.
 #[derive(PartialEq, Debug, Copy, Clone)]
-enum DotFilter {
+pub enum DotFilter {
+
+    /// Shows files, dotfiles, and `.` and `..`.
+    ShowDotfilesAndDots,
 
     /// Show files and dotfiles, but hide `.` and `..`.
     ShowDotfiles,
@@ -272,8 +279,11 @@ impl Default for DotFilter {
 
 impl DotFilter {
     pub fn deduce(matches: &getopts::Matches) -> DotFilter {
-        if matches.opt_present("all") { DotFilter::ShowDotfiles }
-                                 else { DotFilter::JustFiles }
+        match matches.opt_count("all") {
+            0 => DotFilter::JustFiles,
+            1 => DotFilter::ShowDotfiles,
+            _ => DotFilter::ShowDotfilesAndDots,
+        }
     }
 }
 
