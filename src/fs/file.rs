@@ -95,7 +95,7 @@ impl<'dir> File<'dir> {
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
     pub fn to_dir(&self, dots: DotFilter, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(&*self.path, dots, scan_for_git)
+        Dir::read_dir(self.path.clone(), dots, scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a

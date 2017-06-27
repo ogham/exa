@@ -36,24 +36,21 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: &Path, dots: DotFilter, git: bool) -> IOResult<Dir> {
-        let mut paths: Vec<PathBuf> = try!(fs::read_dir(path)?
-                                              .map(|result| result.map(|entry| entry.path()))
-                                              .collect());
+    pub fn read_dir(path: PathBuf, dots: DotFilter, git: bool) -> IOResult<Dir> {
+        let mut contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
+                                                 .map(|result| result.map(|entry| entry.path()))
+                                                 .collect());
         match dots {
-            DotFilter::JustFiles => paths.retain(|p| p.file_name().and_then(|name| name.to_str()).map(|s| !s.starts_with('.')).unwrap_or(true)),
+            DotFilter::JustFiles => contents.retain(|p| p.file_name().and_then(|name| name.to_str()).map(|s| !s.starts_with('.')).unwrap_or(true)),
             DotFilter::Dotfiles => {/* Don’t add or remove anything */},
             DotFilter::DotfilesAndDots => {
-                paths.insert(0, path.join(".."));
-                paths.insert(0, path.join("."));
+                contents.insert(0, path.join(".."));
+                contents.insert(0, path.join("."));
             }
         }
 
-        Ok(Dir {
-            contents: paths,
-            path: path.to_path_buf(),
-            git: if git { Git::scan(path).ok() } else { None },
-        })
+        let git = if git { Git::scan(&path).ok() } else { None };
+        Ok(Dir { contents, path, git })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
