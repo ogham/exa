@@ -6,7 +6,7 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 
-use fs::dir::Dir;
+use fs::dir::{Dir, DotFilter};
 use fs::fields as f;
 
 
@@ -94,8 +94,8 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(&*self.path, scan_for_git)
+    pub fn to_dir(&self, dots: DotFilter, scan_for_git: bool) -> IOResult<Dir> {
+        Dir::read_dir(&*self.path, dots, scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
@@ -119,31 +119,24 @@ impl<'dir> File<'dir> {
 
     /// Whether this file is a named pipe on the filesystem.
     pub fn is_pipe(&self) -> bool {
-       self.metadata.file_type().is_fifo()
-   }
-
-   /// Whether this file is a char device on the filesystem.
-   pub fn is_char_device(&self) -> bool {
-       self.metadata.file_type().is_char_device()
-   }
-
-   /// Whether this file is a block device on the filesystem.
-   pub fn is_block_device(&self) -> bool {
-       self.metadata.file_type().is_block_device()
-   }
-
-   /// Whether this file is a socket on the filesystem.
-   pub fn is_socket(&self) -> bool {
-       self.metadata.file_type().is_socket()
-   }
-
-
-    /// Whether this file is a dotfile, based on its name. In Unix, file names
-    /// beginning with a dot represent system or configuration files, and
-    /// should be hidden by default.
-    pub fn is_dotfile(&self) -> bool {
-        self.name.starts_with('.')
+        self.metadata.file_type().is_fifo()
     }
+
+    /// Whether this file is a char device on the filesystem.
+    pub fn is_char_device(&self) -> bool {
+        self.metadata.file_type().is_char_device()
+    }
+
+    /// Whether this file is a block device on the filesystem.
+    pub fn is_block_device(&self) -> bool {
+        self.metadata.file_type().is_block_device()
+    }
+
+    /// Whether this file is a socket on the filesystem.
+    pub fn is_socket(&self) -> bool {
+        self.metadata.file_type().is_socket()
+    }
+
 
     /// Re-prefixes the path pointed to by this file, if it's a symlink, to
     /// make it an absolute path that can be accessed from whichever

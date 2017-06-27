@@ -29,15 +29,28 @@ pub struct Dir {
 impl Dir {
 
     /// Create a new Dir object filled with all the files in the directory
-    /// pointed to by the given path. Fails if the directory can't be read, or
-    /// isn't actually a directory, or if there's an IO error that occurs
-    /// while scanning.
-    pub fn read_dir(path: &Path, git: bool) -> IOResult<Dir> {
-        let reader = fs::read_dir(path)?;
-        let contents = try!(reader.map(|e| e.map(|e| e.path())).collect());
+    /// pointed to by the given path. Fails if the directory can’t be read, or
+    /// isn’t actually a directory, or if there’s an IO error that occurs at
+    /// any point.
+    ///
+    /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
+    /// entries, so if the user wants to see them, we’ll have to add them
+    /// ourselves after the files have been read.
+    pub fn read_dir(path: &Path, dots: DotFilter, git: bool) -> IOResult<Dir> {
+        let mut paths: Vec<PathBuf> = try!(fs::read_dir(path)?
+                                              .map(|result| result.map(|entry| entry.path()))
+                                              .collect());
+        match dots {
+            DotFilter::JustFiles => paths.retain(|p| p.file_name().and_then(|name| name.to_str()).map(|s| !s.starts_with('.')).unwrap_or(true)),
+            DotFilter::Dotfiles => {/* Don’t add or remove anything */},
+            DotFilter::DotfilesAndDots => {
+                paths.insert(0, path.join(".."));
+                paths.insert(0, path.join("."));
+            }
+        }
 
         Ok(Dir {
-            contents: contents,
+            contents: paths,
             path: path.to_path_buf(),
             git: if git { Git::scan(path).ok() } else { None },
         })
@@ -89,5 +102,28 @@ impl<'dir> Iterator for Files<'dir> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|path| File::from_path(path, Some(self.dir)).map_err(|t| (path.clone(), t)))
+    }
+}
+
+
+/// Usually files in Unix use a leading dot to be hidden or visible, but two
+/// entries in particular are "extra-hidden": `.` and `..`, which only become
+/// visible after an extra `-a` option.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum DotFilter {
+
+    /// Shows files, dotfiles, and `.` and `..`.
+    DotfilesAndDots,
+
+    /// Show files and dotfiles, but hide `.` and `..`.
+    Dotfiles,
+
+    /// Just show files, hiding anything beginning with a dot.
+    JustFiles,
+}
+
+impl Default for DotFilter {
+    fn default() -> DotFilter {
+        DotFilter::JustFiles
     }
 }

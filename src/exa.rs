@@ -82,7 +82,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
-                        match f.to_dir(self.options.should_scan_for_git()) {
+                        match f.to_dir(self.options.filter.dot_filter, self.options.should_scan_for_git()) {
                             Ok(d) => dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", file_name, e)?,
                         }
@@ -142,7 +142,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
 
                     let mut child_dirs = Vec::new();
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
-                        match child_dir.to_dir(false) {
+                        match child_dir.to_dir(self.options.filter.dot_filter, false) {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }

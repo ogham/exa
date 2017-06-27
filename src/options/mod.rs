@@ -145,7 +145,7 @@ impl Options {
 #[cfg(test)]
 mod test {
     use super::{Options, Misfire, SortField, SortCase};
-    use super::filter::DotFilter;
+    use fs::DotFilter;
     use fs::feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
@@ -290,12 +290,12 @@ mod test {
     #[test]
     fn all() {
         let dots = Options::getopts(&[ "--all".to_string() ]).unwrap().0.filter.dot_filter;
-        assert_eq!(dots, DotFilter::ShowDotfiles);
+        assert_eq!(dots, DotFilter::Dotfiles);
     }
 
     #[test]
     fn allall() {
         let dots = Options::getopts(&[ "-a".to_string(), "-a".to_string() ]).unwrap().0.filter.dot_filter;
-        assert_eq!(dots, DotFilter::ShowDotfilesAndDots);
+        assert_eq!(dots, DotFilter::DotfilesAndDots);
     }
 }

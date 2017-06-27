@@ -6,6 +6,7 @@ use glob;
 use natord;
 
 use fs::File;
+use fs::DotFilter;
 use options::misfire::Misfire;
 
 
@@ -27,11 +28,12 @@ pub struct FileFilter {
     /// ones, depending on the sort field.
     pub reverse: bool,
 
-    /// Whether to include invisible “dot” files when listing a directory.
+    /// Which invisible “dot” files to include when listing a directory.
     ///
     /// Files starting with a single “.” are used to determine “system” or
     /// “configuration” files that should not be displayed in a regular
-    /// directory listing.
+    /// directory listing, and the directory entries “.” and “..” are
+    /// considered extra-special.
     ///
     /// This came about more or less by a complete historical accident,
     /// when the original `ls` tried to hide `.` and `..`:
@@ -84,12 +86,6 @@ impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
     pub fn filter_child_files(&self, files: &mut Vec<File>) {
-        match self.dot_filter {
-            DotFilter::JustFiles => files.retain(|f| !f.is_dotfile()),
-            DotFilter::ShowDotfiles => {/* keep all elements */},
-            DotFilter::ShowDotfilesAndDots => unimplemented!(),
-        }
-
         files.retain(|f| !self.ignore_patterns.is_ignored(f));
     }
 
@@ -254,35 +250,12 @@ impl SortField {
 }
 
 
-/// Usually files in Unix use a leading dot to be hidden or visible, but two
-/// entries in particular are "extra-hidden": `.` and `..`, which only become
-/// visible after an extra `-a` option.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum DotFilter {
-
-    /// Shows files, dotfiles, and `.` and `..`.
-    ShowDotfilesAndDots,
-
-    /// Show files and dotfiles, but hide `.` and `..`.
-    ShowDotfiles,
-
-    /// Just show files, hiding anything beginning with a dot.
-    JustFiles,
-}
-
-impl Default for DotFilter {
-    fn default() -> DotFilter {
-        DotFilter::JustFiles
-    }
-}
-
-
 impl DotFilter {
     pub fn deduce(matches: &getopts::Matches) -> DotFilter {
         match matches.opt_count("all") {
             0 => DotFilter::JustFiles,
-            1 => DotFilter::ShowDotfiles,
-            _ => DotFilter::ShowDotfilesAndDots,
+            1 => DotFilter::Dotfiles,
+            _ => DotFilter::DotfilesAndDots,
         }
     }
 }

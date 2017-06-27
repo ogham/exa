@@ -315,7 +315,7 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth) {
-                            if let Ok(d) = file.to_dir(false) {
+                            if let Ok(d) = file.to_dir(self.filter.dot_filter, false) {
                                 dir = Some(d);
                             }
                         }
