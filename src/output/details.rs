@@ -315,7 +315,7 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth) {
-                            if let Ok(d) = file.to_dir(self.filter.dot_filter, false) {
+                            if let Ok(d) = file.to_dir(false) {
                                 dir = Some(d);
                             }
                         }
@@ -344,7 +344,7 @@ impl<'a> Render<'a> {
             table.rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files() {
+                for file_to_add in dir.files(self.filter.dot_filter) {
                     match file_to_add {
                         Ok(f)          => files.push(f),
                         Err((path, e)) => errors.push((e, Some(path)))

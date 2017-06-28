@@ -36,18 +36,10 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf, dots: DotFilter, git: bool) -> IOResult<Dir> {
-        let mut contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
+    pub fn read_dir(path: PathBuf, git: bool) -> IOResult<Dir> {
+        let contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
                                                  .map(|result| result.map(|entry| entry.path()))
                                                  .collect());
-        match dots {
-            DotFilter::JustFiles => contents.retain(|p| p.file_name().and_then(|name| name.to_str()).map(|s| !s.starts_with('.')).unwrap_or(true)),
-            DotFilter::Dotfiles => {/* Don’t add or remove anything */},
-            DotFilter::DotfilesAndDots => {
-                contents.insert(0, path.join(".."));
-                contents.insert(0, path.join("."));
-            }
-        }
 
         let git = if git { Git::scan(&path).ok() } else { None };
         Ok(Dir { contents, path, git })
@@ -55,10 +47,12 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files(&self) -> Files {
+    pub fn files(&self, dots: DotFilter) -> Files {
         Files {
-            inner: self.contents.iter(),
-            dir: self,
+            inner:     self.contents.iter(),
+            dir:       self,
+            dotfiles:  dots.shows_dotfiles(),
+            dots:      dots.dots(),
         }
     }
 
@@ -90,15 +84,83 @@ impl Dir {
 
 /// Iterator over reading the contents of a directory as `File` objects.
 pub struct Files<'dir> {
+
+    /// The internal iterator over the paths that have been read already.
     inner: SliceIter<'dir, PathBuf>,
+
+    /// The directory that begat those paths.
     dir: &'dir Dir,
+
+    /// Whether to include dotfiles in the list.
+    dotfiles: bool,
+
+    /// Whether the `.` or `..` directories should be produced first, before
+    /// any files have been listed.
+    dots: Dots,
 }
+
+impl<'dir> Files<'dir> {
+    fn parent(&self) -> PathBuf {
+        // We can’t use `Path#parent` here because all it does is remove the
+        // last path component, which is no good for us if the path is
+        // relative. For example, while the parent of `/testcases/files` is
+        // `/testcases`, the parent of `.` is an empty path. Adding `..` on
+        // the end is the only way to get to the *actual* parent directory.
+        self.dir.path.join("..")
+    }
+
+    /// Go through the directory until we encounter a file we can list (which
+    /// varies depending on the dotfile visibility flag)
+    fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
+        use fs::file::path_filename;
+
+        loop {
+            if let Some(path) = self.inner.next() {
+                let filen = path_filename(path);
+                if !self.dotfiles && filen.starts_with(".") { continue }
+
+                return Some(File::new(path, Some(self.dir), Some(filen), None)
+                                 .map_err(|e| (path.clone(), e)))
+            }
+            else {
+                return None
+            }
+        }
+    }
+}
+
+/// The dot directories that need to be listed before actual files, if any.
+/// If these aren’t being printed, then `FilesNext` is used to skip them.
+enum Dots {
+
+    /// List the `.` directory next.
+    DotNext,
+
+    /// List the `..` directory next.
+    DotDotNext,
+
+    /// Forget about the dot directories and just list files.
+    FilesNext,
+}
+
 
 impl<'dir> Iterator for Files<'dir> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|path| File::from_path(path, Some(self.dir)).map_err(|t| (path.clone(), t)))
+        if let Dots::DotNext = self.dots {
+            self.dots = Dots::DotDotNext;
+            Some(File::new(&self.dir.path, Some(self.dir), Some(String::from(".")), None)
+                      .map_err(|e| (Path::new(".").to_path_buf(), e)))
+        }
+        else if let Dots::DotDotNext = self.dots {
+            self.dots = Dots::FilesNext;
+            Some(File::new(&self.parent(), Some(self.dir), Some(String::from("..")), None)
+                      .map_err(|e| (self.parent(), e)))
+        }
+        else {
+            self.next_visible_file()
+        }
     }
 }
 
@@ -122,5 +184,26 @@ pub enum DotFilter {
 impl Default for DotFilter {
     fn default() -> DotFilter {
         DotFilter::JustFiles
+    }
+}
+
+impl DotFilter {
+
+    /// Whether this filter should show dotfiles in a listing.
+    fn shows_dotfiles(&self) -> bool {
+        match *self {
+            DotFilter::JustFiles       => false,
+            DotFilter::Dotfiles        => true,
+            DotFilter::DotfilesAndDots => true,
+        }
+    }
+
+    /// Whether this filter should add dot directories to a listing.
+    fn dots(&self) -> Dots {
+        match *self {
+            DotFilter::JustFiles       => Dots::FilesNext,
+            DotFilter::Dotfiles        => Dots::FilesNext,
+            DotFilter::DotfilesAndDots => Dots::DotNext,
+        }
     }
 }

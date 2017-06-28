@@ -6,7 +6,7 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 
-use fs::dir::{Dir, DotFilter};
+use fs::dir::Dir;
 use fs::fields as f;
 
 
@@ -56,31 +56,33 @@ pub struct File<'dir> {
     pub dir: Option<&'dir Dir>,
 }
 
-impl<'dir> File<'dir> {
-
-    /// Create a new `File` object from the given `Path`, inside the given
-    /// `Dir`, if appropriate.
-    ///
-    /// This uses `symlink_metadata` instead of `metadata`, which doesn't
-    /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> IOResult<File<'dir>> {
-        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent))
+/// A file’s name is derived from its string. This needs to handle directories
+/// such as `/` or `..`, which have no `file_name` component. So instead, just
+/// use the last component as the name.
+pub fn path_filename(path: &Path) -> String {
+    match path.components().next_back() {
+        Some(back) => back.as_os_str().to_string_lossy().to_string(),
+        None       => path.display().to_string(),  // use the path as fallback
     }
+}
 
-    /// Create a new File object from the given metadata result, and other data.
-    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
-        let filename = match path.components().next_back() {
-            Some(comp) => comp.as_os_str().to_string_lossy().to_string(),
-            None       => String::new(),
-        };
+impl<'dir> File<'dir> {
+    pub fn new(path: &Path, parent: Option<&'dir Dir>, mut filename: Option<String>, mut metadata: Option<fs::Metadata>) -> IOResult<File<'dir>> {
+        if filename.is_none() {
+            filename = Some(path_filename(path));
+        }
 
-        File {
+        if metadata.is_none() {
+            metadata = Some(fs::symlink_metadata(path)?);
+        }
+
+        Ok(File {
             path:      path.to_path_buf(),
             dir:       parent,
-            metadata:  metadata,
+            metadata:  metadata.unwrap(),
             ext:       ext(path),
-            name:      filename,
-        }
+            name:      filename.unwrap(),
+        })
     }
 
     /// Whether this file is a directory on the filesystem.
@@ -94,8 +96,8 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, dots: DotFilter, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(self.path.clone(), dots, scan_for_git)
+    pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
+        Dir::read_dir(self.path.clone(), scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
@@ -182,7 +184,7 @@ impl<'dir> File<'dir> {
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
         if let Ok(metadata) = fs::metadata(&target_path) {
-            FileTarget::Ok(File::with_metadata(metadata, &*display_path, None))
+            FileTarget::Ok(File::new(&*display_path, None, None, Some(metadata)).unwrap())
         }
         else {
             FileTarget::Broken(display_path)
