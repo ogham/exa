@@ -78,7 +78,7 @@ impl FileFilter {
             list_dirs_first: matches.opt_present("group-directories-first"),
             reverse:         matches.opt_present("reverse"),
             sort_field:      SortField::deduce(matches)?,
-            dot_filter:      DotFilter::deduce(matches),
+            dot_filter:      DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
         })
     }
@@ -251,11 +251,18 @@ impl SortField {
 
 
 impl DotFilter {
-    pub fn deduce(matches: &getopts::Matches) -> DotFilter {
-        match matches.opt_count("all") {
-            0 => DotFilter::JustFiles,
+    pub fn deduce(matches: &getopts::Matches) -> Result<DotFilter, Misfire> {
+        let dots = match matches.opt_count("all") {
+            0 => return Ok(DotFilter::JustFiles),
             1 => DotFilter::Dotfiles,
             _ => DotFilter::DotfilesAndDots,
+        };
+
+        if matches.opt_present("tree") {
+            Err(Misfire::Useless("all --all", true, "tree"))
+        }
+        else {
+            Ok(dots)
         }
     }
 }

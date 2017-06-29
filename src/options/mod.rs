@@ -279,6 +279,11 @@ mod test {
         assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
     }
 
+    #[test]
+    fn all_all_with_tree() {
+        let opts = Options::getopts(&[ "--all", "--all", "--tree" ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("all --all", true, "tree"))
+    }
 
     #[test]
     fn nowt() {
