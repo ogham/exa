@@ -135,6 +135,11 @@ impl FileFilter {
             SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
             SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
 
+            SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
+                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
+                order            => order,
+            },
+
             SortField::Extension(Sensitive) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
@@ -195,6 +200,12 @@ pub enum SortField {
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
     CreatedDate,
+
+    /// The type of the file: directories, links, pipes, regular, files, etc.
+    ///
+    /// Files are ordered according to the `PartialOrd` implementation of
+    /// `fs::fields::Type`, so changing that will change this.
+    FileType,
 }
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
@@ -226,7 +237,7 @@ impl SortField {
 
         const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
                                   "Extension", "modified", "accessed",
-                                  "created", "inode", "none" ];
+                                  "created", "inode", "type", "none" ];
 
         if let Some(word) = matches.opt_str("sort") {
             match &*word {
@@ -238,8 +249,9 @@ impl SortField {
                 "mod"  | "modified"   => Ok(SortField::ModifiedDate),
                 "acc"  | "accessed"   => Ok(SortField::AccessedDate),
                 "cr"   | "created"    => Ok(SortField::CreatedDate),
-                "none"                => Ok(SortField::Unsorted),
                 "inode"               => Ok(SortField::FileInode),
+                "type"                => Ok(SortField::FileType),
+                "none"                => Ok(SortField::Unsorted),
                 field                 => Err(Misfire::bad_argument("sort", field, SORTS))
             }
         }

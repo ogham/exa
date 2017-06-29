@@ -40,8 +40,11 @@ pub type uid_t = u32;
 /// This type is set entirely by the filesystem, rather than relying on a
 /// file’s contents. So “link” is a type, but “image” is just a type of
 /// regular file. (See the `filetype` module for those checks.)
+///
+/// Its ordering is used when sorting by type.
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum Type {
-    File, Directory, Pipe, Link, Socket, CharDevice, BlockDevice, Special,
+    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special,
 }
 
 impl Type {
