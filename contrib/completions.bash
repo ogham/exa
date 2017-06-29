@@ -14,7 +14,7 @@ _exa()
             ;;
 
         -s|--sort)
-            COMPREPLY=( $( compgen -W 'name filename Name Filename size filesize extension Extension modified accessed created none inode --' -- "$cur" ) )
+            COMPREPLY=( $( compgen -W 'name filename Name Filename size filesize extension Extension modified accessed created type inode none --' -- "$cur" ) )
             return
             ;;
 

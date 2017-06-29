@@ -36,6 +36,7 @@ complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
     Name\t'Sort by filename (case-insensitive)'
     none\t'Do not sort files at all'
     size\t'Sort by file size'
+    type\t'Sort by file type'
 "
 
 complete -c exa -s 'I' -l 'ignore-glob' -d "Ignore files that match these glob patterns" -r

@@ -53,7 +53,7 @@ These options are available when running with --long (`-l`):
 - **--git**: list each file's Git status, if tracked
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
-- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, and **none**. Fields starting with a capital letter are case-sensitive.
+- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter are case-sensitive.
 - Valid time fields are **modified**, **accessed**, and **created**.
 
 

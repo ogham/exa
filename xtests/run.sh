@@ -79,15 +79,30 @@ COLUMNS=80 $exa $testcases/file-names -R 2>&1 | diff -q - $results/file_names_R 
 $exa $testcases/file-names/* 2>/dev/null
 
 
-# File types
-$exa $testcases/file-names-exts -1 2>&1 | diff -q - $results/file-names-exts  || exit 1
-$exa $testcases/specials        -l 2>&1 | diff -q - $results/specials         || exit 1
-$exa $testcases/specials     -F -l 2>&1 | diff -q - $results/specials_F       || exit 1
+# Sorting and extension file types
+$exa $testcases/file-names-exts -1 2>&1 --sort=Name | diff -q - $results/file-names-exts           || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=name | diff -q - $results/file-names-exts-case      || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=Ext  | diff -q - $results/file-names-exts-ext       || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=ext  | diff -q - $results/file-names-exts-ext-case  || exit 1
+
+# Pass multiple input arguments because there aren’t enough of different types
+# in one directory already
+$exa $testcases/links -1 --sort=type 2>&1 | diff -q - $results/sort-by-type  || exit 1
+
+# We can’t guarantee inode numbers, but we can at least check that they’re in
+# order. The inode column is the leftmost one, so sort works for this.
+$exa $testcases/file-names-exts --long --inode --sort=inode | sort --check  || exit 1
+
+
+# Other file types
+$exa $testcases/specials             -l 2>&1 | diff -q - $results/specials       || exit 1
+$exa $testcases/specials          -F -l 2>&1 | diff -q - $results/specials_F     || exit 1
+$exa $testcases/specials --sort=type -1 2>&1 | diff -q - $results/specials_sort  || exit 1
 
 
 # Ignores
-$exa $testcases/file-names-exts/music.* -I "*.ogg"       -1 2>&1 | diff -q - $results/ignores_ogg  || exit 1
-$exa $testcases/file-names-exts/music.* -I "*.ogg|*.mp3" -1 2>&1 | diff -q - $results/empty        || exit 1
+$exa $testcases/file-names-exts/music.* -I "*.OGG"       -1 2>&1 | diff -q - $results/ignores_ogg  || exit 1
+$exa $testcases/file-names-exts/music.* -I "*.OGG|*.mp3" -1 2>&1 | diff -q - $results/empty        || exit 1
 
 
 # Paths and directories

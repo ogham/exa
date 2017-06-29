@@ -18,7 +18,7 @@ __exa() {
         {-d,--list-dirs}"[List directories like regular files]" \
         {-L,--level}"+[Limit the depth of recursion]" \
         {-r,--reverse}"[Reverse the sort order]" \
-        {-s,--sort}"[Which field to sort by]:(sort field):(accessed created extension Extension filename Filename inode modified name Name none size)" \
+        {-s,--sort}"[Which field to sort by]:(sort field):(accessed created extension Extension filename Filename inode modified name Name none size type)" \
         {-I,--ignore-glob}"[Ignore files that match these glob patterns]" \
         {-b,--binary}"[List file sizes with binary prefixes]" \
         {-B,--bytes}"[List file sizes in bytes, without any prefixes]" \
