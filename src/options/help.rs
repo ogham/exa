@@ -17,7 +17,7 @@ DISPLAY OPTIONS
   --colo[u]r-scale   highlight levels of file sizes distinctly
 
 FILTERING AND SORTING OPTIONS
-  -a, --all                  don't hide hidden and 'dot' files
+  -a, --all                  show hidden and 'dot' files
   -d, --list-dirs            list directories like regular files
   -r, --reverse              reverse the sort order
   -s, --sort SORT_FIELD      which field to sort by:

@@ -17,7 +17,7 @@ complete -c exa        -l 'colour-scale' -d "Highlight levels of file sizes dist
 
 # Filtering and sorting options
 complete -c exa -l 'group-directories-first' -d "Sort directories before other files"
-complete -c exa -s 'a' -l 'all'       -d "Don't hide hidden and 'dot' files"
+complete -c exa -s 'a' -l 'all'       -d "Show and 'dot' files"
 complete -c exa -s 'd' -l 'list-dirs' -d "List directories like regular files"
 complete -c exa -s 'L' -l 'level'     -d "Limit the depth of recursion" -a "1 2 3 4 5 6 7 8 9"
 complete -c exa -s 'r' -l 'reverse'   -d "Reverse the sort order"

@@ -14,7 +14,7 @@ __exa() {
         {--color,--colour}"[When to use terminal colours]" \
         {--color,--colour}-scale"[Highlight levels of file sizes distinctly]" \
         --group-directories-first"[Sort directories before other files]" \
-        {-a,--all}"[Don't hide hidden and 'dot' files]" \
+        {-a,--all}"[Show hidden and 'dot' files]" \
         {-d,--list-dirs}"[List directories like regular files]" \
         {-L,--level}"+[Limit the depth of recursion]" \
         {-r,--reverse}"[Reverse the sort order]" \

@@ -69,7 +69,7 @@ impl Options {
 
         // Filtering and sorting options
         opts.optflag("",  "group-directories-first", "sort directories before other files");
-        opts.optflagmulti("a", "all",    "don't hide hidden and 'dot' files");
+        opts.optflagmulti("a", "all",    "show hidden and 'dot' files");
         opts.optflag("d", "list-dirs",   "list directories like regular files");
         opts.optopt ("L", "level",       "limit the depth of recursion", "DEPTH");
         opts.optflag("r", "reverse",     "reverse the sert order");
