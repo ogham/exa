@@ -85,6 +85,10 @@ $exa $testcases/file-names-exts -1 2>&1 --sort=name | diff -q - $results/file-na
 $exa $testcases/file-names-exts -1 2>&1 --sort=Ext  | diff -q - $results/file-names-exts-ext       || exit 1
 $exa $testcases/file-names-exts -1 2>&1 --sort=ext  | diff -q - $results/file-names-exts-ext-case  || exit 1
 
+# We can’t guarantee inode numbers, but we can at least check that they’re in
+# order. The inode column is the leftmost one, so sort works for this.
+$exa $testcases/file-names-exts --long --inode --sort=inode | sort --check  || exit 1
+
 
 # Other file types
 $exa $testcases/specials     -l 2>&1 | diff -q - $results/specials    || exit 1
