@@ -139,22 +139,22 @@ Vagrant.configure(2) do |config|
 
 
     # File name extension testcases.
-    # These are tested in grid view, so we don’t need to bother setting
-    # owners or timestamps or anything.
+    # These aren’t tested in details view, but we set timestamps on them to
+    # test that various sort options work.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
         mkdir "#{test_dir}/file-names-exts"
 
         touch "#{test_dir}/file-names-exts/Makefile"
 
-        touch "#{test_dir}/file-names-exts/image.png"
+        touch "#{test_dir}/file-names-exts/IMAGE.PNG"
         touch "#{test_dir}/file-names-exts/image.svg"
 
-        touch "#{test_dir}/file-names-exts/video.avi"
+        touch "#{test_dir}/file-names-exts/VIDEO.AVI"
         touch "#{test_dir}/file-names-exts/video.wmv"
 
         touch "#{test_dir}/file-names-exts/music.mp3"
-        touch "#{test_dir}/file-names-exts/music.ogg"
+        touch "#{test_dir}/file-names-exts/MUSIC.OGG"
 
         touch "#{test_dir}/file-names-exts/lossless.flac"
         touch "#{test_dir}/file-names-exts/lossless.wav"
@@ -163,9 +163,9 @@ Vagrant.configure(2) do |config|
         touch "#{test_dir}/file-names-exts/crypto.signature"
 
         touch "#{test_dir}/file-names-exts/document.pdf"
-        touch "#{test_dir}/file-names-exts/document.xlsx"
+        touch "#{test_dir}/file-names-exts/DOCUMENT.XLSX"
 
-        touch "#{test_dir}/file-names-exts/compressed.zip"
+        touch "#{test_dir}/file-names-exts/COMPRESSED.ZIP"
         touch "#{test_dir}/file-names-exts/compressed.tar.gz"
         touch "#{test_dir}/file-names-exts/compressed.tgz"
 
