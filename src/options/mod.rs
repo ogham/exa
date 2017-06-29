@@ -69,7 +69,7 @@ impl Options {
 
         // Filtering and sorting options
         opts.optflag("",  "group-directories-first", "sort directories before other files");
-        opts.optflag("a", "all",         "don't hide hidden and 'dot' files");
+        opts.optflagmulti("a", "all",    "show hidden and 'dot' files");
         opts.optflag("d", "list-dirs",   "list directories like regular files");
         opts.optopt ("L", "level",       "limit the depth of recursion", "DEPTH");
         opts.optflag("r", "reverse",     "reverse the sert order");
@@ -145,6 +145,7 @@ impl Options {
 #[cfg(test)]
 mod test {
     use super::{Options, Misfire, SortField, SortCase};
+    use fs::DotFilter;
     use fs::feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
@@ -276,5 +277,30 @@ mod test {
     fn level_without_recurse_or_tree() {
         let opts = Options::getopts(&[ "--level", "69105" ]);
         assert_eq!(opts.unwrap_err(), Misfire::Useless2("level", "recurse", "tree"))
+    }
+
+    #[test]
+    fn all_all_with_tree() {
+        let opts = Options::getopts(&[ "--all", "--all", "--tree" ]);
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("all --all", true, "tree"))
+    }
+
+    #[test]
+    fn nowt() {
+        let nothing: Vec<String> = Vec::new();
+        let dots = Options::getopts(&nothing).unwrap().0.filter.dot_filter;
+        assert_eq!(dots, DotFilter::JustFiles);
+    }
+
+    #[test]
+    fn all() {
+        let dots = Options::getopts(&[ "--all".to_string() ]).unwrap().0.filter.dot_filter;
+        assert_eq!(dots, DotFilter::Dotfiles);
+    }
+
+    #[test]
+    fn allall() {
+        let dots = Options::getopts(&[ "-a".to_string(), "-a".to_string() ]).unwrap().0.filter.dot_filter;
+        assert_eq!(dots, DotFilter::DotfilesAndDots);
     }
 }

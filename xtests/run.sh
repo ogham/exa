@@ -38,7 +38,7 @@ COLUMNS=120 $exa $testcases/files | diff -q - $results/files_120  || exit 1
 COLUMNS=160 $exa $testcases/files | diff -q - $results/files_160  || exit 1
 COLUMNS=200 $exa $testcases/files | diff -q - $results/files_200  || exit 1
 
-COLUMNS=100 $exa $testcases/files/* | diff -q - $results/files_star_100   || exit 1
+COLUMNS=100 $exa $testcases/files/* | diff -q - $results/files_star_100  || exit 1
 COLUMNS=150 $exa $testcases/files/* | diff -q - $results/files_star_150  || exit 1
 COLUMNS=200 $exa $testcases/files/* | diff -q - $results/files_star_200  || exit 1
 
@@ -120,8 +120,20 @@ COLUMNS=80 $exa_binary --colour=automatic $testcases/files -l | diff -q - $resul
 $exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  || exit 1
 $exa $testcases/git/edits     -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
 
+
+# Hidden files
+COLUMNS=80 $exa $testcases/hiddens     2>&1 | diff -q - $results/hiddens     || exit 1
+COLUMNS=80 $exa $testcases/hiddens -a  2>&1 | diff -q - $results/hiddens_a   || exit 1
+COLUMNS=80 $exa $testcases/hiddens -aa 2>&1 | diff -q - $results/hiddens_aa  || exit 1
+
+$exa $testcases/hiddens -l     2>&1 | diff -q - $results/hiddens_l    || exit 1
+$exa $testcases/hiddens -l -a  2>&1 | diff -q - $results/hiddens_la   || exit 1
+$exa $testcases/hiddens -l -aa 2>&1 | diff -q - $results/hiddens_laa  || exit 1
+
+
 # And finally...
 $exa --help        | diff -q - $results/help      || exit 1
 $exa --help --long | diff -q - $results/help_long || exit 1
+
 
 echo "All the tests passed!"

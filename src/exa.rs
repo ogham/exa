@@ -24,7 +24,7 @@ extern crate lazy_static;
 
 use std::ffi::OsStr;
 use std::io::{stderr, Write, Result as IOResult};
-use std::path::{Component, Path};
+use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
 
@@ -75,7 +75,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         }
 
         for file_name in &self.args {
-            match File::from_path(Path::new(&file_name), None) {
+            match File::new(PathBuf::from(file_name), None, None) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{}: {}", file_name, e)?;
@@ -126,7 +126,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files() {
+            for file in dir.files(self.options.filter.dot_filter) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,

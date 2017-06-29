@@ -24,13 +24,15 @@ exa’s options are similar, but not exactly the same, as `ls`.
 
 ### Filtering Options
 
-- **-a**, **--all**: don't hide hidden and 'dot' files
+- **-a**, **--all**: show hidden and 'dot' files
 - **-d**, **--list-dirs**: list directories like regular files
 - **-L**, **--level=(depth)**: limit the depth of recursion
 - **-r**, **--reverse**: reverse the sort order
 - **-s**, **--sort=(field)**: which field to sort by
 - **--group-directories-first**: list directories before other files
 - **-I**, **--ignore-glob=(globs)**: glob patterns (pipe-separated) of files to ignore
+
+Pass the `--all` option twice to also show the `.` and `..` directories.
 
 ### Long View Options
 

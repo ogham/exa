@@ -344,7 +344,7 @@ impl<'a> Render<'a> {
             table.rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files() {
+                for file_to_add in dir.files(self.filter.dot_filter) {
                     match file_to_add {
                         Ok(f)          => files.push(f),
                         Err((path, e)) => errors.push((e, Some(path)))

@@ -53,34 +53,49 @@ pub struct File<'dir> {
     /// However, *directories* that get passed in will produce files that
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up a file's Git status).
-    pub dir: Option<&'dir Dir>,
+    pub parent_dir: Option<&'dir Dir>,
 }
 
 impl<'dir> File<'dir> {
+    pub fn new<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    where PD: Into<Option<&'dir Dir>>,
+          FN: Into<Option<String>>
+    {
+        let parent_dir = parent_dir.into();
+        let metadata   = fs::symlink_metadata(&path)?;
+        let name       = filename.into().unwrap_or_else(|| File::filename(&path));
+        let ext        = File::ext(&path);
 
-    /// Create a new `File` object from the given `Path`, inside the given
-    /// `Dir`, if appropriate.
-    ///
-    /// This uses `symlink_metadata` instead of `metadata`, which doesn't
-    /// follow symbolic links.
-    pub fn from_path(path: &Path, parent: Option<&'dir Dir>) -> IOResult<File<'dir>> {
-        fs::symlink_metadata(path).map(|metadata| File::with_metadata(metadata, path, parent))
+        Ok(File { path, parent_dir, metadata, ext, name })
     }
 
-    /// Create a new File object from the given metadata result, and other data.
-    pub fn with_metadata(metadata: fs::Metadata, path: &Path, parent: Option<&'dir Dir>) -> File<'dir> {
-        let filename = match path.components().next_back() {
-            Some(comp) => comp.as_os_str().to_string_lossy().to_string(),
-            None       => String::new(),
+    /// A file’s name is derived from its string. This needs to handle directories
+    /// such as `/` or `..`, which have no `file_name` component. So instead, just
+    /// use the last component as the name.
+    pub fn filename(path: &Path) -> String {
+        match path.components().next_back() {
+            Some(back) => back.as_os_str().to_string_lossy().to_string(),
+            None       => path.display().to_string(),  // use the path as fallback
+        }
+    }
+
+    /// Extract an extension from a file path, if one is present, in lowercase.
+    ///
+    /// The extension is the series of characters after the last dot. This
+    /// deliberately counts dotfiles, so the ".git" folder has the extension "git".
+    ///
+    /// ASCII lowercasing is used because these extensions are only compared
+    /// against a pre-compiled list of extensions which are known to only exist
+    /// within ASCII, so it's alright.
+    fn ext(path: &Path) -> Option<String> {
+        use std::ascii::AsciiExt;
+
+        let name = match path.file_name() {
+            Some(f) => f.to_string_lossy().to_string(),
+            None => return None,
         };
 
-        File {
-            path:      path.to_path_buf(),
-            dir:       parent,
-            metadata:  metadata,
-            ext:       ext(path),
-            name:      filename,
-        }
+        name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
     }
 
     /// Whether this file is a directory on the filesystem.
@@ -95,7 +110,7 @@ impl<'dir> File<'dir> {
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
     pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(&*self.path, scan_for_git)
+        Dir::read_dir(self.path.clone(), scan_for_git)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a
@@ -119,31 +134,24 @@ impl<'dir> File<'dir> {
 
     /// Whether this file is a named pipe on the filesystem.
     pub fn is_pipe(&self) -> bool {
-       self.metadata.file_type().is_fifo()
-   }
-
-   /// Whether this file is a char device on the filesystem.
-   pub fn is_char_device(&self) -> bool {
-       self.metadata.file_type().is_char_device()
-   }
-
-   /// Whether this file is a block device on the filesystem.
-   pub fn is_block_device(&self) -> bool {
-       self.metadata.file_type().is_block_device()
-   }
-
-   /// Whether this file is a socket on the filesystem.
-   pub fn is_socket(&self) -> bool {
-       self.metadata.file_type().is_socket()
-   }
-
-
-    /// Whether this file is a dotfile, based on its name. In Unix, file names
-    /// beginning with a dot represent system or configuration files, and
-    /// should be hidden by default.
-    pub fn is_dotfile(&self) -> bool {
-        self.name.starts_with('.')
+        self.metadata.file_type().is_fifo()
     }
+
+    /// Whether this file is a char device on the filesystem.
+    pub fn is_char_device(&self) -> bool {
+        self.metadata.file_type().is_char_device()
+    }
+
+    /// Whether this file is a block device on the filesystem.
+    pub fn is_block_device(&self) -> bool {
+        self.metadata.file_type().is_block_device()
+    }
+
+    /// Whether this file is a socket on the filesystem.
+    pub fn is_socket(&self) -> bool {
+        self.metadata.file_type().is_socket()
+    }
+
 
     /// Re-prefixes the path pointed to by this file, if it's a symlink, to
     /// make it an absolute path that can be accessed from whichever
@@ -152,7 +160,7 @@ impl<'dir> File<'dir> {
         if path.is_absolute() {
             path.to_path_buf()
         }
-        else if let Some(dir) = self.dir {
+        else if let Some(dir) = self.parent_dir {
             dir.join(&*path)
         }
         else if let Some(parent) = self.path.parent() {
@@ -179,20 +187,22 @@ impl<'dir> File<'dir> {
         // this file -- which could be absolute or relative -- to the path
         // we actually look up and turn into a `File` -- which needs to be
         // absolute to be accessible from any directory.
-        let display_path = match fs::read_link(&self.path) {
-            Ok(path)  => path,
-            Err(e)    => return FileTarget::Err(e),
+        let path = match fs::read_link(&self.path) {
+            Ok(p)   => p,
+            Err(e)  => return FileTarget::Err(e),
         };
 
-        let target_path = self.reorient_target_path(&*display_path);
+        let absolute_path = self.reorient_target_path(&path);
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        if let Ok(metadata) = fs::metadata(&target_path) {
-            FileTarget::Ok(File::with_metadata(metadata, &*display_path, None))
+        if let Ok(metadata) = fs::metadata(&absolute_path) {
+            let ext  = File::ext(&path);
+            let name = File::filename(&path);
+            FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
         }
         else {
-            FileTarget::Broken(display_path)
+            FileTarget::Broken(path)
         }
     }
 
@@ -356,7 +366,7 @@ impl<'dir> File<'dir> {
     pub fn git_status(&self) -> f::Git {
         use std::env::current_dir;
 
-        match self.dir {
+        match self.parent_dir {
             None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
             Some(d) => {
                 let cwd = match current_dir() {
@@ -375,26 +385,6 @@ impl<'a> AsRef<File<'a>> for File<'a> {
     fn as_ref(&self) -> &File<'a> {
         self
     }
-}
-
-
-/// Extract an extension from a file path, if one is present, in lowercase.
-///
-/// The extension is the series of characters after the last dot. This
-/// deliberately counts dotfiles, so the ".git" folder has the extension "git".
-///
-/// ASCII lowercasing is used because these extensions are only compared
-/// against a pre-compiled list of extensions which are known to only exist
-/// within ASCII, so it's alright.
-fn ext(path: &Path) -> Option<String> {
-    use std::ascii::AsciiExt;
-
-    let name = match path.file_name() {
-        Some(f) => f.to_string_lossy().to_string(),
-        None => return None,
-    };
-
-    name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
 }
 
 
@@ -459,22 +449,59 @@ mod modes {
 
 
 #[cfg(test)]
-mod test {
-    use super::ext;
+mod ext_test {
+    use super::File;
     use std::path::Path;
 
     #[test]
     fn extension() {
-        assert_eq!(Some("dat".to_string()), ext(Path::new("fester.dat")))
+        assert_eq!(Some("dat".to_string()), File::ext(Path::new("fester.dat")))
     }
 
     #[test]
     fn dotfile() {
-        assert_eq!(Some("vimrc".to_string()), ext(Path::new(".vimrc")))
+        assert_eq!(Some("vimrc".to_string()), File::ext(Path::new(".vimrc")))
     }
 
     #[test]
     fn no_extension() {
-        assert_eq!(None, ext(Path::new("jarlsberg")))
+        assert_eq!(None, File::ext(Path::new("jarlsberg")))
+    }
+}
+
+
+#[cfg(test)]
+mod filename_test {
+    use super::File;
+    use std::path::Path;
+
+    #[test]
+    fn file() {
+        assert_eq!("fester.dat", File::filename(Path::new("fester.dat")))
+    }
+
+    #[test]
+    fn no_path() {
+        assert_eq!("foo.wha", File::filename(Path::new("/var/cache/foo.wha")))
+    }
+
+    #[test]
+    fn here() {
+        assert_eq!(".", File::filename(Path::new(".")))
+    }
+
+    #[test]
+    fn there() {
+        assert_eq!("..", File::filename(Path::new("..")))
+    }
+
+    #[test]
+    fn everywhere() {
+        assert_eq!("..", File::filename(Path::new("./..")))
+    }
+
+    #[test]
+    fn topmost() {
+        assert_eq!("/", File::filename(Path::new("/")))
     }
 }

@@ -369,6 +369,36 @@ Vagrant.configure(2) do |config|
     EOF
 
 
+    # Hidden and dot file testcases.
+    # We need to set the permissions of `.` and `..` because they actually
+    # get displayed in the output here, so this has to come last.
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        shopt -u dotglob
+        GLOBIGNORE=".:.."
+
+        mkdir "#{test_dir}/hiddens"
+        touch "#{test_dir}/hiddens/visible"
+        touch "#{test_dir}/hiddens/.hidden"
+        touch "#{test_dir}/hiddens/..extra-hidden"
+
+        # ./hiddens/
+        touch -t #{some_date}      "#{test_dir}/hiddens/"*
+        chmod 644                  "#{test_dir}/hiddens/"*
+        sudo chown #{user}:#{user} "#{test_dir}/hiddens/"*
+
+        # .
+        touch -t #{some_date} "#{test_dir}/hiddens"
+        chmod 755 "#{test_dir}/hiddens"
+        sudo chown #{user}:#{user} "#{test_dir}/hiddens"
+
+        # ..
+        sudo touch -t #{some_date} "#{test_dir}"
+        sudo chmod 755 "#{test_dir}"
+        sudo chown #{user}:#{user} "#{test_dir}"
+    EOF
+
+
     # Install kcov for test coverage
     # This doesn’t run coverage over the xtests so it’s less useful for now
     if ENV.key?('INSTALL_KCOV')
