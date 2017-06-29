@@ -79,10 +79,16 @@ COLUMNS=80 $exa $testcases/file-names -R 2>&1 | diff -q - $results/file_names_R 
 $exa $testcases/file-names/* 2>/dev/null
 
 
-# File types
-$exa $testcases/file-names-exts -1 2>&1 --sort=Name | diff -q - $results/file-names-exts  || exit 1
-$exa $testcases/specials        -l 2>&1             | diff -q - $results/specials         || exit 1
-$exa $testcases/specials     -F -l 2>&1             | diff -q - $results/specials_F       || exit 1
+# Sorting and extension file types
+$exa $testcases/file-names-exts -1 2>&1 --sort=Name | diff -q - $results/file-names-exts           || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=name | diff -q - $results/file-names-exts-case      || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=Ext  | diff -q - $results/file-names-exts-ext       || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=ext  | diff -q - $results/file-names-exts-ext-case  || exit 1
+
+
+# Other file types
+$exa $testcases/specials     -l 2>&1 | diff -q - $results/specials    || exit 1
+$exa $testcases/specials  -F -l 2>&1 | diff -q - $results/specials_F  || exit 1
 
 
 # Ignores
