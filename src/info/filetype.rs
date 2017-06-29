@@ -80,7 +80,7 @@ impl<'a> File<'a> {
         if self.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
             true
         }
-        else if let Some(dir) = self.dir {
+        else if let Some(dir) = self.parent_dir {
             self.get_source_files().iter().any(|path| dir.contains(path))
         }
         else {

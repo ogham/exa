@@ -24,7 +24,7 @@ extern crate lazy_static;
 
 use std::ffi::OsStr;
 use std::io::{stderr, Write, Result as IOResult};
-use std::path::{Component, Path};
+use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
 
@@ -75,7 +75,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         }
 
         for file_name in &self.args {
-            match File::new(Path::new(&file_name), None, None) {
+            match File::new(PathBuf::from(file_name), None, None) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{}: {}", file_name, e)?;

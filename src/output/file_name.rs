@@ -49,7 +49,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     pub fn paint(&self) -> TextCellContents {
         let mut bits = Vec::new();
 
-        if self.file.dir.is_none() {
+        if self.file.parent_dir.is_none() {
             if let Some(parent) = self.file.path.parent() {
                 self.add_parent_bits(&mut bits, parent);
             }

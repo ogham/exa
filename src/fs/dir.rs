@@ -112,14 +112,12 @@ impl<'dir> Files<'dir> {
     /// Go through the directory until we encounter a file we can list (which
     /// varies depending on the dotfile visibility flag)
     fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
-        use fs::file::path_filename;
-
         loop {
             if let Some(path) = self.inner.next() {
-                let filen = path_filename(path);
+                let filen = File::filename(path);
                 if !self.dotfiles && filen.starts_with(".") { continue }
 
-                return Some(File::new(path, Some(self.dir), Some(filen))
+                return Some(File::new(path.clone(), Some(self.dir), Some(filen))
                                  .map_err(|e| (path.clone(), e)))
             }
             else {
@@ -150,12 +148,12 @@ impl<'dir> Iterator for Files<'dir> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Dots::DotNext = self.dots {
             self.dots = Dots::DotDotNext;
-            Some(File::new(&self.dir.path, Some(self.dir), Some(String::from(".")))
+            Some(File::new(self.dir.path.to_path_buf(), Some(self.dir), Some(String::from(".")))
                       .map_err(|e| (Path::new(".").to_path_buf(), e)))
         }
         else if let Dots::DotDotNext = self.dots {
             self.dots = Dots::FilesNext;
-            Some(File::new(&self.parent(), Some(self.dir), Some(String::from("..")))
+            Some(File::new(self.parent(), Some(self.dir), Some(String::from("..")))
                       .map_err(|e| (self.parent(), e)))
         }
         else {
