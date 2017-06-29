@@ -114,10 +114,10 @@ impl<'dir> Files<'dir> {
     fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
         loop {
             if let Some(path) = self.inner.next() {
-                let filen = File::filename(path);
-                if !self.dotfiles && filen.starts_with(".") { continue }
+                let filename = File::filename(path);
+                if !self.dotfiles && filename.starts_with(".") { continue }
 
-                return Some(File::new(path.clone(), Some(self.dir), Some(filen))
+                return Some(File::new(path.clone(), self.dir, filename)
                                  .map_err(|e| (path.clone(), e)))
             }
             else {
@@ -148,12 +148,12 @@ impl<'dir> Iterator for Files<'dir> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Dots::DotNext = self.dots {
             self.dots = Dots::DotDotNext;
-            Some(File::new(self.dir.path.to_path_buf(), Some(self.dir), Some(String::from(".")))
+            Some(File::new(self.dir.path.to_path_buf(), self.dir, String::from("."))
                       .map_err(|e| (Path::new(".").to_path_buf(), e)))
         }
         else if let Dots::DotDotNext = self.dots {
             self.dots = Dots::FilesNext;
-            Some(File::new(self.parent(), Some(self.dir), Some(String::from("..")))
+            Some(File::new(self.parent(), self.dir, String::from(".."))
                       .map_err(|e| (self.parent(), e)))
         }
         else {

@@ -57,15 +57,16 @@ pub struct File<'dir> {
 }
 
 impl<'dir> File<'dir> {
-    pub fn new(path: PathBuf, parent_dir: Option<&'dir Dir>, mut filename: Option<String>) -> IOResult<File<'dir>> {
-        if filename.is_none() {
-            filename = Some(File::filename(&path));
-        }
+    pub fn new<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    where PD: Into<Option<&'dir Dir>>,
+          FN: Into<Option<String>>
+    {
+        let parent_dir = parent_dir.into();
+        let metadata   = fs::symlink_metadata(&path)?;
+        let name       = filename.into().unwrap_or_else(|| File::filename(&path));
+        let ext        = File::ext(&path);
 
-        let metadata = fs::symlink_metadata(&path)?;
-        let ext      = File::ext(&path);
-
-        Ok(File { path, parent_dir, metadata, ext, name: filename.unwrap() })
+        Ok(File { path, parent_dir, metadata, ext, name })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
