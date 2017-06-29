@@ -67,19 +67,17 @@ pub fn path_filename(path: &Path) -> String {
 }
 
 impl<'dir> File<'dir> {
-    pub fn new(path: &Path, parent: Option<&'dir Dir>, mut filename: Option<String>, mut metadata: Option<fs::Metadata>) -> IOResult<File<'dir>> {
+    pub fn new(path: &Path, parent: Option<&'dir Dir>, mut filename: Option<String>) -> IOResult<File<'dir>> {
         if filename.is_none() {
             filename = Some(path_filename(path));
         }
 
-        if metadata.is_none() {
-            metadata = Some(fs::symlink_metadata(path)?);
-        }
+        let metadata = fs::symlink_metadata(path)?;
 
         Ok(File {
             path:      path.to_path_buf(),
             dir:       parent,
-            metadata:  metadata.unwrap(),
+            metadata:  metadata,
             ext:       ext(path),
             name:      filename.unwrap(),
         })
@@ -184,7 +182,13 @@ impl<'dir> File<'dir> {
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
         if let Ok(metadata) = fs::metadata(&target_path) {
-            FileTarget::Ok(File::new(&*display_path, None, None, Some(metadata)).unwrap())
+            FileTarget::Ok(File {
+                dir:       None,
+                ext:       ext(&display_path),
+                metadata:  metadata,
+                name:      path_filename(&display_path),
+                path:      display_path,
+            })
         }
         else {
             FileTarget::Broken(display_path)

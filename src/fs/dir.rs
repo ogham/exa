@@ -119,7 +119,7 @@ impl<'dir> Files<'dir> {
                 let filen = path_filename(path);
                 if !self.dotfiles && filen.starts_with(".") { continue }
 
-                return Some(File::new(path, Some(self.dir), Some(filen), None)
+                return Some(File::new(path, Some(self.dir), Some(filen))
                                  .map_err(|e| (path.clone(), e)))
             }
             else {
@@ -150,12 +150,12 @@ impl<'dir> Iterator for Files<'dir> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Dots::DotNext = self.dots {
             self.dots = Dots::DotDotNext;
-            Some(File::new(&self.dir.path, Some(self.dir), Some(String::from(".")), None)
+            Some(File::new(&self.dir.path, Some(self.dir), Some(String::from(".")))
                       .map_err(|e| (Path::new(".").to_path_buf(), e)))
         }
         else if let Dots::DotDotNext = self.dots {
             self.dots = Dots::FilesNext;
-            Some(File::new(&self.parent(), Some(self.dir), Some(String::from("..")), None)
+            Some(File::new(&self.parent(), Some(self.dir), Some(String::from("..")))
                       .map_err(|e| (self.parent(), e)))
         }
         else {

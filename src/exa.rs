@@ -75,7 +75,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         }
 
         for file_name in &self.args {
-            match File::new(Path::new(&file_name), None, None, None) {
+            match File::new(Path::new(&file_name), None, None) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{}: {}", file_name, e)?;
