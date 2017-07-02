@@ -14,3 +14,4 @@ mod colours;
 mod escape;
 mod render;
 mod tree;
+mod table;
