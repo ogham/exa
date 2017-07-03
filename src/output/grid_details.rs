@@ -50,7 +50,7 @@ impl<'a> Render<'a> {
 
         let drender = self.clone().details();
 
-        let (mut first_table, _) = self.make_table(&env, &columns_for_dir, &drender);
+        let (first_table, _) = self.make_table(&env, &columns_for_dir, &drender);
 
         let rows = self.files.iter()
                        .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
@@ -122,7 +122,7 @@ impl<'a> Render<'a> {
         }
 
         let columns: Vec<_> = tables.into_iter().map(|(table, details_rows)| {
-            drender.iterate(&table, details_rows).collect::<Vec<_>>()
+            drender.iterate(Some(&table), details_rows).collect::<Vec<_>>()
         }).collect();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }

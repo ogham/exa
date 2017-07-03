@@ -109,14 +109,10 @@ impl<'a, 'f> Table<'a> {
         Row { cells }
     }
 
-    pub fn row_for_file(&mut self, file: &File, xattrs: bool) -> Row {
-        let mut cells = Vec::with_capacity(self.columns.len());
-
-        let other = self.columns.iter().map(|c| self.display(file, c, xattrs)).collect::<Vec<_>>();
-        for (old_width, column) in self.widths.iter_mut().zip(other.into_iter()) {
-            *old_width = max(*old_width, *column.width);
-            cells.push(column);
-        }
+    pub fn row_for_file(&self, file: &File, xattrs: bool) -> Row {
+        let cells = self.columns.iter()
+                        .map(|c| self.display(file, c, xattrs))
+                        .collect();
 
         Row { cells }
     }

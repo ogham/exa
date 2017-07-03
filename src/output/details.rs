@@ -122,7 +122,7 @@ pub struct Render<'a> {
 
 
 struct Egg<'a> {
-    table_row: TableRow,
+    table_row: Option<TableRow>,
     xattrs:    Vec<Attribute>,
     errors:    Vec<(IOError, Option<PathBuf>)>,
     dir:       Option<Dir>,
@@ -138,24 +138,31 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 impl<'a> Render<'a> {
     pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
-        let columns_for_dir = match self.opts.columns {
-            Some(cols) => cols.for_dir(self.dir),
-            None => Vec::new(),
-        };
-
-        let env = Environment::default();
-        let mut table = Table::new(&columns_for_dir, &self.colours, &env);
         let mut rows = Vec::new();
 
-        if self.opts.header {
-            let header = table.header_row();
-            rows.push(self.render_header(header));
+        if let Some(columns) = self.opts.columns {
+            let env = Environment::default();
+            let colz = columns.for_dir(self.dir);
+            let mut table = Table::new(&colz, &self.colours, &env);
+
+            if self.opts.header {
+                let header = table.header_row();
+                rows.push(self.render_header(header));
+            }
+
+            let mut table = Some(table);
+            self.add_files_to_table(&mut table, &mut rows, &self.files, 0);
+
+            for row in self.iterate(table.as_ref(), rows) {
+                writeln!(w, "{}", row.strings())?
+            }
         }
+        else {
+            self.add_files_to_table(&mut None, &mut rows, &self.files, 0);
 
-        self.add_files_to_table(&mut table, &mut rows, &self.files, 0);
-
-        for row in self.iterate(&table, rows) {
-            writeln!(w, "{}", row.strings())?
+            for row in self.iterate(None, rows) {
+                writeln!(w, "{}", row.strings())?
+            }
         }
 
         Ok(())
@@ -163,7 +170,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir>(&self, mut table: &mut Table, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: usize) {
+    fn add_files_to_table<'dir>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: usize) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
@@ -174,11 +181,10 @@ impl<'a> Render<'a> {
 
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
-            let table = Arc::new(Mutex::new(&mut table));
+            let table = table.as_ref();
 
             for file in src {
                 let file_eggs = file_eggs.clone();
-                let table = table.clone();
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
@@ -191,7 +197,7 @@ impl<'a> Render<'a> {
                         };
                     }
 
-                    let table_row = table.lock().unwrap().row_for_file(&file, !xattrs.is_empty());
+                    let table_row = table.as_ref().map(|t| t.row_for_file(&file, !xattrs.is_empty()));
 
                     if !self.opts.xattr {
                         xattrs.clear();
@@ -220,9 +226,13 @@ impl<'a> Render<'a> {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
+            if let (Some(ref mut t), Some(ref row)) = (table.as_mut(), egg.table_row.as_ref()) {
+                t.add_widths(row);
+            }
+
             let row = Row {
                 depth:    depth,
-                cells:    Some(egg.table_row),
+                cells:    egg.table_row,
                 name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
                 last:     index == num_eggs - 1,
             };
@@ -307,10 +317,10 @@ impl<'a> Render<'a> {
     }
 
     /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn iterate(&self, table: &'a Table<'a>, rows: Vec<Row>) -> Iter<'a> {
+    pub fn iterate(&self, table: Option<&'a Table<'a>>, rows: Vec<Row>) -> Iter<'a> {
         Iter {
             tree_trunk: TreeTrunk::default(),
-            total_width: table.columns_count() + table.widths().iter().fold(0, Add::add),
+            total_width: table.map(|t| t.columns_count() + t.widths().iter().fold(0, Add::add)).unwrap_or(0),
             table: table,
             inner: rows.into_iter(),
             colours: self.colours,
@@ -319,7 +329,7 @@ impl<'a> Render<'a> {
 }
 
 pub struct Iter<'a> {
-    table: &'a Table<'a>,
+    table: Option<&'a Table<'a>>,
     tree_trunk: TreeTrunk,
     total_width: usize,
     colours: &'a Colours,
@@ -332,8 +342,8 @@ impl<'a> Iterator for Iter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|row| {
             let mut cell =
-                if let Some(cells) = row.cells {
-                    self.table.render(cells)
+                if let (Some(table), Some(cells)) = (self.table, row.cells) {
+                    table.render(cells)
                 }
                 else {
                     let mut cell = TextCell::default();
