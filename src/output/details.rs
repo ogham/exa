@@ -147,6 +147,7 @@ impl<'a> Render<'a> {
 
             if self.opts.header {
                 let header = table.header_row();
+                table.add_widths(&header);
                 rows.push(self.render_header(header));
             }
 

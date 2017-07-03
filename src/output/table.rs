@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
 use datetime::TimeZone;
@@ -75,7 +76,7 @@ pub struct Table<'a> {
     columns: &'a [Column],
     colours: &'a Colours,
     env: &'a Environment,
-    widths: Vec<usize>,
+    widths: TableWidths,
 }
 
 #[derive(Clone)]
@@ -85,7 +86,7 @@ pub struct Row {
 
 impl<'a, 'f> Table<'a> {
     pub fn new(columns: &'a [Column], colours: &'a Colours, env: &'a Environment) -> Table<'a> {
-        let widths = vec![ 0; columns.len() ];
+        let widths = TableWidths::zero(columns.len());
         Table { columns, colours, env, widths }
     }
 
@@ -94,17 +95,13 @@ impl<'a, 'f> Table<'a> {
     }
 
     pub fn widths(&self) -> &[usize] {
-        &self.widths
+        &*self.widths
     }
 
-    pub fn header_row(&mut self) -> Row {
-        let mut cells = Vec::with_capacity(self.columns.len());
-
-        for (old_width, column) in self.widths.iter_mut().zip(self.columns.iter()) {
-            let column = TextCell::paint_str(self.colours.header, column.header());
-            *old_width = max(*old_width, *column.width);
-            cells.push(column);
-        }
+    pub fn header_row(&self) -> Row {
+        let cells = self.columns.iter()
+                        .map(|c| TextCell::paint_str(self.colours.header, c.header()))
+                        .collect();
 
         Row { cells }
     }
@@ -118,9 +115,7 @@ impl<'a, 'f> Table<'a> {
     }
 
     pub fn add_widths(&mut self, row: &Row) {
-        for (old_width, cell) in self.widths.iter_mut().zip(row.cells.iter()) {
-            *old_width = max(*old_width, *cell.width);
-        }
+        self.widths.add_widths(row)
     }
 
     fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
@@ -165,5 +160,29 @@ impl<'a, 'f> Table<'a> {
         }
 
         cell
+    }
+}
+
+
+
+pub struct TableWidths(Vec<usize>);
+
+impl Deref for TableWidths {
+    type Target = [usize];
+
+    fn deref<'a>(&'a self) -> &'a Self::Target {
+        &self.0
+    }
+}
+
+impl TableWidths {
+    pub fn zero(count: usize) -> TableWidths {
+        TableWidths(vec![ 0; count ])
+    }
+
+    pub fn add_widths(&mut self, row: &Row) {
+        for (old_width, cell) in self.0.iter_mut().zip(row.cells.iter()) {
+            *old_width = max(*old_width, *cell.width);
+        }
     }
 }

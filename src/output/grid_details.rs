@@ -86,7 +86,9 @@ impl<'a> Render<'a> {
         let mut rows = Vec::new();
 
         if self.details.header {
-            rows.push(drender.render_header(table.header_row()));
+            let row = table.header_row();
+            table.add_widths(&row);
+            rows.push(drender.render_header(row));
         }
 
         (table, rows)
