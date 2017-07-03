@@ -295,6 +295,33 @@ Vagrant.configure(2) do |config|
 
     EOF
 
+    old = '200303030000.00'
+    med = '200606152314.29'
+    new = '200907221038.53'
+
+    # Awkward date and time testcases.
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+      set -xe
+      mkdir "#{test_dir}/dates"
+
+      # there's no way to touch the created date of a file...
+      # so we have to do this the old-fashioned way!
+      # (and make sure these don't actually get listed)
+      touch -t #{old}    "#{test_dir}/dates/peach";  sleep 1
+      touch -t #{med}    "#{test_dir}/dates/plum";   sleep 1
+      touch -t #{new}    "#{test_dir}/dates/pear"
+
+      # modified dates
+      touch -t #{old} -m "#{test_dir}/dates/pear"
+      touch -t #{med} -m "#{test_dir}/dates/peach"
+      touch -t #{new} -m "#{test_dir}/dates/plum"
+
+      # accessed dates
+      touch -t #{old} -a "#{test_dir}/dates/plum"
+      touch -t #{med} -a "#{test_dir}/dates/pear"
+      touch -t #{new} -a "#{test_dir}/dates/peach"
+    EOF
+
 
     # Awkward extended attribute testcases.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
