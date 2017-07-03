@@ -142,12 +142,16 @@ impl TreeParams {
         TreeParams { depth, last }
     }
 
-    pub fn is_zero(&self) -> bool {
+    pub fn is_at_root(&self) -> bool {
         self.depth.0 == 0
     }
 }
 
 impl TreeDepth {
+    pub fn root() -> TreeDepth {
+        TreeDepth(0)
+    }
+
     pub fn deeper(self) -> TreeDepth {
         TreeDepth(self.0 + 1)
     }

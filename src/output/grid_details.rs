@@ -120,7 +120,7 @@ impl<'a> Render<'a> {
 
             let (ref mut table, ref mut rows) = tables[index];
             table.add_widths(&row);
-            let details_row = drender.render_file(row, file_name.clone(), TreeParams::new(TreeDepth(0), false));
+            let details_row = drender.render_file(row, file_name.clone(), TreeParams::new(TreeDepth::root(), false));
             rows.push(details_row);
         }
 

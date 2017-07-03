@@ -153,14 +153,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can't find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth(0));
+            self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth::root());
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut None, &mut rows, &self.files, TreeDepth(0));
+            self.add_files_to_table(&mut None, &mut rows, &self.files, TreeDepth::root());
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -278,7 +278,7 @@ impl<'a> Render<'a> {
 
     pub fn render_header(&self, header: TableRow) -> Row {
         Row {
-            tree:     TreeParams::new(TreeDepth(0), false),
+            tree:     TreeParams::new(TreeDepth::root(), false),
             cells:    Some(header),
             name:     TextCell::paint_str(self.colours.header, "Name"),
         }
@@ -351,7 +351,7 @@ impl<'a> Iterator for TableIter<'a> {
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if !row.tree.is_zero() {
+            if !row.tree.is_at_root() {
                 cell.add_spaces(1);
             }
 
@@ -400,7 +400,7 @@ impl<'a> Iterator for Iter<'a> {
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if !row.tree.is_zero() {
+            if !row.tree.is_at_root() {
                 cell.add_spaces(1);
             }
 
