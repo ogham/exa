@@ -1,8 +1,6 @@
 use std::cmp::max;
 use std::sync::{Mutex, MutexGuard};
 
-use datetime::fmt::DateFormat;
-use datetime::{LocalDateTime, DatePiece};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
@@ -13,6 +11,7 @@ use users::UsersCache;
 use output::cell::TextCell;
 use output::colours::Colours;
 use output::column::{Alignment, Column};
+use output::time::TimeFormat;
 
 use fs::{File, fields as f};
 
@@ -23,21 +22,11 @@ use fs::{File, fields as f};
 /// Any environment field should be able to be mocked up for test runs.
 pub struct Environment {
 
-    /// The year of the current time. This gets used to determine which date
-    /// format to use.
-    current_year: i64,
-
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
 
-    /// Localisation rules for formatting timestamps.
-    time: locale::Time,
-
-    /// Date format for printing out timestamps that are in the current year.
-    date_and_time: DateFormat<'static>,
-
-    /// Date format for printing out timestamps that *aren’t*.
-    date_and_year: DateFormat<'static>,
+    /// Rules for formatting timestamps.
+    time_format: TimeFormat,
 
     /// The computer's current time zone. This gets used to determine how to
     /// offset files' timestamps.
@@ -55,43 +44,22 @@ impl Environment {
 
 impl Default for Environment {
     fn default() -> Self {
-        use unicode_width::UnicodeWidthStr;
+        let tz = match determine_time_zone() {
+            Ok(t) => Some(t),
+            Err(ref e) => {
+                println!("Unable to determine time zone: {}", e);
+                None
+            }
+        };
 
-        let tz = determine_time_zone();
-        if let Err(ref e) = tz {
-            println!("Unable to determine time zone: {}", e);
-        }
+        let time_format = TimeFormat::deduce();
 
         let numeric = locale::Numeric::load_user_locale()
                           .unwrap_or_else(|_| locale::Numeric::english());
 
-        let time = locale::Time::load_user_locale()
-                       .unwrap_or_else(|_| locale::Time::english());
+        let users = Mutex::new(UsersCache::new());
 
-        // Some locales use a three-character wide month name (Jan to Dec);
-        // others vary between three and four (1月 to 12月). We assume that
-        // December is the month with the maximum width, and use the width of
-        // that to determine how to pad the other months.
-        let december_width = UnicodeWidthStr::width(&*time.short_month_name(11));
-        let date_and_time = match december_width {
-            4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
-            _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
-        };
-
-        let date_and_year = match december_width {
-            4 => DateFormat::parse("{2>:D} {4>:M} {5>:Y}").unwrap(),
-            _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
-        };
-
-        Environment {
-            current_year:  LocalDateTime::now().year(),
-            numeric:       numeric,
-            date_and_time: date_and_time,
-            date_and_year: date_and_year,
-            time:          time,
-            tz:            tz.ok(),
-            users:         Mutex::new(UsersCache::new()),
-        }
+        Environment { tz, time_format, numeric, users }
     }
 }
 
@@ -171,17 +139,18 @@ impl<'a, 'f> Table<'a> {
         use output::column::TimeType::*;
 
         match *column {
-            Column::Permissions          => self.permissions_plus(file, xattrs).render(&self.colours),
-            Column::FileSize(fmt)        => file.size().render(&self.colours, fmt, &self.env.numeric),
-            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::HardLinks            => file.links().render(&self.colours, &self.env.numeric),
-            Column::Inode                => file.inode().render(&self.colours),
-            Column::Blocks               => file.blocks().render(&self.colours),
-            Column::User                 => file.user().render(&self.colours, &*self.env.lock_users()),
-            Column::Group                => file.group().render(&self.colours, &*self.env.lock_users()),
-            Column::GitStatus            => file.git_status().render(&self.colours),
+            Column::Permissions    => self.permissions_plus(file, xattrs).render(&self.colours),
+            Column::FileSize(fmt)  => file.size().render(&self.colours, fmt, &self.env.numeric),
+            Column::HardLinks      => file.links().render(&self.colours, &self.env.numeric),
+            Column::Inode          => file.inode().render(&self.colours),
+            Column::Blocks         => file.blocks().render(&self.colours),
+            Column::User           => file.user().render(&self.colours, &*self.env.lock_users()),
+            Column::Group          => file.group().render(&self.colours, &*self.env.lock_users()),
+            Column::GitStatus      => file.git_status().render(&self.colours),
+
+            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.env.time_format),
+            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.env.time_format),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.env.time_format),
         }
     }
 
