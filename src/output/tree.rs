@@ -38,6 +38,7 @@
 //! successfully `stat`ted, we don’t know how many files are going to exist in
 //! each directory)
 
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum TreePart {
 
@@ -79,7 +80,18 @@ pub struct TreeTrunk {
     stack: Vec<TreePart>,
 
     /// A tuple for the last ‘depth’ and ‘last’ parameters that are passed in.
-    last_params: Option<(usize, bool)>,
+    last_params: Option<TreeParams>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct TreeParams {
+
+    /// How many directories deep into the tree structure this is. Directories
+    /// on top have depth 0.
+    depth: usize,
+
+    /// Whether this is the last entry in the directory.
+    last: bool,
 }
 
 impl TreeTrunk {
@@ -91,19 +103,19 @@ impl TreeTrunk {
     ///
     /// This takes a `&mut self` because the results of each file are stored
     /// and used in future rows.
-    pub fn new_row(&mut self, depth: usize, last: bool) -> &[TreePart] {
+    pub fn new_row(&mut self, params: TreeParams) -> &[TreePart] {
 
         // If this isn’t our first iteration, then update the tree parts thus
         // far to account for there being another row after it.
-        if let Some((last_depth, last_last)) = self.last_params {
-            self.stack[last_depth] = if last_last { TreePart::Blank } else { TreePart::Line };
+        if let Some(last) = self.last_params {
+            self.stack[last.depth] = if last.last { TreePart::Blank } else { TreePart::Line };
         }
 
         // Make sure the stack has enough space, then add or modify another
         // part into it.
-        self.stack.resize(depth + 1, TreePart::Edge);
-        self.stack[depth] = if last { TreePart::Corner } else { TreePart::Edge };
-        self.last_params = Some((depth, last));
+        self.stack.resize(params.depth + 1, TreePart::Edge);
+        self.stack[params.depth] = if params.last { TreePart::Corner } else { TreePart::Edge };
+        self.last_params = Some(params);
 
         // Return the tree parts as a slice of the stack.
         //
@@ -123,6 +135,16 @@ impl TreeTrunk {
     }
 }
 
+impl TreeParams {
+    pub fn new(depth: usize, last: bool) -> TreeParams {
+        TreeParams { depth, last }
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.depth == 0
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -131,47 +153,47 @@ mod test {
     #[test]
     fn empty_at_first() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(0, true), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
     }
 
     #[test]
     fn one_child() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(0, true), &[]);
-        assert_eq!(tt.new_row(1, true), &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(1, true)), &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(0, true), &[]);
-        assert_eq!(tt.new_row(1, false), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(1, true),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_times_two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(0, false), &[]);
-        assert_eq!(tt.new_row(1, false), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(1, true),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(0, false)), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
 
-        assert_eq!(tt.new_row(0, true), &[]);
-        assert_eq!(tt.new_row(1, false), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(1, true),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_times_two_nested_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(0, true), &[]);
+        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
 
-        assert_eq!(tt.new_row(1, false), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(2, false), &[ TreePart::Line, TreePart::Edge ]);
-        assert_eq!(tt.new_row(2, true),  &[ TreePart::Line, TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(2, false)), &[ TreePart::Line, TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(2, true)),  &[ TreePart::Line, TreePart::Corner ]);
 
-        assert_eq!(tt.new_row(1, true),  &[ TreePart::Corner ]);
-        assert_eq!(tt.new_row(2, false), &[ TreePart::Blank, TreePart::Edge ]);
-        assert_eq!(tt.new_row(2, true),  &[ TreePart::Blank, TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(TreeParams::new(2, false)), &[ TreePart::Blank, TreePart::Edge ]);
+        assert_eq!(tt.new_row(TreeParams::new(2, true)),  &[ TreePart::Blank, TreePart::Corner ]);
     }
 }

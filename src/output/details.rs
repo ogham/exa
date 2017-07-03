@@ -70,7 +70,7 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::Columns;
 use output::cell::TextCell;
-use output::tree::TreeTrunk;
+use output::tree::{TreeTrunk, TreeParams};
 use output::file_name::{FileName, LinkStyle, Classify};
 use output::table::{Table, Environment, Row as TableRow};
 
@@ -233,10 +233,9 @@ impl<'a> Render<'a> {
             }
 
             let row = Row {
-                depth:    depth,
-                cells:    egg.table_row,
-                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
-                last:     index == num_eggs - 1,
+                tree:   TreeParams::new(depth, index == num_eggs - 1),
+                cells:  egg.table_row,
+                name:   FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
             };
 
             rows.push(row);
@@ -253,11 +252,11 @@ impl<'a> Render<'a> {
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
-                        rows.push(self.render_xattr(xattr, depth + 1, false));
+                        rows.push(self.render_xattr(xattr, TreeParams::new(depth + 1, false)));
                     }
 
                     for (error, path) in errors {
-                        rows.push(self.render_error(&error, depth + 1, false, path));
+                        rows.push(self.render_error(&error, TreeParams::new(depth + 1, false), path));
                     }
 
                     self.add_files_to_table(table, rows, &files, depth + 1);
@@ -267,55 +266,41 @@ impl<'a> Render<'a> {
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                rows.push(self.render_xattr(xattr, depth + 1, errors.is_empty() && index == count - 1));
+                rows.push(self.render_xattr(xattr, TreeParams::new(depth + 1, errors.is_empty() && index == count - 1)));
             }
 
             let count = errors.len();
             for (index, (error, path)) in errors.into_iter().enumerate() {
-                rows.push(self.render_error(&error, depth + 1, index == count - 1, path));
+                rows.push(self.render_error(&error, TreeParams::new(depth + 1, index == count - 1), path));
             }
         }
     }
 
     pub fn render_header(&self, header: TableRow) -> Row {
         Row {
-            depth:    0,
+            tree:     TreeParams::new(0, false),
             cells:    Some(header),
             name:     TextCell::paint_str(self.colours.header, "Name"),
-            last:     false,
         }
     }
 
-    fn render_error(&self, error: &IOError, depth: usize, last: bool, path: Option<PathBuf>) -> Row {
+    fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
             None       => format!("<{}>", error),
         };
 
-        Row {
-            depth:    depth,
-            cells:    None,
-            name:     TextCell::paint(self.colours.broken_arrow, error_message),
-            last:     last,
-        }
+        let name = TextCell::paint(self.colours.broken_arrow, error_message);
+        Row { cells: None, name, tree }
     }
 
-    fn render_xattr(&self, xattr: Attribute, depth: usize, last: bool) -> Row {
-        Row {
-            depth:    depth,
-            cells:    None,
-            name:     TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size)),
-            last:     last,
-        }
+    fn render_xattr(&self, xattr: Attribute, tree: TreeParams) -> Row {
+        let name = TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
+        Row { cells: None, name, tree }
     }
 
-    pub fn render_file(&self, cells: TableRow, name_cell: TextCell, depth: usize, last: bool) -> Row {
-        Row {
-            depth:  depth,
-            cells:  Some(cells),
-            name:   name_cell,
-            last:   last,
-        }
+    pub fn render_file(&self, cells: TableRow, name: TextCell, tree: TreeParams) -> Row {
+        Row { cells: Some(cells), name, tree }
     }
 
     pub fn iterate_with_table(&'a self, table: Table<'a>, rows: Vec<Row>) -> TableIter<'a> {
@@ -360,13 +345,13 @@ impl<'a> Iterator for TableIter<'a> {
                     cell
                 };
 
-            for tree_part in self.tree_trunk.new_row(row.depth, row.last) {
+            for tree_part in self.tree_trunk.new_row(row.tree) {
                 cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if row.depth != 0 {
+            if !row.tree.is_zero() {
                 cell.add_spaces(1);
             }
 
@@ -390,13 +375,8 @@ pub struct Row {
     /// from the other cells, as it never requires padding.
     pub name: TextCell,
 
-    /// How many directories deep into the tree structure this is. Directories
-    /// on top have depth 0.
-    pub depth: usize,
-
-    /// Whether this is the last entry in the directory. This flag is used
-    /// when calculating the tree view.
-    pub last: bool,
+    /// Information used to determine which symbols to display in a tree.
+    pub tree: TreeParams,
 }
 
 
@@ -414,13 +394,13 @@ impl<'a> Iterator for Iter<'a> {
         self.inner.next().map(|row| {
             let mut cell = TextCell::default();
 
-            for tree_part in self.tree_trunk.new_row(row.depth, row.last) {
+            for tree_part in self.tree_trunk.new_row(row.tree) {
                 cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if row.depth != 0 {
+            if !row.tree.is_zero() {
                 cell.add_spaces(1);
             }
 
