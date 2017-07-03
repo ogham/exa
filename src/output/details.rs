@@ -61,7 +61,6 @@
 
 
 use std::io::{Write, Error as IOError, Result as IOResult};
-use std::ops::Add;
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
@@ -320,7 +319,7 @@ impl<'a> Render<'a> {
     pub fn iterate_with_table(&'a self, table: Table<'a>, rows: Vec<Row>) -> TableIter<'a> {
         TableIter {
             tree_trunk: TreeTrunk::default(),
-            total_width: table.columns_count() + table.widths().iter().fold(0, Add::add),
+            total_width: table.widths().total(),
             table: table,
             inner: rows.into_iter(),
             colours: self.colours,

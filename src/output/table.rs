@@ -90,12 +90,8 @@ impl<'a, 'f> Table<'a> {
         Table { columns, colours, env, widths }
     }
 
-    pub fn columns_count(&self) -> usize {
-        self.columns.len()
-    }
-
-    pub fn widths(&self) -> &[usize] {
-        &*self.widths
+    pub fn widths(&self) -> &TableWidths {
+        &self.widths
     }
 
     pub fn header_row(&self) -> Row {
@@ -184,5 +180,9 @@ impl TableWidths {
         for (old_width, cell) in self.0.iter_mut().zip(row.cells.iter()) {
             *old_width = max(*old_width, *cell.width);
         }
+    }
+
+    pub fn total(&self) -> usize {
+        self.0.len() + self.0.iter().sum::<usize>()
     }
 }
