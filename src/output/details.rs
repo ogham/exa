@@ -150,6 +150,8 @@ impl<'a> Render<'a> {
                 rows.push(self.render_header(header));
             }
 
+            // This is weird, but I can't find a way around it:
+            // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
             self.add_files_to_table(&mut table, &mut rows, &self.files, 0);
 
