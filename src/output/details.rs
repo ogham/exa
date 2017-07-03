@@ -70,7 +70,7 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::column::Columns;
 use output::cell::TextCell;
-use output::tree::{TreeTrunk, TreeParams};
+use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::{FileName, LinkStyle, Classify};
 use output::table::{Table, Environment, Row as TableRow};
 
@@ -153,14 +153,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can't find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut table, &mut rows, &self.files, 0);
+            self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth(0));
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut None, &mut rows, &self.files, 0);
+            self.add_files_to_table(&mut None, &mut rows, &self.files, TreeDepth(0));
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -172,7 +172,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: usize) {
+    fn add_files_to_table<'dir>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: TreeDepth) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
@@ -208,7 +208,7 @@ impl<'a> Render<'a> {
                     let mut dir = None;
 
                     if let Some(r) = self.recurse {
-                        if file.is_directory() && r.tree && !r.is_too_deep(depth) {
+                        if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
                             if let Ok(d) = file.to_dir(false) {
                                 dir = Some(d);
                             }
@@ -252,33 +252,33 @@ impl<'a> Render<'a> {
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
-                        rows.push(self.render_xattr(xattr, TreeParams::new(depth + 1, false)));
+                        rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), false)));
                     }
 
                     for (error, path) in errors {
-                        rows.push(self.render_error(&error, TreeParams::new(depth + 1, false), path));
+                        rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(table, rows, &files, depth + 1);
+                    self.add_files_to_table(table, rows, &files, depth.deeper());
                     continue;
                 }
             }
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                rows.push(self.render_xattr(xattr, TreeParams::new(depth + 1, errors.is_empty() && index == count - 1)));
+                rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
             }
 
             let count = errors.len();
             for (index, (error, path)) in errors.into_iter().enumerate() {
-                rows.push(self.render_error(&error, TreeParams::new(depth + 1, index == count - 1), path));
+                rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), index == count - 1), path));
             }
         }
     }
 
     pub fn render_header(&self, header: TableRow) -> Row {
         Row {
-            tree:     TreeParams::new(0, false),
+            tree:     TreeParams::new(TreeDepth(0), false),
             cells:    Some(header),
             name:     TextCell::paint_str(self.colours.header, "Name"),
         }

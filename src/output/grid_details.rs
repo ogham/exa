@@ -14,7 +14,7 @@ use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as De
 use output::grid::Options as GridOptions;
 use output::file_name::{FileName, LinkStyle, Classify};
 use output::table::{Table, Environment, Row as TableRow};
-use output::tree::TreeParams;
+use output::tree::{TreeParams, TreeDepth};
 
 
 pub struct Render<'a> {
@@ -120,7 +120,7 @@ impl<'a> Render<'a> {
 
             let (ref mut table, ref mut rows) = tables[index];
             table.add_widths(&row);
-            let details_row = drender.render_file(row, file_name.clone(), TreeParams::new(0, false));
+            let details_row = drender.render_file(row, file_name.clone(), TreeParams::new(TreeDepth(0), false));
             rows.push(details_row);
         }
 

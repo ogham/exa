@@ -88,11 +88,14 @@ pub struct TreeParams {
 
     /// How many directories deep into the tree structure this is. Directories
     /// on top have depth 0.
-    depth: usize,
+    depth: TreeDepth,
 
     /// Whether this is the last entry in the directory.
     last: bool,
 }
+
+#[derive(Debug, Copy, Clone)]
+pub struct TreeDepth(pub usize);
 
 impl TreeTrunk {
 
@@ -108,40 +111,45 @@ impl TreeTrunk {
         // If this isn’t our first iteration, then update the tree parts thus
         // far to account for there being another row after it.
         if let Some(last) = self.last_params {
-            self.stack[last.depth] = if last.last { TreePart::Blank } else { TreePart::Line };
+            self.stack[last.depth.0] = if last.last { TreePart::Blank } else { TreePart::Line };
         }
 
         // Make sure the stack has enough space, then add or modify another
         // part into it.
-        self.stack.resize(params.depth + 1, TreePart::Edge);
-        self.stack[params.depth] = if params.last { TreePart::Corner } else { TreePart::Edge };
+        self.stack.resize(params.depth.0 + 1, TreePart::Edge);
+        self.stack[params.depth.0] = if params.last { TreePart::Corner } else { TreePart::Edge };
         self.last_params = Some(params);
 
         // Return the tree parts as a slice of the stack.
         //
-        // Ignoring the first component is specific to exa: when a user prints
-        // a tree view for multiple directories, we don’t want there to be a
-        // ‘zeroth level’ connecting the initial directories. Otherwise, not
-        // only are unrelated directories seemingly connected to each other,
-        // but the tree part of the first row doesn’t connect to anything:
+        // Ignore the first element here to prevent a 'zeroth level' from
+        // appearing before the very first directory. This level would
+        // join unrelated directories without connecting to anything:
         //
-        // with [0..]             with [1..]
-        // ==========             ==========
-        // ├──folder              folder
-        // │  └──file             └──file
-        // └──folder              folder
-        //    └──file             └──file
+        //     with [0..]        with [1..]
+        //     ==========        ==========
+        //      ├── folder        folder
+        //      │  └── file       └── file
+        //      └── folder        folder
+        //         └── file       └──file
+        //
         &self.stack[1..]
     }
 }
 
 impl TreeParams {
-    pub fn new(depth: usize, last: bool) -> TreeParams {
+    pub fn new(depth: TreeDepth, last: bool) -> TreeParams {
         TreeParams { depth, last }
     }
 
     pub fn is_zero(&self) -> bool {
-        self.depth == 0
+        self.depth.0 == 0
+    }
+}
+
+impl TreeDepth {
+    pub fn deeper(self) -> TreeDepth {
+        TreeDepth(self.0 + 1)
     }
 }
 
@@ -150,50 +158,54 @@ impl TreeParams {
 mod test {
     use super::*;
 
+    fn params(depth: usize, last: bool) -> TreeParams {
+        TreeParams::new(TreeDepth(depth), last)
+    }
+
     #[test]
     fn empty_at_first() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
+        assert_eq!(tt.new_row(params(0, true)), &[]);
     }
 
     #[test]
     fn one_child() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
-        assert_eq!(tt.new_row(TreeParams::new(1, true)), &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(0, true)), &[]);
+        assert_eq!(tt.new_row(params(1, true)), &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
-        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(0, true)),  &[]);
+        assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_times_two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(TreeParams::new(0, false)), &[]);
-        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(0, false)), &[]);
+        assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
 
-        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
-        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(0, true)),  &[]);
+        assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_times_two_nested_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(TreeParams::new(0, true)), &[]);
+        assert_eq!(tt.new_row(params(0, true)), &[]);
 
-        assert_eq!(tt.new_row(TreeParams::new(1, false)), &[ TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(2, false)), &[ TreePart::Line, TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(2, true)),  &[ TreePart::Line, TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(2, false)), &[ TreePart::Line, TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(2, true)),  &[ TreePart::Line, TreePart::Corner ]);
 
-        assert_eq!(tt.new_row(TreeParams::new(1, true)),  &[ TreePart::Corner ]);
-        assert_eq!(tt.new_row(TreeParams::new(2, false)), &[ TreePart::Blank, TreePart::Edge ]);
-        assert_eq!(tt.new_row(TreeParams::new(2, true)),  &[ TreePart::Blank, TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(2, false)), &[ TreePart::Blank, TreePart::Edge ]);
+        assert_eq!(tt.new_row(params(2, true)),  &[ TreePart::Blank, TreePart::Corner ]);
     }
 }
