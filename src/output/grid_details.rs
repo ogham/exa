@@ -124,7 +124,7 @@ impl<'a> Render<'a> {
         }
 
         let columns: Vec<_> = tables.into_iter().map(|(table, details_rows)| {
-            drender.iterate(Some(&table), details_rows).collect::<Vec<_>>()
+            drender.iterate_with_table(table, details_rows).collect::<Vec<_>>()
         }).collect();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }

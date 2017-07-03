@@ -154,14 +154,14 @@ impl<'a> Render<'a> {
             let mut table = Some(table);
             self.add_files_to_table(&mut table, &mut rows, &self.files, 0);
 
-            for row in self.iterate(table.as_ref(), rows) {
+            for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
             self.add_files_to_table(&mut None, &mut rows, &self.files, 0);
 
-            for row in self.iterate(None, rows) {
+            for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
@@ -317,34 +317,41 @@ impl<'a> Render<'a> {
         }
     }
 
-    /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn iterate(&self, table: Option<&'a Table<'a>>, rows: Vec<Row>) -> Iter<'a> {
+    pub fn iterate_with_table(&'a self, table: Table<'a>, rows: Vec<Row>) -> TableIter<'a> {
+        TableIter {
+            tree_trunk: TreeTrunk::default(),
+            total_width: table.columns_count() + table.widths().iter().fold(0, Add::add),
+            table: table,
+            inner: rows.into_iter(),
+            colours: self.colours,
+        }
+    }
+
+    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter<'a> {
         Iter {
             tree_trunk: TreeTrunk::default(),
-            total_width: table.map(|t| t.columns_count() + t.widths().iter().fold(0, Add::add)).unwrap_or(0),
-            table: table,
             inner: rows.into_iter(),
             colours: self.colours,
         }
     }
 }
 
-pub struct Iter<'a> {
-    table: Option<&'a Table<'a>>,
+pub struct TableIter<'a> {
+    table: Table<'a>,
     tree_trunk: TreeTrunk,
     total_width: usize,
     colours: &'a Colours,
     inner: VecIntoIter<Row>,
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl<'a> Iterator for TableIter<'a> {
     type Item = TextCell;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|row| {
             let mut cell =
-                if let (Some(table), Some(cells)) = (self.table, row.cells) {
-                    table.render(cells)
+                if let Some(cells) = row.cells {
+                    self.table.render(cells)
                 }
                 else {
                     let mut cell = TextCell::default();
@@ -352,23 +359,17 @@ impl<'a> Iterator for Iter<'a> {
                     cell
                 };
 
-            let mut filename = TextCell::default();
-
             for tree_part in self.tree_trunk.new_row(row.depth, row.last) {
-                filename.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
             if row.depth != 0 {
-                filename.add_spaces(1);
+                cell.add_spaces(1);
             }
 
-            // Print the name without worrying about padding.
-            filename.append(row.name);
-
-            cell.append(filename);
-
+            cell.append(row.name);
             cell
         })
     }
@@ -395,4 +396,35 @@ pub struct Row {
     /// Whether this is the last entry in the directory. This flag is used
     /// when calculating the tree view.
     pub last: bool,
+}
+
+
+
+pub struct Iter<'a> {
+    tree_trunk: TreeTrunk,
+    colours: &'a Colours,
+    inner: VecIntoIter<Row>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = TextCell;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|row| {
+            let mut cell = TextCell::default();
+
+            for tree_part in self.tree_trunk.new_row(row.depth, row.last) {
+                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+            }
+
+            // If any tree characters have been printed, then add an extra
+            // space, which makes the output look much better.
+            if row.depth != 0 {
+                cell.add_spaces(1);
+            }
+
+            cell.append(row.name);
+            cell
+        })
+    }
 }
