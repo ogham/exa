@@ -223,8 +223,7 @@ impl<'a> Render<'a> {
 
         self.filter.sort_files(&mut file_eggs);
 
-        let num_eggs = file_eggs.len();
-        for (index, egg) in file_eggs.into_iter().enumerate() {
+        for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
@@ -233,7 +232,7 @@ impl<'a> Render<'a> {
             }
 
             let row = Row {
-                tree:   TreeParams::new(depth, index == num_eggs - 1),
+                tree:   tree_params,
                 cells:  egg.table_row,
                 name:   FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
             };

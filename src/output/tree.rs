@@ -155,11 +155,36 @@ impl TreeDepth {
     pub fn deeper(self) -> TreeDepth {
         TreeDepth(self.0 + 1)
     }
+
+    /// Creates an iterator that, as well as yielding each value, yields a
+    /// `TreeParams` with the current depth and last flag filled in.
+    pub fn iterate_over<I, T>(self, inner: I) -> Iter<I>
+    where I: ExactSizeIterator+Iterator<Item=T> {
+        Iter { current_depth: self, inner }
+    }
+}
+
+
+pub struct Iter<I> {
+    current_depth: TreeDepth,
+    inner: I,
+}
+
+impl<I, T> Iterator for Iter<I>
+where I: ExactSizeIterator+Iterator<Item=T> {
+    type Item = (TreeParams, T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|t| {
+            // use exact_size_is_empty API soon
+            (TreeParams::new(self.current_depth, self.inner.len() == 0), t)
+        })
+    }
 }
 
 
 #[cfg(test)]
-mod test {
+mod trunk_test {
     use super::*;
 
     fn params(depth: usize, last: bool) -> TreeParams {
@@ -211,5 +236,39 @@ mod test {
         assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
         assert_eq!(tt.new_row(params(2, false)), &[ TreePart::Blank, TreePart::Edge ]);
         assert_eq!(tt.new_row(params(2, true)),  &[ TreePart::Blank, TreePart::Corner ]);
+    }
+}
+
+
+
+#[cfg(test)]
+mod iter_test {
+    use super::*;
+
+    #[test]
+    fn test_iteration() {
+        let foos = &[ "first", "middle", "last" ];
+        let mut iter = TreeDepth::root().iterate_over(foos.into_iter());
+
+        let next = iter.next().unwrap();
+        assert_eq!(&"first", next.1);
+        assert_eq!(false, next.0.last);
+
+        let next = iter.next().unwrap();
+        assert_eq!(&"middle", next.1);
+        assert_eq!(false, next.0.last);
+
+        let next = iter.next().unwrap();
+        assert_eq!(&"last", next.1);
+        assert_eq!(true, next.0.last);
+
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_empty() {
+        let nothing: &[usize] = &[];
+        let mut iter = TreeDepth::root().iterate_over(nothing.into_iter());
+        assert!(iter.next().is_none());
     }
 }
