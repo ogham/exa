@@ -209,8 +209,9 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
-                            if let Ok(d) = file.to_dir(false) {
-                                dir = Some(d);
+                            match file.to_dir(false) {
+                                Ok(d)  => { dir = Some(d); },
+                                Err(e) => { errors.push((e, None)) },
                             }
                         }
                     };
