@@ -58,47 +58,21 @@
 //! Each column in the table needs to be resized to fit its widest argument. This
 //! means that we must wait until every row has been added to the table before it
 //! can be displayed, in order to make sure that every column is wide enough.
-//!
-//!
-//! ## Extended Attributes and Errors
-//!
-//! Finally, files' extended attributes and any errors that occur while statting
-//! them can also be displayed as their children. It looks like this:
-//!
-//! ```text
-//!     .rw-r--r--  0 ben  3 Sep 13:26 forbidden
-//!                                    └── <Permission denied (os error 13)>
-//!     .rw-r--r--@ 0 ben  3 Sep 13:26 file_with_xattrs
-//!                                    ├── another_greeting (len 2)
-//!                                    └── greeting (len 5)
-//! ```
-//!
-//! These lines also have `None` cells, and the error string or attribute details
-//! are used in place of the filename.
 
 
 use std::io::{Write, Error as IOError, Result as IOResult};
-use std::ops::Add;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::vec::IntoIter as VecIntoIter;
 
-use datetime::fmt::DateFormat;
-use datetime::{LocalDateTime, DatePiece};
-use datetime::TimeZone;
-use zoneinfo_compiled::{CompiledData, Result as TZResult};
-
-use locale;
-
-use users::{Users, Groups, UsersCache};
-
-use fs::{Dir, File, fields as f};
+use fs::{Dir, File};
 use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
-use output::column::{Alignment, Column, Columns};
-use output::cell::{TextCell, TextCellContents};
-use output::tree::TreeTrunk;
+use output::column::Columns;
+use output::cell::TextCell;
+use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::{FileName, LinkStyle, Classify};
+use output::table::{Table, Environment, Row as TableRow};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -127,87 +101,6 @@ pub struct Options {
     pub xattr: bool,
 }
 
-/// The **environment** struct contains any data that could change between
-/// running instances of exa, depending on the user's computer's configuration.
-///
-/// Any environment field should be able to be mocked up for test runs.
-pub struct Environment<U> {  // where U: Users+Groups
-
-    /// The year of the current time. This gets used to determine which date
-    /// format to use.
-    current_year: i64,
-
-    /// Localisation rules for formatting numbers.
-    numeric: locale::Numeric,
-
-    /// Localisation rules for formatting timestamps.
-    time: locale::Time,
-
-    /// Date format for printing out timestamps that are in the current year.
-    date_and_time: DateFormat<'static>,
-
-    /// Date format for printing out timestamps that *aren’t*.
-    date_and_year: DateFormat<'static>,
-
-    /// The computer's current time zone. This gets used to determine how to
-    /// offset files' timestamps.
-    tz: Option<TimeZone>,
-
-    /// Mapping cache of user IDs to usernames.
-    users: Mutex<U>,
-}
-
-impl<U> Environment<U> {
-    pub fn lock_users(&self) -> MutexGuard<U> {
-        self.users.lock().unwrap()
-    }
-}
-
-impl Default for Environment<UsersCache> {
-    fn default() -> Self {
-        use unicode_width::UnicodeWidthStr;
-
-        let tz = determine_time_zone();
-        if let Err(ref e) = tz {
-            println!("Unable to determine time zone: {}", e);
-        }
-
-        let numeric = locale::Numeric::load_user_locale()
-                          .unwrap_or_else(|_| locale::Numeric::english());
-
-        let time = locale::Time::load_user_locale()
-                       .unwrap_or_else(|_| locale::Time::english());
-
-        // Some locales use a three-character wide month name (Jan to Dec);
-        // others vary between three and four (1月 to 12月). We assume that
-        // December is the month with the maximum width, and use the width of
-        // that to determine how to pad the other months.
-        let december_width = UnicodeWidthStr::width(&*time.short_month_name(11));
-        let date_and_time = match december_width {
-            4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
-            _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
-        };
-
-        let date_and_year = match december_width {
-            4 => DateFormat::parse("{2>:D} {4>:M} {5>:Y}").unwrap(),
-            _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
-        };
-
-        Environment {
-            current_year:  LocalDateTime::now().year(),
-            numeric:       numeric,
-            date_and_time: date_and_time,
-            date_and_year: date_and_year,
-            time:          time,
-            tz:            tz.ok(),
-            users:         Mutex::new(UsersCache::new()),
-        }
-    }
-}
-
-fn determine_time_zone() -> TZResult<TimeZone> {
-    TimeZone::from_file("/etc/localtime")
-}
 
 
 pub struct Render<'a> {
@@ -226,36 +119,52 @@ pub struct Render<'a> {
     pub filter: &'a FileFilter,
 }
 
+
+struct Egg<'a> {
+    table_row: Option<TableRow>,
+    xattrs:    Vec<Attribute>,
+    errors:    Vec<(IOError, Option<PathBuf>)>,
+    dir:       Option<Dir>,
+    file:      &'a File<'a>,
+}
+
+impl<'a> AsRef<File<'a>> for Egg<'a> {
+    fn as_ref(&self) -> &File<'a> {
+        self.file
+    }
+}
+
+
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
+        let mut rows = Vec::new();
 
-        // First, transform the Columns object into a vector of columns for
-        // the current directory.
-        let columns_for_dir = match self.opts.columns {
-            Some(cols) => cols.for_dir(self.dir),
-            None => Vec::new(),
-        };
+        if let Some(columns) = self.opts.columns {
+            let env = Environment::default();
+            let colz = columns.for_dir(self.dir);
+            let mut table = Table::new(&colz, &self.colours, &env);
 
-        // Then, retrieve various environment variables.
-        let env = Arc::new(Environment::<UsersCache>::default());
+            if self.opts.header {
+                let header = table.header_row();
+                table.add_widths(&header);
+                rows.push(self.render_header(header));
+            }
 
-        // Build the table to put rows in.
-        let mut table = Table {
-            columns: &*columns_for_dir,
-            colours: self.colours,
-            classify: self.classify,
-            xattr: self.opts.xattr,
-            env: env,
-            rows: Vec::new(),
-        };
+            // This is weird, but I can't find a way around it:
+            // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
+            let mut table = Some(table);
+            self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth::root());
 
-        // Next, add a header if the user requests it.
-        if self.opts.header { table.add_header() }
+            for row in self.iterate_with_table(table.unwrap(), rows) {
+                writeln!(w, "{}", row.strings())?
+            }
+        }
+        else {
+            self.add_files_to_table(&mut None, &mut rows, &self.files, TreeDepth::root());
 
-        // Then add files to the table and print it out.
-        self.add_files_to_table(&mut table, &self.files, 0);
-        for cell in table.print_table() {
-            writeln!(w, "{}", cell.strings())?;
+            for row in self.iterate(rows) {
+                writeln!(w, "{}", row.strings())?
+            }
         }
 
         Ok(())
@@ -263,7 +172,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, U: Users+Groups+Send>(&self, mut table: &mut Table<U>, src: &Vec<File<'dir>>, depth: usize) {
+    fn add_files_to_table<'dir>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: TreeDepth) {
         use num_cpus;
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
@@ -272,27 +181,12 @@ impl<'a> Render<'a> {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
 
-        struct Egg<'a> {
-            cells:   Vec<TextCell>,
-            xattrs:  Vec<Attribute>,
-            errors:  Vec<(IOError, Option<PathBuf>)>,
-            dir:     Option<Dir>,
-            file:    &'a File<'a>,
-        }
-
-        impl<'a> AsRef<File<'a>> for Egg<'a> {
-            fn as_ref(&self) -> &File<'a> {
-                self.file
-            }
-        }
-
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
-            let table = Arc::new(&mut table);
+            let table = table.as_ref();
 
             for file in src {
                 let file_eggs = file_eggs.clone();
-                let table = table.clone();
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
@@ -305,23 +199,24 @@ impl<'a> Render<'a> {
                         };
                     }
 
-                    let cells = table.cells_for_file(&file, !xattrs.is_empty());
+                    let table_row = table.as_ref().map(|t| t.row_for_file(&file, !xattrs.is_empty()));
 
-                    if !table.xattr {
+                    if !self.opts.xattr {
                         xattrs.clear();
                     }
 
                     let mut dir = None;
 
                     if let Some(r) = self.recurse {
-                        if file.is_directory() && r.tree && !r.is_too_deep(depth) {
-                            if let Ok(d) = file.to_dir(false) {
-                                dir = Some(d);
+                        if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
+                            match file.to_dir(false) {
+                                Ok(d)  => { dir = Some(d); },
+                                Err(e) => { errors.push((e, None)) },
                             }
                         }
                     };
 
-                    let egg = Egg { cells, xattrs, errors, dir, file };
+                    let egg = Egg { table_row, xattrs, errors, dir, file };
                     file_eggs.lock().unwrap().push(egg);
                 });
             }
@@ -329,19 +224,21 @@ impl<'a> Render<'a> {
 
         self.filter.sort_files(&mut file_eggs);
 
-        let num_eggs = file_eggs.len();
-        for (index, egg) in file_eggs.into_iter().enumerate() {
+        for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
+            if let (Some(ref mut t), Some(ref row)) = (table.as_mut(), egg.table_row.as_ref()) {
+                t.add_widths(row);
+            }
+
             let row = Row {
-                depth:    depth,
-                cells:    Some(egg.cells),
-                name:     FileName::new(&egg.file, LinkStyle::FullLinkPaths, table.classify, table.colours).paint().promote(),
-                last:     index == num_eggs - 1,
+                tree:   tree_params,
+                cells:  egg.table_row,
+                name:   FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
             };
 
-            table.rows.push(row);
+            rows.push(row);
 
             if let Some(ref dir) = egg.dir {
                 for file_to_add in dir.files(self.filter.dot_filter) {
@@ -355,27 +252,72 @@ impl<'a> Render<'a> {
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
-                        table.add_xattr(xattr, depth + 1, false);
+                        rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), false)));
                     }
 
                     for (error, path) in errors {
-                        table.add_error(&error, depth + 1, false, path);
+                        rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(table, &files, depth + 1);
+                    self.add_files_to_table(table, rows, &files, depth.deeper());
                     continue;
                 }
             }
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                table.add_xattr(xattr, depth + 1, errors.is_empty() && index == count - 1);
+                rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
             }
 
             let count = errors.len();
             for (index, (error, path)) in errors.into_iter().enumerate() {
-                table.add_error(&error, depth + 1, index == count - 1, path);
+                rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), index == count - 1), path));
             }
+        }
+    }
+
+    pub fn render_header(&self, header: TableRow) -> Row {
+        Row {
+            tree:     TreeParams::new(TreeDepth::root(), false),
+            cells:    Some(header),
+            name:     TextCell::paint_str(self.colours.header, "Name"),
+        }
+    }
+
+    fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
+        let error_message = match path {
+            Some(path) => format!("<{}: {}>", path.display(), error),
+            None       => format!("<{}>", error),
+        };
+
+        let name = TextCell::paint(self.colours.broken_arrow, error_message);
+        Row { cells: None, name, tree }
+    }
+
+    fn render_xattr(&self, xattr: Attribute, tree: TreeParams) -> Row {
+        let name = TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
+        Row { cells: None, name, tree }
+    }
+
+    pub fn render_file(&self, cells: TableRow, name: TextCell, tree: TreeParams) -> Row {
+        Row { cells: Some(cells), name, tree }
+    }
+
+    pub fn iterate_with_table(&'a self, table: Table<'a>, rows: Vec<Row>) -> TableIter<'a> {
+        TableIter {
+            tree_trunk: TreeTrunk::default(),
+            total_width: table.widths().total(),
+            table: table,
+            inner: rows.into_iter(),
+            colours: self.colours,
+        }
+    }
+
+    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter<'a> {
+        Iter {
+            tree_trunk: TreeTrunk::default(),
+            inner: rows.into_iter(),
+            colours: self.colours,
         }
     }
 }
@@ -389,189 +331,82 @@ pub struct Row {
     /// almost always be `Some`, containing a vector of cells. It will only be
     /// `None` for a row displaying an attribute or error, neither of which
     /// have cells.
-    cells: Option<Vec<TextCell>>,
+    pub cells: Option<TableRow>,
 
     /// This file's name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
-    name: TextCell,
+    pub name: TextCell,
 
-    /// How many directories deep into the tree structure this is. Directories
-    /// on top have depth 0.
-    depth: usize,
-
-    /// Whether this is the last entry in the directory. This flag is used
-    /// when calculating the tree view.
-    last: bool,
-}
-
-impl Row {
-
-    /// Gets the Unicode display width of the indexed column, if present. If
-    /// not, returns 0.
-    fn column_width(&self, index: usize) -> usize {
-        match self.cells {
-            Some(ref cells) => *cells[index].width,
-            None => 0,
-        }
-    }
+    /// Information used to determine which symbols to display in a tree.
+    pub tree: TreeParams,
 }
 
 
-/// A **Table** object gets built up by the view as it lists files and
-/// directories.
-pub struct Table<'a, U: 'a> { // where U: Users+Groups
-    pub rows: Vec<Row>,
-    pub columns: &'a [Column],
-    pub colours: &'a Colours,
-    pub xattr: bool,
-    pub classify: Classify,
-    pub env: Arc<Environment<U>>,
+pub struct TableIter<'a> {
+    table: Table<'a>,
+    tree_trunk: TreeTrunk,
+    total_width: usize,
+    colours: &'a Colours,
+    inner: VecIntoIter<Row>,
 }
 
-impl<'a, U: Users+Groups+'a> Table<'a, U> {
+impl<'a> Iterator for TableIter<'a> {
+    type Item = TextCell;
 
-    /// Add a dummy "header" row to the table, which contains the names of all
-    /// the columns, underlined. This has dummy data for the cases that aren't
-    /// actually used, such as the depth or list of attributes.
-    pub fn add_header(&mut self) {
-        let row = Row {
-            depth:    0,
-            cells:    Some(self.columns.iter().map(|c| TextCell::paint_str(self.colours.header, c.header())).collect()),
-            name:     TextCell::paint_str(self.colours.header, "Name"),
-            last:     false,
-        };
-
-        self.rows.push(row);
-    }
-
-    fn add_error(&mut self, error: &IOError, depth: usize, last: bool, path: Option<PathBuf>) {
-        let error_message = match path {
-            Some(path) => format!("<{}: {}>", path.display(), error),
-            None       => format!("<{}>", error),
-        };
-
-        let row = Row {
-            depth:    depth,
-            cells:    None,
-            name:     TextCell::paint(self.colours.broken_arrow, error_message),
-            last:     last,
-        };
-
-        self.rows.push(row);
-    }
-
-    fn add_xattr(&mut self, xattr: Attribute, depth: usize, last: bool) {
-        let row = Row {
-            depth:    depth,
-            cells:    None,
-            name:     TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size)),
-            last:     last,
-        };
-
-        self.rows.push(row);
-    }
-
-    pub fn filename(&self, file: &File, links: LinkStyle) -> TextCellContents {
-        FileName::new(file, links, self.classify, &self.colours).paint()
-    }
-
-    pub fn add_file_with_cells(&mut self, cells: Vec<TextCell>, name_cell: TextCell, depth: usize, last: bool) {
-        let row = Row {
-            depth:  depth,
-            cells:  Some(cells),
-            name:   name_cell,
-            last:   last,
-        };
-
-        self.rows.push(row);
-    }
-
-    /// Use the list of columns to find which cells should be produced for
-    /// this file, per-column.
-    pub fn cells_for_file(&self, file: &File, xattrs: bool) -> Vec<TextCell> {
-        self.columns.iter()
-                    .map(|c| self.display(file, c, xattrs))
-                    .collect()
-    }
-
-    fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
-        f::PermissionsPlus {
-            file_type: file.type_char(),
-            permissions: file.permissions(),
-            xattrs: xattrs,
-        }
-    }
-
-    fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
-        use output::column::TimeType::*;
-
-        match *column {
-            Column::Permissions          => self.permissions_plus(file, xattrs).render(&self.colours),
-            Column::FileSize(fmt)        => file.size().render(&self.colours, fmt, &self.env.numeric),
-            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.env.date_and_time, &self.env.date_and_year, &self.env.time, self.env.current_year),
-            Column::HardLinks            => file.links().render(&self.colours, &self.env.numeric),
-            Column::Inode                => file.inode().render(&self.colours),
-            Column::Blocks               => file.blocks().render(&self.colours),
-            Column::User                 => file.user().render(&self.colours, &*self.env.lock_users()),
-            Column::Group                => file.group().render(&self.colours, &*self.env.lock_users()),
-            Column::GitStatus            => file.git_status().render(&self.colours),
-        }
-    }
-
-    /// Render the table as a vector of Cells, to be displayed on standard output.
-    pub fn print_table(self) -> Vec<TextCell> {
-        let mut tree_trunk = TreeTrunk::default();
-        let mut cells = Vec::new();
-
-        // Work out the list of column widths by finding the longest cell for
-        // each column, then formatting each cell in that column to be the
-        // width of that one.
-        let column_widths: Vec<usize> = (0 .. self.columns.len())
-            .map(|n| self.rows.iter().map(|row| row.column_width(n)).max().unwrap_or(0))
-            .collect();
-
-        let total_width: usize = self.columns.len() + column_widths.iter().fold(0, Add::add);
-
-        for row in self.rows {
-            let mut cell = TextCell::default();
-
-            if let Some(cells) = row.cells {
-                for (n, (this_cell, width)) in cells.into_iter().zip(column_widths.iter()).enumerate() {
-                    let padding = width - *this_cell.width;
-
-                    match self.columns[n].alignment() {
-                        Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }
-                        Alignment::Right => { cell.add_spaces(padding); cell.append(this_cell); }
-                    }
-
-                    cell.add_spaces(1);
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|row| {
+            let mut cell =
+                if let Some(cells) = row.cells {
+                    self.table.render(cells)
                 }
-            }
-            else {
-                cell.add_spaces(total_width)
-            }
+                else {
+                    let mut cell = TextCell::default();
+                    cell.add_spaces(self.total_width);
+                    cell
+                };
 
-            let mut filename = TextCell::default();
-
-            for tree_part in tree_trunk.new_row(row.depth, row.last) {
-                filename.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+            for tree_part in self.tree_trunk.new_row(row.tree) {
+                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if row.depth != 0 {
-                filename.add_spaces(1);
+            if !row.tree.is_at_root() {
+                cell.add_spaces(1);
             }
 
-            // Print the name without worrying about padding.
-            filename.append(row.name);
+            cell.append(row.name);
+            cell
+        })
+    }
+}
 
-            cell.append(filename);
-            cells.push(cell);
-        }
 
-        cells
+pub struct Iter<'a> {
+    tree_trunk: TreeTrunk,
+    colours: &'a Colours,
+    inner: VecIntoIter<Row>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = TextCell;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|row| {
+            let mut cell = TextCell::default();
+
+            for tree_part in self.tree_trunk.new_row(row.tree) {
+                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+            }
+
+            // If any tree characters have been printed, then add an extra
+            // space, which makes the output look much better.
+            if !row.tree.is_at_root() {
+                cell.add_spaces(1);
+            }
+
+            cell.append(row.name);
+            cell
+        })
     }
 }

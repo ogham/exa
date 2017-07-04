@@ -18,7 +18,8 @@ results="/vagrant/xtests"
 # Check that no files were created more than a year ago.
 # Files not from the current year use a different date format, meaning
 # that tests will fail until the VM gets re-provisioned.
-sudo find $testcases -mtime +365 -printf "File %p has not been modified since %TY! Consider re-provisioning; tests will probably fail.\n"
+# (Ignore the folder that deliberately has dates in the past)
+sudo find $testcases -mtime +365 -not -path "*/dates/*" -printf "File %p has not been modified since %TY! Consider re-provisioning; tests will probably fail.\n"
 
 
 # Long view tests
@@ -26,7 +27,7 @@ $exa $testcases/files -l   | diff -q - $results/files_l     || exit 1
 $exa $testcases/files -lh  | diff -q - $results/files_lh    || exit 1
 $exa $testcases/files -lhb | diff -q - $results/files_lhb   || exit 1
 $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
-$exa $testcases/attributes/dirs/empty-with-attribute -lh | diff -q - $results/empty  || exit 1
+$exa $testcases/attributes/dirs/no-xattrs_empty -lh | diff -q - $results/empty  || exit 1
 
 $exa --color-scale         $testcases/files -l | diff -q - $results/files_l_scale  || exit 1
 
@@ -56,6 +57,7 @@ COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  
 
 
 # Attributes
+# (there are many tests, but they're all done in one go)
 $exa $testcases/attributes -l@T | diff -q - $results/attributes  || exit 1
 
 

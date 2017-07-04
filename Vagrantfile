@@ -295,45 +295,73 @@ Vagrant.configure(2) do |config|
 
     EOF
 
+    old = '200303030000.00'
+    med = '200606152314.29'
+    new = '200907221038.53'
+
+    # Awkward date and time testcases.
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+      set -xe
+      mkdir "#{test_dir}/dates"
+
+      # there's no way to touch the created date of a file...
+      # so we have to do this the old-fashioned way!
+      # (and make sure these don't actually get listed)
+      touch -t #{old}    "#{test_dir}/dates/peach";  sleep 1
+      touch -t #{med}    "#{test_dir}/dates/plum";   sleep 1
+      touch -t #{new}    "#{test_dir}/dates/pear"
+
+      # modified dates
+      touch -t #{old} -m "#{test_dir}/dates/pear"
+      touch -t #{med} -m "#{test_dir}/dates/peach"
+      touch -t #{new} -m "#{test_dir}/dates/plum"
+
+      # accessed dates
+      touch -t #{old} -a "#{test_dir}/dates/plum"
+      touch -t #{med} -a "#{test_dir}/dates/pear"
+      touch -t #{new} -a "#{test_dir}/dates/peach"
+    EOF
+
 
     # Awkward extended attribute testcases.
+    # We need to test combinations of various numbers of files *and*
+    # extended attributes in directories. Turns out, the easiest way to
+    # do this is to generate all combinations of files with “one-xattr”
+    # or “two-xattrs” in their name and directories with “empty” or
+    # “one-file” in their name, then just give the right number of
+    # xattrs and children to those.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
         mkdir "#{test_dir}/attributes"
 
-        touch "#{test_dir}/attributes/none"
-
-        touch "#{test_dir}/attributes/one"
-        setfattr -n user.greeting -v hello "#{test_dir}/attributes/one"
-
-        touch "#{test_dir}/attributes/two"
-        setfattr -n user.greeting -v hello "#{test_dir}/attributes/two"
-        setfattr -n user.another_greeting -v hi "#{test_dir}/attributes/two"
-
-        #touch "#{test_dir}/attributes/forbidden"
-        #setfattr -n user.greeting -v hello "#{test_dir}/attributes/forbidden"
-        #chmod +a "$YOU deny readextattr" "#{test_dir}/attributes/forbidden"
+        mkdir "#{test_dir}/attributes/files"
+        touch "#{test_dir}/attributes/files/"{no-xattrs,one-xattr,two-xattrs}{,_forbidden}
 
         mkdir "#{test_dir}/attributes/dirs"
+        mkdir "#{test_dir}/attributes/dirs/"{no-xattrs,one-xattr,two-xattrs}_{empty,one-file,two-files}{,_forbidden}
 
-        mkdir "#{test_dir}/attributes/dirs/empty-with-attribute"
-        setfattr -n user.greeting -v hello "#{test_dir}/attributes/dirs/empty-with-attribute"
+        setfattr -n user.greeting         -v hello "#{test_dir}/attributes"/**/*{one-xattr,two-xattrs}*
+        setfattr -n user.another_greeting -v hi    "#{test_dir}/attributes"/**/*two-xattrs*
 
-        mkdir "#{test_dir}/attributes/dirs/full-with-attribute"
-        touch "#{test_dir}/attributes/dirs/full-with-attribute/file"
-        setfattr -n user.greeting -v hello "#{test_dir}/attributes/dirs/full-with-attribute"
+        for dir in "#{test_dir}/attributes/dirs/"*one-file*; do
+            touch $dir/file-in-question
+        done
 
-        mkdir "#{test_dir}/attributes/dirs/full-but-forbidden"
-        touch "#{test_dir}/attributes/dirs/full-but-forbidden/file"
-        #setfattr -n user.greeting -v hello "#{test_dir}/attributes/dirs/full-but-forbidden"
-        #chmod 000 "#{test_dir}/attributes/dirs/full-but-forbidden"
-        #chmod +a "$YOU deny readextattr" "#{test_dir}/attributes/dirs/full-but-forbidden"
+        for dir in "#{test_dir}/attributes/dirs/"*two-files*; do
+            touch $dir/this-file
+            touch $dir/that-file
+        done
 
-        touch -t #{some_date} "#{test_dir}/attributes"
-        touch -t #{some_date} "#{test_dir}/attributes/"*
-        touch -t #{some_date} "#{test_dir}/attributes/dirs/"*
-        touch -t #{some_date} "#{test_dir}/attributes/dirs/"*/*
+        touch -t #{some_date} "#{test_dir}/attributes"         # there's probably
+        touch -t #{some_date} "#{test_dir}/attributes"/*       # a better
+        touch -t #{some_date} "#{test_dir}/attributes"/*/*     # way to
+        touch -t #{some_date} "#{test_dir}/attributes"/*/*/*   # do this
 
+        # I want to use the following to test,
+        # but it only works on macos:
+        #chmod +a "#{user} deny readextattr" "#{test_dir}/attributes"/**/*_forbidden
+
+        sudo chmod 000                "#{test_dir}/attributes"/**/*_forbidden
         sudo chown #{user}:#{user} -R "#{test_dir}/attributes"
     EOF
 

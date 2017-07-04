@@ -1,19 +1,20 @@
 use std::io::{Write, Result as IOResult};
-use std::sync::Arc;
 
 use ansi_term::ANSIStrings;
-use users::UsersCache;
 use term_grid as grid;
 
 use fs::{Dir, File};
 use fs::feature::xattr::FileAttributes;
 
+use options::FileFilter;
 use output::cell::TextCell;
 use output::column::Column;
 use output::colours::Colours;
-use output::details::{Table, Environment, Options as DetailsOptions};
+use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
-use output::file_name::{Classify, LinkStyle};
+use output::file_name::{FileName, LinkStyle, Classify};
+use output::table::{Table, Environment, Row as TableRow};
+use output::tree::{TreeParams, TreeDepth};
 
 
 pub struct Render<'a> {
@@ -23,9 +24,22 @@ pub struct Render<'a> {
     pub classify: Classify,
     pub grid: &'a GridOptions,
     pub details: &'a DetailsOptions,
+    pub filter: &'a FileFilter,
 }
 
 impl<'a> Render<'a> {
+    pub fn details(&self) -> DetailsRender<'a> {
+        DetailsRender {
+            dir: self.dir.clone(),
+            files: Vec::new(),
+            colours: self.colours,
+            classify: self.classify,
+            opts: self.details,
+            recurse: None,
+            filter: self.filter,
+        }
+    }
+
     pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
 
         let columns_for_dir = match self.details.columns {
@@ -33,27 +47,24 @@ impl<'a> Render<'a> {
             None => Vec::new(),
         };
 
-        let env = Arc::new(Environment::default());
+        let env = Environment::default();
 
-        let (cells, file_names) = {
+        let drender = self.clone().details();
 
-            let first_table = self.make_table(env.clone(), &*columns_for_dir, self.colours, self.classify);
+        let (first_table, _) = self.make_table(&env, &columns_for_dir, &drender);
 
-            let cells = self.files.iter()
-                              .map(|file| first_table.cells_for_file(file, file_has_xattrs(file)))
-                              .collect::<Vec<_>>();
+        let rows = self.files.iter()
+                       .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
+                       .collect::<Vec<TableRow>>();
 
-            let file_names = self.files.iter()
-                                  .map(|file| first_table.filename(file, LinkStyle::JustFilenames).promote())
-                                  .collect::<Vec<_>>();
+        let file_names = self.files.iter()
+                             .map(|file| FileName::new(file, LinkStyle::JustFilenames, self.classify, self.colours).paint().promote())
+                             .collect::<Vec<TextCell>>();
 
-            (cells, file_names)
-        };
-
-        let mut last_working_table = self.make_grid(env.clone(), 1, &columns_for_dir, &file_names, cells.clone(), self.colours, self.classify);
+        let mut last_working_table = self.make_grid(&env, 1, &columns_for_dir, &file_names, rows.clone(), &drender);
 
         for column_count in 2.. {
-            let grid = self.make_grid(env.clone(), column_count, &columns_for_dir, &file_names, cells.clone(), self.colours, self.classify);
+            let grid = self.make_grid(&env, column_count, &columns_for_dir, &file_names, rows.clone(), &drender);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -71,33 +82,35 @@ impl<'a> Render<'a> {
         Ok(())
     }
 
-    fn make_table<'g>(&'g self, env: Arc<Environment<UsersCache>>, columns_for_dir: &'g [Column], colours: &'g Colours, classify: Classify) -> Table<UsersCache> {
-        let mut table = Table {
-            columns: columns_for_dir,
-            colours, classify, env,
-            xattr: self.details.xattr,
-            rows: Vec::new(),
-        };
+    fn make_table<'t>(&'a self, env: &'a Environment, columns_for_dir: &'a [Column], drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+        let mut table = Table::new(columns_for_dir, self.colours, env);
+        let mut rows = Vec::new();
 
-        if self.details.header { table.add_header() }
-        table
-    }
-
-    fn make_grid<'g>(&'g self, env: Arc<Environment<UsersCache>>, column_count: usize, columns_for_dir: &'g [Column], file_names: &[TextCell], cells: Vec<Vec<TextCell>>, colours: &'g Colours, classify: Classify) -> grid::Grid {
-        let mut tables = Vec::new();
-        for _ in 0 .. column_count {
-            tables.push(self.make_table(env.clone(), columns_for_dir, colours, classify));
+        if self.details.header {
+            let row = table.header_row();
+            table.add_widths(&row);
+            rows.push(drender.render_header(row));
         }
 
-        let mut num_cells = cells.len();
+        (table, rows)
+    }
+
+    fn make_grid(&'a self, env: &'a Environment, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
+
+        let mut tables = Vec::new();
+        for _ in 0 .. column_count {
+            tables.push(self.make_table(env.clone(), columns_for_dir, drender));
+        }
+
+        let mut num_cells = rows.len();
         if self.details.header {
             num_cells += column_count;
         }
 
-        let original_height = divide_rounding_up(cells.len(), column_count);
+        let original_height = divide_rounding_up(rows.len(), column_count);
         let height = divide_rounding_up(num_cells, column_count);
 
-        for (i, (file_name, row)) in file_names.iter().zip(cells.into_iter()).enumerate() {
+        for (i, (file_name, row)) in file_names.iter().zip(rows.into_iter()).enumerate() {
             let index = if self.grid.across {
                     i % column_count
                 }
@@ -105,10 +118,15 @@ impl<'a> Render<'a> {
                     i / original_height
                 };
 
-            tables[index].add_file_with_cells(row, file_name.clone(), 0, false);
+            let (ref mut table, ref mut rows) = tables[index];
+            table.add_widths(&row);
+            let details_row = drender.render_file(row, file_name.clone(), TreeParams::new(TreeDepth::root(), false));
+            rows.push(details_row);
         }
 
-        let columns: Vec<_> = tables.into_iter().map(|t| t.print_table()).collect();
+        let columns: Vec<_> = tables.into_iter().map(|(table, details_rows)| {
+            drender.iterate_with_table(table, details_rows).collect::<Vec<_>>()
+        }).collect();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }
                                        else { grid::Direction::TopToBottom };
