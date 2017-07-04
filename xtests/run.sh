@@ -27,7 +27,7 @@ $exa $testcases/files -l   | diff -q - $results/files_l     || exit 1
 $exa $testcases/files -lh  | diff -q - $results/files_lh    || exit 1
 $exa $testcases/files -lhb | diff -q - $results/files_lhb   || exit 1
 $exa $testcases/files -lhB | diff -q - $results/files_lhb2  || exit 1
-$exa $testcases/attributes/dirs/empty-with-attribute -lh | diff -q - $results/empty  || exit 1
+$exa $testcases/attributes/dirs/no-xattrs_empty -lh | diff -q - $results/empty  || exit 1
 
 $exa --color-scale         $testcases/files -l | diff -q - $results/files_l_scale  || exit 1
 
@@ -57,6 +57,7 @@ COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  
 
 
 # Attributes
+# (there are many tests, but they're all done in one go)
 $exa $testcases/attributes -l@T | diff -q - $results/attributes  || exit 1
 
 
