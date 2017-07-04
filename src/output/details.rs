@@ -322,6 +322,26 @@ impl<'a> Render<'a> {
     }
 }
 
+
+pub struct Row {
+
+    /// Vector of cells to display.
+    ///
+    /// Most of the rows will be used to display files' metadata, so this will
+    /// almost always be `Some`, containing a vector of cells. It will only be
+    /// `None` for a row displaying an attribute or error, neither of which
+    /// have cells.
+    pub cells: Option<TableRow>,
+
+    /// This file's name, in coloured output. The name is treated separately
+    /// from the other cells, as it never requires padding.
+    pub name: TextCell,
+
+    /// Information used to determine which symbols to display in a tree.
+    pub tree: TreeParams,
+}
+
+
 pub struct TableIter<'a> {
     table: Table<'a>,
     tree_trunk: TreeTrunk,
@@ -360,25 +380,6 @@ impl<'a> Iterator for TableIter<'a> {
         })
     }
 }
-
-pub struct Row {
-
-    /// Vector of cells to display.
-    ///
-    /// Most of the rows will be used to display files' metadata, so this will
-    /// almost always be `Some`, containing a vector of cells. It will only be
-    /// `None` for a row displaying an attribute or error, neither of which
-    /// have cells.
-    pub cells: Option<TableRow>,
-
-    /// This file's name, in coloured output. The name is treated separately
-    /// from the other cells, as it never requires padding.
-    pub name: TextCell,
-
-    /// Information used to determine which symbols to display in a tree.
-    pub tree: TreeParams,
-}
-
 
 
 pub struct Iter<'a> {
