@@ -68,11 +68,10 @@ use fs::{Dir, File};
 use fs::feature::xattr::{Attribute, FileAttributes};
 use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
-use output::column::Columns;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::{FileName, LinkStyle, Classify};
-use output::table::{Table, Environment, Row as TableRow};
+use output::table::{Table, Environment, Options as TableOptions, Row as TableRow};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -86,13 +85,14 @@ use output::table::{Table, Environment, Row as TableRow};
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug, Clone, Default)]
+#[derive(Debug)]
 pub struct Options {
 
-    /// A Columns object that says which columns should be included in the
-    /// output in the general case. Directories themselves can pick which
-    /// columns are *added* to this list, such as the Git column.
-    pub columns: Option<Columns>,
+    /// Options specific to drawing a table.
+    ///
+    /// Directories themselves can pick which columns are *added* to this
+    /// list, such as the Git column.
+    pub columns: Option<TableOptions>,
 
     /// Whether to show a header line or not.
     pub header: bool,
@@ -139,7 +139,7 @@ impl<'a> Render<'a> {
     pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
         let mut rows = Vec::new();
 
-        if let Some(columns) = self.opts.columns {
+        if let Some(ref columns) = self.opts.columns {
             let env = Environment::load_all();
             let colz = columns.for_dir(self.dir);
             let mut table = Table::new(&colz, &self.colours, &env);

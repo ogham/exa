@@ -8,12 +8,11 @@ use fs::feature::xattr::FileAttributes;
 
 use options::FileFilter;
 use output::cell::TextCell;
-use output::column::Column;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
 use output::file_name::{FileName, LinkStyle, Classify};
-use output::table::{Table, Environment, Row as TableRow};
+use output::table::{Table, Column, Environment, Row as TableRow};
 use output::tree::{TreeParams, TreeDepth};
 
 
@@ -43,7 +42,7 @@ impl<'a> Render<'a> {
     pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
 
         let columns_for_dir = match self.details.columns {
-            Some(cols) => cols.for_dir(self.dir),
+            Some(ref cols) => cols.for_dir(self.dir),
             None => Vec::new(),
         };
 

@@ -4,14 +4,14 @@ use getopts;
 
 use output::Colours;
 use output::{grid, details};
-use output::column::{Columns, TimeTypes, SizeFormat};
+use output::table::{TimeTypes, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
 use options::Misfire;
 use fs::feature::xattr;
 
 
 /// The **view** contains all information about how to format output.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub struct View {
     pub mode: Mode,
     pub colours: Colours,
@@ -31,7 +31,7 @@ impl View {
 
 
 /// The **mode** is the “type” of output.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub enum Mode {
     Grid(grid::Options),
     Details(details::Options),
@@ -54,7 +54,7 @@ impl Mode {
             }
             else {
                 Ok(details::Options {
-                    columns: Some(Columns::deduce(matches)?),
+                    columns: Some(TableOptions::deduce(matches)?),
                     header: matches.opt_present("header"),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 })
@@ -194,9 +194,9 @@ impl TerminalWidth {
 }
 
 
-impl Columns {
-    fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
-        Ok(Columns {
+impl TableOptions {
+    fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
+        Ok(TableOptions {
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),

@@ -23,7 +23,7 @@ pub use self::view::{View, Mode};
 
 /// These **options** represent a parsed, error-checked versions of the
 /// user’s command-line options.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub struct Options {
 
     /// The action to perform when encountering a directory rather than a
@@ -124,8 +124,8 @@ impl Options {
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
-            Mode::Details(details::Options { columns: Some(cols), .. }) |
-            Mode::GridDetails(_, details::Options { columns: Some(cols), .. }) => cols.should_scan_for_git(),
+            Mode::Details(details::Options { columns: Some(ref cols), .. }) |
+            Mode::GridDetails(_, details::Options { columns: Some(ref cols), .. }) => cols.should_scan_for_git(),
             _ => false,
         }
     }
@@ -201,13 +201,13 @@ mod test {
     #[test]
     fn long_across() {
         let opts = Options::getopts(&[ "--long", "--across" ]);
-        assert_eq!(opts, Err(Misfire::Useless("across", true, "long")))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "long"))
     }
 
     #[test]
     fn oneline_across() {
         let opts = Options::getopts(&[ "--oneline", "--across" ]);
-        assert_eq!(opts, Err(Misfire::Useless("across", true, "oneline")))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "oneline"))
     }
 
     #[test]
