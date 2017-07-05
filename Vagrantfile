@@ -320,6 +320,8 @@ Vagrant.configure(2) do |config|
       touch -t #{old} -a "#{test_dir}/dates/plum"
       touch -t #{med} -a "#{test_dir}/dates/pear"
       touch -t #{new} -a "#{test_dir}/dates/peach"
+
+      sudo chown #{user}:#{user} -R "#{test_dir}/dates"
     EOF
 
 

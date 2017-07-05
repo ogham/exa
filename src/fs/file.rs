@@ -282,7 +282,7 @@ impl<'dir> File<'dir> {
     }
 
     pub fn accessed_time(&self) -> f::Time {
-        f::Time(self.metadata.mtime())
+        f::Time(self.metadata.atime())
     }
 
     /// This file's 'type'.
