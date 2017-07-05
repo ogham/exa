@@ -5,8 +5,27 @@ use locale;
 use fs::fields::Time;
 
 
+pub enum TimeFormat {
+    DefaultFormat(DefaultFormat),
+}
+
+impl TimeFormat {
+    pub fn format_local(&self, time: Time) -> String {
+        match *self {
+            TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
+        }
+    }
+
+    pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+        match *self {
+            TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
+        }
+    }
+}
+
+
 #[derive(Debug, Clone)]
-pub struct TimeFormat {
+pub struct DefaultFormat {
 
     /// The year of the current time. This gets used to determine which date
     /// format to use.
@@ -22,36 +41,8 @@ pub struct TimeFormat {
     pub date_and_year: DateFormat<'static>,
 }
 
-impl TimeFormat {
-    fn is_recent(&self, date: LocalDateTime) -> bool {
-        date.year() == self.current_year
-    }
-
-    #[allow(trivial_numeric_casts)]
-    pub fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
-
-        if self.is_recent(date) {
-            self.date_and_time.format(&date, &self.locale)
-        }
-        else {
-            self.date_and_year.format(&date, &self.locale)
-        }
-    }
-
-    #[allow(trivial_numeric_casts)]
-    pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
-
-        if self.is_recent(date) {
-            self.date_and_time.format(&date, &self.locale)
-        }
-        else {
-            self.date_and_year.format(&date, &self.locale)
-        }
-    }
-
-    pub fn deduce() -> TimeFormat {
+impl DefaultFormat {
+    pub fn new() -> DefaultFormat {
         use unicode_width::UnicodeWidthStr;
 
         let locale = locale::Time::load_user_locale()
@@ -74,6 +65,37 @@ impl TimeFormat {
             _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
         };
 
-        TimeFormat { current_year, locale, date_and_time, date_and_year }
+        DefaultFormat { current_year, locale, date_and_time, date_and_year }
+    }
+
+    fn is_recent(&self, date: LocalDateTime) -> bool {
+        date.year() == self.current_year
+    }
+}
+
+impl DefaultFormat {
+
+    #[allow(trivial_numeric_casts)]
+    fn format_local(&self, time: Time) -> String {
+        let date = LocalDateTime::at(time.seconds as i64);
+
+        if self.is_recent(date) {
+            self.date_and_time.format(&date, &self.locale)
+        }
+        else {
+            self.date_and_year.format(&date, &self.locale)
+        }
+    }
+
+    #[allow(trivial_numeric_casts)]
+    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+
+        if self.is_recent(date) {
+            self.date_and_time.format(&date, &self.locale)
+        }
+        else {
+            self.date_and_year.format(&date, &self.locale)
+        }
     }
 }

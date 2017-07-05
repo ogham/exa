@@ -6,7 +6,7 @@ use output::Colours;
 use output::{grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
-use output::time::TimeFormat;
+use output::time::{TimeFormat, DefaultFormat};
 use options::Misfire;
 use fs::feature::xattr;
 
@@ -199,7 +199,7 @@ impl TableOptions {
     fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
         Ok(TableOptions {
             env:         Environment::load_all(),
-            time_format: TimeFormat::deduce(),
+            time_format: TimeFormat::deduce(matches)?,
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),
@@ -232,6 +232,15 @@ impl SizeFormat {
             (false, true )  => Ok(SizeFormat::JustBytes),
             (false, false)  => Ok(SizeFormat::DecimalBytes),
         }
+    }
+}
+
+
+impl TimeFormat {
+
+    /// Determine how time should be formatted in timestamp columns.
+    fn deduce(_matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
+        Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
     }
 }
 
