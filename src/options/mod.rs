@@ -23,7 +23,7 @@ pub use self::view::{View, Mode};
 
 /// These **options** represent a parsed, error-checked versions of the
 /// user’s command-line options.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub struct Options {
 
     /// The action to perform when encountering a directory rather than a
@@ -77,17 +77,18 @@ impl Options {
         opts.optopt ("I", "ignore-glob", "ignore files that match these glob patterns", "GLOB1|GLOB2...");
 
         // Long view options
-        opts.optflag("b", "binary",    "list file sizes with binary prefixes");
-        opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
-        opts.optflag("g", "group",     "list each file's group");
-        opts.optflag("h", "header",    "add a header row to each column");
-        opts.optflag("H", "links",     "list each file's number of hard links");
-        opts.optflag("i", "inode",     "list each file's inode number");
-        opts.optflag("m", "modified",  "use the modified timestamp field");
-        opts.optflag("S", "blocks",    "list each file's number of file system blocks");
-        opts.optopt ("t", "time",      "which timestamp field to show", "WORD");
-        opts.optflag("u", "accessed",  "use the accessed timestamp field");
-        opts.optflag("U", "created",   "use the created timestamp field");
+        opts.optflag("b", "binary",     "list file sizes with binary prefixes");
+        opts.optflag("B", "bytes",      "list file sizes in bytes, without prefixes");
+        opts.optflag("g", "group",      "list each file's group");
+        opts.optflag("h", "header",     "add a header row to each column");
+        opts.optflag("H", "links",      "list each file's number of hard links");
+        opts.optflag("i", "inode",      "list each file's inode number");
+        opts.optflag("m", "modified",   "use the modified timestamp field");
+        opts.optflag("S", "blocks",     "list each file's number of file system blocks");
+        opts.optopt ("t", "time",       "which timestamp field to show", "WORD");
+        opts.optflag("u", "accessed",   "use the accessed timestamp field");
+        opts.optflag("U", "created",    "use the created timestamp field");
+        opts.optopt ("",  "time-style", "how to format timestamp fields", "STYLE");
 
         if cfg!(feature="git") {
             opts.optflag("", "git", "list each file's git status");
@@ -124,8 +125,8 @@ impl Options {
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
-            Mode::Details(details::Options { columns: Some(cols), .. }) |
-            Mode::GridDetails(_, details::Options { columns: Some(cols), .. }) => cols.should_scan_for_git(),
+            Mode::Details(details::Options { table: Some(ref table), .. }) |
+            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.should_scan_for_git(),
             _ => false,
         }
     }
@@ -201,13 +202,13 @@ mod test {
     #[test]
     fn long_across() {
         let opts = Options::getopts(&[ "--long", "--across" ]);
-        assert_eq!(opts, Err(Misfire::Useless("across", true, "long")))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "long"))
     }
 
     #[test]
     fn oneline_across() {
         let opts = Options::getopts(&[ "--oneline", "--across" ]);
-        assert_eq!(opts, Err(Misfire::Useless("across", true, "oneline")))
+        assert_eq!(opts.unwrap_err(), Misfire::Useless("across", true, "oneline"))
     }
 
     #[test]

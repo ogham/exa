@@ -55,8 +55,14 @@ complete -c exa -s 't' -l 'time'  -x -d "Which timestamp field to list" -a "
     created\t'Display created time'
     modified\t'Display modified time'
 "
-complete -c exa -s 'u' -l 'accessed' -d "Use the accessed timestamp field"
-complete -c exa -s 'U' -l 'created'  -d "Use the created timestamp field"
+complete -c exa -s 'u' -l 'accessed'      -d "Use the accessed timestamp field"
+complete -c exa -s 'U' -l 'created'       -d "Use the created timestamp field"
+complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "
+    default\t'Use the default time style'
+    iso\t'Display brief ISO timestamps'
+    long-iso\t'Display longer ISO timestaps, up to the minute'
+    full-iso\t'Display full ISO timestamps, up to the nanosecond'
+"
 
 # Optional extras
 complete -c exa -s 'g' -l 'git'      -d "List each file's Git status, if tracked"

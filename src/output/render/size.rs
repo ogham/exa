@@ -1,7 +1,7 @@
 use fs::fields as f;
-use output::column::SizeFormat;
 use output::cell::{TextCell, DisplayWidth};
 use output::colours::Colours;
+use output::table::SizeFormat;
 use locale;
 
 
@@ -68,8 +68,8 @@ impl f::DeviceIDs {
 #[cfg(test)]
 pub mod test {
     use output::colours::Colours;
-    use output::column::SizeFormat;
     use output::cell::{TextCell, DisplayWidth};
+    use output::table::SizeFormat;
     use fs::fields as f;
 
     use locale;

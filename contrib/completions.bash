@@ -22,6 +22,11 @@ _exa()
             COMPREPLY=( $( compgen -W 'accessed modified created --' -- $cur ) )
             return
             ;;
+
+        --time-style)
+            COMPREPLY=( $( compgen -W 'default iso long-iso full-iso --' -- $cur ) )
+            return
+            ;;
     esac
 
     case "$cur" in

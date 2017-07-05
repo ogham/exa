@@ -29,6 +29,7 @@ __exa() {
         {-m,--modified}"[Use the modified timestamp field]" \
         {-S,--blocks}"[List each file's number of filesystem blocks]" \
         {-t,--time}"[Which time field to show]:(time field):(accessed created modified)" \
+        --time-style"[How to format timestamps]:(time style):(default iso long-iso full-iso)" \
         {-u,--accessed}"[Use the accessed timestamp field]" \
         {-U,--created}"[Use the created timestamp field]" \
         --git"[List each file's Git status, if tracked]" \

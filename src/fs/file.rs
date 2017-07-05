@@ -273,23 +273,35 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// This file’s last modified timestamp.
     pub fn modified_time(&self) -> f::Time {
-        f::Time(self.metadata.mtime())
+        f::Time {
+            seconds:     self.metadata.mtime(),
+            nanoseconds: self.metadata.mtime_nsec()
+        }
     }
 
+    /// This file’s created timestamp.
     pub fn created_time(&self) -> f::Time {
-        f::Time(self.metadata.ctime())
+        f::Time {
+            seconds:     self.metadata.ctime(),
+            nanoseconds: self.metadata.ctime_nsec()
+        }
     }
 
+    /// This file’s last accessed timestamp.
     pub fn accessed_time(&self) -> f::Time {
-        f::Time(self.metadata.mtime())
+        f::Time {
+            seconds:     self.metadata.atime(),
+            nanoseconds: self.metadata.atime_nsec()
+        }
     }
 
-    /// This file's 'type'.
+    /// This file’s ‘type’.
     ///
-    /// This is used in the leftmost column of the permissions column.
-    /// Although the file type can usually be guessed from the colour of the
-    /// file, `ls` puts this character there, so people will expect it.
+    /// This is used a the leftmost character of the permissions column.
+    /// The file type can usually be guessed from the colour of the file, but
+    /// ls puts this character there.
     pub fn type_char(&self) -> f::Type {
         if self.is_file() {
             f::Type::File
@@ -341,7 +353,7 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// Whether this file's extension is any of the strings that get passed in.
+    /// Whether this file’s extension is any of the strings that get passed in.
     ///
     /// This will always return `false` if the file has no extension.
     pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {

@@ -51,10 +51,12 @@ These options are available when running with --long (`-l`):
 - **-U**, **--created**: use the created timestamp field
 - **-@**, **--extended**: list each file's extended attributes and sizes
 - **--git**: list each file's Git status, if tracked
+- **--time-style**: how to format timestamps
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
 - Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter are case-sensitive.
 - Valid time fields are **modified**, **accessed**, and **created**.
+- Valid time styles are **default**, **iso**, **long-iso**, and **full-iso**.
 
 
 ## Installation

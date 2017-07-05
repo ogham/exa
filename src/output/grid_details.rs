@@ -8,12 +8,11 @@ use fs::feature::xattr::FileAttributes;
 
 use options::FileFilter;
 use output::cell::TextCell;
-use output::column::Column;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
 use output::file_name::{FileName, LinkStyle, Classify};
-use output::table::{Table, Environment, Row as TableRow};
+use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
 
 
@@ -42,16 +41,11 @@ impl<'a> Render<'a> {
 
     pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
 
-        let columns_for_dir = match self.details.columns {
-            Some(cols) => cols.for_dir(self.dir),
-            None => Vec::new(),
-        };
-
-        let env = Environment::default();
+        let options = self.details.table.as_ref().expect("Details table options not given!");
 
         let drender = self.clone().details();
 
-        let (first_table, _) = self.make_table(&env, &columns_for_dir, &drender);
+        let (first_table, _) = self.make_table(options, &drender);
 
         let rows = self.files.iter()
                        .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
@@ -61,10 +55,10 @@ impl<'a> Render<'a> {
                              .map(|file| FileName::new(file, LinkStyle::JustFilenames, self.classify, self.colours).paint().promote())
                              .collect::<Vec<TextCell>>();
 
-        let mut last_working_table = self.make_grid(&env, 1, &columns_for_dir, &file_names, rows.clone(), &drender);
+        let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
 
         for column_count in 2.. {
-            let grid = self.make_grid(&env, column_count, &columns_for_dir, &file_names, rows.clone(), &drender);
+            let grid = self.make_grid(column_count, options, &file_names, rows.clone(), &drender);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -82,8 +76,8 @@ impl<'a> Render<'a> {
         Ok(())
     }
 
-    fn make_table<'t>(&'a self, env: &'a Environment, columns_for_dir: &'a [Column], drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
-        let mut table = Table::new(columns_for_dir, self.colours, env);
+    fn make_table<'t>(&'a self, options: &'a TableOptions, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+        let mut table = Table::new(options, self.dir, self.colours);
         let mut rows = Vec::new();
 
         if self.details.header {
@@ -95,11 +89,11 @@ impl<'a> Render<'a> {
         (table, rows)
     }
 
-    fn make_grid(&'a self, env: &'a Environment, column_count: usize, columns_for_dir: &'a [Column], file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
+    fn make_grid(&'a self, column_count: usize, options: &'a TableOptions, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
 
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
-            tables.push(self.make_table(env.clone(), columns_for_dir, drender));
+            tables.push(self.make_table(options, drender));
         }
 
         let mut num_cells = rows.len();

@@ -166,7 +166,11 @@ pub struct DeviceIDs {
 
 
 /// One of a file’s timestamps (created, accessed, or modified).
-pub struct Time(pub time_t);
+#[derive(Copy, Clone)]
+pub struct Time {
+    pub seconds: time_t,
+    pub nanoseconds: time_t,
+}
 
 
 /// A file’s status in a Git repository. Whether a file is in a repository or

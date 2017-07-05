@@ -4,14 +4,15 @@ use getopts;
 
 use output::Colours;
 use output::{grid, details};
-use output::column::{Columns, TimeTypes, SizeFormat};
+use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
+use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
 
 
 /// The **view** contains all information about how to format output.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub struct View {
     pub mode: Mode,
     pub colours: Colours,
@@ -31,7 +32,7 @@ impl View {
 
 
 /// The **mode** is the “type” of output.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Debug)]
 pub enum Mode {
     Grid(grid::Options),
     Details(details::Options),
@@ -54,7 +55,7 @@ impl Mode {
             }
             else {
                 Ok(details::Options {
-                    columns: Some(Columns::deduce(matches)?),
+                    table: Some(TableOptions::deduce(matches)?),
                     header: matches.opt_present("header"),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 })
@@ -94,7 +95,7 @@ impl Mode {
                 }
                 else if matches.opt_present("tree") {
                     let details = details::Options {
-                        columns: None,
+                        table: None,
                         header: false,
                         xattr: false,
                     };
@@ -117,7 +118,7 @@ impl Mode {
 
                 if matches.opt_present("tree") {
                     let details = details::Options {
-                        columns: None,
+                        table: None,
                         header: false,
                         xattr: false,
                     };
@@ -194,9 +195,11 @@ impl TerminalWidth {
 }
 
 
-impl Columns {
-    fn deduce(matches: &getopts::Matches) -> Result<Columns, Misfire> {
-        Ok(Columns {
+impl TableOptions {
+    fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
+        Ok(TableOptions {
+            env:         Environment::load_all(),
+            time_format: TimeFormat::deduce(matches)?,
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),
@@ -228,6 +231,29 @@ impl SizeFormat {
             (true,  false)  => Ok(SizeFormat::BinaryBytes),
             (false, true )  => Ok(SizeFormat::JustBytes),
             (false, false)  => Ok(SizeFormat::DecimalBytes),
+        }
+    }
+}
+
+
+impl TimeFormat {
+
+    /// Determine how time should be formatted in timestamp columns.
+    fn deduce(matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
+        pub use output::time::{DefaultFormat, ISOFormat};
+        const STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
+
+        if let Some(word) = matches.opt_str("time-style") {
+            match &*word {
+                "default"   => Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
+                "iso"       => Ok(TimeFormat::ISOFormat(ISOFormat::new())),
+                "long-iso"  => Ok(TimeFormat::LongISO),
+                "full-iso"  => Ok(TimeFormat::FullISO),
+                otherwise   => Err(Misfire::bad_argument("time-style", otherwise, STYLES)),
+            }
+        }
+        else {
+            Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
         }
     }
 }
