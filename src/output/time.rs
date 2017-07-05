@@ -7,6 +7,7 @@ use fs::fields::Time;
 
 pub enum TimeFormat {
     DefaultFormat(DefaultFormat),
+    ISOFormat(ISOFormat),
     LongISO,
     FullISO,
 }
@@ -15,6 +16,7 @@ impl TimeFormat {
     pub fn format_local(&self, time: Time) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
+            TimeFormat::ISOFormat(ref iso)     => iso.format_local(time),
             TimeFormat::LongISO                => long_local(time),
             TimeFormat::FullISO                => full_local(time),
         }
@@ -23,6 +25,7 @@ impl TimeFormat {
     pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
+            TimeFormat::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
             TimeFormat::LongISO                => long_zoned(time, zone),
             TimeFormat::FullISO                => full_zoned(time, zone),
         }
@@ -140,4 +143,55 @@ fn full_zoned(time: Time, zone: &TimeZone) -> String {
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute(), date.second(), time.nanoseconds,
             offset.hours(), offset.minutes().abs())
+}
+
+
+
+#[derive(Debug, Clone)]
+pub struct ISOFormat {
+
+    /// The year of the current time. This gets used to determine which date
+    /// format to use.
+    pub current_year: i64,
+}
+
+impl ISOFormat {
+    pub fn new() -> Self {
+        let current_year = LocalDateTime::now().year();
+        ISOFormat { current_year }
+    }
+
+    fn is_recent(&self, date: LocalDateTime) -> bool {
+        date.year() == self.current_year
+    }
+
+    #[allow(trivial_numeric_casts)]
+    fn format_local(&self, time: Time) -> String {
+        let date = LocalDateTime::at(time.seconds as i64);
+
+        if self.is_recent(date) {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
+        }
+        else {
+            format!("{:02}-{:02} {:02}:{:02}",
+                    date.month() as usize, date.day(),
+                    date.hour(), date.minute())
+        }
+    }
+
+    #[allow(trivial_numeric_casts)]
+    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+
+        if self.is_recent(date) {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
+        }
+        else {
+            format!("{:02}-{:02} {:02}:{:02}",
+                    date.month() as usize, date.day(),
+                    date.hour(), date.minute())
+        }
+    }
 }
