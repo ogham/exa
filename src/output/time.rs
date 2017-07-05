@@ -7,21 +7,24 @@ use fs::fields::Time;
 
 pub enum TimeFormat {
     DefaultFormat(DefaultFormat),
-    LongISO(LongISO),
+    LongISO,
+    FullISO,
 }
 
 impl TimeFormat {
     pub fn format_local(&self, time: Time) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
-            TimeFormat::LongISO(ref iso)       => iso.format_local(time),
+            TimeFormat::LongISO                => long_local(time),
+            TimeFormat::FullISO                => full_local(time),
         }
     }
 
     pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
-            TimeFormat::LongISO(ref iso)       => iso.format_zoned(time, zone),
+            TimeFormat::LongISO                => long_zoned(time, zone),
+            TimeFormat::FullISO                => full_zoned(time, zone),
         }
     }
 }
@@ -101,20 +104,40 @@ impl DefaultFormat {
 }
 
 
-pub struct LongISO;
+#[allow(trivial_numeric_casts)]
+fn long_local(time: Time) -> String {
+    let date = LocalDateTime::at(time.seconds as i64);
+    format!("{:04}-{:02}-{:02} {:02}:{:02}",
+            date.year(), date.month() as usize, date.day(),
+            date.hour(), date.minute())
+}
 
-impl LongISO {
-    #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
-        format!("{:04}-{:02}-{:02} {:02}:{:02}",
-                date.year(), date.month() as usize, date.day(), date.hour(), date.minute())
-    }
+#[allow(trivial_numeric_casts)]
+fn long_zoned(time: Time, zone: &TimeZone) -> String {
+    let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+    format!("{:04}-{:02}-{:02} {:02}:{:02}",
+            date.year(), date.month() as usize, date.day(),
+            date.hour(), date.minute())
+}
 
-    #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
-        format!("{:04}-{:02}-{:02} {:02}:{:02}",
-                date.year(), date.month() as usize, date.day(), date.hour(), date.minute())
-    }
+
+#[allow(trivial_numeric_casts)]
+fn full_local(time: Time) -> String {
+    let date = LocalDateTime::at(time.seconds as i64);
+    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
+            date.year(), date.month() as usize, date.day(),
+            date.hour(), date.minute(), date.second(), time.nanoseconds)
+}
+
+#[allow(trivial_numeric_casts)]
+fn full_zoned(time: Time, zone: &TimeZone) -> String {
+    use datetime::Offset;
+
+    let local = LocalDateTime::at(time.seconds as i64);
+    let date = zone.to_zoned(local);
+    let offset = Offset::of_seconds(zone.offset(local) as i32).expect("Offset out of range");
+    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
+            date.year(), date.month() as usize, date.day(),
+            date.hour(), date.minute(), date.second(), time.nanoseconds,
+            offset.hours(), offset.minutes().abs())
 }

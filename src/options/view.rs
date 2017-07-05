@@ -240,13 +240,14 @@ impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
     fn deduce(matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
-        pub use output::time::{DefaultFormat, LongISO};
-        const STYLES: &[&str] = &["default", "long-iso"];
+        pub use output::time::{DefaultFormat};
+        const STYLES: &[&str] = &["default", "long-iso", "full-iso"];
 
         if let Some(word) = matches.opt_str("time-style") {
             match &*word {
                 "default"   => Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
-                "long-iso"  => Ok(TimeFormat::LongISO(LongISO)),
+                "long-iso"  => Ok(TimeFormat::LongISO),
+                "full-iso"  => Ok(TimeFormat::FullISO),
                 otherwise   => Err(Misfire::bad_argument("time-style", otherwise, STYLES))
             }
         }
