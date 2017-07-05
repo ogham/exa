@@ -22,6 +22,7 @@ use fs::{File, Dir, fields as f};
 pub struct Options {
     pub env: Environment,
     pub size_format: SizeFormat,
+    pub time_format: TimeFormat,
     pub time_types: TimeTypes,
     pub inode: bool,
     pub links: bool,
@@ -230,9 +231,6 @@ pub struct Environment {
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
 
-    /// Rules for formatting timestamps.
-    time_format: TimeFormat,
-
     /// The computer's current time zone. This gets used to determine how to
     /// offset files' timestamps.
     tz: Option<TimeZone>,
@@ -255,14 +253,12 @@ impl Environment {
             }
         };
 
-        let time_format = TimeFormat::deduce();
-
         let numeric = locale::Numeric::load_user_locale()
                           .unwrap_or_else(|_| locale::Numeric::english());
 
         let users = Mutex::new(UsersCache::new());
 
-        Environment { tz, time_format, numeric, users }
+        Environment { tz, numeric, users }
     }
 }
 
@@ -279,6 +275,7 @@ pub struct Table<'a> {
     colours: &'a Colours,
     env: &'a Environment,
     widths: TableWidths,
+    time_format: &'a TimeFormat,
 }
 
 #[derive(Clone)]
@@ -290,7 +287,7 @@ impl<'a, 'f> Table<'a> {
     pub fn new(options: &'a Options, dir: Option<&'a Dir>, colours: &'a Colours) -> Table<'a> {
         let colz = options.for_dir(dir);
         let widths = TableWidths::zero(colz.len());
-        Table { columns: colz, colours, env: &options.env, widths }
+        Table { columns: colz, colours, env: &options.env, widths, time_format: &options.time_format }
     }
 
     pub fn widths(&self) -> &TableWidths {
@@ -338,9 +335,9 @@ impl<'a, 'f> Table<'a> {
             Column::Group          => file.group().render(&self.colours, &*self.env.lock_users()),
             Column::GitStatus      => file.git_status().render(&self.colours),
 
-            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.env.time_format),
-            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.env.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.env.time_format),
+            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.time_format),
+            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.time_format),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.time_format),
         }
     }
 

@@ -6,6 +6,7 @@ use output::Colours;
 use output::{grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
+use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
 
@@ -198,6 +199,7 @@ impl TableOptions {
     fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
         Ok(TableOptions {
             env:         Environment::load_all(),
+            time_format: TimeFormat::deduce(),
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),
