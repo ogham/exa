@@ -2,7 +2,7 @@ use datetime::{LocalDateTime, TimeZone, DatePiece};
 use datetime::fmt::DateFormat;
 use locale;
 
-use fs::fields::time_t;
+use fs::fields::Time;
 
 
 #[derive(Debug, Clone)]
@@ -28,8 +28,8 @@ impl TimeFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    pub fn format_local(&self, time: time_t) -> String {
-        let date = LocalDateTime::at(time as i64);
+    pub fn format_local(&self, time: Time) -> String {
+        let date = LocalDateTime::at(time.seconds as i64);
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
@@ -40,8 +40,8 @@ impl TimeFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    pub fn format_zoned(&self, time: time_t, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time as i64));
+    pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
