@@ -40,7 +40,8 @@ LONG VIEW OPTIONS
   -S, --blocks       show number of file system blocks
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
-  -U, --created      use the created timestamp field"##;
+  -U, --created      use the created timestamp field
+  --time-style       how to format timestamps (default, iso, long-iso, full-iso)"##;
 
 static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked"##;
 static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
