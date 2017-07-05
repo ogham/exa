@@ -41,10 +41,8 @@ impl Environment {
     pub fn lock_users(&self) -> MutexGuard<UsersCache> {
         self.users.lock().unwrap()
     }
-}
 
-impl Default for Environment {
-    fn default() -> Self {
+    pub fn load_all() -> Self {
         let tz = match determine_time_zone() {
             Ok(t) => Some(t),
             Err(ref e) => {

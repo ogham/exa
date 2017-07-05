@@ -47,7 +47,7 @@ impl<'a> Render<'a> {
             None => Vec::new(),
         };
 
-        let env = Environment::default();
+        let env = Environment::load_all();
 
         let drender = self.clone().details();
 

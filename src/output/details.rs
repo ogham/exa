@@ -140,7 +140,7 @@ impl<'a> Render<'a> {
         let mut rows = Vec::new();
 
         if let Some(columns) = self.opts.columns {
-            let env = Environment::default();
+            let env = Environment::load_all();
             let colz = columns.for_dir(self.dir);
             let mut table = Table::new(&colz, &self.colours, &env);
 
