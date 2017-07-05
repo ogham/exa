@@ -77,17 +77,18 @@ impl Options {
         opts.optopt ("I", "ignore-glob", "ignore files that match these glob patterns", "GLOB1|GLOB2...");
 
         // Long view options
-        opts.optflag("b", "binary",    "list file sizes with binary prefixes");
-        opts.optflag("B", "bytes",     "list file sizes in bytes, without prefixes");
-        opts.optflag("g", "group",     "list each file's group");
-        opts.optflag("h", "header",    "add a header row to each column");
-        opts.optflag("H", "links",     "list each file's number of hard links");
-        opts.optflag("i", "inode",     "list each file's inode number");
-        opts.optflag("m", "modified",  "use the modified timestamp field");
-        opts.optflag("S", "blocks",    "list each file's number of file system blocks");
-        opts.optopt ("t", "time",      "which timestamp field to show", "WORD");
-        opts.optflag("u", "accessed",  "use the accessed timestamp field");
-        opts.optflag("U", "created",   "use the created timestamp field");
+        opts.optflag("b", "binary",     "list file sizes with binary prefixes");
+        opts.optflag("B", "bytes",      "list file sizes in bytes, without prefixes");
+        opts.optflag("g", "group",      "list each file's group");
+        opts.optflag("h", "header",     "add a header row to each column");
+        opts.optflag("H", "links",      "list each file's number of hard links");
+        opts.optflag("i", "inode",      "list each file's inode number");
+        opts.optflag("m", "modified",   "use the modified timestamp field");
+        opts.optflag("S", "blocks",     "list each file's number of file system blocks");
+        opts.optopt ("t", "time",       "which timestamp field to show", "WORD");
+        opts.optflag("u", "accessed",   "use the accessed timestamp field");
+        opts.optflag("U", "created",    "use the created timestamp field");
+        opts.optopt ("",  "time-style", "how to format timestamp fields", "STYLE");
 
         if cfg!(feature="git") {
             opts.optflag("", "git", "list each file's git status");

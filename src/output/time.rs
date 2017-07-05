@@ -1,4 +1,4 @@
-use datetime::{LocalDateTime, TimeZone, DatePiece};
+use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 use locale;
 
@@ -7,18 +7,21 @@ use fs::fields::Time;
 
 pub enum TimeFormat {
     DefaultFormat(DefaultFormat),
+    LongISO(LongISO),
 }
 
 impl TimeFormat {
     pub fn format_local(&self, time: Time) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
+            TimeFormat::LongISO(ref iso)       => iso.format_local(time),
         }
     }
 
     pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
+            TimeFormat::LongISO(ref iso)       => iso.format_zoned(time, zone),
         }
     }
 }
@@ -71,9 +74,6 @@ impl DefaultFormat {
     fn is_recent(&self, date: LocalDateTime) -> bool {
         date.year() == self.current_year
     }
-}
-
-impl DefaultFormat {
 
     #[allow(trivial_numeric_casts)]
     fn format_local(&self, time: Time) -> String {
@@ -97,5 +97,24 @@ impl DefaultFormat {
         else {
             self.date_and_year.format(&date, &self.locale)
         }
+    }
+}
+
+
+pub struct LongISO;
+
+impl LongISO {
+    #[allow(trivial_numeric_casts)]
+    fn format_local(&self, time: Time) -> String {
+        let date = LocalDateTime::at(time.seconds as i64);
+        format!("{:04}-{:02}-{:02} {:02}:{:02}",
+                date.year(), date.month() as usize, date.day(), date.hour(), date.minute())
+    }
+
+    #[allow(trivial_numeric_casts)]
+    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+        format!("{:04}-{:02}-{:02} {:02}:{:02}",
+                date.year(), date.month() as usize, date.day(), date.hour(), date.minute())
     }
 }

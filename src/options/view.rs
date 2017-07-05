@@ -6,7 +6,7 @@ use output::Colours;
 use output::{grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
-use output::time::{TimeFormat, DefaultFormat};
+use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
 
@@ -239,8 +239,20 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce(_matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
-        Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
+    fn deduce(matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
+        pub use output::time::{DefaultFormat, LongISO};
+        const STYLES: &[&str] = &["default", "long-iso"];
+
+        if let Some(word) = matches.opt_str("time-style") {
+            match &*word {
+                "default"   => Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
+                "long-iso"  => Ok(TimeFormat::LongISO(LongISO)),
+                otherwise   => Err(Misfire::bad_argument("time-style", otherwise, STYLES))
+            }
+        }
+        else {
+            Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
+        }
     }
 }
 
