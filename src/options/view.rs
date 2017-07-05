@@ -4,7 +4,7 @@ use getopts;
 
 use output::Colours;
 use output::{grid, details};
-use output::table::{TimeTypes, SizeFormat, Options as TableOptions};
+use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::Classify;
 use options::Misfire;
 use fs::feature::xattr;
@@ -54,7 +54,7 @@ impl Mode {
             }
             else {
                 Ok(details::Options {
-                    columns: Some(TableOptions::deduce(matches)?),
+                    table: Some(TableOptions::deduce(matches)?),
                     header: matches.opt_present("header"),
                     xattr: xattr::ENABLED && matches.opt_present("extended"),
                 })
@@ -94,7 +94,7 @@ impl Mode {
                 }
                 else if matches.opt_present("tree") {
                     let details = details::Options {
-                        columns: None,
+                        table: None,
                         header: false,
                         xattr: false,
                     };
@@ -117,7 +117,7 @@ impl Mode {
 
                 if matches.opt_present("tree") {
                     let details = details::Options {
-                        columns: None,
+                        table: None,
                         header: false,
                         xattr: false,
                     };
@@ -197,6 +197,7 @@ impl TerminalWidth {
 impl TableOptions {
     fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
         Ok(TableOptions {
+            env:         Environment::load_all(),
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
             inode:  matches.opt_present("inode"),

@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::fmt;
 use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
@@ -18,8 +19,8 @@ use fs::{File, Dir, fields as f};
 
 
 /// Options for displaying a table.
-#[derive(Debug)]
 pub struct Options {
+    pub env: Environment,
     pub size_format: SizeFormat,
     pub time_types: TimeTypes,
     pub inode: bool,
@@ -27,6 +28,14 @@ pub struct Options {
     pub blocks: bool,
     pub group: bool,
     pub git: bool
+}
+
+impl fmt::Debug for Options {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        // I had to make other types derive Debug,
+        // and Mutex<UsersCache> is not that!
+        writeln!(f, "<table options>")
+    }
 }
 
 impl Options {
@@ -266,7 +275,7 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 
 
 pub struct Table<'a> {
-    columns: &'a [Column],
+    columns: Vec<Column>,
     colours: &'a Colours,
     env: &'a Environment,
     widths: TableWidths,
@@ -278,9 +287,10 @@ pub struct Row {
 }
 
 impl<'a, 'f> Table<'a> {
-    pub fn new(columns: &'a [Column], colours: &'a Colours, env: &'a Environment) -> Table<'a> {
-        let widths = TableWidths::zero(columns.len());
-        Table { columns, colours, env, widths }
+    pub fn new(options: &'a Options, dir: Option<&'a Dir>, colours: &'a Colours) -> Table<'a> {
+        let colz = options.for_dir(dir);
+        let widths = TableWidths::zero(colz.len());
+        Table { columns: colz, colours, env: &options.env, widths }
     }
 
     pub fn widths(&self) -> &TableWidths {

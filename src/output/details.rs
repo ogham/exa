@@ -71,7 +71,7 @@ use output::colours::Colours;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::{FileName, LinkStyle, Classify};
-use output::table::{Table, Environment, Options as TableOptions, Row as TableRow};
+use output::table::{Table, Options as TableOptions, Row as TableRow};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -92,7 +92,7 @@ pub struct Options {
     ///
     /// Directories themselves can pick which columns are *added* to this
     /// list, such as the Git column.
-    pub columns: Option<TableOptions>,
+    pub table: Option<TableOptions>,
 
     /// Whether to show a header line or not.
     pub header: bool,
@@ -139,10 +139,8 @@ impl<'a> Render<'a> {
     pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
         let mut rows = Vec::new();
 
-        if let Some(ref columns) = self.opts.columns {
-            let env = Environment::load_all();
-            let colz = columns.for_dir(self.dir);
-            let mut table = Table::new(&colz, &self.colours, &env);
+        if let Some(ref table) = self.opts.table {
+            let mut table = Table::new(&table, self.dir, &self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
