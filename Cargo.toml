@@ -3,6 +3,16 @@ name = "exa"
 version = "0.7.0"
 authors = [ "ogham@bsago.me" ]
 
+description = "A modern replacement for ls"
+homepage = "https://the.exa.website/"
+repository = "https://github.com/ogham/exa"
+documentation = "https://github.com/ogham/exa"
+
+readme = "README.md"
+categories = ["command-line-utilities"]
+keywords = ["ls", "files", "command-line"]
+license = "MIT"
+
 [[bin]]
 name = "exa"
 path = "src/bin/main.rs"
@@ -25,7 +35,7 @@ number_prefix = "0.2.3"
 scoped_threadpool = "0.1.*"
 term_grid = "0.1.2"
 unicode-width = "0.1.4"
-users = "0.5.1"
+users = "0.5.2"
 
 [features]
 default = [ "git" ]
