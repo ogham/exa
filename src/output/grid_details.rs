@@ -11,7 +11,7 @@ use output::cell::TextCell;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
-use output::file_name::{FileName, LinkStyle, Classify};
+use output::file_name::{FileStyle, LinkStyle};
 use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
 
@@ -20,7 +20,7 @@ pub struct Render<'a> {
     pub dir: Option<&'a Dir>,
     pub files: Vec<File<'a>>,
     pub colours: &'a Colours,
-    pub classify: Classify,
+    pub style: &'a FileStyle,
     pub grid: &'a GridOptions,
     pub details: &'a DetailsOptions,
     pub filter: &'a FileFilter,
@@ -32,7 +32,7 @@ impl<'a> Render<'a> {
             dir: self.dir.clone(),
             files: Vec::new(),
             colours: self.colours,
-            classify: self.classify,
+            style: self.style,
             opts: self.details,
             recurse: None,
             filter: self.filter,
@@ -52,7 +52,7 @@ impl<'a> Render<'a> {
                        .collect::<Vec<TableRow>>();
 
         let file_names = self.files.iter()
-                             .map(|file| FileName::new(file, LinkStyle::JustFilenames, self.classify, self.colours).paint().promote())
+                             .map(|file| self.style.for_file(file, LinkStyle::JustFilenames, self.colours).paint().promote())
                              .collect::<Vec<TextCell>>();
 
         let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);

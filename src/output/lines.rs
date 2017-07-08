@@ -4,7 +4,7 @@ use ansi_term::ANSIStrings;
 
 use fs::File;
 
-use output::file_name::{FileName, LinkStyle, Classify};
+use output::file_name::{FileName, FileStyle, LinkStyle};
 use super::colours::Colours;
 
 
@@ -12,7 +12,7 @@ use super::colours::Colours;
 pub struct Render<'a> {
     pub files: Vec<File<'a>>,
     pub colours: &'a Colours,
-    pub classify: Classify,
+    pub style: &'a FileStyle,
 }
 
 impl<'a> Render<'a> {
@@ -26,6 +26,6 @@ impl<'a> Render<'a> {
     }
 
     fn render_file<'f>(&self, file: &'f File<'a>) -> FileName<'f, 'a> {
-        FileName::new(file, LinkStyle::FullLinkPaths, self.classify, self.colours)
+        self.style.for_file(file, LinkStyle::FullLinkPaths, self.colours)
     }
 }

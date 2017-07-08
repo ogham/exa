@@ -5,7 +5,7 @@ use getopts;
 use output::Colours;
 use output::{grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
-use output::file_name::Classify;
+use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
@@ -16,17 +16,17 @@ use fs::feature::xattr;
 pub struct View {
     pub mode: Mode,
     pub colours: Colours,
-    pub classify: Classify,
+    pub style: FileStyle,
 }
 
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce(matches: &getopts::Matches) -> Result<View, Misfire> {
-        let mode     = Mode::deduce(matches)?;
-        let colours  = Colours::deduce(matches)?;
-        let classify = Classify::deduce(matches);
-        Ok(View { mode, colours, classify })
+        let mode = Mode::deduce(matches)?;
+        let colours = Colours::deduce(matches)?;
+        let style = FileStyle::deduce(matches);
+        Ok(View { mode, colours, style })
     }
 }
 
@@ -369,6 +369,14 @@ impl Colours {
 }
 
 
+
+impl FileStyle {
+    fn deduce(matches: &getopts::Matches) -> FileStyle {
+        let classify = Classify::deduce(matches);
+        FileStyle { classify }
+    }
+
+}
 
 impl Classify {
     fn deduce(matches: &getopts::Matches) -> Classify {

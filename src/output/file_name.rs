@@ -8,6 +8,62 @@ use output::escape;
 use output::cell::TextCellContents;
 
 
+/// Basically a file name factory.
+#[derive(PartialEq, Debug)]
+pub struct FileStyle {
+
+    /// Whether to append file class characters to file names.
+    pub classify: Classify,
+}
+
+impl FileStyle {
+
+    /// Create a new `FileName` that prints the given file’s name, painting it
+    /// with the remaining arguments.
+    pub fn for_file<'a, 'dir>(&self, file: &'a File<'dir>, link_style: LinkStyle, colours: &'a Colours) -> FileName<'a, 'dir> {
+        let target = if file.is_link() { Some(file.link_target()) }
+                                  else { None };
+        FileName { file, colours, target, link_style, classify: self.classify }
+    }
+}
+
+
+/// When displaying a file name, there needs to be some way to handle broken
+/// links, depending on how long the resulting Cell can be.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum LinkStyle {
+
+    /// Just display the file names, but colour them differently if they’re
+    /// a broken link or can’t be followed.
+    JustFilenames,
+
+    /// Display all files in their usual style, but follow each link with an
+    /// arrow pointing to their path, colouring the path differently if it’s
+    /// a broken link, and doing nothing if it can’t be followed.
+    FullLinkPaths,
+}
+
+
+/// Whether to append file class characters to the file names.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum Classify {
+
+    /// Just display the file names, without any characters.
+    JustFilenames,
+
+    /// Add a character after the file name depending on what class of file
+    /// it is.
+    AddFileIndicators,
+}
+
+impl Default for Classify {
+    fn default() -> Classify {
+        Classify::JustFilenames
+    }
+}
+
+
+
 /// A **file name** holds all the information necessary to display the name
 /// of the given file. This is used in all of the views.
 pub struct FileName<'a, 'dir: 'a> {
@@ -30,15 +86,6 @@ pub struct FileName<'a, 'dir: 'a> {
 
 
 impl<'a, 'dir> FileName<'a, 'dir> {
-
-    /// Create a new `FileName` that prints the given file’s name, painting it
-    /// with the remaining arguments.
-    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, classify: Classify, colours: &'a Colours) -> FileName<'a, 'dir> {
-        let target = if file.is_link() { Some(file.link_target()) }
-                                                      else { None };
-        FileName { file, colours, target, link_style, classify }
-    }
-
 
     /// Paints the name of the file using the colours, resulting in a vector
     /// of coloured cells that can be printed to the terminal.
@@ -73,7 +120,14 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
+                        let target = FileName {
+                            file: target,
+                            colours: self.colours,
+                            target: None,
+                            link_style: LinkStyle::FullLinkPaths,
+                            classify: Classify::JustFilenames,
+                        };
+
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
@@ -193,40 +247,5 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             f if f.is_compiled()         => self.colours.filetypes.compiled,
             _                            => self.colours.filetypes.normal,
         }
-    }
-}
-
-
-/// When displaying a file name, there needs to be some way to handle broken
-/// links, depending on how long the resulting Cell can be.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum LinkStyle {
-
-    /// Just display the file names, but colour them differently if they’re
-    /// a broken link or can’t be followed.
-    JustFilenames,
-
-    /// Display all files in their usual style, but follow each link with an
-    /// arrow pointing to their path, colouring the path differently if it’s
-    /// a broken link, and doing nothing if it can’t be followed.
-    FullLinkPaths,
-}
-
-
-/// Whether to append file class characters to the file names.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum Classify {
-
-    /// Just display the file names, without any characters.
-    JustFilenames,
-
-    /// Add a character after the file name depending on what class of file
-    /// it is.
-    AddFileIndicators,
-}
-
-impl Default for Classify {
-    fn default() -> Classify {
-        Classify::JustFilenames
     }
 }
