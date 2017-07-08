@@ -20,10 +20,14 @@ impl FileStyle {
 
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
-    pub fn for_file<'a, 'dir>(&self, file: &'a File<'dir>, link_style: LinkStyle, colours: &'a Colours) -> FileName<'a, 'dir> {
-        let target = if file.is_link() { Some(file.link_target()) }
-                                  else { None };
-        FileName { file, colours, target, link_style, classify: self.classify }
+    pub fn for_file<'a, 'dir>(&self, file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+        FileName {
+            file, colours,
+            link_style: LinkStyle::JustFilenames,
+            classify:   self.classify,
+            target:     if file.is_link() { Some(file.link_target()) }
+                                     else { None }
+        }
     }
 }
 
@@ -31,7 +35,7 @@ impl FileStyle {
 /// When displaying a file name, there needs to be some way to handle broken
 /// links, depending on how long the resulting Cell can be.
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub enum LinkStyle {
+enum LinkStyle {
 
     /// Just display the file names, but colour them differently if they’re
     /// a broken link or can’t be followed.
@@ -86,6 +90,13 @@ pub struct FileName<'a, 'dir: 'a> {
 
 
 impl<'a, 'dir> FileName<'a, 'dir> {
+
+    /// Sets the flag on this file name to display link targets with an
+    /// arrow followed by their path.
+    pub fn with_link_paths(mut self) -> Self {
+        self.link_style = LinkStyle::FullLinkPaths;
+        self
+    }
 
     /// Paints the name of the file using the colours, resulting in a vector
     /// of coloured cells that can be printed to the terminal.

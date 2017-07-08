@@ -70,7 +70,7 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
-use output::file_name::{FileStyle, LinkStyle};
+use output::file_name::FileStyle;
 use output::table::{Table, Options as TableOptions, Row as TableRow};
 
 
@@ -233,7 +233,9 @@ impl<'a> Render<'a> {
             let row = Row {
                 tree:   tree_params,
                 cells:  egg.table_row,
-                name:   self.style.for_file(&egg.file, LinkStyle::FullLinkPaths, self.colours).paint().promote(),
+                name:   self.style.for_file(&egg.file, self.colours)
+                                  .with_link_paths()
+                                  .paint().promote(),
             };
 
             rows.push(row);

@@ -4,7 +4,7 @@ use ansi_term::ANSIStrings;
 
 use fs::File;
 
-use output::file_name::{FileName, FileStyle, LinkStyle};
+use output::file_name::{FileName, FileStyle};
 use super::colours::Colours;
 
 
@@ -26,6 +26,6 @@ impl<'a> Render<'a> {
     }
 
     fn render_file<'f>(&self, file: &'f File<'a>) -> FileName<'f, 'a> {
-        self.style.for_file(file, LinkStyle::FullLinkPaths, self.colours)
+        self.style.for_file(file, self.colours).with_link_paths()
     }
 }

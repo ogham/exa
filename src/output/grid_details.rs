@@ -11,7 +11,7 @@ use output::cell::TextCell;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
-use output::file_name::{FileStyle, LinkStyle};
+use output::file_name::FileStyle;
 use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
 
@@ -52,7 +52,7 @@ impl<'a> Render<'a> {
                        .collect::<Vec<TableRow>>();
 
         let file_names = self.files.iter()
-                             .map(|file| self.style.for_file(file, LinkStyle::JustFilenames, self.colours).paint().promote())
+                             .map(|file| self.style.for_file(file, self.colours).paint().promote())
                              .collect::<Vec<TextCell>>();
 
         let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
