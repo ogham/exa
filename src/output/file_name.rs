@@ -3,6 +3,7 @@ use std::path::Path;
 use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
+use info::filetype::FileExtensions;
 use output::Colours;
 use output::escape;
 use output::cell::TextCellContents;
@@ -23,6 +24,7 @@ impl FileStyle {
     pub fn for_file<'a, 'dir>(&self, file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
         FileName {
             file, colours,
+            exts: FileExtensions,
             link_style: LinkStyle::JustFilenames,
             classify:   self.classify,
             target:     if file.is_link() { Some(file.link_target()) }
@@ -86,6 +88,9 @@ pub struct FileName<'a, 'dir: 'a> {
 
     /// Whether to append file class characters to file names.
     classify: Classify,
+
+    /// Mapping of file extensions to colours, to highlight regular files.
+    exts: FileExtensions,
 }
 
 
@@ -137,6 +142,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                             target: None,
                             link_style: LinkStyle::FullLinkPaths,
                             classify: Classify::JustFilenames,
+                            exts: FileExtensions,
                         };
 
                         for bit in target.coloured_file_name() {
@@ -246,17 +252,18 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                | f.is_block_device()     => self.colours.filetypes.device,
             f if f.is_socket()           => self.colours.filetypes.socket,
             f if !f.is_file()            => self.colours.filetypes.special,
-            f if f.is_immediate()        => self.colours.filetypes.immediate,
-            f if f.is_image()            => self.colours.filetypes.image,
-            f if f.is_video()            => self.colours.filetypes.video,
-            f if f.is_music()            => self.colours.filetypes.music,
-            f if f.is_lossless()         => self.colours.filetypes.lossless,
-            f if f.is_crypto()           => self.colours.filetypes.crypto,
-            f if f.is_document()         => self.colours.filetypes.document,
-            f if f.is_compressed()       => self.colours.filetypes.compressed,
-            f if f.is_temp()             => self.colours.filetypes.temp,
-            f if f.is_compiled()         => self.colours.filetypes.compiled,
-            _                            => self.colours.filetypes.normal,
+
+            f if self.exts.is_immediate(f)   => self.colours.filetypes.immediate,
+            f if self.exts.is_image(f)       => self.colours.filetypes.image,
+            f if self.exts.is_video(f)       => self.colours.filetypes.video,
+            f if self.exts.is_music(f)       => self.colours.filetypes.music,
+            f if self.exts.is_lossless(f)    => self.colours.filetypes.lossless,
+            f if self.exts.is_crypto(f)      => self.colours.filetypes.crypto,
+            f if self.exts.is_document(f)    => self.colours.filetypes.document,
+            f if self.exts.is_compressed(f)  => self.colours.filetypes.compressed,
+            f if self.exts.is_temp(f)        => self.colours.filetypes.temp,
+            f if self.exts.is_compiled(f)    => self.colours.filetypes.compiled,
+            _                                => self.colours.filetypes.normal,
         }
     }
 }
