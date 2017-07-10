@@ -10,22 +10,25 @@ use output::cell::TextCellContents;
 
 
 /// Basically a file name factory.
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub struct FileStyle {
 
     /// Whether to append file class characters to file names.
     pub classify: Classify,
+
+    /// Mapping of file extensions to colours, to highlight regular files.
+    pub exts: FileExtensions,
 }
 
 impl FileStyle {
 
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
-    pub fn for_file<'a, 'dir>(&self, file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+    pub fn for_file<'a, 'dir>(&'a self, file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
         FileName {
             file, colours,
-            exts: FileExtensions,
             link_style: LinkStyle::JustFilenames,
+            exts:       &self.exts,
             classify:   self.classify,
             target:     if file.is_link() { Some(file.link_target()) }
                                      else { None }
@@ -90,7 +93,7 @@ pub struct FileName<'a, 'dir: 'a> {
     classify: Classify,
 
     /// Mapping of file extensions to colours, to highlight regular files.
-    exts: FileExtensions,
+    exts: &'a FileExtensions,
 }
 
 
@@ -142,7 +145,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                             target: None,
                             link_style: LinkStyle::FullLinkPaths,
                             classify: Classify::JustFilenames,
-                            exts: FileExtensions,
+                            exts: self.exts,
                         };
 
                         for bit in target.coloured_file_name() {

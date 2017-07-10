@@ -7,6 +7,7 @@
 use fs::File;
 
 
+#[derive(Debug)]
 pub struct FileExtensions;
 
 impl FileExtensions {

@@ -2,6 +2,7 @@ use std::env::var_os;
 
 use getopts;
 
+use info::filetype::FileExtensions;
 use output::Colours;
 use output::{grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
@@ -373,7 +374,8 @@ impl Colours {
 impl FileStyle {
     fn deduce(matches: &getopts::Matches) -> FileStyle {
         let classify = Classify::deduce(matches);
-        FileStyle { classify }
+        let exts = FileExtensions;
+        FileStyle { classify, exts }
     }
 
 }
