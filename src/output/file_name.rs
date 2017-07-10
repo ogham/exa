@@ -3,9 +3,74 @@ use std::path::Path;
 use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
+use info::filetype::FileExtensions;
 use output::Colours;
 use output::escape;
 use output::cell::TextCellContents;
+
+
+/// Basically a file name factory.
+#[derive(Debug)]
+pub struct FileStyle {
+
+    /// Whether to append file class characters to file names.
+    pub classify: Classify,
+
+    /// Mapping of file extensions to colours, to highlight regular files.
+    pub exts: FileExtensions,
+}
+
+impl FileStyle {
+
+    /// Create a new `FileName` that prints the given file’s name, painting it
+    /// with the remaining arguments.
+    pub fn for_file<'a, 'dir>(&'a self, file: &'a File<'dir>, colours: &'a Colours) -> FileName<'a, 'dir> {
+        FileName {
+            file, colours,
+            link_style: LinkStyle::JustFilenames,
+            exts:       &self.exts,
+            classify:   self.classify,
+            target:     if file.is_link() { Some(file.link_target()) }
+                                     else { None }
+        }
+    }
+}
+
+
+/// When displaying a file name, there needs to be some way to handle broken
+/// links, depending on how long the resulting Cell can be.
+#[derive(PartialEq, Debug, Copy, Clone)]
+enum LinkStyle {
+
+    /// Just display the file names, but colour them differently if they’re
+    /// a broken link or can’t be followed.
+    JustFilenames,
+
+    /// Display all files in their usual style, but follow each link with an
+    /// arrow pointing to their path, colouring the path differently if it’s
+    /// a broken link, and doing nothing if it can’t be followed.
+    FullLinkPaths,
+}
+
+
+/// Whether to append file class characters to the file names.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum Classify {
+
+    /// Just display the file names, without any characters.
+    JustFilenames,
+
+    /// Add a character after the file name depending on what class of file
+    /// it is.
+    AddFileIndicators,
+}
+
+impl Default for Classify {
+    fn default() -> Classify {
+        Classify::JustFilenames
+    }
+}
+
 
 
 /// A **file name** holds all the information necessary to display the name
@@ -26,19 +91,20 @@ pub struct FileName<'a, 'dir: 'a> {
 
     /// Whether to append file class characters to file names.
     classify: Classify,
+
+    /// Mapping of file extensions to colours, to highlight regular files.
+    exts: &'a FileExtensions,
 }
 
 
 impl<'a, 'dir> FileName<'a, 'dir> {
 
-    /// Create a new `FileName` that prints the given file’s name, painting it
-    /// with the remaining arguments.
-    pub fn new(file: &'a File<'dir>, link_style: LinkStyle, classify: Classify, colours: &'a Colours) -> FileName<'a, 'dir> {
-        let target = if file.is_link() { Some(file.link_target()) }
-                                                      else { None };
-        FileName { file, colours, target, link_style, classify }
+    /// Sets the flag on this file name to display link targets with an
+    /// arrow followed by their path.
+    pub fn with_link_paths(mut self) -> Self {
+        self.link_style = LinkStyle::FullLinkPaths;
+        self
     }
-
 
     /// Paints the name of the file using the colours, resulting in a vector
     /// of coloured cells that can be printed to the terminal.
@@ -73,7 +139,15 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                     }
 
                     if !target.name.is_empty() {
-                        let target = FileName::new(target, LinkStyle::FullLinkPaths, Classify::JustFilenames, self.colours);
+                        let target = FileName {
+                            file: target,
+                            colours: self.colours,
+                            target: None,
+                            link_style: LinkStyle::FullLinkPaths,
+                            classify: Classify::JustFilenames,
+                            exts: self.exts,
+                        };
+
                         for bit in target.coloured_file_name() {
                             bits.push(bit);
                         }
@@ -181,52 +255,18 @@ impl<'a, 'dir> FileName<'a, 'dir> {
                | f.is_block_device()     => self.colours.filetypes.device,
             f if f.is_socket()           => self.colours.filetypes.socket,
             f if !f.is_file()            => self.colours.filetypes.special,
-            f if f.is_immediate()        => self.colours.filetypes.immediate,
-            f if f.is_image()            => self.colours.filetypes.image,
-            f if f.is_video()            => self.colours.filetypes.video,
-            f if f.is_music()            => self.colours.filetypes.music,
-            f if f.is_lossless()         => self.colours.filetypes.lossless,
-            f if f.is_crypto()           => self.colours.filetypes.crypto,
-            f if f.is_document()         => self.colours.filetypes.document,
-            f if f.is_compressed()       => self.colours.filetypes.compressed,
-            f if f.is_temp()             => self.colours.filetypes.temp,
-            f if f.is_compiled()         => self.colours.filetypes.compiled,
-            _                            => self.colours.filetypes.normal,
+
+            f if self.exts.is_immediate(f)   => self.colours.filetypes.immediate,
+            f if self.exts.is_image(f)       => self.colours.filetypes.image,
+            f if self.exts.is_video(f)       => self.colours.filetypes.video,
+            f if self.exts.is_music(f)       => self.colours.filetypes.music,
+            f if self.exts.is_lossless(f)    => self.colours.filetypes.lossless,
+            f if self.exts.is_crypto(f)      => self.colours.filetypes.crypto,
+            f if self.exts.is_document(f)    => self.colours.filetypes.document,
+            f if self.exts.is_compressed(f)  => self.colours.filetypes.compressed,
+            f if self.exts.is_temp(f)        => self.colours.filetypes.temp,
+            f if self.exts.is_compiled(f)    => self.colours.filetypes.compiled,
+            _                                => self.colours.filetypes.normal,
         }
-    }
-}
-
-
-/// When displaying a file name, there needs to be some way to handle broken
-/// links, depending on how long the resulting Cell can be.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum LinkStyle {
-
-    /// Just display the file names, but colour them differently if they’re
-    /// a broken link or can’t be followed.
-    JustFilenames,
-
-    /// Display all files in their usual style, but follow each link with an
-    /// arrow pointing to their path, colouring the path differently if it’s
-    /// a broken link, and doing nothing if it can’t be followed.
-    FullLinkPaths,
-}
-
-
-/// Whether to append file class characters to the file names.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum Classify {
-
-    /// Just display the file names, without any characters.
-    JustFilenames,
-
-    /// Add a character after the file name depending on what class of file
-    /// it is.
-    AddFileIndicators,
-}
-
-impl Default for Classify {
-    fn default() -> Classify {
-        Classify::JustFilenames
     }
 }

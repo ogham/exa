@@ -70,7 +70,7 @@ use options::{FileFilter, RecurseOptions};
 use output::colours::Colours;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
-use output::file_name::{FileName, LinkStyle, Classify};
+use output::file_name::FileStyle;
 use output::table::{Table, Options as TableOptions, Row as TableRow};
 
 
@@ -107,7 +107,7 @@ pub struct Render<'a> {
     pub dir: Option<&'a Dir>,
     pub files: Vec<File<'a>>,
     pub colours: &'a Colours,
-    pub classify: Classify,
+    pub style: &'a FileStyle,
     pub opts: &'a Options,
 
     /// Whether to recurse through directories with a tree view, and if so,
@@ -233,7 +233,9 @@ impl<'a> Render<'a> {
             let row = Row {
                 tree:   tree_params,
                 cells:  egg.table_row,
-                name:   FileName::new(&egg.file, LinkStyle::FullLinkPaths, self.classify, self.colours).paint().promote(),
+                name:   self.style.for_file(&egg.file, self.colours)
+                                  .with_link_paths()
+                                  .paint().promote(),
             };
 
             rows.push(row);
