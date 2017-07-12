@@ -120,7 +120,17 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
         else if bytes.starts_with(b"-") && arg != "-" {
             let short_arg = OsStr::from_bytes(&bytes[1..]);
             if let Some((before, after)) = split_on_equals(short_arg) {
-                // TODO: remember to deal with the other bytes!
+                let (arg_with_value, other_args) = before.as_bytes().split_last().unwrap();
+
+                for byte in other_args {
+                    let arg = args.lookup_short(*byte)?;
+                    let flag = Flag::Short(*byte);
+                    match arg.takes_value {
+                        Forbidden  => results.flags.push((flag, None)),
+                        Necessary  => return Err(ParseError::NeedsValue { flag })
+                    }
+                }
+
                 let arg = args.lookup_short(*before.as_bytes().last().unwrap())?;
                 let flag = Flag::Short(arg.short.unwrap());
                 match arg.takes_value {
@@ -129,15 +139,18 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
                 }
             }
             else {
-                for byte in &bytes[1..] {
-                    // TODO: gotta check that these don't take arguments
-                    // like -c4
+                for (index, byte) in bytes.into_iter().enumerate().skip(1) {
                     let arg = args.lookup_short(*byte)?;
                     let flag = Flag::Short(*byte);
                     match arg.takes_value {
                         Forbidden  => results.flags.push((flag, None)),
                         Necessary  => {
-                            if let Some(next_arg) = iter.next() {
+                            if index < bytes.len() - 1 {
+                                let remnants = &bytes[index+1 ..];
+                                results.flags.push((flag, Some(OsStr::from_bytes(remnants))));
+                                break;
+                            }
+                            else if let Some(next_arg) = iter.next() {
                                 results.flags.push((flag, Some(next_arg)));
                             }
                             else {
@@ -224,8 +237,9 @@ mod test {
     use super::*;
 
     static TEST_ARGS: &'static [Arg] = &[
-        Arg { short: Some(b'l'), long: "long",  takes_value: TakesValue::Forbidden },
-        Arg { short: Some(b'c'), long: "count", takes_value: TakesValue::Necessary }
+        Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden },
+        Arg { short: Some(b'v'), long: "verbose",  takes_value: TakesValue::Forbidden },
+        Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary }
     ];
 
     #[test]
@@ -289,6 +303,12 @@ mod test {
         assert_eq!(results, Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Long("long"), None) ] }))
     }
 
+    #[test]
+    fn two_long_flags() {
+        let bits = [ os("--long"), os("--verbose") ];
+        let results = parse(Args(TEST_ARGS), &bits);
+        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }))
+    }
 
     #[test]
     fn no_arg_given() {
@@ -369,4 +389,31 @@ mod test {
         assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }))
     }
 
+    #[test]
+    fn two_short_flags() {
+        let bits = [ os("-lv") ];
+        let results = parse(Args(TEST_ARGS), &bits);
+        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }))
+    }
+
+    #[test]
+    fn two_short_flags_nothing() {
+        let bits = [ os("-lctwo") ];
+        let results = parse(Args(TEST_ARGS), &bits);
+        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
+    }
+
+    #[test]
+    fn two_short_flags_equals() {
+        let bits = [ os("-lc=two") ];
+        let results = parse(Args(TEST_ARGS), &bits);
+        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
+    }
+
+    #[test]
+    fn two_short_flags_next() {
+        let bits = [ os("-lc"), os("two") ];
+        let results = parse(Args(TEST_ARGS), &bits);
+        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
+    }
 }
