@@ -36,12 +36,18 @@ pub struct Arg {
 pub struct Args(&'static [Arg]);
 
 impl Args {
-    fn lookup_short(&self, short: ShortArg) -> Option<&Arg> {
-        self.0.into_iter().find(|arg| arg.short == Some(short))
+    fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError<'a>> {
+        match self.0.into_iter().find(|arg| arg.short == Some(short)) {
+            Some(arg)  => Ok(arg),
+            None       => Err(ParseError::UnknownShortArgument { attempt: short })
+        }
     }
 
-    fn lookup_long(&self, long: &OsStr) -> Option<&Arg> {
-        self.0.into_iter().find(|arg| arg.long == long)
+    fn lookup_long<'a>(&self, long: &'a OsStr) -> Result<&Arg, ParseError<'a>> {
+        match self.0.into_iter().find(|arg| arg.long == long) {
+            Some(arg)  => Ok(arg),
+            None       => Err(ParseError::UnknownArgument { attempt: long })
+        }
     }
 }
 
@@ -89,20 +95,46 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
             let long_arg = OsStr::from_bytes(&bytes[2..]);
 
             if let Some((before, after)) = split_on_equals(long_arg) {
-                if let Some(&Arg { short: _, long: long_arg_name, takes_value }) = args.lookup_long(before) {
-                    let flag = Flag::Long(long_arg_name);
-                    match takes_value {
-                        Necessary  => results.flags.push((flag, Some(after))),
-                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
-                    }
-                }
-                else {
-                    return Err(ParseError::UnknownArgument { attempt: before })
+                let &Arg { short: _, long: long_arg_name, takes_value } = args.lookup_long(before)?;
+                let flag = Flag::Long(long_arg_name);
+                match takes_value {
+                    Necessary  => results.flags.push((flag, Some(after))),
+                    Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                 }
             }
             else {
-                if let Some(&Arg { short: _, long: long_arg_name, takes_value }) = args.lookup_long(long_arg) {
-                    let flag = Flag::Long(long_arg_name);
+                let &Arg { short: _, long: long_arg_name, takes_value } = args.lookup_long(long_arg)?;
+                let flag = Flag::Long(long_arg_name);
+                match takes_value {
+                    Forbidden  => results.flags.push((flag, None)),
+                    Necessary  => {
+                        if let Some(next_arg) = iter.next() {
+                            results.flags.push((flag, Some(next_arg)));
+                        }
+                        else {
+                            return Err(ParseError::NeedsValue { flag })
+                        }
+                    }
+                }
+            }
+        }
+        else if bytes.starts_with(b"-") && arg != "-" {
+            let short_arg = OsStr::from_bytes(&bytes[1..]);
+            if let Some((before, after)) = split_on_equals(short_arg) {
+                // TODO: remember to deal with the other bytes!
+                let &Arg { short, long, takes_value } = args.lookup_short(*before.as_bytes().last().unwrap())?;
+                let flag = Flag::Short(short.unwrap());
+                match takes_value {
+                    Necessary  => results.flags.push((flag, Some(after))),
+                    Forbidden  => return Err(ParseError::ForbiddenValue { flag })
+                }
+            }
+            else {
+                for byte in &bytes[1..] {
+                    // TODO: gotta check that these don't take arguments
+                    // like -c4
+                    let &Arg { short, long, takes_value } = args.lookup_short(*byte)?;
+                    let flag = Flag::Short(*byte);
                     match takes_value {
                         Forbidden  => results.flags.push((flag, None)),
                         Necessary  => {
@@ -113,48 +145,6 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
                                 return Err(ParseError::NeedsValue { flag })
                             }
                         }
-                    }
-                }
-                else {
-                    return Err(ParseError::UnknownArgument { attempt: long_arg })
-                }
-            }
-        }
-        else if bytes.starts_with(b"-") && arg != "-" {
-            let short_arg = OsStr::from_bytes(&bytes[1..]);
-            if let Some((before, after)) = split_on_equals(short_arg) {
-                // TODO: remember to deal with the other bytes!
-                if let Some(&Arg { short, long, takes_value }) = args.lookup_short(*before.as_bytes().last().unwrap()) {
-                    let flag = Flag::Short(short.unwrap());
-                    match takes_value {
-                        Necessary  => results.flags.push((flag, Some(after))),
-                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
-                    }
-                }
-                else {
-                    return Err(ParseError::UnknownArgument { attempt: before })
-                }
-            }
-            else {
-                for byte in &bytes[1..] {
-                    // TODO: gotta check that these don't take arguments
-                    // like -c4
-                    if let Some(&Arg { short, long, takes_value }) = args.lookup_short(*byte) {
-                        let flag = Flag::Short(*byte);
-                        match takes_value {
-                            Forbidden  => results.flags.push((flag, None)),
-                            Necessary  => {
-                                if let Some(next_arg) = iter.next() {
-                                    results.flags.push((flag, Some(next_arg)));
-                                }
-                                else {
-                                    return Err(ParseError::NeedsValue { flag })
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        return Err(ParseError::UnknownShortArgument { attempt: *byte });
                     }
                 }
             }
@@ -233,7 +223,6 @@ mod split_test {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::ffi::OsString;
 
     static TEST_ARGS: &'static [Arg] = &[
         Arg { short: Some(b'l'), long: "long",  takes_value: TakesValue::Forbidden },
