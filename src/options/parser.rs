@@ -81,7 +81,6 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
     };
 
     let mut iter = inputs.iter();
-
     while let Some(arg) = iter.next() {
         let bytes = arg.as_bytes();
 
@@ -92,20 +91,20 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
             parsing = false;
         }
         else if bytes.starts_with(b"--") {
-            let long_arg = OsStr::from_bytes(&bytes[2..]);
+            let long_arg_name = OsStr::from_bytes(&bytes[2..]);
 
-            if let Some((before, after)) = split_on_equals(long_arg) {
-                let &Arg { short: _, long: long_arg_name, takes_value } = args.lookup_long(before)?;
-                let flag = Flag::Long(long_arg_name);
-                match takes_value {
+            if let Some((before, after)) = split_on_equals(long_arg_name) {
+                let arg = args.lookup_long(before)?;
+                let flag = Flag::Long(arg.long);
+                match arg.takes_value {
                     Necessary  => results.flags.push((flag, Some(after))),
                     Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                 }
             }
             else {
-                let &Arg { short: _, long: long_arg_name, takes_value } = args.lookup_long(long_arg)?;
-                let flag = Flag::Long(long_arg_name);
-                match takes_value {
+                let arg = args.lookup_long(long_arg_name)?;
+                let flag = Flag::Long(arg.long);
+                match arg.takes_value {
                     Forbidden  => results.flags.push((flag, None)),
                     Necessary  => {
                         if let Some(next_arg) = iter.next() {
@@ -122,9 +121,9 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
             let short_arg = OsStr::from_bytes(&bytes[1..]);
             if let Some((before, after)) = split_on_equals(short_arg) {
                 // TODO: remember to deal with the other bytes!
-                let &Arg { short, long, takes_value } = args.lookup_short(*before.as_bytes().last().unwrap())?;
-                let flag = Flag::Short(short.unwrap());
-                match takes_value {
+                let arg = args.lookup_short(*before.as_bytes().last().unwrap())?;
+                let flag = Flag::Short(arg.short.unwrap());
+                match arg.takes_value {
                     Necessary  => results.flags.push((flag, Some(after))),
                     Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                 }
@@ -133,9 +132,9 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
                 for byte in &bytes[1..] {
                     // TODO: gotta check that these don't take arguments
                     // like -c4
-                    let &Arg { short, long, takes_value } = args.lookup_short(*byte)?;
+                    let arg = args.lookup_short(*byte)?;
                     let flag = Flag::Short(*byte);
-                    match takes_value {
+                    match arg.takes_value {
                         Forbidden  => results.flags.push((flag, None)),
                         Necessary  => {
                             if let Some(next_arg) = iter.next() {
