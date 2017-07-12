@@ -20,6 +20,8 @@ pub use self::misfire::Misfire;
 mod view;
 pub use self::view::{View, Mode};
 
+mod parser;
+
 
 /// These **options** represent a parsed, error-checked versions of the
 /// user’s command-line options.
