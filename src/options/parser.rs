@@ -187,16 +187,17 @@ fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
 }
 
 
+/// Creates an `OSString` (used in tests)
+#[cfg(test)]
+fn os(input: &'static str) -> OsString {
+    let mut os = OsString::new();
+    os.push(input);
+    os
+}
+
 #[cfg(test)]
 mod split_test {
-    use super::split_on_equals;
-    use std::ffi::OsString;
-
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
+    use super::{split_on_equals, os};
 
     macro_rules! test_split {
         ($name:ident: $input:expr => None) => {
@@ -238,12 +239,6 @@ mod test {
         Arg { short: Some(b'l'), long: "long",  takes_value: TakesValue::Forbidden },
         Arg { short: Some(b'c'), long: "count", takes_value: TakesValue::Necessary }
     ];
-
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
 
     #[test]
     fn empty() {
