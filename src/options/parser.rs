@@ -168,17 +168,65 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
 }
 
 
-fn split_on_equals<'a>(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
+/// Splits a string on its `=` character, returning the two substrings on
+/// either side. Returns `None` if there’s no equals or a string is missing.
+fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
     use std::os::unix::ffi::OsStrExt;
 
-    input.as_bytes()
-         .iter()
-         .position(|elem| *elem == b'=')
-         .map(|index| input.as_bytes().split_at(index))
-         .map(|(b,a)| (OsStr::from_bytes(b), OsStr::from_bytes(&a[1..])))
+    if let Some(index) = input.as_bytes().iter().position(|elem| *elem == b'=') {
+        let (before, after) = input.as_bytes().split_at(index);
+
+        // The after string contains the = that we need to remove.
+        if before.len() >= 1 && after.len() >= 2 {
+            return Some((OsStr::from_bytes(before),
+                         OsStr::from_bytes(&after[1..])))
+        }
+    }
+
+    None
 }
 
 
+#[cfg(test)]
+mod split_test {
+    use super::split_on_equals;
+    use std::ffi::OsString;
+
+    fn os(input: &'static str) -> OsString {
+        let mut os = OsString::new();
+        os.push(input);
+        os
+    }
+
+    macro_rules! test_split {
+        ($name:ident: $input:expr => None) => {
+            #[test]
+            fn $name() {
+                assert_eq!(split_on_equals(&os($input)),
+                           None);
+            }
+        };
+
+        ($name:ident: $input:expr => $before:expr, $after:expr) => {
+            #[test]
+            fn $name() {
+                assert_eq!(split_on_equals(&os($input)),
+                           Some((&*os($before), &*os($after))));
+            }
+        };
+    }
+
+    test_split!(empty:   ""   => None);
+    test_split!(letter:  "a"  => None);
+
+    test_split!(just:      "="    => None);
+    test_split!(intro:     "=bbb" => None);
+    test_split!(denou:  "aaa="    => None);
+    test_split!(equals: "aaa=bbb" => "aaa", "bbb");
+
+    test_split!(sort: "--sort=size"     => "--sort", "size");
+    test_split!(more: "this=that=other" => "this",   "that=other");
+}
 
 
 #[cfg(test)]
