@@ -7,7 +7,7 @@ pub type ShortArg = u8;
 pub type LongArg = &'static str;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Flag {
     Short(ShortArg),
     Long(LongArg),
@@ -331,52 +331,37 @@ mod parse_test {
 mod matches_test {
     use super::*;
 
-    static LONG:    Arg = Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden };
+    macro_rules! test {
+        ($name:ident: $input:expr, has $param:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                let frees = Vec::new();
+                let flags = $input.to_vec();
+                assert_eq!(Matches { frees, flags }.has(&$param), $result);
+            }
+        };
+    }
+
     static VERBOSE: Arg = Arg { short: Some(b'v'), long: "verbose",  takes_value: TakesValue::Forbidden };
     static COUNT:   Arg = Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary };
-    static TEST_ARGS: &[&Arg] = &[ &LONG, &VERBOSE, &COUNT ];
+    static TEST_ARGS: &[&Arg] = &[ &VERBOSE, &COUNT ];
 
-    #[test]
-    fn has_long() {
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: vec![ (Flag::Short(b'l'), None) ],
-        };
 
-        assert!(matches.has(&LONG));
-    }
+    test!(short_never: [],                                                     has VERBOSE => false);
+    test!(short_once:  [(Flag::Short(b'v'), None)],                            has VERBOSE => true);
+    test!(short_twice: [(Flag::Short(b'v'), None), (Flag::Short(b'v'), None)], has VERBOSE => true);
 
-    #[test]
-    fn has_long_twice() {
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: vec![ (Flag::Short(b'l'), None),
-                         (Flag::Short(b'l'), None) ],
-        };
+    test!(long_once:  [(Flag::Long("verbose"), None)],                                has VERBOSE => true);
+    test!(long_twice: [(Flag::Long("verbose"), None), (Flag::Long("verbose"), None)], has VERBOSE => true);
+    test!(long_mixed: [(Flag::Long("verbose"), None), (Flag::Short(b'v'), None)],     has VERBOSE => true);
 
-        assert!(matches.has(&LONG));
-    }
-
-    #[test]
-    fn no_long() {
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: Vec::new(),
-        };
-
-        assert!(!matches.has(&LONG));
-    }
 
     #[test]
     fn only_count() {
         let everything = os("everything");
-
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ],
-        };
-
-        assert_eq!(matches.get(&COUNT), Some(&*everything));
+        let frees = Vec::new();
+        let flags = vec![ (Flag::Short(b'c'), Some(&*everything)) ];
+        assert_eq!(Matches { frees, flags }.get(&COUNT), Some(&*everything));
     }
 
     #[test]
@@ -384,22 +369,18 @@ mod matches_test {
         let everything = os("everything");
         let nothing    = os("nothing");
 
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: vec![ (Flag::Short(b'c'), Some(&*everything)),
-                         (Flag::Short(b'c'), Some(&*nothing)) ],
-        };
+        let frees = Vec::new();
+        let flags = vec![ (Flag::Short(b'c'), Some(&*everything)),
+                          (Flag::Short(b'c'), Some(&*nothing)) ];
 
-        assert_eq!(matches.get(&COUNT), Some(&*nothing));
+        assert_eq!(Matches { frees, flags }.get(&COUNT), Some(&*nothing));
     }
 
     #[test]
     fn no_count() {
-        let matches = Matches {
-            frees: Vec::new(),
-            flags: Vec::new(),
-        };
+        let frees =  Vec::new();
+        let flags =  Vec::new();
 
-        assert!(!matches.has(&COUNT));
+        assert!(!Matches { frees, flags }.has(&COUNT));
     }
 }
