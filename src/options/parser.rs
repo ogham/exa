@@ -13,6 +13,15 @@ pub enum Flag {
     Long(LongArg),
 }
 
+impl Flag {
+    fn matches(&self, arg: &Arg) -> bool {
+        match *self {
+            Flag::Short(short)  => arg.short == Some(short),
+            Flag::Long(long)    => arg.long == long,
+        }
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub enum Strictness {
     ComplainAboutRedundantArguments,
@@ -33,7 +42,7 @@ pub struct Arg {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct Args(&'static [Arg]);
+pub struct Args(&'static [&'static Arg]);
 
 impl Args {
     fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError<'a>> {
@@ -58,6 +67,20 @@ pub struct Matches<'a> {
     /// we usually want the one nearest the end to count.
     flags: Vec<(Flag, Option<&'a OsStr>)>,
     frees: Vec<&'a OsStr>,
+}
+
+impl<'a> Matches<'a> {
+    fn has(&self, arg: &Arg) -> bool {
+        self.flags.iter().rev()
+            .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
+            .is_some()
+    }
+
+    fn get(&self, arg: &Arg) -> Option<&OsStr> {
+        self.flags.iter().rev()
+            .find(|tuple| tuple.1.is_some() && tuple.0.matches(arg))
+            .map(|tuple| tuple.1.unwrap())
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -233,7 +256,7 @@ mod split_test {
 
 
 #[cfg(test)]
-mod test {
+mod parse_test {
     use super::*;
 
     macro_rules! test {
@@ -247,10 +270,10 @@ mod test {
         };
     }
 
-    static TEST_ARGS: &'static [Arg] = &[
-        Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden },
-        Arg { short: Some(b'v'), long: "verbose",  takes_value: TakesValue::Forbidden },
-        Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary }
+    static TEST_ARGS: &[&Arg] = &[
+        &Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden },
+        &Arg { short: Some(b'v'), long: "verbose",  takes_value: TakesValue::Forbidden },
+        &Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary }
     ];
 
 
@@ -301,4 +324,82 @@ mod test {
     test!(unknown_short_2nd:     [os("-lq")]          => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
     test!(unknown_short_eq:      [os("-q=shhh")]      => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
     test!(unknown_short_2nd_eq:  [os("-lq=shhh")]     => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
+}
+
+
+#[cfg(test)]
+mod matches_test {
+    use super::*;
+
+    static LONG:    Arg = Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden };
+    static VERBOSE: Arg = Arg { short: Some(b'v'), long: "verbose",  takes_value: TakesValue::Forbidden };
+    static COUNT:   Arg = Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary };
+    static TEST_ARGS: &[&Arg] = &[ &LONG, &VERBOSE, &COUNT ];
+
+    #[test]
+    fn has_long() {
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: vec![ (Flag::Short(b'l'), None) ],
+        };
+
+        assert!(matches.has(&LONG));
+    }
+
+    #[test]
+    fn has_long_twice() {
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: vec![ (Flag::Short(b'l'), None),
+                         (Flag::Short(b'l'), None) ],
+        };
+
+        assert!(matches.has(&LONG));
+    }
+
+    #[test]
+    fn no_long() {
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: Vec::new(),
+        };
+
+        assert!(!matches.has(&LONG));
+    }
+
+    #[test]
+    fn only_count() {
+        let everything = os("everything");
+
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ],
+        };
+
+        assert_eq!(matches.get(&COUNT), Some(&*everything));
+    }
+
+    #[test]
+    fn rightmost_count() {
+        let everything = os("everything");
+        let nothing    = os("nothing");
+
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: vec![ (Flag::Short(b'c'), Some(&*everything)),
+                         (Flag::Short(b'c'), Some(&*nothing)) ],
+        };
+
+        assert_eq!(matches.get(&COUNT), Some(&*nothing));
+    }
+
+    #[test]
+    fn no_count() {
+        let matches = Matches {
+            frees: Vec::new(),
+            flags: Vec::new(),
+        };
+
+        assert!(!matches.has(&COUNT));
+    }
 }
