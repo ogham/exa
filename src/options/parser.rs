@@ -242,178 +242,51 @@ mod test {
         Arg { short: Some(b'c'), long: "count",    takes_value: TakesValue::Necessary }
     ];
 
-    #[test]
-    fn empty() {
-        let bits = [ ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![] }))
+    macro_rules! test {
+        ($name:ident: $input:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                let bits = $input;
+                let results = parse(Args(TEST_ARGS), &bits);
+                assert_eq!(results, $result);
+            }
+        };
     }
 
-    #[test]
-    fn filename() {
-        let bits = [ os("exa") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![ os("exa").as_os_str() ], flags: vec![] }))
-    }
+    // Just filenames
+    test!(empty:       []           => Ok(Matches { frees: vec![], flags: vec![] }));
+    test!(one_arg:     [os("exa")]  => Ok(Matches { frees: vec![ os("exa").as_os_str() ], flags: vec![] }));
 
-    #[test]
-    fn the_dashes_do_nothing() {
-        let bits = [ os("--") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![] }))
-    }
+    // Dashes and double dashes
+    test!(one_dash:    [os("-")]                 => Ok(Matches { frees: vec![ os("-").as_os_str() ],      flags: vec![] }));
+    test!(two_dashes:  [os("--")]                => Ok(Matches { frees: vec![],                           flags: vec![] }));
+    test!(two_file:    [os("--"), os("file")]    => Ok(Matches { frees: vec![ os("file").as_os_str() ],   flags: vec![] }));
+    test!(two_arg_l:   [os("--"), os("--long")]  => Ok(Matches { frees: vec![ os("--long").as_os_str() ], flags: vec![] }));
+    test!(two_arg_s:   [os("--"), os("-l")]      => Ok(Matches { frees: vec![ os("-l").as_os_str() ],     flags: vec![] }));
 
-    #[test]
-    fn but_just_one_does() {
-        let bits = [ os("-") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![ os("-").as_os_str() ], flags: vec![] }))
-    }
+    // Long args
+    test!(long:        [os("--long")]                  => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Long("long"), None) ] }));
+    test!(long_then:   [os("--long"), os("4")]         => Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Long("long"), None) ] }));
+    test!(long_two:    [os("--long"), os("--verbose")] => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }));
 
+    // Long args with values
+    test!(bad_equals:  [os("--long=equals")]    => Err(ParseError::ForbiddenValue { flag: Flag::Long("long") }));
+    test!(no_arg:      [os("--count")]          => Err(ParseError::NeedsValue     { flag: Flag::Long("count") }));
+    test!(arg_equals:  [os("--count=4")]        => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }));
+    test!(arg_then:    [os("--count"), os("4")] => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }));
 
+    // Short args
+    test!(short:       [os("-l")]                  => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None) ] }));
+    test!(short_then:  [os("-l"), os("4")]         => Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Short(b'l'), None) ] }));
+    test!(short_two:   [os("-lv")]                 => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }));
+    test!(mixed:       [os("-v"), os("--long")]    => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'v'), None), (Flag::Long("long"), None) ] }));
 
-    // ----- long args --------
-
-    #[test]
-    fn as_filename() {
-        let bits = [ os("--"), os("--long") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![os("--long").as_os_str() ], flags: vec![] }))
-    }
-
-
-    #[test]
-    fn long() {
-        let bits = [ os("--long") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("long"), None) ] }))
-    }
-
-    #[test]
-    fn long_equals() {
-        let bits = [ os("--long=equals") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Err(ParseError::ForbiddenValue { flag: Flag::Long("long") }))
-    }
-
-    #[test]
-    fn no_arg_separate() {
-        let bits = [ os("--long"), os("4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Long("long"), None) ] }))
-    }
-
-    #[test]
-    fn two_long_flags() {
-        let bits = [ os("--long"), os("--verbose") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }))
-    }
-
-    #[test]
-    fn no_arg_given() {
-        let bits = [ os("--count") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Err(ParseError::NeedsValue { flag: Flag::Long("count") }))
-    }
-
-    #[test]
-    fn arg_equals() {
-        let bits = [ os("--count=4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }))
-    }
-
-    #[test]
-    fn arg_separate() {
-        let bits = [ os("--count"), os("4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }))
-    }
-
-
-
-
-
-
-    // ----- short args --------
-
-    #[test]
-    fn short_as_filename() {
-        let bits = [ os("--"), os("-l") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![os("-l").as_os_str() ], flags: vec![] }))
-    }
-
-
-    #[test]
-    fn short_long() {
-        let bits = [ os("-l") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None) ] }))
-    }
-
-    #[test]
-    fn short_long_equals() {
-        let bits = [ os("-l=equals") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Err(ParseError::ForbiddenValue { flag: Flag::Short(b'l') }))
-    }
-
-    #[test]
-    fn short_no_arg_separate() {
-        let bits = [ os("-l"), os("4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Short(b'l'), None) ] }))
-    }
-
-
-    #[test]
-    fn short_no_arg_given() {
-        let bits = [ os("-c") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Err(ParseError::NeedsValue { flag: Flag::Short(b'c') }))
-    }
-
-    #[test]
-    fn short_arg_equals() {
-        let bits = [ os("-c=4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }))
-    }
-
-    #[test]
-    fn short_arg_separate() {
-        let bits = [ os("-c"), os("4") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }))
-    }
-
-    #[test]
-    fn two_short_flags() {
-        let bits = [ os("-lv") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }))
-    }
-
-    #[test]
-    fn two_short_flags_nothing() {
-        let bits = [ os("-lctwo") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
-    }
-
-    #[test]
-    fn two_short_flags_equals() {
-        let bits = [ os("-lc=two") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
-    }
-
-    #[test]
-    fn two_short_flags_next() {
-        let bits = [ os("-lc"), os("two") ];
-        let results = parse(Args(TEST_ARGS), &bits);
-        assert_eq!(results, Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }))
-    }
+    // Short args with values
+    test!(bad_short:          [os("-l=equals")]       => Err(ParseError::ForbiddenValue { flag: Flag::Short(b'l') }));
+    test!(short_none:         [os("-c")]              => Err(ParseError::NeedsValue     { flag: Flag::Short(b'c') }));
+    test!(short_arg_eq:       [os("-c=4")]            => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }));
+    test!(short_arg_then:     [os("-c"), os("4")]     => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }));
+    test!(short_two_together: [os("-lctwo")]          => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
+    test!(short_two_equals:   [os("-lc=two")]         => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
+    test!(short_two_next:     [os("-lc"), os("two")]  => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
 }
