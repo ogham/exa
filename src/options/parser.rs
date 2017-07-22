@@ -1,3 +1,33 @@
+//! A general parser for command-line options.
+//!
+//! exa uses its own hand-rolled parser for command-line options. It supports
+//! the following syntax:
+//!
+//! - Long options: `--inode`, `--grid`
+//! - Long options with values: `--sort size`, `--level=4`
+//! - Short options: `-i`, `-G`
+//! - Short options with values: `-ssize`, `-L=4`
+//!
+//! These values can be mixed and matched: `exa -lssize --grid`. If you’ve used
+//! other command-line programs, then hopefully it’ll work much like them.
+//!
+//! Because exa already has its own files for the help text, shell completions,
+//! man page, and readme, so it can get away with having the options parser do
+//! very little: all it really needs to do is parse a slice of strings.
+//!
+//!
+//! ## UTF-8 and `OsStr`
+//!
+//! The parser uses `OsStr` as its string type. This is necessary for exa to
+//! list files that have invalid UTF-8 in their names: by treating file paths
+//! as bytes with no encoding, a file can be specified on the command-line and
+//! be looked up without having to be encoded into a `str` first.
+//!
+//! It also avoids the overhead of checking for invalid UTF-8 when parsing
+//! command-line options, as all the options and their values (such as
+//! `--sort size`) are guaranteed to just be 8-bit ASCII.
+
+
 #![allow(unused_variables, dead_code)]
 
 use std::ffi::{OsStr, OsString};
