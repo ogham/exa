@@ -29,9 +29,9 @@ use std::path::{Component, PathBuf};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
-use options::{Options, View, Mode};
+use options::Options;
 pub use options::Misfire;
-use output::{escape, lines, grid, grid_details, details};
+use output::{escape, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
 mod info;

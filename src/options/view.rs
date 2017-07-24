@@ -4,21 +4,13 @@ use getopts;
 
 use info::filetype::FileExtensions;
 use output::Colours;
-use output::{grid, details};
+use output::{View, Mode, grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
 
-
-/// The **view** contains all information about how to format output.
-#[derive(Debug)]
-pub struct View {
-    pub mode: Mode,
-    pub colours: Colours,
-    pub style: FileStyle,
-}
 
 impl View {
 
@@ -31,15 +23,6 @@ impl View {
     }
 }
 
-
-/// The **mode** is the “type” of output.
-#[derive(Debug)]
-pub enum Mode {
-    Grid(grid::Options),
-    Details(details::Options),
-    GridDetails(grid::Options, details::Options),
-    Lines,
-}
 
 impl Mode {
 

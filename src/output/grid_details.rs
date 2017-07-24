@@ -5,8 +5,8 @@ use term_grid as grid;
 
 use fs::{Dir, File};
 use fs::feature::xattr::FileAttributes;
+use fs::filter::FileFilter;
 
-use options::FileFilter;
 use output::cell::TextCell;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};

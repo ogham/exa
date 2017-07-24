@@ -1,5 +1,10 @@
 //! Parsing command-line strings into exa options.
 //!
+//! This module imports exa’s configuration types, such as `View` (the details
+//! of displaying multiple files) and `DirAction` (what to do when encountering
+//! a directory), and implements `deduce` methods on them so they can be
+//! configured using command-line options.
+//!
 //!
 //! ## Useless and overridden options
 //!
@@ -69,22 +74,20 @@ use std::ffi::OsStr;
 use getopts;
 
 use fs::feature::xattr;
+use fs::dir_action::DirAction;
+use fs::filter::FileFilter;
+use output::{View, Mode};
 use output::details;
 
 mod dir_action;
-pub use self::dir_action::{DirAction, RecurseOptions};
-
 mod filter;
-pub use self::filter::{FileFilter, SortField, SortCase};
+mod view;
 
 mod help;
 use self::help::HelpString;
 
 mod misfire;
 pub use self::misfire::Misfire;
-
-mod view;
-pub use self::view::{View, Mode};
 
 mod parser;
 
@@ -213,8 +216,9 @@ impl Options {
 
 #[cfg(test)]
 mod test {
-    use super::{Options, Misfire, SortField, SortCase};
+    use super::{Options, Misfire};
     use fs::DotFilter;
+    use fs::filter::{SortField, SortCase};
     use fs::feature::xattr;
 
     fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
