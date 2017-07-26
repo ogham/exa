@@ -31,6 +31,7 @@
 #![allow(unused_variables, dead_code)]
 
 use std::ffi::{OsStr, OsString};
+use std::fmt;
 
 
 pub type ShortArg = u8;
@@ -66,63 +67,87 @@ pub enum TakesValue {
 
 #[derive(PartialEq, Debug)]
 pub struct Arg {
-    short: Option<ShortArg>,
-    long: LongArg,
-    takes_value: TakesValue,
+    pub short: Option<ShortArg>,
+    pub long: LongArg,
+    pub takes_value: TakesValue,
+}
+
+impl fmt::Display for Arg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "--{}", self.long)?;
+
+        if let Some(short) = self.short {
+            write!(f, " (-{})", short as char)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct Args(&'static [&'static Arg]);
+pub struct Args(pub &'static [&'static Arg]);
 
 impl Args {
-    fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError<'a>> {
+    fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError> {
         match self.0.into_iter().find(|arg| arg.short == Some(short)) {
             Some(arg)  => Ok(arg),
             None       => Err(ParseError::UnknownShortArgument { attempt: short })
         }
     }
 
-    fn lookup_long<'a>(&self, long: &'a OsStr) -> Result<&Arg, ParseError<'a>> {
+    fn lookup_long<'a>(&self, long: &'a OsStr) -> Result<&Arg, ParseError> {
         match self.0.into_iter().find(|arg| arg.long == long) {
             Some(arg)  => Ok(arg),
-            None       => Err(ParseError::UnknownArgument { attempt: long })
+            None       => Err(ParseError::UnknownArgument { attempt: long.to_os_string() })
         }
     }
 }
 
 
 #[derive(PartialEq, Debug)]
-pub struct Matches<'a> {
+pub struct Matches<'args> {
     /// Long and short arguments need to be kept in the same vector, because
     /// we usually want the one nearest the end to count.
-    flags: Vec<(Flag, Option<&'a OsStr>)>,
-    frees: Vec<&'a OsStr>,
+    pub flags: Vec<(Flag, Option<&'args OsStr>)>,
+    pub frees: Vec<&'args OsStr>,
 }
 
 impl<'a> Matches<'a> {
-    fn has(&self, arg: &Arg) -> bool {
+    pub fn has(&self, arg: &Arg) -> bool {
         self.flags.iter().rev()
             .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
             .is_some()
     }
 
-    fn get(&self, arg: &Arg) -> Option<&OsStr> {
+    pub fn get(&self, arg: &Arg) -> Option<&OsStr> {
         self.flags.iter().rev()
             .find(|tuple| tuple.1.is_some() && tuple.0.matches(arg))
             .map(|tuple| tuple.1.unwrap())
     }
+
+    pub fn count(&self, arg: &Arg) -> usize {
+        self.flags.iter()
+            .filter(|tuple| tuple.0.matches(arg))
+            .count()
+    }
 }
 
 #[derive(PartialEq, Debug)]
-pub enum ParseError<'a> {
+pub enum ParseError {
     NeedsValue { flag: Flag },
     ForbiddenValue { flag: Flag },
     UnknownShortArgument { attempt: ShortArg },
-    UnknownArgument { attempt: &'a OsStr },
+    UnknownArgument { attempt: OsString },
 }
 
+// It’s technically possible for ParseError::UnknownArgument to borrow its
+// OsStr rather than owning it, but that would give ParseError a lifetime,
+// which would give Misfire a lifetime, which gets used everywhere. And this
+// only happens when an error occurs, so it’s not really worth it.
 
-fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseError<'a>> {
+
+pub fn parse<'args, I>(args: &Args, inputs: I) -> Result<Matches<'args>, ParseError>
+where I: IntoIterator<Item=&'args OsString> {
     use std::os::unix::ffi::OsStrExt;
     use self::TakesValue::*;
 
@@ -133,8 +158,8 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
         frees: Vec::new(),
     };
 
-    let mut iter = inputs.iter();
-    while let Some(arg) = iter.next() {
+    let mut inputs = inputs.into_iter();
+    while let Some(arg) = inputs.next() {
         let bytes = arg.as_bytes();
 
         if !parsing {
@@ -160,7 +185,7 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
                 match arg.takes_value {
                     Forbidden  => results.flags.push((flag, None)),
                     Necessary  => {
-                        if let Some(next_arg) = iter.next() {
+                        if let Some(next_arg) = inputs.next() {
                             results.flags.push((flag, Some(next_arg)));
                         }
                         else {
@@ -203,7 +228,7 @@ fn parse<'a>(args: Args, inputs: &'a [OsString]) -> Result<Matches<'a>, ParseErr
                                 results.flags.push((flag, Some(OsStr::from_bytes(remnants))));
                                 break;
                             }
-                            else if let Some(next_arg) = iter.next() {
+                            else if let Some(next_arg) = inputs.next() {
                                 results.flags.push((flag, Some(next_arg)));
                             }
                             else {
@@ -250,6 +275,7 @@ fn os(input: &'static str) -> OsString {
     os
 }
 
+
 #[cfg(test)]
 mod split_test {
     use super::{split_on_equals, os};
@@ -294,7 +320,7 @@ mod parse_test {
             #[test]
             fn $name() {
                 let bits = $input;
-                let results = parse(Args(TEST_ARGS), &bits);
+                let results = parse(&Args(TEST_ARGS), bits.into_iter());
                 assert_eq!(results, $result);
             }
         };
@@ -309,47 +335,47 @@ mod parse_test {
 
     // Just filenames
     test!(empty:       []           => Ok(Matches { frees: vec![], flags: vec![] }));
-    test!(one_arg:     [os("exa")]  => Ok(Matches { frees: vec![ os("exa").as_os_str() ], flags: vec![] }));
+    test!(one_arg:     [os("exa")]  => Ok(Matches { frees: vec![ &os("exa") ], flags: vec![] }));
 
     // Dashes and double dashes
-    test!(one_dash:    [os("-")]                 => Ok(Matches { frees: vec![ os("-").as_os_str() ],      flags: vec![] }));
-    test!(two_dashes:  [os("--")]                => Ok(Matches { frees: vec![],                           flags: vec![] }));
-    test!(two_file:    [os("--"), os("file")]    => Ok(Matches { frees: vec![ os("file").as_os_str() ],   flags: vec![] }));
-    test!(two_arg_l:   [os("--"), os("--long")]  => Ok(Matches { frees: vec![ os("--long").as_os_str() ], flags: vec![] }));
-    test!(two_arg_s:   [os("--"), os("-l")]      => Ok(Matches { frees: vec![ os("-l").as_os_str() ],     flags: vec![] }));
+    test!(one_dash:    [os("-")]                 => Ok(Matches { frees: vec![ &os("-") ],      flags: vec![] }));
+    test!(two_dashes:  [os("--")]                => Ok(Matches { frees: vec![],                flags: vec![] }));
+    test!(two_file:    [os("--"), os("file")]    => Ok(Matches { frees: vec![ &os("file") ],   flags: vec![] }));
+    test!(two_arg_l:   [os("--"), os("--long")]  => Ok(Matches { frees: vec![ &os("--long") ], flags: vec![] }));
+    test!(two_arg_s:   [os("--"), os("-l")]      => Ok(Matches { frees: vec![ &os("-l") ],     flags: vec![] }));
 
 
     // Long args
-    test!(long:        [os("--long")]                  => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Long("long"), None) ] }));
-    test!(long_then:   [os("--long"), os("4")]         => Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Long("long"), None) ] }));
-    test!(long_two:    [os("--long"), os("--verbose")] => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }));
+    test!(long:        [os("--long")]                  => Ok(Matches { frees: vec![],           flags: vec![ (Flag::Long("long"), None) ] }));
+    test!(long_then:   [os("--long"), os("4")]         => Ok(Matches { frees: vec![ &os("4") ], flags: vec![ (Flag::Long("long"), None) ] }));
+    test!(long_two:    [os("--long"), os("--verbose")] => Ok(Matches { frees: vec![],           flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }));
 
     // Long args with values
     test!(bad_equals:  [os("--long=equals")]    => Err(ParseError::ForbiddenValue { flag: Flag::Long("long") }));
     test!(no_arg:      [os("--count")]          => Err(ParseError::NeedsValue     { flag: Flag::Long("count") }));
-    test!(arg_equals:  [os("--count=4")]        => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }));
-    test!(arg_then:    [os("--count"), os("4")] => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(os("4").as_os_str())) ] }));
+    test!(arg_equals:  [os("--count=4")]        => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(&*os("4"))) ] }));
+    test!(arg_then:    [os("--count"), os("4")] => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(&*os("4"))) ] }));
 
 
     // Short args
-    test!(short:       [os("-l")]                  => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Short(b'l'), None) ] }));
-    test!(short_then:  [os("-l"), os("4")]         => Ok(Matches { frees: vec![ os("4").as_os_str() ], flags: vec![ (Flag::Short(b'l'), None) ] }));
-    test!(short_two:   [os("-lv")]                 => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }));
-    test!(mixed:       [os("-v"), os("--long")]    => Ok(Matches { frees: vec![],                      flags: vec![ (Flag::Short(b'v'), None), (Flag::Long("long"), None) ] }));
+    test!(short:       [os("-l")]                  => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'l'), None) ] }));
+    test!(short_then:  [os("-l"), os("4")]         => Ok(Matches { frees: vec![ &*os("4") ], flags: vec![ (Flag::Short(b'l'), None) ] }));
+    test!(short_two:   [os("-lv")]                 => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }));
+    test!(mixed:       [os("-v"), os("--long")]    => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'v'), None), (Flag::Long("long"), None) ] }));
 
     // Short args with values
     test!(bad_short:          [os("-l=equals")]       => Err(ParseError::ForbiddenValue { flag: Flag::Short(b'l') }));
     test!(short_none:         [os("-c")]              => Err(ParseError::NeedsValue     { flag: Flag::Short(b'c') }));
-    test!(short_arg_eq:       [os("-c=4")]            => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }));
-    test!(short_arg_then:     [os("-c"), os("4")]     => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(os("4").as_os_str())) ] }));
-    test!(short_two_together: [os("-lctwo")]          => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
-    test!(short_two_equals:   [os("-lc=two")]         => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
-    test!(short_two_next:     [os("-lc"), os("two")]  => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(os("two").as_os_str())) ] }));
+    test!(short_arg_eq:       [os("-c=4")]            => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(&*os("4"))) ] }));
+    test!(short_arg_then:     [os("-c"), os("4")]     => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(&*os("4"))) ] }));
+    test!(short_two_together: [os("-lctwo")]          => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
+    test!(short_two_equals:   [os("-lc=two")]         => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
+    test!(short_two_next:     [os("-lc"), os("two")]  => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
 
 
     // Unknown args
-    test!(unknown_long:          [os("--quiet")]      => Err(ParseError::UnknownArgument      { attempt: os("quiet").as_os_str() }));
-    test!(unknown_long_eq:       [os("--quiet=shhh")] => Err(ParseError::UnknownArgument      { attempt: os("quiet").as_os_str() }));
+    test!(unknown_long:          [os("--quiet")]      => Err(ParseError::UnknownArgument      { attempt: os("quiet") }));
+    test!(unknown_long_eq:       [os("--quiet=shhh")] => Err(ParseError::UnknownArgument      { attempt: os("quiet") }));
     test!(unknown_short:         [os("-q")]           => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
     test!(unknown_short_2nd:     [os("-lq")]          => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
     test!(unknown_short_eq:      [os("-q=shhh")]      => Err(ParseError::UnknownShortArgument { attempt: b'q' }));

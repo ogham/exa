@@ -1,19 +1,20 @@
-use getopts;
 use glob;
 
 use fs::DotFilter;
 use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns};
-use options::misfire::Misfire;
+
+use options::{flags, Misfire};
+use options::parser::Matches;
 
 
 impl FileFilter {
 
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
+    pub fn deduce(matches: &Matches) -> Result<FileFilter, Misfire> {
         Ok(FileFilter {
-            list_dirs_first: matches.opt_present("group-directories-first"),
-            reverse:         matches.opt_present("reverse"),
+            list_dirs_first: matches.has(&flags::DIRS_FIRST),
+            reverse:         matches.has(&flags::REVERSE),
             sort_field:      SortField::deduce(matches)?,
             dot_filter:      DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
@@ -34,45 +35,67 @@ impl SortField {
     /// Determine the sort field to use, based on the presence of a “sort”
     /// argument. This will return `Err` if the option is there, but does not
     /// correspond to a valid field.
-    fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
+    fn deduce(matches: &Matches) -> Result<SortField, Misfire> {
 
         const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
                                   "Extension", "modified", "accessed",
                                   "created", "inode", "type", "none" ];
 
-        if let Some(word) = matches.opt_str("sort") {
-            match &*word {
-                "name" | "filename"   => Ok(SortField::Name(SortCase::Sensitive)),
-                "Name" | "Filename"   => Ok(SortField::Name(SortCase::Insensitive)),
-                "size" | "filesize"   => Ok(SortField::Size),
-                "ext"  | "extension"  => Ok(SortField::Extension(SortCase::Sensitive)),
-                "Ext"  | "Extension"  => Ok(SortField::Extension(SortCase::Insensitive)),
-                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
-                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
-                "cr"   | "created"    => Ok(SortField::CreatedDate),
-                "inode"               => Ok(SortField::FileInode),
-                "type"                => Ok(SortField::FileType),
-                "none"                => Ok(SortField::Unsorted),
-                field                 => Err(Misfire::bad_argument("sort", field, SORTS))
-            }
+        let word = match matches.get(&flags::SORT) {
+            Some(w)  => w,
+            None     => return Ok(SortField::default()),
+        };
+
+        if word == "name" || word == "filename" {
+            Ok(SortField::Name(SortCase::Sensitive))
+        }
+        else if word == "Name" || word == "Filename" {
+            Ok(SortField::Name(SortCase::Insensitive))
+        }
+        else if word == "size" || word == "filesize" {
+            Ok(SortField::Size)
+        }
+        else if word == "ext" || word == "extension" {
+            Ok(SortField::Extension(SortCase::Sensitive))
+        }
+        else if word == "Ext" || word == "Extension" {
+            Ok(SortField::Extension(SortCase::Insensitive))
+        }
+        else if word == "mod" || word == "modified" {
+            Ok(SortField::ModifiedDate)
+        }
+        else if word == "acc" || word == "accessed" {
+            Ok(SortField::AccessedDate)
+        }
+        else if word == "cr" || word == "created" {
+            Ok(SortField::CreatedDate)
+        }
+        else if word == "inode" {
+            Ok(SortField::FileInode)
+        }
+        else if word == "type" {
+            Ok(SortField::FileType)
+        }
+        else if word == "none" {
+            Ok(SortField::Unsorted)
         }
         else {
-            Ok(SortField::default())
+            Err(Misfire::bad_argument(&flags::SORT, word, SORTS))
         }
     }
 }
 
 
 impl DotFilter {
-    pub fn deduce(matches: &getopts::Matches) -> Result<DotFilter, Misfire> {
-        let dots = match matches.opt_count("all") {
+    pub fn deduce(matches: &Matches) -> Result<DotFilter, Misfire> {
+        let dots = match matches.count(&flags::ALL) {
             0 => return Ok(DotFilter::JustFiles),
             1 => DotFilter::Dotfiles,
             _ => DotFilter::DotfilesAndDots,
         };
 
-        if matches.opt_present("tree") {
-            Err(Misfire::Useless("all --all", true, "tree"))
+        if matches.has(&flags::TREE) {
+            Err(Misfire::TreeAllAll)
         }
         else {
             Ok(dots)
@@ -85,14 +108,15 @@ impl IgnorePatterns {
 
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<IgnorePatterns, Misfire> {
-        let patterns = match matches.opt_str("ignore-glob") {
+    pub fn deduce(matches: &Matches) -> Result<IgnorePatterns, Misfire> {
+        let patterns = match matches.get(&flags::IGNORE_GLOB) {
             None => Ok(Vec::new()),
-            Some(is) => is.split('|').map(|a| glob::Pattern::new(a)).collect(),
-        };
+            Some(is) => is.to_string_lossy().split('|').map(|a| glob::Pattern::new(a)).collect(),
+        }?;
 
-        Ok(IgnorePatterns {
-            patterns: patterns?,
-        })
+        // TODO: is to_string_lossy really the best way to handle
+        // invalid UTF-8 there?
+
+        Ok(IgnorePatterns { patterns })
     }
 }

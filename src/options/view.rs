@@ -1,21 +1,22 @@
 use std::env::var_os;
 
-use getopts;
-
-use info::filetype::FileExtensions;
 use output::Colours;
 use output::{View, Mode, grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
-use options::Misfire;
+
+use options::{flags, Misfire};
+use options::parser::Matches;
+
 use fs::feature::xattr;
+use info::filetype::FileExtensions;
 
 
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<View, Misfire> {
+    pub fn deduce(matches: &Matches) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches)?;
         let colours = Colours::deduce(matches)?;
         let style = FileStyle::deduce(matches);
@@ -27,40 +28,41 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<Mode, Misfire> {
+    pub fn deduce(matches: &Matches) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
-            if matches.opt_present("across") && !matches.opt_present("grid") {
-                Err(Useless("across", true, "long"))
+            if matches.has(&flags::ACROSS) && !matches.has(&flags::GRID) {
+                Err(Useless(&flags::ACROSS, true, &flags::LONG))
             }
-            else if matches.opt_present("oneline") {
-                Err(Useless("oneline", true, "long"))
+            else if matches.has(&flags::ONE_LINE) {
+                Err(Useless(&flags::ONE_LINE, true, &flags::LONG))
             }
             else {
                 Ok(details::Options {
                     table: Some(TableOptions::deduce(matches)?),
-                    header: matches.opt_present("header"),
-                    xattr: xattr::ENABLED && matches.opt_present("extended"),
+                    header: matches.has(&flags::HEADER),
+                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
                 })
             }
         };
 
         let long_options_scan = || {
-            for option in &[ "binary", "bytes", "inode", "links", "header", "blocks", "time", "group" ] {
-                if matches.opt_present(option) {
-                    return Err(Useless(option, false, "long"));
+            for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
+                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
+                if matches.has(option) {
+                    return Err(Useless(*option, false, &flags::LONG));
                 }
             }
 
-            if cfg!(feature="git") && matches.opt_present("git") {
-                Err(Useless("git", false, "long"))
+            if cfg!(feature="git") && matches.has(&flags::GIT) {
+                Err(Useless(&flags::GIT, false, &flags::LONG))
             }
-            else if matches.opt_present("level") && !matches.opt_present("recurse") && !matches.opt_present("tree") {
-                Err(Useless2("level", "recurse", "tree"))
+            else if matches.has(&flags::LEVEL) && !matches.has(&flags::RECURSE) && !matches.has(&flags::TREE) {
+                Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
             }
-            else if xattr::ENABLED && matches.opt_present("extended") {
-                Err(Useless("extended", false, "long"))
+            else if xattr::ENABLED && matches.has(&flags::EXTENDED) {
+                Err(Useless(&flags::EXTENDED, false, &flags::LONG))
             }
             else {
                 Ok(())
@@ -69,15 +71,15 @@ impl Mode {
 
         let other_options_scan = || {
             if let Some(width) = TerminalWidth::deduce()?.width() {
-                if matches.opt_present("oneline") {
-                    if matches.opt_present("across") {
-                        Err(Useless("across", true, "oneline"))
+                if matches.has(&flags::ONE_LINE) {
+                    if matches.has(&flags::ACROSS) {
+                        Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
                         Ok(Mode::Lines)
                     }
                 }
-                else if matches.opt_present("tree") {
+                else if matches.has(&flags::TREE) {
                     let details = details::Options {
                         table: None,
                         header: false,
@@ -88,7 +90,7 @@ impl Mode {
                 }
                 else {
                     let grid = grid::Options {
-                        across: matches.opt_present("across"),
+                        across: matches.has(&flags::ACROSS),
                         console_width: width,
                     };
 
@@ -100,7 +102,7 @@ impl Mode {
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
 
-                if matches.opt_present("tree") {
+                if matches.has(&flags::TREE) {
                     let details = details::Options {
                         table: None,
                         header: false,
@@ -115,9 +117,9 @@ impl Mode {
             }
         };
 
-        if matches.opt_present("long") {
+        if matches.has(&flags::LONG) {
             let details = long()?;
-            if matches.opt_present("grid") {
+            if matches.has(&flags::GRID) {
                 match other_options_scan()? {
                     Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
                     others            => return Ok(others),
@@ -180,17 +182,17 @@ impl TerminalWidth {
 
 
 impl TableOptions {
-    fn deduce(matches: &getopts::Matches) -> Result<Self, Misfire> {
+    fn deduce(matches: &Matches) -> Result<Self, Misfire> {
         Ok(TableOptions {
             env:         Environment::load_all(),
             time_format: TimeFormat::deduce(matches)?,
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
-            inode:  matches.opt_present("inode"),
-            links:  matches.opt_present("links"),
-            blocks: matches.opt_present("blocks"),
-            group:  matches.opt_present("group"),
-            git:    cfg!(feature="git") && matches.opt_present("git"),
+            inode:  matches.has(&flags::INODE),
+            links:  matches.has(&flags::LINKS),
+            blocks: matches.has(&flags::BLOCKS),
+            group:  matches.has(&flags::GROUP),
+            git:    cfg!(feature="git") && matches.has(&flags::GIT),
         })
     }
 }
@@ -206,12 +208,12 @@ impl SizeFormat {
     /// strings of digits in your head. Changing the format to anything else
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
-    fn deduce(matches: &getopts::Matches) -> Result<SizeFormat, Misfire> {
-        let binary = matches.opt_present("binary");
-        let bytes  = matches.opt_present("bytes");
+    fn deduce(matches: &Matches) -> Result<SizeFormat, Misfire> {
+        let binary = matches.has(&flags::BINARY);
+        let bytes  = matches.has(&flags::BYTES);
 
         match (binary, bytes) {
-            (true,  true )  => Err(Misfire::Conflict("binary", "bytes")),
+            (true,  true )  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)),
             (true,  false)  => Ok(SizeFormat::BinaryBytes),
             (false, true )  => Ok(SizeFormat::JustBytes),
             (false, false)  => Ok(SizeFormat::DecimalBytes),
@@ -223,21 +225,29 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce(matches: &getopts::Matches) -> Result<TimeFormat, Misfire> {
+    fn deduce(matches: &Matches) -> Result<TimeFormat, Misfire> {
         pub use output::time::{DefaultFormat, ISOFormat};
         const STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
 
-        if let Some(word) = matches.opt_str("time-style") {
-            match &*word {
-                "default"   => Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
-                "iso"       => Ok(TimeFormat::ISOFormat(ISOFormat::new())),
-                "long-iso"  => Ok(TimeFormat::LongISO),
-                "full-iso"  => Ok(TimeFormat::FullISO),
-                otherwise   => Err(Misfire::bad_argument("time-style", otherwise, STYLES)),
-            }
+        let word = match matches.get(&flags::TIME_STYLE) {
+            Some(w) => w,
+            None    => return Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
+        };
+
+        if word == "default" {
+            Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
+        }
+        else if word == "iso" {
+            Ok(TimeFormat::ISOFormat(ISOFormat::new()))
+        }
+        else if word == "long-iso" {
+            Ok(TimeFormat::LongISO)
+        }
+        else if word == "full-iso" {
+            Ok(TimeFormat::FullISO)
         }
         else {
-            Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
+            Err(Misfire::bad_argument(&flags::TIME_STYLE, word, STYLES))
         }
     }
 }
@@ -255,29 +265,35 @@ impl TimeTypes {
     /// It’s valid to show more than one column by passing in more than one
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
-    fn deduce(matches: &getopts::Matches) -> Result<TimeTypes, Misfire> {
-        let possible_word = matches.opt_str("time");
-        let modified = matches.opt_present("modified");
-        let created  = matches.opt_present("created");
-        let accessed = matches.opt_present("accessed");
+    fn deduce(matches: &Matches) -> Result<TimeTypes, Misfire> {
+        let possible_word = matches.get(&flags::TIME);
+        let modified = matches.has(&flags::MODIFIED);
+        let created  = matches.has(&flags::CREATED);
+        let accessed = matches.has(&flags::ACCESSED);
 
         if let Some(word) = possible_word {
             if modified {
-                return Err(Misfire::Useless("modified", true, "time"));
+                return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
             }
             else if created {
-                return Err(Misfire::Useless("created", true, "time"));
+                return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
             }
             else if accessed {
-                return Err(Misfire::Useless("accessed", true, "time"));
+                return Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME));
             }
 
-            static TIMES: &[& str] = &["modified", "accessed", "created"];
-            match &*word {
-                "mod" | "modified"  => Ok(TimeTypes { accessed: false, modified: true,  created: false }),
-                "acc" | "accessed"  => Ok(TimeTypes { accessed: true,  modified: false, created: false }),
-                "cr"  | "created"   => Ok(TimeTypes { accessed: false, modified: false, created: true  }),
-                otherwise           => Err(Misfire::bad_argument("time", otherwise, TIMES))
+            static TIMES: &[&str] = &["modified", "accessed", "created"];
+            if word == "mod" || word == "modified" {
+                Ok(TimeTypes { accessed: false, modified: true,  created: false })
+            }
+            else if word == "acc" || word == "accessed" {
+                Ok(TimeTypes { accessed: true,  modified: false, created: false })
+            }
+            else if word == "cr" || word == "created" {
+                Ok(TimeTypes { accessed: false, modified: false, created: true  })
+            }
+            else {
+                Err(Misfire::bad_argument(&flags::TIME, word, TIMES))
             }
         }
         else if modified || created || accessed {
@@ -319,31 +335,37 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &getopts::Matches) -> Result<TerminalColours, Misfire> {
+    fn deduce(matches: &Matches) -> Result<TerminalColours, Misfire> {
         const COLOURS: &[&str] = &["always", "auto", "never"];
 
-        if let Some(word) = matches.opt_str("color").or_else(|| matches.opt_str("colour")) {
-            match &*word {
-                "always"              => Ok(TerminalColours::Always),
-                "auto" | "automatic"  => Ok(TerminalColours::Automatic),
-                "never"               => Ok(TerminalColours::Never),
-                otherwise             => Err(Misfire::bad_argument("color", otherwise, COLOURS))
-            }
+        let word = match matches.get(&flags::COLOR).or_else(|| matches.get(&flags::COLOUR)) {
+            Some(w) => w,
+            None    => return Ok(TerminalColours::default()),
+        };
+
+        if word == "always" {
+            Ok(TerminalColours::Always)
+        }
+        else if word == "auto" || word == "automatic" {
+            Ok(TerminalColours::Automatic)
+        }
+        else if word == "never" {
+            Ok(TerminalColours::Never)
         }
         else {
-            Ok(TerminalColours::default())
+            Err(Misfire::bad_argument(&flags::COLOR, word, COLOURS))
         }
     }
 }
 
 
 impl Colours {
-    fn deduce(matches: &getopts::Matches) -> Result<Colours, Misfire> {
+    fn deduce(matches: &Matches) -> Result<Colours, Misfire> {
         use self::TerminalColours::*;
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Always || (tc == Automatic && TERM_WIDTH.is_some()) {
-            let scale = matches.opt_present("color-scale") || matches.opt_present("colour-scale");
+            let scale = matches.has(&flags::COLOR_SCALE) || matches.has(&flags::COLOUR_SCALE);
             Ok(Colours::colourful(scale))
         }
         else {
@@ -355,18 +377,17 @@ impl Colours {
 
 
 impl FileStyle {
-    fn deduce(matches: &getopts::Matches) -> FileStyle {
+    fn deduce(matches: &Matches) -> FileStyle {
         let classify = Classify::deduce(matches);
         let exts = FileExtensions;
         FileStyle { classify, exts }
     }
-
 }
 
 impl Classify {
-    fn deduce(matches: &getopts::Matches) -> Classify {
-        if matches.opt_present("classify") { Classify::AddFileIndicators }
-                                      else { Classify::JustFilenames }
+    fn deduce(matches: &Matches) -> Classify {
+        if matches.has(&flags::CLASSIFY) { Classify::AddFileIndicators }
+                                    else { Classify::JustFilenames }
     }
 }
 

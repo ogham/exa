@@ -59,8 +59,8 @@ Vagrant.configure(2) do |config|
     config.vm.provision :shell, privileged: true, inline: <<-EOF
         set -xe
 
-        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \\$*" > /usr/bin/exa
-        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \\$*" > /usr/bin/rexa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \"\\$*\"" > /usr/bin/exa
+        echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \"\\$*\"" > /usr/bin/rexa
         chmod +x /usr/bin/{exa,rexa}
     EOF
 

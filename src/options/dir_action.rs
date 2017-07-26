@@ -1,24 +1,23 @@
-use getopts;
+use options::parser::Matches;
+use options::{flags, Misfire};
 
-use options::misfire::Misfire;
 use fs::dir_action::{DirAction, RecurseOptions};
-
 
 
 impl DirAction {
 
     /// Determine which action to perform when trying to list a directory.
-    pub fn deduce(matches: &getopts::Matches) -> Result<DirAction, Misfire> {
-        let recurse = matches.opt_present("recurse");
-        let list    = matches.opt_present("list-dirs");
-        let tree    = matches.opt_present("tree");
+    pub fn deduce(matches: &Matches) -> Result<DirAction, Misfire> {
+        let recurse = matches.has(&flags::RECURSE);
+        let list    = matches.has(&flags::LIST_DIRS);
+        let tree    = matches.has(&flags::TREE);
 
         match (recurse, list, tree) {
 
             // You can't --list-dirs along with --recurse or --tree because
             // they already automatically list directories.
-            (true,  true,  _    )  => Err(Misfire::Conflict("recurse", "list-dirs")),
-            (_,     true,  true )  => Err(Misfire::Conflict("tree", "list-dirs")),
+            (true,  true,  _    )  => Err(Misfire::Conflict(&flags::RECURSE, &flags::LIST_DIRS)),
+            (_,     true,  true )  => Err(Misfire::Conflict(&flags::TREE,    &flags::LIST_DIRS)),
 
             (_   ,  _,     true )  => Ok(DirAction::Recurse(RecurseOptions::deduce(matches, true)?)),
             (true,  false, false)  => Ok(DirAction::Recurse(RecurseOptions::deduce(matches, false)?)),
@@ -32,9 +31,9 @@ impl DirAction {
 impl RecurseOptions {
 
     /// Determine which files should be recursed into.
-    pub fn deduce(matches: &getopts::Matches, tree: bool) -> Result<RecurseOptions, Misfire> {
-        let max_depth = if let Some(level) = matches.opt_str("level") {
-            match level.parse() {
+    pub fn deduce(matches: &Matches, tree: bool) -> Result<RecurseOptions, Misfire> {
+        let max_depth = if let Some(level) = matches.get(&flags::LEVEL) {
+            match level.to_string_lossy().parse() {
                 Ok(l)   => Some(l),
                 Err(e)  => return Err(Misfire::FailedParse(e)),
             }
