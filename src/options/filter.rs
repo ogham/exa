@@ -87,17 +87,11 @@ impl SortField {
 
 impl DotFilter {
     pub fn deduce(matches: &Matches) -> Result<DotFilter, Misfire> {
-        let dots = match matches.count(&flags::ALL) {
-            0 => return Ok(DotFilter::JustFiles),
-            1 => DotFilter::Dotfiles,
-            _ => DotFilter::DotfilesAndDots,
-        };
-
-        if matches.has(&flags::TREE) {
-            Err(Misfire::TreeAllAll)
-        }
-        else {
-            Ok(dots)
+        match matches.count(&flags::ALL) {
+            0 => Ok(DotFilter::JustFiles),
+            1 => Ok(DotFilter::Dotfiles),
+            _ => if matches.has(&flags::TREE) { Err(Misfire::TreeAllAll) }
+                                         else { Ok(DotFilter::DotfilesAndDots) }
         }
     }
 }
@@ -184,6 +178,7 @@ mod test {
         test!(all_all_2:  DotFilter <- ["-aa"]          => Ok(DotFilter::DotfilesAndDots));
 
         // --all and --tree
-        test!(tree:       DotFilter <- ["-Taa"]         => Err(Misfire::TreeAllAll));
+        test!(tree_a:     DotFilter <- ["-Ta"]          => Ok(DotFilter::Dotfiles));
+        test!(tree_aa:    DotFilter <- ["-Taa"]         => Err(Misfire::TreeAllAll));
     }
 }

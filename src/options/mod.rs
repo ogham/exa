@@ -171,7 +171,6 @@ impl Options {
 mod test {
     use super::{Options, Misfire, flags};
     use std::ffi::OsString;
-    use fs::DotFilter;
     use fs::filter::{SortField, SortCase};
     use fs::feature::xattr;
 
@@ -332,33 +331,5 @@ mod test {
         let args = [ os("--level"), os("69105") ];
         let opts = Options::getopts(&args);
         assert_eq!(opts.unwrap_err(), Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
-    }
-
-    #[test]
-    fn all_all_with_tree() {
-        let args = [ os("--all"), os("--all"), os("--tree") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::TreeAllAll)
-    }
-
-    #[test]
-    fn nowt() {
-        let nothing: Vec<OsString> = Vec::new();
-        let dots = Options::getopts(&nothing).unwrap().0.filter.dot_filter;
-        assert_eq!(dots, DotFilter::JustFiles);
-    }
-
-    #[test]
-    fn all() {
-        let args = [ os("--all") ];
-        let dots = Options::getopts(&args).unwrap().0.filter.dot_filter;
-        assert_eq!(dots, DotFilter::Dotfiles);
-    }
-
-    #[test]
-    fn allall() {
-        let args = [ os("-a"), os("-a") ];
-        let dots = Options::getopts(&args).unwrap().0.filter.dot_filter;
-        assert_eq!(dots, DotFilter::DotfilesAndDots);
     }
 }
