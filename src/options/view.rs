@@ -253,6 +253,8 @@ impl TimeFormat {
 }
 
 
+static TIMES: &[&str] = &["modified", "accessed", "created"];
+
 impl TimeTypes {
 
     /// Determine which of a file’s time fields should be displayed for it
@@ -282,7 +284,6 @@ impl TimeTypes {
                 return Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME));
             }
 
-            static TIMES: &[&str] = &["modified", "accessed", "created"];
             if word == "mod" || word == "modified" {
                 Ok(TimeTypes { accessed: false, modified: true,  created: false })
             }
@@ -423,7 +424,8 @@ mod test {
                 use options::parser::{parse, Args, Arg};
                 use std::ffi::OsString;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES ];
+                static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,
+                                               &flags::TIME, &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED ];
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = parse(&Args(TEST_ARGS), bits.iter());
@@ -432,6 +434,7 @@ mod test {
         };
     }
 
+
     mod size_formats {
         use super::*;
 
@@ -439,5 +442,37 @@ mod test {
         test!(binary:  SizeFormat <- ["--binary"]             => Ok(SizeFormat::BinaryBytes));
         test!(bytes:   SizeFormat <- ["--bytes"]              => Ok(SizeFormat::JustBytes));
         test!(both:    SizeFormat <- ["--binary", "--bytes"]  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
+    }
+
+
+    mod time_types {
+        use super::*;
+
+        // Default behaviour
+        test!(empty:     TimeTypes <- []                      => Ok(TimeTypes::default()));
+        test!(modified:  TimeTypes <- ["--modified"]          => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(m:         TimeTypes <- ["-m"]                  => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(time_mod:  TimeTypes <- ["--time=modified"]     => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(time_m:    TimeTypes <- ["-tmod"]               => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+
+        test!(acc:       TimeTypes <- ["--accessed"]          => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(a:         TimeTypes <- ["-u"]                  => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(time_acc:  TimeTypes <- ["--time", "accessed"]  => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(time_a:    TimeTypes <- ["-t", "acc"]           => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+
+        test!(cr:        TimeTypes <- ["--created"]           => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(c:         TimeTypes <- ["-U"]                  => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(time_cr:   TimeTypes <- ["--time=created"]      => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(time_c:    TimeTypes <- ["-tcr"]                => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+
+        // Multiples
+        test!(time_uu:    TimeTypes <- ["-uU"]                => Ok(TimeTypes { accessed: true,   modified: false,  created: true  }));
+
+        // Overriding
+        test!(time_mc:    TimeTypes <- ["-tcr", "-tmod"]      => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+
+        // Errors
+        test!(time_tea:  TimeTypes <- ["--time=tea"]  => Err(Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES)));
+        test!(time_ea:   TimeTypes <- ["-tea"]        => Err(Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES)));
     }
 }
