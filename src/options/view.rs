@@ -401,3 +401,43 @@ lazy_static! {
         dimensions().map(|t| t.0)
     };
 }
+
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::ffi::OsString;
+    use options::flags;
+
+    pub fn os(input: &'static str) -> OsString {
+        let mut os = OsString::new();
+        os.push(input);
+        os
+    }
+
+    macro_rules! test {
+        ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                use options::parser::{parse, Args, Arg};
+                use std::ffi::OsString;
+
+                static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES ];
+
+                let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+                let results = parse(&Args(TEST_ARGS), bits.iter());
+                assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
+            }
+        };
+    }
+
+    mod size_formats {
+        use super::*;
+
+        test!(empty:   SizeFormat <- []                       => Ok(SizeFormat::DecimalBytes));
+        test!(binary:  SizeFormat <- ["--binary"]             => Ok(SizeFormat::BinaryBytes));
+        test!(bytes:   SizeFormat <- ["--bytes"]              => Ok(SizeFormat::JustBytes));
+        test!(both:    SizeFormat <- ["--binary", "--bytes"]  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
+    }
+}
