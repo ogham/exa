@@ -135,7 +135,7 @@ mod test {
                 use options::parser::{parse, Args, Arg};
                 use std::ffi::OsString;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE ];
+                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB ];
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = parse(&Args(TEST_ARGS), bits.iter());
@@ -180,5 +180,21 @@ mod test {
         // --all and --tree
         test!(tree_a:     DotFilter <- ["-Ta"]          => Ok(DotFilter::Dotfiles));
         test!(tree_aa:    DotFilter <- ["-Taa"]         => Err(Misfire::TreeAllAll));
+    }
+
+
+    mod ignore_patternses {
+        use super::*;
+        use glob;
+
+        fn pat(string: &'static str) -> glob::Pattern {
+            glob::Pattern::new(string).unwrap()
+        }
+
+        // Various numbers of globs
+        test!(none:   IgnorePatterns <- []                             => Ok(IgnorePatterns { patterns: vec![] }));
+        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"]     => Ok(IgnorePatterns { patterns: vec![ pat("*.ogg") ] }));
+        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"]  => Ok(IgnorePatterns { patterns: vec![ pat("*.ogg"), pat("*.MP3") ] }));
+        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"]  => Ok(IgnorePatterns { patterns: vec![ pat("*"), pat("?"), pat("."), pat("*") ] }));
     }
 }
