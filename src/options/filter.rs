@@ -141,7 +141,7 @@ mod test {
                 use options::parser::{parse, Args, Arg};
                 use std::ffi::OsString;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::SORT ];
+                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE ];
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = parse(&Args(TEST_ARGS), bits.iter());
@@ -169,5 +169,21 @@ mod test {
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"]     => Ok(SortField::ModifiedDate));
         test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"]  => Ok(SortField::Extension(SortCase::Insensitive)));
+    }
+
+
+    mod dot_filters {
+        use super::*;
+
+        // Default behaviour
+        test!(empty:      DotFilter <- []               => Ok(DotFilter::JustFiles));
+
+        // --all
+        test!(all:        DotFilter <- ["--all"]        => Ok(DotFilter::Dotfiles));
+        test!(all_all:    DotFilter <- ["--all", "-a"]  => Ok(DotFilter::DotfilesAndDots));
+        test!(all_all_2:  DotFilter <- ["-aa"]          => Ok(DotFilter::DotfilesAndDots));
+
+        // --all and --tree
+        test!(tree:       DotFilter <- ["-Taa"]         => Err(Misfire::TreeAllAll));
     }
 }
