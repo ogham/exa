@@ -30,17 +30,16 @@ impl Default for SortField {
     }
 }
 
+const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
+                          "Extension", "modified", "accessed",
+                          "created", "inode", "type", "none" ];
+
 impl SortField {
 
     /// Determine the sort field to use, based on the presence of a “sort”
     /// argument. This will return `Err` if the option is there, but does not
     /// correspond to a valid field.
     fn deduce(matches: &Matches) -> Result<SortField, Misfire> {
-
-        const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
-                                  "Extension", "modified", "accessed",
-                                  "created", "inode", "type", "none" ];
-
         let word = match matches.get(&flags::SORT) {
             Some(w)  => w,
             None     => return Ok(SortField::default()),
@@ -118,5 +117,57 @@ impl IgnorePatterns {
         // invalid UTF-8 there?
 
         Ok(IgnorePatterns { patterns })
+    }
+}
+
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::ffi::OsString;
+    use options::flags;
+
+    pub fn os(input: &'static str) -> OsString {
+        let mut os = OsString::new();
+        os.push(input);
+        os
+    }
+
+    macro_rules! test {
+        ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                use options::parser::{parse, Args, Arg};
+                use std::ffi::OsString;
+
+                static TEST_ARGS: &[&Arg] = &[ &flags::SORT ];
+
+                let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+                let results = parse(&Args(TEST_ARGS), bits.iter());
+                assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
+            }
+        };
+    }
+
+    mod sort_fields {
+        use super::*;
+
+        // Default behaviour
+        test!(empty:         SortField <- []                  => Ok(SortField::default()));
+
+        // Sort field arguments
+        test!(one_arg:       SortField <- ["--sort=cr"]       => Ok(SortField::CreatedDate));
+        test!(one_long:      SortField <- ["--sort=size"]     => Ok(SortField::Size));
+        test!(one_short:     SortField <- ["-saccessed"]      => Ok(SortField::AccessedDate));
+        test!(lowercase:     SortField <- ["--sort", "name"]  => Ok(SortField::Name(SortCase::Sensitive)));
+        test!(uppercase:     SortField <- ["--sort", "Name"]  => Ok(SortField::Name(SortCase::Insensitive)));
+
+        // Errors
+        test!(error:         SortField <- ["--sort=colour"]   => Err(Misfire::bad_argument(&flags::SORT, &os("colour"), super::SORTS)));
+
+        // Overriding
+        test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"]     => Ok(SortField::ModifiedDate));
+        test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"]  => Ok(SortField::Extension(SortCase::Insensitive)));
     }
 }
