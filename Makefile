@@ -8,7 +8,7 @@ endif
 endef
 
 $(eval $(call compdir,BASHDIR,bash-completion,$(PREFIX)/etc/bash_completion.d))
-ZSHDIR  = /usr/share/zsh/vendor-completions
+ZSHDIR  = /usr/share/zsh/site-functions
 $(eval $(call compdir,FISHDIR,fish,$(PREFIX)/share/fish/vendor_completions.d))
 
 FEATURES ?= default
