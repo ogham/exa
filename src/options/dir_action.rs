@@ -68,13 +68,13 @@ mod test {
         ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::{parse, Args, Arg};
+                use options::parser::{Args, Arg};
                 use std::ffi::OsString;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::RECURSE, &flags::LIST_DIRS, &flags::TREE, &flags::LEVEL ];
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let results = parse(&Args(TEST_ARGS), bits.iter());
+                let results = Args(TEST_ARGS).parse(bits.iter());
                 assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
             }
         };

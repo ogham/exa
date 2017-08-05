@@ -114,7 +114,7 @@ impl Options {
     pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString> {
 
-        let matches = match parser::parse(&flags::ALL_ARGS, args) {
+        let matches = match flags::ALL_ARGS.parse(args) {
             Ok(m)   => m,
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
