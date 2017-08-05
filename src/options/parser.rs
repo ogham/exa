@@ -129,10 +129,8 @@ impl Args {
         let mut parsing = true;
 
         // The results that get built up.
-        let mut results = Matches {
-            flags: MatchedFlags { flags: Vec::new() },
-            frees: Vec::new(),
-        };
+        let mut result_flags = Vec::new();
+        let mut frees: Vec<&OsStr> = Vec::new();
 
         // Iterate over the inputs with “while let” because we need to advance
         // the iterator manually whenever an argument that takes a value
@@ -146,7 +144,7 @@ impl Args {
             // the pair “-- --arg”, without it getting matched as a flag that
             // doesn’t exist.
             if !parsing {
-                results.frees.push(arg)
+                frees.push(arg)
             }
             else if arg == "--" {
                 parsing = false;
@@ -163,7 +161,7 @@ impl Args {
                     let arg = self.lookup_long(before)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Necessary  => results.flags.flags.push((flag, Some(after))),
+                        Necessary  => result_flags.push((flag, Some(after))),
                         Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
@@ -174,10 +172,10 @@ impl Args {
                     let arg = self.lookup_long(long_arg_name)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Forbidden  => results.flags.flags.push((flag, None)),
+                        Forbidden  => result_flags.push((flag, None)),
                         Necessary  => {
                             if let Some(next_arg) = inputs.next() {
-                                results.flags.flags.push((flag, Some(next_arg)));
+                                result_flags.push((flag, Some(next_arg)));
                             }
                             else {
                                 return Err(ParseError::NeedsValue { flag })
@@ -212,7 +210,7 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden  => results.flags.flags.push((flag, None)),
+                            Forbidden  => result_flags.push((flag, None)),
                             Necessary  => return Err(ParseError::NeedsValue { flag })
                         }
                     }
@@ -221,7 +219,7 @@ impl Args {
                     let arg = self.lookup_short(*arg_with_value)?;
                     let flag = Flag::Short(arg.short.unwrap());
                     match arg.takes_value {
-                        Necessary  => results.flags.flags.push((flag, Some(after))),
+                        Necessary  => result_flags.push((flag, Some(after))),
                         Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
@@ -243,15 +241,15 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden  => results.flags.flags.push((flag, None)),
+                            Forbidden  => result_flags.push((flag, None)),
                             Necessary  => {
                                 if index < bytes.len() - 1 {
                                     let remnants = &bytes[index+1 ..];
-                                    results.flags.flags.push((flag, Some(OsStr::from_bytes(remnants))));
+                                    result_flags.push((flag, Some(OsStr::from_bytes(remnants))));
                                     break;
                                 }
                                 else if let Some(next_arg) = inputs.next() {
-                                    results.flags.flags.push((flag, Some(next_arg)));
+                                    result_flags.push((flag, Some(next_arg)));
                                 }
                                 else {
                                     return Err(ParseError::NeedsValue { flag })
@@ -264,11 +262,11 @@ impl Args {
 
             // Otherwise, it’s a free string, usually a file name.
             else {
-                results.frees.push(arg)
+                frees.push(arg)
             }
         }
 
-        Ok(results)
+        Ok(Matches { frees, flags: MatchedFlags { flags: result_flags } })
     }
 
     fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError> {
