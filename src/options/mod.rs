@@ -325,11 +325,4 @@ mod test {
             assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::EXTENDED, false, &flags::LONG))
         }
     }
-
-    #[test]
-    fn level_without_recurse_or_tree() {
-        let args = [ os("--level"), os("69105") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
-    }
 }

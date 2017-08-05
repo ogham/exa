@@ -23,7 +23,7 @@ pub static COLOUR_SCALE: Arg = Arg { short: None, long: "colour-scale", takes_va
 // filtering and sorting options
 pub static ALL:         Arg = Arg { short: Some(b'a'), long: "all",         takes_value: TakesValue::Forbidden };
 pub static LIST_DIRS:   Arg = Arg { short: Some(b'd'), long: "list-dirs",   takes_value: TakesValue::Forbidden };
-pub static LEVEL:       Arg = Arg { short: Some(b'L'), long: "level",       takes_value: TakesValue::Forbidden };
+pub static LEVEL:       Arg = Arg { short: Some(b'L'), long: "level",       takes_value: TakesValue::Necessary };
 pub static REVERSE:     Arg = Arg { short: Some(b'r'), long: "reverse",     takes_value: TakesValue::Forbidden };
 pub static SORT:        Arg = Arg { short: Some(b's'), long: "sort",        takes_value: TakesValue::Necessary };
 pub static IGNORE_GLOB: Arg = Arg { short: Some(b'I'), long: "ignore-glob", takes_value: TakesValue::Necessary };
