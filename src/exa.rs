@@ -15,6 +15,7 @@ extern crate term_grid;
 extern crate unicode_width;
 extern crate users;
 extern crate zoneinfo_compiled;
+extern crate term_size;
 
 #[cfg(feature="git")] extern crate git2;
 
@@ -37,7 +38,6 @@ mod fs;
 mod info;
 mod options;
 mod output;
-mod term;
 
 
 /// The main program wrapper.
