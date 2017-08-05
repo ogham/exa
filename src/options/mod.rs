@@ -109,12 +109,6 @@ pub struct Options {
 
 impl Options {
 
-    // Even though the arguments go in as OsStrings, they come out
-    // as Strings. Invalid UTF-8 won’t be parsed, but it won’t make
-    // exa core dump either.
-    //
-    // https://github.com/rust-lang-nursery/getopts/pull/29
-
     /// Call getopts on the given slice of command-line strings.
     #[allow(unused_results)]
     pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
@@ -186,13 +180,6 @@ mod test {
         let nothing: Vec<OsString> = Vec::new();
         let outs = Options::getopts(&nothing).unwrap().1;
         assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
-    }
-
-    #[test]
-    fn file_sizes() {
-        let args = [ os("--long"), os("--binary"), os("--bytes") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Conflict(&flags::BINARY, &flags::BYTES))
     }
 
     #[test]

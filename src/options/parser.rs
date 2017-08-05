@@ -28,8 +28,6 @@
 //! `--sort size`) are guaranteed to just be 8-bit ASCII.
 
 
-#![allow(unused_variables, dead_code)]
-
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 
@@ -209,7 +207,7 @@ where I: IntoIterator<Item=&'args OsString> {
                     }
                 }
 
-                let arg = args.lookup_short(*before.as_bytes().last().unwrap())?;
+                let arg = args.lookup_short(*arg_with_value)?;
                 let flag = Flag::Short(arg.short.unwrap());
                 match arg.takes_value {
                     Necessary  => results.flags.push((flag, Some(after))),
