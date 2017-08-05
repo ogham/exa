@@ -83,6 +83,9 @@ mod view;
 mod help;
 use self::help::HelpString;
 
+mod version;
+use self::version::VersionString;
+
 mod misfire;
 pub use self::misfire::Misfire;
 
@@ -121,10 +124,7 @@ impl Options {
         };
 
         HelpString::deduce(&flags).map_err(Misfire::Help)?;
-
-        if flags.has(&flags::VERSION) {
-            return Err(Misfire::Version);
-        }
+        VersionString::deduce(&flags).map_err(Misfire::Version)?;
 
         let options = Options::deduce(&flags)?;
         Ok((options, frees))

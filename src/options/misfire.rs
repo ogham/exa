@@ -4,7 +4,7 @@ use std::num::ParseIntError;
 
 use glob;
 
-use options::help::HelpString;
+use options::{HelpString, VersionString};
 use options::parser::{Arg, ParseError};
 
 
@@ -34,7 +34,7 @@ pub enum Misfire {
     Help(HelpString),
 
     /// The user wanted the version number.
-    Version,
+    Version(VersionString),
 
     /// Two options were given that conflict with one another.
     Conflict(&'static Arg, &'static Arg),
@@ -62,9 +62,9 @@ impl Misfire {
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
         match *self {
-            Misfire::Help(_) => false,
-            Misfire::Version => false,
-            _                => true,
+            Misfire::Help(_)    => false,
+            Misfire::Version(_) => false,
+            _                   => true,
         }
     }
 
@@ -91,7 +91,7 @@ impl fmt::Display for Misfire {
             BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no value {:?} (Choices: {})", a, b, c),
             InvalidOptions(ref e)            => write!(f, "{:?}", e),
             Help(ref text)                   => write!(f, "{}", text),
-            Version                          => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
+            Version(ref version)             => write!(f, "{}", version),
             Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}.", a, b),
             Useless(ref a, false, ref b)     => write!(f, "Option {} is useless without option {}.", a, b),
             Useless(ref a, true, ref b)      => write!(f, "Option {} is useless given option {}.", a, b),
