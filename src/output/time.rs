@@ -60,17 +60,17 @@ impl DefaultFormat {
         let current_year = LocalDateTime::now().year();
 
         // Some locales use a three-character wide month name (Jan to Dec);
-        // others vary between three and four (1月 to 12月). We assume that
-        // December is the month with the maximum width, and use the width of
+        // others vary between three and five (like juil. for July in french). We assume that
+        // July is the month with the maximum width, and use the width of
         // that to determine how to pad the other months.
-        let december_width = UnicodeWidthStr::width(&*locale.short_month_name(11));
-        let date_and_time = match december_width {
-            4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
+        let july_width = UnicodeWidthStr::width(&*locale.short_month_name(6));
+        let date_and_time = match july_width {
+            5  => DateFormat::parse("{2>:D} {5<:M} {2>:h}:{02>:m}").unwrap(),
             _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
         };
 
-        let date_and_year = match december_width {
-            4 => DateFormat::parse("{2>:D} {4>:M} {5>:Y}").unwrap(),
+        let date_and_year = match july_width {
+            5 => DateFormat::parse("{2>:D} {5<:M} {5>:Y}").unwrap(),
             _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
         };
 
