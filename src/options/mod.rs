@@ -88,7 +88,7 @@ pub use self::misfire::Misfire;
 
 mod parser;
 mod flags;
-use self::parser::Matches;
+use self::parser::MatchedFlags;
 
 
 /// These **options** represent a parsed, error-checked versions of the
@@ -113,20 +113,21 @@ impl Options {
     #[allow(unused_results)]
     pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString> {
+        use options::parser::Matches;
 
-        let matches = match flags::ALL_ARGS.parse(args) {
+        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args) {
             Ok(m)   => m,
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
 
-        HelpString::deduce(&matches).map_err(Misfire::Help)?;
+        HelpString::deduce(&flags).map_err(Misfire::Help)?;
 
-        if matches.has(&flags::VERSION) {
+        if flags.has(&flags::VERSION) {
             return Err(Misfire::Version);
         }
 
-        let options = Options::deduce(&matches)?;
-        Ok((options, matches.frees))
+        let options = Options::deduce(&flags)?;
+        Ok((options, frees))
     }
 
     /// Whether the View specified in this set of options includes a Git
@@ -142,7 +143,7 @@ impl Options {
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce(matches: &Matches) -> Result<Options, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches)?;

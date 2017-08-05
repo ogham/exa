@@ -1,7 +1,7 @@
 use std::fmt;
 
 use options::flags;
-use options::parser::Matches;
+use options::parser::MatchedFlags;
 use fs::feature::xattr;
 
 
@@ -72,7 +72,7 @@ impl HelpString {
     /// Determines how to show help, if at all, based on the user’s
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
-    pub fn deduce(matches: &Matches) -> Result<(), HelpString> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<(), HelpString> {
         if matches.has(&flags::HELP) {
             let only_long = matches.has(&flags::LONG);
             let git       = cfg!(feature="git");

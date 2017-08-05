@@ -4,14 +4,14 @@ use fs::DotFilter;
 use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns};
 
 use options::{flags, Misfire};
-use options::parser::Matches;
+use options::parser::MatchedFlags;
 
 
 impl FileFilter {
 
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
-    pub fn deduce(matches: &Matches) -> Result<FileFilter, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<FileFilter, Misfire> {
         Ok(FileFilter {
             list_dirs_first: matches.has(&flags::DIRS_FIRST),
             reverse:         matches.has(&flags::REVERSE),
@@ -39,7 +39,7 @@ impl SortField {
     /// Determine the sort field to use, based on the presence of a “sort”
     /// argument. This will return `Err` if the option is there, but does not
     /// correspond to a valid field.
-    fn deduce(matches: &Matches) -> Result<SortField, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<SortField, Misfire> {
         let word = match matches.get(&flags::SORT) {
             Some(w)  => w,
             None     => return Ok(SortField::default()),
@@ -86,7 +86,7 @@ impl SortField {
 
 
 impl DotFilter {
-    pub fn deduce(matches: &Matches) -> Result<DotFilter, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<DotFilter, Misfire> {
         match matches.count(&flags::ALL) {
             0 => Ok(DotFilter::JustFiles),
             1 => Ok(DotFilter::Dotfiles),
@@ -101,7 +101,7 @@ impl IgnorePatterns {
 
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
-    pub fn deduce(matches: &Matches) -> Result<IgnorePatterns, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
         let patterns = match matches.get(&flags::IGNORE_GLOB) {
             None => Ok(Vec::new()),
             Some(is) => is.to_string_lossy().split('|').map(|a| glob::Pattern::new(a)).collect(),
@@ -139,7 +139,7 @@ mod test {
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
+                assert_eq!($type::deduce(&results.unwrap().flags), $result);
             }
         };
     }

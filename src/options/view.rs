@@ -7,7 +7,7 @@ use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
 
 use options::{flags, Misfire};
-use options::parser::Matches;
+use options::parser::MatchedFlags;
 
 use fs::feature::xattr;
 use info::filetype::FileExtensions;
@@ -16,7 +16,7 @@ use info::filetype::FileExtensions;
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &Matches) -> Result<View, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches)?;
         let colours = Colours::deduce(matches)?;
         let style = FileStyle::deduce(matches);
@@ -28,7 +28,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce(matches: &Matches) -> Result<Mode, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -182,7 +182,7 @@ impl TerminalWidth {
 
 
 impl TableOptions {
-    fn deduce(matches: &Matches) -> Result<Self, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         Ok(TableOptions {
             env:         Environment::load_all(),
             time_format: TimeFormat::deduce(matches)?,
@@ -208,7 +208,7 @@ impl SizeFormat {
     /// strings of digits in your head. Changing the format to anything else
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
-    fn deduce(matches: &Matches) -> Result<SizeFormat, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<SizeFormat, Misfire> {
         let binary = matches.has(&flags::BINARY);
         let bytes  = matches.has(&flags::BYTES);
 
@@ -225,7 +225,7 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce(matches: &Matches) -> Result<TimeFormat, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<TimeFormat, Misfire> {
         pub use output::time::{DefaultFormat, ISOFormat};
         const STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
 
@@ -267,7 +267,7 @@ impl TimeTypes {
     /// It’s valid to show more than one column by passing in more than one
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
-    fn deduce(matches: &Matches) -> Result<TimeTypes, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<TimeTypes, Misfire> {
         let possible_word = matches.get(&flags::TIME);
         let modified = matches.has(&flags::MODIFIED);
         let created  = matches.has(&flags::CREATED);
@@ -335,7 +335,7 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &Matches) -> Result<TerminalColours, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<TerminalColours, Misfire> {
         const COLOURS: &[&str] = &["always", "auto", "never"];
 
         let word = match matches.get(&flags::COLOR).or_else(|| matches.get(&flags::COLOUR)) {
@@ -360,7 +360,7 @@ impl TerminalColours {
 
 
 impl Colours {
-    fn deduce(matches: &Matches) -> Result<Colours, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Colours, Misfire> {
         use self::TerminalColours::*;
 
         let tc = TerminalColours::deduce(matches)?;
@@ -377,7 +377,7 @@ impl Colours {
 
 
 impl FileStyle {
-    fn deduce(matches: &Matches) -> FileStyle {
+    fn deduce(matches: &MatchedFlags) -> FileStyle {
         let classify = Classify::deduce(matches);
         let exts = FileExtensions;
         FileStyle { classify, exts }
@@ -385,7 +385,7 @@ impl FileStyle {
 }
 
 impl Classify {
-    fn deduce(matches: &Matches) -> Classify {
+    fn deduce(matches: &MatchedFlags) -> Classify {
         if matches.has(&flags::CLASSIFY) { Classify::AddFileIndicators }
                                     else { Classify::JustFilenames }
     }
@@ -428,7 +428,7 @@ mod test {
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
+                assert_eq!($type::deduce(&results.unwrap().flags), $result);
             }
         };
     }

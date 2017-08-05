@@ -130,7 +130,7 @@ impl Args {
 
         // The results that get built up.
         let mut results = Matches {
-            flags: Vec::new(),
+            flags: MatchedFlags { flags: Vec::new() },
             frees: Vec::new(),
         };
 
@@ -163,7 +163,7 @@ impl Args {
                     let arg = self.lookup_long(before)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Necessary  => results.flags.push((flag, Some(after))),
+                        Necessary  => results.flags.flags.push((flag, Some(after))),
                         Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
@@ -174,10 +174,10 @@ impl Args {
                     let arg = self.lookup_long(long_arg_name)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Forbidden  => results.flags.push((flag, None)),
+                        Forbidden  => results.flags.flags.push((flag, None)),
                         Necessary  => {
                             if let Some(next_arg) = inputs.next() {
-                                results.flags.push((flag, Some(next_arg)));
+                                results.flags.flags.push((flag, Some(next_arg)));
                             }
                             else {
                                 return Err(ParseError::NeedsValue { flag })
@@ -212,7 +212,7 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden  => results.flags.push((flag, None)),
+                            Forbidden  => results.flags.flags.push((flag, None)),
                             Necessary  => return Err(ParseError::NeedsValue { flag })
                         }
                     }
@@ -221,7 +221,7 @@ impl Args {
                     let arg = self.lookup_short(*arg_with_value)?;
                     let flag = Flag::Short(arg.short.unwrap());
                     match arg.takes_value {
-                        Necessary  => results.flags.push((flag, Some(after))),
+                        Necessary  => results.flags.flags.push((flag, Some(after))),
                         Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
@@ -243,15 +243,15 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden  => results.flags.push((flag, None)),
+                            Forbidden  => results.flags.flags.push((flag, None)),
                             Necessary  => {
                                 if index < bytes.len() - 1 {
                                     let remnants = &bytes[index+1 ..];
-                                    results.flags.push((flag, Some(OsStr::from_bytes(remnants))));
+                                    results.flags.flags.push((flag, Some(OsStr::from_bytes(remnants))));
                                     break;
                                 }
                                 else if let Some(next_arg) = inputs.next() {
-                                    results.flags.push((flag, Some(next_arg)));
+                                    results.flags.flags.push((flag, Some(next_arg)));
                                 }
                                 else {
                                     return Err(ParseError::NeedsValue { flag })
@@ -287,20 +287,31 @@ impl Args {
 }
 
 
-/// The **matches** are the result of parsing
+/// The **matches** are the result of parsing the user’s command-line strings.
 #[derive(PartialEq, Debug)]
 pub struct Matches<'args> {
 
-    /// The flags that were
-    /// Long and short arguments need to be kept in the same vector, because
-    /// we usually want the one nearest the end to count.
-    pub flags: Vec<(Flag, Option<&'args OsStr>)>,
+    /// The flags that were parsed from the user’s input.
+    pub flags: MatchedFlags<'args>,
 
-    /// The strings that weren’t matched as arguments.
+    /// All the strings that weren’t matched as arguments, as well as anything
+    /// after the special "--" string.
     pub frees: Vec<&'args OsStr>,
 }
 
-impl<'a> Matches<'a> {
+#[derive(PartialEq, Debug)]
+pub struct MatchedFlags<'args> {
+
+    /// The individual flags from the user’s input, in the order they were
+    /// originally given.
+    ///
+    /// Long and short arguments need to be kept in the same vector because
+    /// we usually want the one nearest the end to count, and to know this,
+    /// we need to know where they are in relation to one another.
+    flags: Vec<(Flag, Option<&'args OsStr>)>,
+}
+
+impl<'a> MatchedFlags<'a> {
 
     /// Whether the given argument was specified.
     pub fn has(&self, arg: &Arg) -> bool {
@@ -424,12 +435,39 @@ mod parse_test {
     use super::*;
 
     macro_rules! test {
-        ($name:ident: $inputs:expr => $result:expr) => {
+        ($name:ident: $inputs:expr => frees: $frees:expr, flags: $flags:expr) => {
             #[test]
             fn $name() {
+
+                // Annoyingly the input &strs need to be converted to OsStrings
+                let inputs: Vec<OsString> = $inputs.as_ref().into_iter().map(|&o| os(o)).collect();
+
+                // Same with the frees
+                let frees: Vec<OsString> = $frees.as_ref().into_iter().map(|&o| os(o)).collect();
+                let frees: Vec<&OsStr> = frees.iter().map(|os| os.as_os_str()).collect();
+
+                // And again for the flags
+                let flags: Vec<(Flag, Option<&OsStr>)> = $flags
+                    .as_ref()
+                    .into_iter()
+                    .map(|&(ref f, ref os): &(Flag, Option<&'static str>)| (f.clone(), os.map(OsStr::new)))
+                    .collect();
+
+                let got = Args(TEST_ARGS).parse(inputs.iter());
+                let expected = Ok(Matches { frees, flags: MatchedFlags { flags } });
+                assert_eq!(got, expected);
+            }
+        };
+
+        ($name:ident: $inputs:expr => error $error:expr) => {
+            #[test]
+            fn $name() {
+                use self::ParseError::*;
+
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!(results, $result);
+                let got = Args(TEST_ARGS).parse(bits.iter());
+
+                assert_eq!(got, Err($error));
             }
         };
     }
@@ -442,52 +480,52 @@ mod parse_test {
 
 
     // Just filenames
-    test!(empty:       []       => Ok(Matches { frees: vec![],             flags: vec![] }));
-    test!(one_arg:     ["exa"]  => Ok(Matches { frees: vec![ &os("exa") ], flags: vec![] }));
+    test!(empty:       []       => frees: [],         flags: []);
+    test!(one_arg:     ["exa"]  => frees: [ "exa" ],  flags: []);
 
     // Dashes and double dashes
-    test!(one_dash:    ["-"]             => Ok(Matches { frees: vec![ &os("-") ],      flags: vec![] }));
-    test!(two_dashes:  ["--"]            => Ok(Matches { frees: vec![],                flags: vec![] }));
-    test!(two_file:    ["--", "file"]    => Ok(Matches { frees: vec![ &os("file") ],   flags: vec![] }));
-    test!(two_arg_l:   ["--", "--long"]  => Ok(Matches { frees: vec![ &os("--long") ], flags: vec![] }));
-    test!(two_arg_s:   ["--", "-l"]      => Ok(Matches { frees: vec![ &os("-l") ],     flags: vec![] }));
+    test!(one_dash:    ["-"]             => frees: [ "-" ],       flags: []);
+    test!(two_dashes:  ["--"]            => frees: [],            flags: []);
+    test!(two_file:    ["--", "file"]    => frees: [ "file" ],    flags: []);
+    test!(two_arg_l:   ["--", "--long"]  => frees: [ "--long" ],  flags: []);
+    test!(two_arg_s:   ["--", "-l"]      => frees: [ "-l" ],      flags: []);
 
 
     // Long args
-    test!(long:        ["--long"]               => Ok(Matches { frees: vec![],           flags: vec![ (Flag::Long("long"), None) ] }));
-    test!(long_then:   ["--long", "4"]          => Ok(Matches { frees: vec![ &os("4") ], flags: vec![ (Flag::Long("long"), None) ] }));
-    test!(long_two:    ["--long", "--verbose"]  => Ok(Matches { frees: vec![],           flags: vec![ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ] }));
+    test!(long:        ["--long"]               => frees: [],       flags: [ (Flag::Long("long"), None) ]);
+    test!(long_then:   ["--long", "4"]          => frees: [ "4" ],  flags: [ (Flag::Long("long"), None) ]);
+    test!(long_two:    ["--long", "--verbose"]  => frees: [],       flags: [ (Flag::Long("long"), None), (Flag::Long("verbose"), None) ]);
 
     // Long args with values
-    test!(bad_equals:  ["--long=equals"]  => Err(ParseError::ForbiddenValue { flag: Flag::Long("long") }));
-    test!(no_arg:      ["--count"]        => Err(ParseError::NeedsValue     { flag: Flag::Long("count") }));
-    test!(arg_equals:  ["--count=4"]      => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(&*os("4"))) ] }));
-    test!(arg_then:    ["--count", "4"]   => Ok(Matches { frees: vec![], flags: vec![ (Flag::Long("count"), Some(&*os("4"))) ] }));
+    test!(bad_equals:  ["--long=equals"]  => error ForbiddenValue { flag: Flag::Long("long") });
+    test!(no_arg:      ["--count"]        => error NeedsValue     { flag: Flag::Long("count") });
+    test!(arg_equals:  ["--count=4"]      => frees: [],  flags: [ (Flag::Long("count"), Some("4")) ]);
+    test!(arg_then:    ["--count", "4"]   => frees: [],  flags: [ (Flag::Long("count"), Some("4")) ]);
 
 
     // Short args
-    test!(short:       ["-l"]            => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'l'), None) ] }));
-    test!(short_then:  ["-l", "4"]       => Ok(Matches { frees: vec![ &*os("4") ], flags: vec![ (Flag::Short(b'l'), None) ] }));
-    test!(short_two:   ["-lv"]           => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ] }));
-    test!(mixed:       ["-v", "--long"]  => Ok(Matches { frees: vec![],            flags: vec![ (Flag::Short(b'v'), None), (Flag::Long("long"), None) ] }));
+    test!(short:       ["-l"]            => frees: [],       flags: [ (Flag::Short(b'l'), None) ]);
+    test!(short_then:  ["-l", "4"]       => frees: [ "4" ],  flags: [ (Flag::Short(b'l'), None) ]);
+    test!(short_two:   ["-lv"]           => frees: [],       flags: [ (Flag::Short(b'l'), None), (Flag::Short(b'v'), None) ]);
+    test!(mixed:       ["-v", "--long"]  => frees: [],       flags: [ (Flag::Short(b'v'), None), (Flag::Long("long"), None) ]);
 
     // Short args with values
-    test!(bad_short:          ["-l=equals"]   => Err(ParseError::ForbiddenValue { flag: Flag::Short(b'l') }));
-    test!(short_none:         ["-c"]          => Err(ParseError::NeedsValue     { flag: Flag::Short(b'c') }));
-    test!(short_arg_eq:       ["-c=4"]        => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(&*os("4"))) ] }));
-    test!(short_arg_then:     ["-c", "4"]     => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'c'), Some(&*os("4"))) ] }));
-    test!(short_two_together: ["-lctwo"]      => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
-    test!(short_two_equals:   ["-lc=two"]     => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
-    test!(short_two_next:     ["-lc", "two"]  => Ok(Matches { frees: vec![], flags: vec![ (Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(&*os("two"))) ] }));
+    test!(bad_short:          ["-l=equals"]   => error ForbiddenValue { flag: Flag::Short(b'l') });
+    test!(short_none:         ["-c"]          => error NeedsValue     { flag: Flag::Short(b'c') });
+    test!(short_arg_eq:       ["-c=4"]        => frees: [],  flags: [(Flag::Short(b'c'), Some("4")) ]);
+    test!(short_arg_then:     ["-c", "4"]     => frees: [],  flags: [(Flag::Short(b'c'), Some("4")) ]);
+    test!(short_two_together: ["-lctwo"]      => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
+    test!(short_two_equals:   ["-lc=two"]     => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
+    test!(short_two_next:     ["-lc", "two"]  => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
 
 
     // Unknown args
-    test!(unknown_long:          ["--quiet"]      => Err(ParseError::UnknownArgument      { attempt: os("quiet") }));
-    test!(unknown_long_eq:       ["--quiet=shhh"] => Err(ParseError::UnknownArgument      { attempt: os("quiet") }));
-    test!(unknown_short:         ["-q"]           => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
-    test!(unknown_short_2nd:     ["-lq"]          => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
-    test!(unknown_short_eq:      ["-q=shhh"]      => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
-    test!(unknown_short_2nd_eq:  ["-lq=shhh"]     => Err(ParseError::UnknownShortArgument { attempt: b'q' }));
+    test!(unknown_long:          ["--quiet"]      => error UnknownArgument      { attempt: os("quiet") });
+    test!(unknown_long_eq:       ["--quiet=shhh"] => error UnknownArgument      { attempt: os("quiet") });
+    test!(unknown_short:         ["-q"]           => error UnknownShortArgument { attempt: b'q' });
+    test!(unknown_short_2nd:     ["-lq"]          => error UnknownShortArgument { attempt: b'q' });
+    test!(unknown_short_eq:      ["-q=shhh"]      => error UnknownShortArgument { attempt: b'q' });
+    test!(unknown_short_2nd_eq:  ["-lq=shhh"]     => error UnknownShortArgument { attempt: b'q' });
 }
 
 
@@ -499,9 +537,8 @@ mod matches_test {
         ($name:ident: $input:expr, has $param:expr => $result:expr) => {
             #[test]
             fn $name() {
-                let frees = Vec::new();
-                let flags = $input.to_vec();
-                assert_eq!(Matches { frees, flags }.has(&$param), $result);
+                let flags = MatchedFlags { flags: $input.to_vec() };
+                assert_eq!(flags.has(&$param), $result);
             }
         };
     }
@@ -521,9 +558,8 @@ mod matches_test {
     #[test]
     fn only_count() {
         let everything = os("everything");
-        let frees = Vec::new();
-        let flags = vec![ (Flag::Short(b'c'), Some(&*everything)) ];
-        assert_eq!(Matches { frees, flags }.get(&COUNT), Some(&*everything));
+        let flags = MatchedFlags { flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ] };
+        assert_eq!(flags.get(&COUNT), Some(&*everything));
     }
 
     #[test]
@@ -531,18 +567,18 @@ mod matches_test {
         let everything = os("everything");
         let nothing    = os("nothing");
 
-        let frees = Vec::new();
-        let flags = vec![ (Flag::Short(b'c'), Some(&*everything)),
-                          (Flag::Short(b'c'), Some(&*nothing)) ];
+        let flags = MatchedFlags {
+            flags: vec![ (Flag::Short(b'c'), Some(&*everything)),
+                         (Flag::Short(b'c'), Some(&*nothing)) ]
+        };
 
-        assert_eq!(Matches { frees, flags }.get(&COUNT), Some(&*nothing));
+        assert_eq!(flags.get(&COUNT), Some(&*nothing));
     }
 
     #[test]
     fn no_count() {
-        let frees =  Vec::new();
-        let flags =  Vec::new();
+        let flags = MatchedFlags { flags: Vec::new() };
 
-        assert!(!Matches { frees, flags }.has(&COUNT));
+        assert!(!flags.has(&COUNT));
     }
 }

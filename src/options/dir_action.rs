@@ -1,4 +1,4 @@
-use options::parser::Matches;
+use options::parser::MatchedFlags;
 use options::{flags, Misfire};
 
 use fs::dir_action::{DirAction, RecurseOptions};
@@ -7,7 +7,7 @@ use fs::dir_action::{DirAction, RecurseOptions};
 impl DirAction {
 
     /// Determine which action to perform when trying to list a directory.
-    pub fn deduce(matches: &Matches) -> Result<DirAction, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<DirAction, Misfire> {
         let recurse = matches.has(&flags::RECURSE);
         let list    = matches.has(&flags::LIST_DIRS);
         let tree    = matches.has(&flags::TREE);
@@ -36,7 +36,7 @@ impl DirAction {
 impl RecurseOptions {
 
     /// Determine which files should be recursed into.
-    pub fn deduce(matches: &Matches, tree: bool) -> Result<RecurseOptions, Misfire> {
+    pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<RecurseOptions, Misfire> {
         let max_depth = if let Some(level) = matches.get(&flags::LEVEL) {
             match level.to_string_lossy().parse() {
                 Ok(l)   => Some(l),
@@ -75,7 +75,7 @@ mod test {
 
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
                 let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!($type::deduce(results.as_ref().unwrap()), $result);
+                assert_eq!($type::deduce(&results.unwrap().flags), $result);
             }
         };
     }
