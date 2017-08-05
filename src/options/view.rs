@@ -11,7 +11,6 @@ use output::time::TimeFormat;
 use options::Misfire;
 use fs::feature::xattr;
 
-
 /// The **view** contains all information about how to format output.
 #[derive(Debug)]
 pub struct View {
@@ -393,7 +392,7 @@ impl Classify {
 // so it’s easier to just cache it the first time it runs.
 lazy_static! {
     static ref TERM_WIDTH: Option<usize> = {
-        use term::dimensions;
+        use term_size::dimensions;
         dimensions().map(|t| t.0)
     };
 }
