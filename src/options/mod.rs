@@ -71,7 +71,6 @@
 
 use std::ffi::{OsStr, OsString};
 
-use fs::feature::xattr;
 use fs::dir_action::DirAction;
 use fs::filter::FileFilter;
 use output::{View, Mode};
@@ -126,16 +125,9 @@ impl Options {
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
 
-        if matches.has(&flags::HELP) {
-            let help = HelpString {
-                only_long: matches.has(&flags::LONG),
-                git: cfg!(feature="git"),
-                xattrs: xattr::ENABLED,
-            };
+        HelpString::deduce(&matches).map_err(Misfire::Help)?;
 
-            return Err(Misfire::Help(help));
-        }
-        else if matches.has(&flags::VERSION) {
+        if matches.has(&flags::VERSION) {
             return Err(Misfire::Version);
         }
 
@@ -174,34 +166,12 @@ mod test {
     use fs::filter::{SortField, SortCase};
     use fs::feature::xattr;
 
-    fn is_helpful<T>(misfire: Result<T, Misfire>) -> bool {
-        match misfire {
-            Err(Misfire::Help(_)) => true,
-            _                     => false,
-        }
-    }
-
     /// Creates an `OSStr` (used in tests)
     #[cfg(test)]
     fn os(input: &'static str) -> OsString {
         let mut os = OsString::new();
         os.push(input);
         os
-    }
-
-
-    #[test]
-    fn help() {
-        let args = [ os("--help") ];
-        let opts = Options::getopts(&args);
-        assert!(is_helpful(opts))
-    }
-
-    #[test]
-    fn help_with_file() {
-        let args = [ os("--help"), os("me") ];
-        let opts = Options::getopts(&args);
-        assert!(is_helpful(opts))
     }
 
     #[test]
