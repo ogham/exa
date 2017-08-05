@@ -58,13 +58,13 @@ static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended 
 pub struct HelpString {
 
     /// Only show the help for the long section, not all the help.
-    pub only_long: bool,
+    only_long: bool,
 
     /// Whether the --git option should be included in the help.
-    pub git: bool,
+    git: bool,
 
     /// Whether the --extended option should be included in the help.
-    pub xattrs: bool,
+    xattrs: bool,
 }
 
 impl HelpString {
