@@ -275,16 +275,15 @@ impl TimeTypes {
 
         if let Some(word) = possible_word {
             if modified {
-                return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
+                Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME))
             }
             else if created {
-                return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
+                Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME))
             }
             else if accessed {
-                return Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME));
+                Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME))
             }
-
-            if word == "mod" || word == "modified" {
+            else if word == "mod" || word == "modified" {
                 Ok(TimeTypes { accessed: false, modified: true,  created: false })
             }
             else if word == "acc" || word == "accessed" {
