@@ -61,6 +61,7 @@ impl Flag {
 
 /// Whether redundant arguments should be considered a problem.
 #[derive(PartialEq, Debug)]
+#[allow(dead_code)] // until strict mode is actually implemented
 pub enum Strictness {
 
     /// Throw an error when an argument doesn’t do anything, either because
