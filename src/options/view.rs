@@ -392,7 +392,10 @@ impl Classify {
 // so it’s easier to just cache it the first time it runs.
 lazy_static! {
     static ref TERM_WIDTH: Option<usize> = {
-        use term_size::dimensions;
-        dimensions().map(|t| t.0)
+        // All of stdin, stdout, and stderr could not be connected to a
+        // terminal, but we’re only interested in stdout because it’s
+        // where the output goes.
+        use term_size::dimensions_stdout;
+        dimensions_stdout().map(|t| t.0)
     };
 }
