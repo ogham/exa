@@ -78,7 +78,7 @@ COLUMNS=80 $exa $testcases/file-names -R 2>&1 | diff -q - $results/file_names_R 
            $exa $testcases/file-names -T 2>&1 | diff -q - $results/file_names_T || exit 1
 
 # At least make sure it handles invalid UTF-8 arguments without crashing
-$exa $testcases/file-names/* 2>/dev/null
+$exa $testcases/file-names/* >/dev/null || exit 1
 
 
 # Sorting and extension file types

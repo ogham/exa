@@ -1,10 +1,11 @@
+use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::num::ParseIntError;
 
-use getopts;
 use glob;
 
-use options::help::HelpString;
+use options::{HelpString, VersionString};
+use options::parser::{Arg, ParseError};
 
 
 /// A list of legal choices for an argument-taking option
@@ -13,7 +14,7 @@ pub struct Choices(&'static [&'static str]);
 
 impl fmt::Display for Choices {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(choices: {})", self.0.join(" "))
+        write!(f, "(choices: {})", self.0.join(", "))
     }
 }
 
@@ -22,29 +23,32 @@ impl fmt::Display for Choices {
 #[derive(PartialEq, Debug)]
 pub enum Misfire {
 
-    /// The getopts crate didn’t like these arguments.
-    InvalidOptions(getopts::Fail),
+    /// The getopts crate didn’t like these Arguments.
+    InvalidOptions(ParseError),
 
-    /// The user supplied an illegal choice to an argument
-    BadArgument(getopts::Fail, Choices),
+    /// The user supplied an illegal choice to an Argument.
+    BadArgument(&'static Arg, OsString, Choices),
 
     /// The user asked for help. This isn’t strictly an error, which is why
     /// this enum isn’t named Error!
     Help(HelpString),
 
     /// The user wanted the version number.
-    Version,
+    Version(VersionString),
 
     /// Two options were given that conflict with one another.
-    Conflict(&'static str, &'static str),
+    Conflict(&'static Arg, &'static Arg),
 
     /// An option was given that does nothing when another one either is or
     /// isn't present.
-    Useless(&'static str, bool, &'static str),
+    Useless(&'static Arg, bool, &'static Arg),
 
     /// An option was given that does nothing when either of two other options
     /// are not present.
-    Useless2(&'static str, &'static str, &'static str),
+    Useless2(&'static Arg, &'static Arg, &'static Arg),
+
+    /// A very specific edge case where --tree can’t be used with --all twice.
+    TreeAllAll,
 
     /// A numeric option was given that failed to be parsed as a number.
     FailedParse(ParseIntError),
@@ -58,9 +62,9 @@ impl Misfire {
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
         match *self {
-            Misfire::Help(_) => false,
-            Misfire::Version => false,
-            _                => true,
+            Misfire::Help(_)    => false,
+            Misfire::Version(_) => false,
+            _                   => true,
         }
     }
 
@@ -68,10 +72,8 @@ impl Misfire {
     /// argument. This has to use one of the `getopts` failure
     /// variants--it’s meant to take just an option name, rather than an
     /// option *and* an argument, but it works just as well.
-    pub fn bad_argument(option: &str, otherwise: &str, legal: &'static [&'static str]) -> Misfire {
-        Misfire::BadArgument(getopts::Fail::UnrecognizedOption(format!(
-            "--{} {}",
-            option, otherwise)), Choices(legal))
+    pub fn bad_argument(option: &'static Arg, otherwise: &OsStr, legal: &'static [&'static str]) -> Misfire {
+        Misfire::BadArgument(option, otherwise.to_os_string(), Choices(legal))
     }
 }
 
@@ -86,16 +88,17 @@ impl fmt::Display for Misfire {
         use self::Misfire::*;
 
         match *self {
-            InvalidOptions(ref e)      => write!(f, "{}", e),
-            BadArgument(ref e, ref c)  => write!(f, "{} {}", e, c),
-            Help(ref text)             => write!(f, "{}", text),
-            Version                    => write!(f, "exa {}", env!("CARGO_PKG_VERSION")),
-            Conflict(a, b)             => write!(f, "Option --{} conflicts with option {}.", a, b),
-            Useless(a, false, b)       => write!(f, "Option --{} is useless without option --{}.", a, b),
-            Useless(a, true, b)        => write!(f, "Option --{} is useless given option --{}.", a, b),
-            Useless2(a, b1, b2)        => write!(f, "Option --{} is useless without options --{} or --{}.", a, b1, b2),
-            FailedParse(ref e)         => write!(f, "Failed to parse number: {}", e),
-            FailedGlobPattern(ref e)   => write!(f, "Failed to parse glob pattern: {}", e),
+            BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no value {:?} (Choices: {})", a, b, c),
+            InvalidOptions(ref e)            => write!(f, "{:?}", e),
+            Help(ref text)                   => write!(f, "{}", text),
+            Version(ref version)             => write!(f, "{}", version),
+            Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}.", a, b),
+            Useless(ref a, false, ref b)     => write!(f, "Option {} is useless without option {}.", a, b),
+            Useless(ref a, true, ref b)      => write!(f, "Option {} is useless given option {}.", a, b),
+            Useless2(ref a, ref b1, ref b2)  => write!(f, "Option {} is useless without options {} or {}.", a, b1, b2),
+            TreeAllAll                       => write!(f, "Option --tree is useless given --all --all."),
+            FailedParse(ref e)               => write!(f, "Failed to parse number: {}", e),
+            FailedGlobPattern(ref e)         => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
 }
