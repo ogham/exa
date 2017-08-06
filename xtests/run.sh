@@ -57,8 +57,10 @@ COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  
 
 
 # Attributes
-# (there are many tests, but they're all done in one go)
-$exa $testcases/attributes -l@T | diff -q - $results/attributes  || exit 1
+# (there are many tests, but they’re all done in one go)
+$exa $testcases/attributes  -l@T | diff -q - $results/attributes        || exit 1
+$exa $testcases/attributes   -@T | diff -q - $results/attributes_dir    || exit 1
+$exa $testcases/attributes/* -@T | diff -q - $results/attributes_files  || exit 1
 
 
 # UIDs and GIDs

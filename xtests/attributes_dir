@@ -1,0 +1,57 @@
+[36m/testcases/[1;34mattributes[0m
+[38;5;244m├──[0m [1;34mdirs[0m
+[38;5;244m│  ├──[0m [1;34mno-xattrs_empty[0m
+[38;5;244m│  ├──[0m [1;34mno-xattrs_empty_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mno-xattrs_one-file[0m
+[38;5;244m│  │  └──[0m file-in-question
+[38;5;244m│  ├──[0m [1;34mno-xattrs_one-file_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mno-xattrs_two-files[0m
+[38;5;244m│  │  ├──[0m that-file
+[38;5;244m│  │  └──[0m this-file
+[38;5;244m│  ├──[0m [1;34mno-xattrs_two-files_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mone-xattr_empty[0m
+[38;5;244m│  │  └──[0m user.greeting (len 5)
+[38;5;244m│  ├──[0m [1;34mone-xattr_empty_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mone-xattr_one-file[0m
+[38;5;244m│  │  ├──[0m user.greeting (len 5)
+[38;5;244m│  │  └──[0m file-in-question
+[38;5;244m│  ├──[0m [1;34mone-xattr_one-file_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mone-xattr_two-files[0m
+[38;5;244m│  │  ├──[0m user.greeting (len 5)
+[38;5;244m│  │  ├──[0m that-file
+[38;5;244m│  │  └──[0m this-file
+[38;5;244m│  ├──[0m [1;34mone-xattr_two-files_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mtwo-xattrs_empty[0m
+[38;5;244m│  │  ├──[0m user.greeting (len 5)
+[38;5;244m│  │  └──[0m user.another_greeting (len 2)
+[38;5;244m│  ├──[0m [1;34mtwo-xattrs_empty_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mtwo-xattrs_one-file[0m
+[38;5;244m│  │  ├──[0m user.greeting (len 5)
+[38;5;244m│  │  ├──[0m user.another_greeting (len 2)
+[38;5;244m│  │  └──[0m file-in-question
+[38;5;244m│  ├──[0m [1;34mtwo-xattrs_one-file_forbidden[0m
+[38;5;244m│  │  └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m│  ├──[0m [1;34mtwo-xattrs_two-files[0m
+[38;5;244m│  │  ├──[0m user.greeting (len 5)
+[38;5;244m│  │  ├──[0m user.another_greeting (len 2)
+[38;5;244m│  │  ├──[0m that-file
+[38;5;244m│  │  └──[0m this-file
+[38;5;244m│  └──[0m [1;34mtwo-xattrs_two-files_forbidden[0m
+[38;5;244m│     └──[0m [31m<Permission denied (os error 13)>[0m
+[38;5;244m└──[0m [1;34mfiles[0m
+[38;5;244m   ├──[0m no-xattrs
+[38;5;244m   ├──[0m no-xattrs_forbidden
+[38;5;244m   ├──[0m one-xattr
+[38;5;244m   │  └──[0m user.greeting (len 5)
+[38;5;244m   ├──[0m one-xattr_forbidden
+[38;5;244m   ├──[0m two-xattrs
+[38;5;244m   │  ├──[0m user.greeting (len 5)
+[38;5;244m   │  └──[0m user.another_greeting (len 2)
+[38;5;244m   └──[0m two-xattrs_forbidden

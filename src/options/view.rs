@@ -61,9 +61,6 @@ impl Mode {
             else if matches.has(&flags::LEVEL) && !matches.has(&flags::RECURSE) && !matches.has(&flags::TREE) {
                 Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
             }
-            else if xattr::ENABLED && matches.has(&flags::EXTENDED) {
-                Err(Useless(&flags::EXTENDED, false, &flags::LONG))
-            }
             else {
                 Ok(())
             }
@@ -83,7 +80,7 @@ impl Mode {
                     let details = details::Options {
                         table: None,
                         header: false,
-                        xattr: false,
+                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
                     };
 
                     Ok(Mode::Details(details))
@@ -106,7 +103,7 @@ impl Mode {
                     let details = details::Options {
                         table: None,
                         header: false,
-                        xattr: false,
+                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
                     };
 
                     Ok(Mode::Details(details))

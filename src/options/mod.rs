@@ -159,7 +159,6 @@ mod test {
     use super::{Options, Misfire, flags};
     use std::ffi::OsString;
     use fs::filter::{SortField, SortCase};
-    use fs::feature::xattr;
 
     /// Creates an `OSStr` (used in tests)
     #[cfg(test)]
@@ -273,14 +272,5 @@ mod test {
         let args = [ os("--git") ];
         let opts = Options::getopts(&args);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GIT, false, &flags::LONG))
-    }
-
-    #[test]
-    fn extended_without_long() {
-        if xattr::ENABLED {
-            let args = [ os("--extended") ];
-            let opts = Options::getopts(&args);
-            assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::EXTENDED, false, &flags::LONG))
-        }
     }
 }
