@@ -170,13 +170,13 @@ impl ISOFormat {
         let date = LocalDateTime::at(time.seconds as i64);
 
         if self.is_recent(date) {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
-        else {
             format!("{:02}-{:02} {:02}:{:02}",
                     date.month() as usize, date.day(),
                     date.hour(), date.minute())
+        }
+        else {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
         }
     }
 
@@ -185,13 +185,13 @@ impl ISOFormat {
         let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
 
         if self.is_recent(date) {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
-        else {
             format!("{:02}-{:02} {:02}:{:02}",
                     date.month() as usize, date.day(),
                     date.hour(), date.minute())
+        }
+        else {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
         }
     }
 }
