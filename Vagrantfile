@@ -296,8 +296,8 @@ Vagrant.configure(2) do |config|
     EOF
 
     old = '200303030000.00'
-    med = '200606152314.29'
-    new = '200907221038.53'
+    med = '200606152314.29'   # the june gets used for fr_FR locale tests
+    new = '200912221038.53'   # and the december for ja_JP local tests
 
     # Awkward date and time testcases.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
@@ -426,6 +426,17 @@ Vagrant.configure(2) do |config|
         sudo touch -t #{some_date} "#{test_dir}"
         sudo chmod 755 "#{test_dir}"
         sudo chown #{user}:#{user} "#{test_dir}"
+    EOF
+
+
+    # Set up some locales
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+
+        # uncomment these from the config file
+        sudo sed -i '/fr_FR.UTF-8/s/^# //g' /etc/locale.gen
+        sudo sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen
+        sudo locale-gen
     EOF
 
 
