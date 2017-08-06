@@ -28,7 +28,7 @@ impl FileExtensions {
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
             "svg", "stl", "eps", "dvi", "ps", "cbr",
-            "cbz", "xpm", "ico", "cr2",
+            "cbz", "xpm", "ico", "cr2", "orf", "nef",
         ])
     }
 
