@@ -168,6 +168,9 @@ Vagrant.configure(2) do |config|
         touch "#{test_dir}/file-names-exts/COMPRESSED.ZIP"
         touch "#{test_dir}/file-names-exts/compressed.tar.gz"
         touch "#{test_dir}/file-names-exts/compressed.tgz"
+        touch "#{test_dir}/file-names-exts/compressed.tar.xz"
+        touch "#{test_dir}/file-names-exts/compressed.txz"
+        touch "#{test_dir}/file-names-exts/compressed.deb"
 
         touch "#{test_dir}/file-names-exts/backup~"
         touch "#{test_dir}/file-names-exts/#SAVEFILE#"
