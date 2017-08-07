@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::iter::FromIterator;
 use std::os::unix::fs::MetadataExt;
 
 use glob;
@@ -209,12 +210,45 @@ pub enum SortCase {
 }
 
 
+/// The **ignore patterns** are a list of globs that are tested against
+/// each filename, and if any of them match, that file isn’t displayed.
+/// This lets a user hide, say, text files by ignoring `*.txt`.
 #[derive(PartialEq, Default, Debug, Clone)]
 pub struct IgnorePatterns {
-    pub patterns: Vec<glob::Pattern>,
+    patterns: Vec<glob::Pattern>,
+}
+
+impl FromIterator<glob::Pattern> for IgnorePatterns {
+    fn from_iter<I: IntoIterator<Item = glob::Pattern>>(iter: I) -> Self {
+        IgnorePatterns { patterns: iter.into_iter().collect() }
+    }
 }
 
 impl IgnorePatterns {
+
+    /// Create a new list from the input glob strings, turning the inputs that
+    /// are valid glob patterns into an IgnorePatterns. The inputs that don’t
+    /// parse correctly are returned separately.
+    pub fn parse_from_iter<'a, I: IntoIterator<Item = &'a str>>(iter: I) -> (Self, Vec<glob::PatternError>) {
+        let mut patterns = Vec::new();
+        let mut errors = Vec::new();
+
+        for input in iter {
+            match glob::Pattern::new(input) {
+                Ok(pat) => patterns.push(pat),
+                Err(e)  => errors.push(e),
+            }
+        }
+
+        (IgnorePatterns { patterns }, errors)
+    }
+
+    /// Create a new empty list that matches nothing.
+    pub fn empty() -> IgnorePatterns {
+        IgnorePatterns { patterns: Vec::new() }
+    }
+
+    /// Test whether the given file should be hidden from the results.
     fn is_ignored(&self, file: &File) -> bool {
         self.patterns.iter().any(|p| p.matches(&file.name))
     }

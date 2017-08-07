@@ -1,5 +1,3 @@
-use glob;
-
 use fs::DotFilter;
 use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns};
 
@@ -102,15 +100,22 @@ impl IgnorePatterns {
     /// Determines the set of file filter options to use, based on the user’s
     /// command-line arguments.
     pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
-        let patterns = match matches.get(&flags::IGNORE_GLOB) {
-            None => Ok(Vec::new()),
-            Some(is) => is.to_string_lossy().split('|').map(|a| glob::Pattern::new(a)).collect(),
-        }?;
 
-        // TODO: is to_string_lossy really the best way to handle
-        // invalid UTF-8 there?
+        let inputs = match matches.get(&flags::IGNORE_GLOB) {
+            None => return Ok(IgnorePatterns::empty()),
+            Some(is) => is,
+        };
 
-        Ok(IgnorePatterns { patterns })
+        let (patterns, mut errors) = IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
+
+        // It can actually return more than one glob error,
+        // but we only use one.
+        if let Some(error) = errors.pop() {
+            return Err(error.into())
+        }
+        else {
+            Ok(patterns)
+        }
     }
 }
 
@@ -185,6 +190,7 @@ mod test {
 
     mod ignore_patternses {
         use super::*;
+        use std::iter::FromIterator;
         use glob;
 
         fn pat(string: &'static str) -> glob::Pattern {
@@ -192,9 +198,9 @@ mod test {
         }
 
         // Various numbers of globs
-        test!(none:   IgnorePatterns <- []                             => Ok(IgnorePatterns { patterns: vec![] }));
-        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"]     => Ok(IgnorePatterns { patterns: vec![ pat("*.ogg") ] }));
-        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"]  => Ok(IgnorePatterns { patterns: vec![ pat("*.ogg"), pat("*.MP3") ] }));
-        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"]  => Ok(IgnorePatterns { patterns: vec![ pat("*"), pat("?"), pat("."), pat("*") ] }));
+        test!(none:   IgnorePatterns <- []                             => Ok(IgnorePatterns::empty()));
+        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"]     => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg") ])));
+        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"]  => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg"), pat("*.MP3") ])));
+        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"]                  => Ok(IgnorePatterns::from_iter(vec![ pat("*"), pat("?"), pat("."), pat("*") ])));
     }
 }
