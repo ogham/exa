@@ -116,9 +116,9 @@ impl Options {
     #[allow(unused_results)]
     pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString> {
-        use options::parser::Matches;
+        use options::parser::{Matches, Strictness};
 
-        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args) {
+        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, Strictness::UseLastArguments) {
             Ok(m)   => m,
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
@@ -155,14 +155,44 @@ impl Options {
 
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use super::{Options, Misfire, flags};
+    use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
     use fs::filter::{SortField, SortCase};
+    use std::fmt::Debug;
+
+
+    #[derive(PartialEq, Debug)]
+    pub enum Strictnesses {
+        Last,
+        Complain,
+        Both,
+    }
+
+    pub fn assert_parses<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F, result: T)
+    where  T: PartialEq + Debug,  F: Fn(&MatchedFlags) -> T
+    {
+        use self::Strictnesses::*;
+        use options::parser::{Args, Strictness};
+        use std::ffi::OsString;
+
+        let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+
+        if strictnesses == Last || strictnesses == Both {
+            let results = Args(args).parse(bits.iter(), Strictness::UseLastArguments);
+            assert_eq!(get(&results.unwrap().flags), result);
+        }
+
+        if strictnesses == Complain || strictnesses == Both {
+            let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
+            assert_eq!(get(&results.unwrap().flags), result);
+        }
+    }
 
     /// Creates an `OSStr` (used in tests)
     #[cfg(test)]
-    fn os(input: &'static str) -> OsString {
+    fn os(input: &str) -> OsString {
         let mut os = OsString::new();
         os.push(input);
         os

@@ -55,27 +55,18 @@ impl RecurseOptions {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::ffi::OsString;
     use options::flags;
-
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
 
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::{Args, Arg};
-                use std::ffi::OsString;
+                use options::parser::Arg;
+                use options::test::assert_parses;
+                use options::test::Strictnesses::*;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::RECURSE, &flags::LIST_DIRS, &flags::TREE, &flags::LEVEL ];
-
-                let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!($type::deduce(&results.unwrap().flags), $result);
+                static TEST_ARGS: &[&Arg] = &[&flags::RECURSE, &flags::LIST_DIRS, &flags::TREE, &flags::LEVEL ];
+                assert_parses($inputs.as_ref(), TEST_ARGS, Both, |mf| $type::deduce(mf), $result)
             }
         };
     }

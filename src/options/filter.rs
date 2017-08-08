@@ -137,14 +137,12 @@ mod test {
         ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::{Args, Arg};
-                use std::ffi::OsString;
+                use options::parser::Arg;
+                use options::test::assert_parses;
+                use options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB ];
-
-                let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let results = Args(TEST_ARGS).parse(bits.iter());
-                assert_eq!($type::deduce(&results.unwrap().flags), $result);
+                assert_parses($inputs.as_ref(), TEST_ARGS, Both, |mf| $type::deduce(mf), $result)
             }
         };
     }
