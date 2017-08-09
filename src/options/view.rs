@@ -219,12 +219,13 @@ impl SizeFormat {
 }
 
 
+const TIME_STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
+
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
     fn deduce(matches: &MatchedFlags) -> Result<TimeFormat, Misfire> {
         pub use output::time::{DefaultFormat, ISOFormat};
-        const STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
 
         let word = match matches.get(&flags::TIME_STYLE)? {
             Some(w) => w,
@@ -244,7 +245,7 @@ impl TimeFormat {
             Ok(TimeFormat::FullISO)
         }
         else {
-            Err(Misfire::bad_argument(&flags::TIME_STYLE, word, STYLES))
+            Err(Misfire::bad_argument(&flags::TIME_STYLE, word, TIME_STYLES))
         }
     }
 }
@@ -425,14 +426,16 @@ mod test {
             #[test]
             fn $name() {
                 use options::parser::Arg;
-                use options::test::assert_parses;
+                use options::test::parse_for_test;
                 use options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,
                                                &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
                                                &flags::COLOR,  &flags::COLOUR ];
 
-                assert_parses($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf), $result)
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    assert_eq!(result, $result);
+                }
             }
         };
     }
@@ -453,16 +456,20 @@ mod test {
 
         // Default behaviour
         test!(empty:     TimeTypes <- [];                      Both => Ok(TimeTypes::default()));
+
+        // Modified
         test!(modified:  TimeTypes <- ["--modified"];          Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
         test!(m:         TimeTypes <- ["-m"];                  Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
         test!(time_mod:  TimeTypes <- ["--time=modified"];     Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
         test!(time_m:    TimeTypes <- ["-tmod"];               Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
 
+        // Accessed
         test!(acc:       TimeTypes <- ["--accessed"];          Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
         test!(a:         TimeTypes <- ["-u"];                  Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
         test!(time_acc:  TimeTypes <- ["--time", "accessed"];  Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
         test!(time_a:    TimeTypes <- ["-t", "acc"];           Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
 
+        // Created
         test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
         test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
         test!(time_cr:   TimeTypes <- ["--time=created"];      Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));

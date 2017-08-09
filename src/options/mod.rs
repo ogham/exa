@@ -160,7 +160,6 @@ pub mod test {
     use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
     use fs::filter::{SortField, SortCase};
-    use std::fmt::Debug;
 
 
     #[derive(PartialEq, Debug)]
@@ -173,24 +172,30 @@ pub mod test {
     /// This function gets used by the other testing modules.
     /// It can run with one or both strictness values: if told to run with
     /// both, then both should resolve to the same result.
-    pub fn assert_parses<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F, result: T)
-    where  T: PartialEq + Debug,  F: Fn(&MatchedFlags) -> T
+    ///
+    /// It returns a vector with one or two elements in.
+    /// These elements can then be tested with assert_eq or what have you.
+    pub fn parse_for_test<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F) -> Vec<T>
+    where F: Fn(&MatchedFlags) -> T
     {
         use self::Strictnesses::*;
         use options::parser::{Args, Strictness};
         use std::ffi::OsString;
 
         let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+        let mut rezzies = Vec::new();
 
         if strictnesses == Last || strictnesses == Both {
             let results = Args(args).parse(bits.iter(), Strictness::UseLastArguments);
-            assert_eq!(get(&results.unwrap().flags), result);
+            rezzies.push(get(&results.unwrap().flags));
         }
 
         if strictnesses == Complain || strictnesses == Both {
             let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
-            assert_eq!(get(&results.unwrap().flags), result);
+            rezzies.push(get(&results.unwrap().flags));
         }
+
+        rezzies
     }
 
     /// Creates an `OSStr` (used in tests)

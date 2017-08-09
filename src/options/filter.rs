@@ -150,11 +150,13 @@ mod test {
             #[test]
             fn $name() {
                 use options::parser::Arg;
-                use options::test::assert_parses;
+                use options::test::parse_for_test;
                 use options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB ];
-                assert_parses($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf), $result)
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    assert_eq!(result, $result);
+                }
             }
         };
     }
