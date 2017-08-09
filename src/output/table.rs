@@ -23,7 +23,17 @@ pub struct Options {
     pub env: Environment,
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
+    pub extra_columns: Columns,
+}
+
+/// Extra columns to display in the table.
+#[derive(PartialEq, Debug)]
+pub struct Columns {
+
+    /// At least one of these timestamps will be shown.
     pub time_types: TimeTypes,
+
+    // The rest are just on/off
     pub inode: bool,
     pub links: bool,
     pub blocks: bool,
@@ -39,7 +49,7 @@ impl fmt::Debug for Options {
     }
 }
 
-impl Options {
+impl Columns {
     pub fn should_scan_for_git(&self) -> bool {
         self.git
     }
@@ -286,7 +296,7 @@ pub struct Row {
 
 impl<'a, 'f> Table<'a> {
     pub fn new(options: &'a Options, dir: Option<&'a Dir>, colours: &'a Colours) -> Table<'a> {
-        let colz = options.for_dir(dir);
+        let colz = options.extra_columns.for_dir(dir);
         let widths = TableWidths::zero(colz.len());
         Table { colours, widths,
             columns: colz,

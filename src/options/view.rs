@@ -2,7 +2,7 @@ use std::env::var_os;
 
 use output::Colours;
 use output::{View, Mode, grid, details};
-use output::table::{TimeTypes, Environment, SizeFormat, Options as TableOptions};
+use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
 
@@ -180,17 +180,26 @@ impl TerminalWidth {
 
 impl TableOptions {
     fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
-        Ok(TableOptions {
-            env:         Environment::load_all(),
-            time_format: TimeFormat::deduce(matches)?,
-            size_format: SizeFormat::deduce(matches)?,
-            time_types:  TimeTypes::deduce(matches)?,
-            inode:  matches.has(&flags::INODE)?,
-            links:  matches.has(&flags::LINKS)?,
-            blocks: matches.has(&flags::BLOCKS)?,
-            group:  matches.has(&flags::GROUP)?,
-            git:    cfg!(feature="git") && matches.has(&flags::GIT)?,
-        })
+        let env = Environment::load_all();
+        let time_format = TimeFormat::deduce(matches)?;
+        let size_format = SizeFormat::deduce(matches)?;
+        let extra_columns = Columns::deduce(matches)?;
+        Ok(TableOptions { env, time_format, size_format, extra_columns })
+    }
+}
+
+
+impl Columns {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+        let time_types = TimeTypes::deduce(matches)?;
+        let git = cfg!(feature="git") && matches.has(&flags::GIT)?;
+
+        let blocks = matches.has(&flags::BLOCKS)?;
+        let group  = matches.has(&flags::GROUP)?;
+        let inode  = matches.has(&flags::INODE)?;
+        let links  = matches.has(&flags::LINKS)?;
+
+        Ok(Columns { time_types, git, blocks, group, inode, links })
     }
 }
 

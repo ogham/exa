@@ -136,7 +136,7 @@ impl Options {
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
             Mode::Details(details::Options { table: Some(ref table), .. }) |
-            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.should_scan_for_git(),
+            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.extra_columns.should_scan_for_git(),
             _ => false,
         }
     }
