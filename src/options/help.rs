@@ -72,9 +72,13 @@ impl HelpString {
     /// Determines how to show help, if at all, based on the user’s
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
+    ///
+    /// We don’t do any strict-mode error checking here: it’s OK to give
+    /// the --help or --long flags more than once. Actually checking for
+    /// errors when the user wants help is kind of petty!
     pub fn deduce(matches: &MatchedFlags) -> Result<(), HelpString> {
-        if matches.has(&flags::HELP) {
-            let only_long = matches.has(&flags::LONG);
+        if matches.count(&flags::HELP) > 0 {
+            let only_long = matches.count(&flags::LONG) > 0;
             let git       = cfg!(feature="git");
             let xattrs    = xattr::ENABLED;
             Err(HelpString { only_long, git, xattrs })

@@ -19,7 +19,7 @@ impl View {
     pub fn deduce(matches: &MatchedFlags) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches)?;
         let colours = Colours::deduce(matches)?;
-        let style = FileStyle::deduce(matches);
+        let style = FileStyle::deduce(matches)?;
         Ok(View { mode, colours, style })
     }
 }
@@ -32,17 +32,17 @@ impl Mode {
         use options::misfire::Misfire::*;
 
         let long = || {
-            if matches.has(&flags::ACROSS) && !matches.has(&flags::GRID) {
+            if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
                 Err(Useless(&flags::ACROSS, true, &flags::LONG))
             }
-            else if matches.has(&flags::ONE_LINE) {
+            else if matches.has(&flags::ONE_LINE)? {
                 Err(Useless(&flags::ONE_LINE, true, &flags::LONG))
             }
             else {
                 Ok(details::Options {
                     table: Some(TableOptions::deduce(matches)?),
-                    header: matches.has(&flags::HEADER),
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
+                    header: matches.has(&flags::HEADER)?,
+                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
                 })
             }
         };
@@ -50,15 +50,15 @@ impl Mode {
         let long_options_scan = || {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
                              &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
-                if matches.has(option) {
+                if matches.has(option)? {
                     return Err(Useless(*option, false, &flags::LONG));
                 }
             }
 
-            if cfg!(feature="git") && matches.has(&flags::GIT) {
+            if cfg!(feature="git") && matches.has(&flags::GIT)? {
                 Err(Useless(&flags::GIT, false, &flags::LONG))
             }
-            else if matches.has(&flags::LEVEL) && !matches.has(&flags::RECURSE) && !matches.has(&flags::TREE) {
+            else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
                 Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
             }
             else {
@@ -68,26 +68,26 @@ impl Mode {
 
         let other_options_scan = || {
             if let Some(width) = TerminalWidth::deduce()?.width() {
-                if matches.has(&flags::ONE_LINE) {
-                    if matches.has(&flags::ACROSS) {
+                if matches.has(&flags::ONE_LINE)? {
+                    if matches.has(&flags::ACROSS)? {
                         Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
                         Ok(Mode::Lines)
                     }
                 }
-                else if matches.has(&flags::TREE) {
+                else if matches.has(&flags::TREE)? {
                     let details = details::Options {
                         table: None,
                         header: false,
-                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
+                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
                     };
 
                     Ok(Mode::Details(details))
                 }
                 else {
                     let grid = grid::Options {
-                        across: matches.has(&flags::ACROSS),
+                        across: matches.has(&flags::ACROSS)?,
                         console_width: width,
                     };
 
@@ -99,11 +99,11 @@ impl Mode {
                 // as the program’s stdout being connected to a file, then
                 // fallback to the lines view.
 
-                if matches.has(&flags::TREE) {
+                if matches.has(&flags::TREE)? {
                     let details = details::Options {
                         table: None,
                         header: false,
-                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED),
+                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
                     };
 
                     Ok(Mode::Details(details))
@@ -114,9 +114,9 @@ impl Mode {
             }
         };
 
-        if matches.has(&flags::LONG) {
+        if matches.has(&flags::LONG)? {
             let details = long()?;
-            if matches.has(&flags::GRID) {
+            if matches.has(&flags::GRID)? {
                 match other_options_scan()? {
                     Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
                     others            => return Ok(others),
@@ -185,11 +185,11 @@ impl TableOptions {
             time_format: TimeFormat::deduce(matches)?,
             size_format: SizeFormat::deduce(matches)?,
             time_types:  TimeTypes::deduce(matches)?,
-            inode:  matches.has(&flags::INODE),
-            links:  matches.has(&flags::LINKS),
-            blocks: matches.has(&flags::BLOCKS),
-            group:  matches.has(&flags::GROUP),
-            git:    cfg!(feature="git") && matches.has(&flags::GIT),
+            inode:  matches.has(&flags::INODE)?,
+            links:  matches.has(&flags::LINKS)?,
+            blocks: matches.has(&flags::BLOCKS)?,
+            group:  matches.has(&flags::GROUP)?,
+            git:    cfg!(feature="git") && matches.has(&flags::GIT)?,
         })
     }
 }
@@ -206,8 +206,8 @@ impl SizeFormat {
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
     fn deduce(matches: &MatchedFlags) -> Result<SizeFormat, Misfire> {
-        let binary = matches.has(&flags::BINARY);
-        let bytes  = matches.has(&flags::BYTES);
+        let binary = matches.has(&flags::BINARY)?;
+        let bytes  = matches.has(&flags::BYTES)?;
 
         match (binary, bytes) {
             (true,  true )  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)),
@@ -226,7 +226,7 @@ impl TimeFormat {
         pub use output::time::{DefaultFormat, ISOFormat};
         const STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
 
-        let word = match matches.get(&flags::TIME_STYLE) {
+        let word = match matches.get(&flags::TIME_STYLE)? {
             Some(w) => w,
             None    => return Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
         };
@@ -265,10 +265,10 @@ impl TimeTypes {
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
     fn deduce(matches: &MatchedFlags) -> Result<TimeTypes, Misfire> {
-        let possible_word = matches.get(&flags::TIME);
-        let modified = matches.has(&flags::MODIFIED);
-        let created  = matches.has(&flags::CREATED);
-        let accessed = matches.has(&flags::ACCESSED);
+        let possible_word = matches.get(&flags::TIME)?;
+        let modified = matches.has(&flags::MODIFIED)?;
+        let created  = matches.has(&flags::CREATED)?;
+        let accessed = matches.has(&flags::ACCESSED)?;
 
         if let Some(word) = possible_word {
             if modified {
@@ -329,13 +329,14 @@ impl Default for TerminalColours {
     }
 }
 
+const COLOURS: &[&str] = &["always", "auto", "never"];
+
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
     fn deduce(matches: &MatchedFlags) -> Result<TerminalColours, Misfire> {
-        const COLOURS: &[&str] = &["always", "auto", "never"];
 
-        let word = match matches.get(&flags::COLOR).or_else(|| matches.get(&flags::COLOUR)) {
+        let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w) => w,
             None    => return Ok(TerminalColours::default()),
         };
@@ -362,7 +363,7 @@ impl Colours {
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Always || (tc == Automatic && TERM_WIDTH.is_some()) {
-            let scale = matches.has(&flags::COLOR_SCALE) || matches.has(&flags::COLOUR_SCALE);
+            let scale = matches.has(&flags::COLOR_SCALE)? || matches.has(&flags::COLOUR_SCALE)?;
             Ok(Colours::colourful(scale))
         }
         else {
@@ -374,17 +375,19 @@ impl Colours {
 
 
 impl FileStyle {
-    fn deduce(matches: &MatchedFlags) -> FileStyle {
-        let classify = Classify::deduce(matches);
+    fn deduce(matches: &MatchedFlags) -> Result<FileStyle, Misfire> {
+        let classify = Classify::deduce(matches)?;
         let exts = FileExtensions;
-        FileStyle { classify, exts }
+        Ok(FileStyle { classify, exts })
     }
 }
 
 impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Classify {
-        if matches.has(&flags::CLASSIFY) { Classify::AddFileIndicators }
-                                    else { Classify::JustFilenames }
+    fn deduce(matches: &MatchedFlags) -> Result<Classify, Misfire> {
+        let flagged = matches.has(&flags::CLASSIFY)?;
+
+        Ok(if flagged { Classify::AddFileIndicators }
+                 else { Classify::JustFilenames })
     }
 }
 
@@ -407,10 +410,18 @@ lazy_static! {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::ffi::OsString;
     use options::flags;
+    use options::parser::Flag;
+
+    pub fn os(input: &'static str) -> OsString {
+        let mut os = OsString::new();
+        os.push(input);
+        os
+    }
 
     macro_rules! test {
-        ($name:ident: $type:ident <- $inputs:expr => $result:expr) => {
+        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
                 use options::parser::Arg;
@@ -418,9 +429,10 @@ mod test {
                 use options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,
-                                               &flags::TIME, &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED ];
+                                               &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
+                                               &flags::COLOR,  &flags::COLOUR ];
 
-                assert_parses($inputs.as_ref(), TEST_ARGS, Both, |mf| $type::deduce(mf), $result)
+                assert_parses($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf), $result)
             }
         };
     }
@@ -429,49 +441,75 @@ mod test {
     mod size_formats {
         use super::*;
 
-        test!(empty:   SizeFormat <- []                       => Ok(SizeFormat::DecimalBytes));
-        test!(binary:  SizeFormat <- ["--binary"]             => Ok(SizeFormat::BinaryBytes));
-        test!(bytes:   SizeFormat <- ["--bytes"]              => Ok(SizeFormat::JustBytes));
-        test!(both:    SizeFormat <- ["--binary", "--bytes"]  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
+        test!(empty:   SizeFormat <- [];                       Both => Ok(SizeFormat::DecimalBytes));
+        test!(binary:  SizeFormat <- ["--binary"];             Both => Ok(SizeFormat::BinaryBytes));
+        test!(bytes:   SizeFormat <- ["--bytes"];              Both => Ok(SizeFormat::JustBytes));
+        test!(both:    SizeFormat <- ["--binary", "--bytes"];  Both => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
     }
 
 
     mod time_types {
         use super::*;
-        use std::ffi::OsString;
-
-        fn os(input: &'static str) -> OsString {
-            let mut os = OsString::new();
-            os.push(input);
-            os
-        }
-
 
         // Default behaviour
-        test!(empty:     TimeTypes <- []                      => Ok(TimeTypes::default()));
-        test!(modified:  TimeTypes <- ["--modified"]          => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
-        test!(m:         TimeTypes <- ["-m"]                  => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
-        test!(time_mod:  TimeTypes <- ["--time=modified"]     => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
-        test!(time_m:    TimeTypes <- ["-tmod"]               => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(empty:     TimeTypes <- [];                      Both => Ok(TimeTypes::default()));
+        test!(modified:  TimeTypes <- ["--modified"];          Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(m:         TimeTypes <- ["-m"];                  Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(time_mod:  TimeTypes <- ["--time=modified"];     Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(time_m:    TimeTypes <- ["-tmod"];               Both => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
 
-        test!(acc:       TimeTypes <- ["--accessed"]          => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
-        test!(a:         TimeTypes <- ["-u"]                  => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
-        test!(time_acc:  TimeTypes <- ["--time", "accessed"]  => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
-        test!(time_a:    TimeTypes <- ["-t", "acc"]           => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(acc:       TimeTypes <- ["--accessed"];          Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(a:         TimeTypes <- ["-u"];                  Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(time_acc:  TimeTypes <- ["--time", "accessed"];  Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
+        test!(time_a:    TimeTypes <- ["-t", "acc"];           Both => Ok(TimeTypes { accessed: true,   modified: false,  created: false }));
 
-        test!(cr:        TimeTypes <- ["--created"]           => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
-        test!(c:         TimeTypes <- ["-U"]                  => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
-        test!(time_cr:   TimeTypes <- ["--time=created"]      => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
-        test!(time_c:    TimeTypes <- ["-tcr"]                => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(time_cr:   TimeTypes <- ["--time=created"];      Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
+        test!(time_c:    TimeTypes <- ["-tcr"];                Both => Ok(TimeTypes { accessed: false,  modified: false,  created: true  }));
 
         // Multiples
-        test!(time_uu:    TimeTypes <- ["-uU"]                => Ok(TimeTypes { accessed: true,   modified: false,  created: true  }));
-
-        // Overriding
-        test!(time_mc:    TimeTypes <- ["-tcr", "-tmod"]      => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(time_uu:   TimeTypes <- ["-uU"];                 Both => Ok(TimeTypes { accessed: true,   modified: false,  created: true  }));
 
         // Errors
-        test!(time_tea:  TimeTypes <- ["--time=tea"]  => Err(Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES)));
-        test!(time_ea:   TimeTypes <- ["-tea"]        => Err(Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES)));
+        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => Err(Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES)));
+        test!(time_ea:   TimeTypes <- ["-tea"];                Both => Err(Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES)));
+
+        // Overriding
+        test!(overridden:   TimeTypes <- ["-tcr", "-tmod"];    Last => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
+        test!(overridden_2: TimeTypes <- ["-tcr", "-tmod"];    Complain => Err(Misfire::Duplicate(Flag::Short(b't'), Flag::Short(b't'))));
+    }
+
+
+    mod colourses {
+        use super::*;
+
+        // Default
+        test!(empty:        TerminalColours <- [];                     Both => Ok(TerminalColours::default()));
+
+        // --colour
+        test!(u_always:     TerminalColours <- ["--colour=always"];    Both => Ok(TerminalColours::Always));
+        test!(u_auto:       TerminalColours <- ["--colour", "auto"];   Both => Ok(TerminalColours::Automatic));
+        test!(u_never:      TerminalColours <- ["--colour=never"];     Both => Ok(TerminalColours::Never));
+
+        // --color
+        test!(no_u_always:  TerminalColours <- ["--color", "always"];  Both => Ok(TerminalColours::Always));
+        test!(no_u_auto:    TerminalColours <- ["--color=auto"];       Both => Ok(TerminalColours::Automatic));
+        test!(no_u_never:   TerminalColours <- ["--color", "never"];   Both => Ok(TerminalColours::Never));
+
+        // Errors
+        test!(no_u_error:   TerminalColours <- ["--color=upstream"];   Both => Err(Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS)));  // the error is for --color
+        test!(u_error:      TerminalColours <- ["--colour=lovers"];    Both => Err(Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS)));  // and so is this one!
+
+        // Overriding
+        test!(overridden_1: TerminalColours <- ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
+        test!(overridden_2: TerminalColours <- ["--color=auto",  "--colour=never"];  Last => Ok(TerminalColours::Never));
+        test!(overridden_3: TerminalColours <- ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
+        test!(overridden_4: TerminalColours <- ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
+
+        test!(overridden_5: TerminalColours <- ["--colour=auto", "--colour=never"];  Complain => Err(Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour"))));
+        test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => Err(Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour"))));
+        test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => Err(Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color"))));
+        test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => Err(Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color"))));
     }
 }

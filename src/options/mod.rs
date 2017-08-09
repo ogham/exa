@@ -170,6 +170,9 @@ pub mod test {
         Both,
     }
 
+    /// This function gets used by the other testing modules.
+    /// It can run with one or both strictness values: if told to run with
+    /// both, then both should resolve to the same result.
     pub fn assert_parses<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F, result: T)
     where  T: PartialEq + Debug,  F: Fn(&MatchedFlags) -> T
     {

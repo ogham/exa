@@ -17,8 +17,10 @@ impl VersionString {
     /// Determines how to show the version, if at all, based on the user’s
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
+    ///
+    /// Like --help, this doesn’t bother checking for errors.
     pub fn deduce(matches: &MatchedFlags) -> Result<(), VersionString> {
-        if matches.has(&flags::VERSION) {
+        if matches.count(&flags::VERSION) > 0 {
             Err(VersionString { cargo: env!("CARGO_PKG_VERSION") })
         }
         else {

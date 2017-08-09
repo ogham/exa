@@ -31,6 +31,8 @@
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 
+use options::Misfire;
+
 
 /// A **short argument** is a single ASCII character.
 pub type ShortArg = u8;
@@ -50,7 +52,7 @@ pub enum Flag {
 }
 
 impl Flag {
-    fn matches(&self, arg: &Arg) -> bool {
+    pub fn matches(&self, arg: &Arg) -> bool {
         match *self {
             Flag::Short(short)  => arg.short == Some(short),
             Flag::Long(long)    => arg.long == long,
@@ -312,21 +314,55 @@ pub struct MatchedFlags<'args> {
     strictness: Strictness,
 }
 
+use self::Strictness::*;
 impl<'a> MatchedFlags<'a> {
 
     /// Whether the given argument was specified.
-    pub fn has(&self, arg: &Arg) -> bool {
-        self.flags.iter().rev()
-            .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
-            .is_some()
+    pub fn has(&self, arg: &'static Arg) -> Result<bool, Misfire> {
+        match self.strictness {
+            UseLastArguments => {
+                let any = self.flags.iter().rev()
+                              .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
+                              .is_some();
+                Ok(any)
+            }
+            ComplainAboutRedundantArguments => {
+                let all = self.flags.iter()
+                              .filter(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
+                              .collect::<Vec<_>>();
+
+                if all.len() < 2 { Ok(all.len() == 1) }
+                             else { Err(Misfire::Conflict(arg, arg)) }
+            }
+        }
+    }
+
+    // This code could probably be better.
+
+    pub fn get(&self, arg: &'static Arg) -> Result<Option<&OsStr>, Misfire> {
+        self.get_where(|flag| flag.matches(arg))
     }
 
     /// If the given argument was specified, return its value.
     /// The value is not guaranteed to be valid UTF-8.
-    pub fn get(&self, arg: &Arg) -> Option<&OsStr> {
-        self.flags.iter().rev()
-            .find(|tuple| tuple.1.is_some() && tuple.0.matches(arg))
-            .map(|tuple| tuple.1.unwrap())
+    pub fn get_where<P>(&self, predicate: P) -> Result<Option<&OsStr>, Misfire>
+    where P: Fn(&Flag) -> bool {
+        match self.strictness {
+            UseLastArguments => {
+                let found = self.flags.iter().rev()
+                                .find(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                                .map(|tuple| tuple.1.unwrap());
+                Ok(found)
+            }
+            ComplainAboutRedundantArguments => {
+                let those = self.flags.iter()
+                                .filter(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                                .collect::<Vec<_>>();
+
+                if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
+                               else { Err(Misfire::Duplicate(those[0].0.clone(), those[1].0.clone())) }
+            }
+        }
     }
 
     // It’s annoying that ‘has’ and ‘get’ won’t work when accidentally given
@@ -337,6 +373,12 @@ impl<'a> MatchedFlags<'a> {
         self.flags.iter()
             .filter(|tuple| tuple.0.matches(arg))
             .count()
+    }
+
+    /// Checks whether strict mode is on. This is usually done from within
+    /// ‘has’ and ‘get’, but it’s available in an emergency.
+    pub fn is_strict(&self) -> bool {
+        self.strictness == Strictness::ComplainAboutRedundantArguments
     }
 }
 
@@ -547,7 +589,7 @@ mod matches_test {
                     strictness: Strictness::UseLastArguments,
                 };
 
-                assert_eq!(flags.has(&$param), $result);
+                assert_eq!(flags.has(&$param), Ok($result));
             }
         };
     }
@@ -573,7 +615,7 @@ mod matches_test {
             strictness: Strictness::UseLastArguments,
         };
 
-        assert_eq!(flags.get(&COUNT), Some(&*everything));
+        assert_eq!(flags.get(&COUNT), Ok(Some(&*everything)));
     }
 
     #[test]
@@ -587,13 +629,13 @@ mod matches_test {
             strictness: Strictness::UseLastArguments,
         };
 
-        assert_eq!(flags.get(&COUNT), Some(&*nothing));
+        assert_eq!(flags.get(&COUNT), Ok(Some(&*nothing)));
     }
 
     #[test]
     fn no_count() {
         let flags = MatchedFlags { flags: Vec::new(), strictness: Strictness::UseLastArguments };
 
-        assert!(!flags.has(&COUNT));
+        assert!(!flags.has(&COUNT).unwrap());
     }
 }
