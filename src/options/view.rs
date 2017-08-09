@@ -206,15 +206,13 @@ impl SizeFormat {
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
     fn deduce(matches: &MatchedFlags) -> Result<SizeFormat, Misfire> {
-        let binary = matches.has(&flags::BINARY)?;
-        let bytes  = matches.has(&flags::BYTES)?;
+        let flag = matches.has_where(|f| f.matches(&flags::BINARY) || f.matches(&flags::BYTES))?;
 
-        match (binary, bytes) {
-            (true,  true )  => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)),
-            (true,  false)  => Ok(SizeFormat::BinaryBytes),
-            (false, true )  => Ok(SizeFormat::JustBytes),
-            (false, false)  => Ok(SizeFormat::DecimalBytes),
-        }
+        Ok(match flag {
+            Some(f) if f.matches(&flags::BINARY)  => SizeFormat::BinaryBytes,
+            Some(f) if f.matches(&flags::BYTES)   => SizeFormat::JustBytes,
+            _                                     => SizeFormat::DecimalBytes,
+        })
     }
 }
 
@@ -463,8 +461,16 @@ mod test {
         test!(binary:  SizeFormat <- ["--binary"];             Both => Ok(SizeFormat::BinaryBytes));
         test!(bytes:   SizeFormat <- ["--bytes"];              Both => Ok(SizeFormat::JustBytes));
 
-        // Errors
-        test!(both:    SizeFormat <- ["--binary", "--bytes"];  Both => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
+        // Overriding
+        test!(both_1:  SizeFormat <- ["--binary", "--binary"];  Last => Ok(SizeFormat::BinaryBytes));
+        test!(both_2:  SizeFormat <- ["--bytes",  "--binary"];  Last => Ok(SizeFormat::BinaryBytes));
+        test!(both_3:  SizeFormat <- ["--binary", "--bytes"];   Last => Ok(SizeFormat::JustBytes));
+        test!(both_4:  SizeFormat <- ["--bytes",  "--bytes"];   Last => Ok(SizeFormat::JustBytes));
+
+        test!(both_5:  SizeFormat <- ["--binary", "--binary"];  Complain => Err(Misfire::Duplicate(Flag::Long("binary"), Flag::Long("binary"))));
+        test!(both_6:  SizeFormat <- ["--bytes",  "--binary"];  Complain => Err(Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("binary"))));
+        test!(both_7:  SizeFormat <- ["--binary", "--bytes"];   Complain => Err(Misfire::Duplicate(Flag::Long("binary"), Flag::Long("bytes"))));
+        test!(both_8:  SizeFormat <- ["--bytes",  "--bytes"];   Complain => Err(Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("bytes"))));
     }
 
 

@@ -314,61 +314,77 @@ pub struct MatchedFlags<'args> {
     strictness: Strictness,
 }
 
-use self::Strictness::*;
 impl<'a> MatchedFlags<'a> {
 
     /// Whether the given argument was specified.
+    /// Returns `true` if it was, `false` if it wasn’t, and an error in
+    /// strict mode if it was specified more than once.
     pub fn has(&self, arg: &'static Arg) -> Result<bool, Misfire> {
-        match self.strictness {
-            UseLastArguments => {
-                let any = self.flags.iter().rev()
-                              .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
-                              .is_some();
-                Ok(any)
-            }
-            ComplainAboutRedundantArguments => {
-                let all = self.flags.iter()
-                              .filter(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
-                              .collect::<Vec<_>>();
+        self.has_where(|flag| flag.matches(arg)).map(|flag| flag.is_some())
+    }
 
-                if all.len() < 2 { Ok(all.len() == 1) }
-                             else { Err(Misfire::Conflict(arg, arg)) }
-            }
+    /// Returns the first found argument that satisfies the predicate, or
+    /// nothing if none is found, or an error in strict mode if multiple
+    /// argument satisfy the predicate.
+    ///
+    /// You’ll have to test the resulting flag to see which argument it was.
+    pub fn has_where<P>(&self, predicate: P) -> Result<Option<&Flag>, Misfire>
+    where P: Fn(&Flag) -> bool {
+        if self.is_strict() {
+            let all = self.flags.iter()
+                          .filter(|tuple| tuple.1.is_none() && predicate(&tuple.0))
+                          .collect::<Vec<_>>();
+
+            if all.len() < 2 { Ok(all.first().map(|t| &t.0)) }
+                        else { Err(Misfire::Duplicate(all[0].0.clone(), all[1].0.clone())) }
+        }
+        else {
+            let any = self.flags.iter().rev()
+                          .find(|tuple| tuple.1.is_none() && predicate(&tuple.0))
+                          .map(|tuple| &tuple.0);
+            Ok(any)
         }
     }
 
     // This code could probably be better.
+    // Both ‘has’ and ‘get’ immediately begin with a conditional, which makes
+    // me think the functionality could be moved to inside Strictness.
 
+    /// Returns the value of the given argument if it was specified, nothing
+    /// if it wasn’t, and an error in strict mode if it was specified more
+    /// than once.
     pub fn get(&self, arg: &'static Arg) -> Result<Option<&OsStr>, Misfire> {
         self.get_where(|flag| flag.matches(arg))
     }
 
-    /// If the given argument was specified, return its value.
-    /// The value is not guaranteed to be valid UTF-8.
+    /// Returns the value of the argument that matches the predicate if it
+    /// was specified, nothing if it wasn't, and an error in strict mode if
+    /// multiple arguments matched the predicate.
+    ///
+    /// It’s not possible to tell which flag the value belonged to from this.
     pub fn get_where<P>(&self, predicate: P) -> Result<Option<&OsStr>, Misfire>
     where P: Fn(&Flag) -> bool {
-        match self.strictness {
-            UseLastArguments => {
-                let found = self.flags.iter().rev()
-                                .find(|tuple| tuple.1.is_some() && predicate(&tuple.0))
-                                .map(|tuple| tuple.1.unwrap());
-                Ok(found)
-            }
-            ComplainAboutRedundantArguments => {
-                let those = self.flags.iter()
-                                .filter(|tuple| tuple.1.is_some() && predicate(&tuple.0))
-                                .collect::<Vec<_>>();
+        if self.is_strict() {
+            let those = self.flags.iter()
+                            .filter(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                            .collect::<Vec<_>>();
 
-                if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
-                               else { Err(Misfire::Duplicate(those[0].0.clone(), those[1].0.clone())) }
-            }
+            if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
+                          else { Err(Misfire::Duplicate(those[0].0.clone(), those[1].0.clone())) }
+        }
+        else {
+            let found = self.flags.iter().rev()
+                            .find(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                            .map(|tuple| tuple.1.unwrap());
+            Ok(found)
         }
     }
 
     // It’s annoying that ‘has’ and ‘get’ won’t work when accidentally given
     // flags that do/don’t take values, but this should be caught by tests.
 
-    /// Counts the number of occurrences of the given argument.
+    /// Counts the number of occurrences of the given argument, even in
+    /// strict mode.
     pub fn count(&self, arg: &Arg) -> usize {
         self.flags.iter()
             .filter(|tuple| tuple.0.matches(arg))
