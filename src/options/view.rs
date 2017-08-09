@@ -413,7 +413,10 @@ mod test {
     use super::*;
     use std::ffi::OsString;
     use options::flags;
-    use options::parser::Flag;
+    use options::parser::{Flag, Arg};
+
+    use options::test::parse_for_test;
+    use options::test::Strictnesses::*;
 
     pub fn os(input: &'static str) -> OsString {
         let mut os = OsString::new();
@@ -421,20 +424,29 @@ mod test {
         os
     }
 
+    static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
+                                   &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
+                                   &flags::COLOR,  &flags::COLOUR ];
+
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::Arg;
-                use options::test::parse_for_test;
-                use options::test::Strictnesses::*;
-
-                static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,
-                                               &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
-                                               &flags::COLOR,  &flags::COLOUR ];
-
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
                     assert_eq!(result, $result);
+                }
+            }
+        };
+
+        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => like $pat:pat) => {
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    println!("Testing {:?}", result);
+                    match result {
+                        $pat => assert!(true),
+                        _    => assert!(false),
+                    }
                 }
             }
         };
@@ -444,10 +456,42 @@ mod test {
     mod size_formats {
         use super::*;
 
+        // Default behaviour
         test!(empty:   SizeFormat <- [];                       Both => Ok(SizeFormat::DecimalBytes));
+
+        // Individual flags
         test!(binary:  SizeFormat <- ["--binary"];             Both => Ok(SizeFormat::BinaryBytes));
         test!(bytes:   SizeFormat <- ["--bytes"];              Both => Ok(SizeFormat::JustBytes));
+
+        // Errors
         test!(both:    SizeFormat <- ["--binary", "--bytes"];  Both => Err(Misfire::Conflict(&flags::BINARY, &flags::BYTES)));
+    }
+
+
+    mod time_formats {
+        use super::*;
+
+        // These tests use pattern matching because TimeFormat doesn’t
+        // implement PartialEq.
+
+        // Default behaviour
+        test!(empty:     TimeFormat <- [];                            Both => like Ok(TimeFormat::DefaultFormat(_)));
+
+        // Individual settings
+        test!(default:   TimeFormat <- ["--time-style=default"];      Both => like Ok(TimeFormat::DefaultFormat(_)));
+        test!(iso:       TimeFormat <- ["--time-style", "iso"];       Both => like Ok(TimeFormat::ISOFormat(_)));
+        test!(long_iso:  TimeFormat <- ["--time-style=long-iso"];     Both => like Ok(TimeFormat::LongISO));
+        test!(full_iso:  TimeFormat <- ["--time-style", "full-iso"];  Both => like Ok(TimeFormat::FullISO));
+
+        // Overriding
+        test!(actually:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Last => like Ok(TimeFormat::ISOFormat(_)));
+        test!(actual_2:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Complain => like Err(Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style"))));
+
+        test!(nevermind: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Last => like Ok(TimeFormat::FullISO));
+        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Complain => like Err(Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style"))));
+
+        // Errors
+        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => like Err(Misfire::BadArgument(_, _, _)));
     }
 
 
