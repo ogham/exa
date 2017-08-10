@@ -178,7 +178,11 @@ $exa $testcases/hiddens -l -aa 2>&1 | diff -q - $results/hiddens_laa  || exit 1
 
 
 # Errors
-$exa --binary 2>&1 | diff -q - $results/errors_useless  || exit 1
+$exa --binary     2>&1 | diff -q - $results/error_useless    || exit 1
+$exa --ternary    2>&1 | diff -q - $results/error_long       || exit 1
+$exa -4           2>&1 | diff -q - $results/error_short      || exit 1
+$exa --time       2>&1 | diff -q - $results/error_value      || exit 1
+$exa --long=time  2>&1 | diff -q - $results/error_overvalued || exit 1
 
 
 # And finally...

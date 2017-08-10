@@ -60,6 +60,14 @@ impl Flag {
     }
 }
 
+impl fmt::Display for Flag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Flag::Short(short) => write!(f, "-{}", short as char),
+            Flag::Long(long)   => write!(f, "--{}", long),
+        }
+    }
+}
 
 /// Whether redundant arguments should be considered a problem.
 #[derive(PartialEq, Debug, Copy, Clone)]

@@ -92,7 +92,7 @@ impl fmt::Display for Misfire {
 
         match *self {
             BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no value {:?} (Choices: {})", a, b, c),
-            InvalidOptions(ref e)            => write!(f, "{:?}", e),
+            InvalidOptions(ref e)            => write!(f, "{}", e),
             Help(ref text)                   => write!(f, "{}", text),
             Version(ref version)             => write!(f, "{}", version),
             Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}.", a, b),
@@ -103,6 +103,19 @@ impl fmt::Display for Misfire {
             TreeAllAll                       => write!(f, "Option --tree is useless given --all --all."),
             FailedParse(ref e)               => write!(f, "Failed to parse number: {}", e),
             FailedGlobPattern(ref e)         => write!(f, "Failed to parse glob pattern: {}", e),
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::ParseError::*;
+
+        match *self {
+            NeedsValue { ref flag }              => write!(f, "Flag {} needs a value", flag),
+            ForbiddenValue { ref flag }          => write!(f, "Flag {} cannot take a value", flag),
+            UnknownShortArgument { ref attempt } => write!(f, "Unknown argument -{}", *attempt as char),
+            UnknownArgument { ref attempt }      => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
         }
     }
 }
