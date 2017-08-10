@@ -50,7 +50,7 @@ impl Mode {
         let long_options_scan = || {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
                              &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
-                if matches.has(option)? {
+                if matches.is_strict() && matches.has(option)? {
                     return Err(Useless(*option, false, &flags::LONG));
                 }
             }
@@ -433,7 +433,9 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
-                                   &flags::COLOR,  &flags::COLOUR ];
+                                   &flags::COLOR,  &flags::COLOUR,
+                                   &flags::HEADER, &flags::GROUP,  &flags::INODE,
+                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG ];
 
     macro_rules! test {
 
@@ -594,5 +596,31 @@ mod test {
         test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
         test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
         test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    }
+
+
+    mod views {
+        use super::*;
+
+        test!(just_header:   Mode <- ["--header"];  Last => like Ok(Mode::Grid(_)));
+        test!(just_header_2: Mode <- ["--header"];  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
+
+        test!(just_group:    Mode <- ["--group"];   Last => like Ok(Mode::Grid(_)));
+        test!(just_group_2:  Mode <- ["--group"];   Complain => err Misfire::Useless(&flags::GROUP,  false, &flags::LONG));
+
+        test!(just_inode:    Mode <- ["--inode"];   Last => like Ok(Mode::Grid(_)));
+        test!(just_inode_2:  Mode <- ["--inode"];   Complain => err Misfire::Useless(&flags::INODE,  false, &flags::LONG));
+
+        test!(just_links:    Mode <- ["--links"];   Last => like Ok(Mode::Grid(_)));
+        test!(just_links_2:  Mode <- ["--links"];   Complain => err Misfire::Useless(&flags::LINKS,  false, &flags::LONG));
+
+        test!(just_blocks:   Mode <- ["--blocks"];  Last => like Ok(Mode::Grid(_)));
+        test!(just_blocks_2: Mode <- ["--blocks"];  Complain => err Misfire::Useless(&flags::BLOCKS, false, &flags::LONG));
+
+        test!(just_binary:   Mode <- ["--binary"];  Last => like Ok(Mode::Grid(_)));
+        test!(just_binary_2: Mode <- ["--binary"];  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
+
+        test!(just_bytes:    Mode <- ["--bytes"];  Last => like Ok(Mode::Grid(_)));
+        test!(just_bytes_2:  Mode <- ["--bytes"];  Complain => err Misfire::Useless(&flags::BYTES, false, &flags::LONG));
     }
 }

@@ -221,20 +221,6 @@ pub mod test {
     }
 
     #[test]
-    fn just_binary() {
-        let args = [ os("--binary") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BINARY, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_bytes() {
-        let args = [ os("--bytes") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BYTES, false, &flags::LONG))
-    }
-
-    #[test]
     fn long_across() {
         let args = [ os("--long"), os("--across") ];
         let opts = Options::getopts(&args);
@@ -246,41 +232,6 @@ pub mod test {
         let args = [ os("--oneline"), os("--across") ];
         let opts = Options::getopts(&args);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-    }
-
-    #[test]
-    fn just_header() {
-        let args = [ os("--header") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::HEADER, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_group() {
-        let args = [ os("--group") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GROUP, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_inode() {
-        let args = [ os("--inode") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::INODE, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_links() {
-        let args = [ os("--links") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::LINKS, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_blocks() {
-        let args = [ os("--blocks") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BLOCKS, false, &flags::LONG))
     }
 
     #[test]
