@@ -436,7 +436,10 @@ mod test {
                                    &flags::COLOR,  &flags::COLOUR ];
 
     macro_rules! test {
+
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
+            /// Macro that writes a test.
+            /// If testing both strictnesses, they’ll both be done in the same function.
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
@@ -445,7 +448,20 @@ mod test {
             }
         };
 
+        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => err $result:expr) => {
+            /// Special macro for testing Err results.
+            /// This is needed because sometimes the Ok type doesn’t implement PartialEq.
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    assert_eq!(result.unwrap_err(), $result);
+                }
+            }
+        };
+
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => like $pat:pat) => {
+            /// More general macro for testing against a pattern.
+            /// Instead of using PartialEq, this just tests if it matches a pat.
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
@@ -476,15 +492,16 @@ mod test {
         test!(both_3:  SizeFormat <- ["--binary", "--bytes"];   Last => Ok(SizeFormat::JustBytes));
         test!(both_4:  SizeFormat <- ["--bytes",  "--bytes"];   Last => Ok(SizeFormat::JustBytes));
 
-        test!(both_5:  SizeFormat <- ["--binary", "--binary"];  Complain => Err(Misfire::Duplicate(Flag::Long("binary"), Flag::Long("binary"))));
-        test!(both_6:  SizeFormat <- ["--bytes",  "--binary"];  Complain => Err(Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("binary"))));
-        test!(both_7:  SizeFormat <- ["--binary", "--bytes"];   Complain => Err(Misfire::Duplicate(Flag::Long("binary"), Flag::Long("bytes"))));
-        test!(both_8:  SizeFormat <- ["--bytes",  "--bytes"];   Complain => Err(Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("bytes"))));
+        test!(both_5:  SizeFormat <- ["--binary", "--binary"];  Complain => err Misfire::Duplicate(Flag::Long("binary"), Flag::Long("binary")));
+        test!(both_6:  SizeFormat <- ["--bytes",  "--binary"];  Complain => err Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("binary")));
+        test!(both_7:  SizeFormat <- ["--binary", "--bytes"];   Complain => err Misfire::Duplicate(Flag::Long("binary"), Flag::Long("bytes")));
+        test!(both_8:  SizeFormat <- ["--bytes",  "--bytes"];   Complain => err Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("bytes")));
     }
 
 
     mod time_formats {
         use super::*;
+        use std::ffi::OsStr;
 
         // These tests use pattern matching because TimeFormat doesn’t
         // implement PartialEq.
@@ -500,13 +517,13 @@ mod test {
 
         // Overriding
         test!(actually:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Last => like Ok(TimeFormat::ISOFormat(_)));
-        test!(actual_2:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Complain => like Err(Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style"))));
+        test!(actual_2:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         test!(nevermind: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Last => like Ok(TimeFormat::FullISO));
-        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Complain => like Err(Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style"))));
+        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         // Errors
-        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => like Err(Misfire::BadArgument(_, _, _)));
+        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => err Misfire::bad_argument(&flags::TIME_STYLE, OsStr::new("24-hour"), TIME_STYLES));
     }
 
 
@@ -538,12 +555,12 @@ mod test {
         test!(time_uu:   TimeTypes <- ["-uU"];                 Both => Ok(TimeTypes { accessed: true,   modified: false,  created: true  }));
 
         // Errors
-        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => Err(Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES)));
-        test!(time_ea:   TimeTypes <- ["-tea"];                Both => Err(Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES)));
+        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => err Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES));
+        test!(time_ea:   TimeTypes <- ["-tea"];                Both => err Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES));
 
         // Overriding
         test!(overridden:   TimeTypes <- ["-tcr", "-tmod"];    Last => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));
-        test!(overridden_2: TimeTypes <- ["-tcr", "-tmod"];    Complain => Err(Misfire::Duplicate(Flag::Short(b't'), Flag::Short(b't'))));
+        test!(overridden_2: TimeTypes <- ["-tcr", "-tmod"];    Complain => err Misfire::Duplicate(Flag::Short(b't'), Flag::Short(b't')));
     }
 
 
@@ -564,8 +581,8 @@ mod test {
         test!(no_u_never:   TerminalColours <- ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
         // Errors
-        test!(no_u_error:   TerminalColours <- ["--color=upstream"];   Both => Err(Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS)));  // the error is for --color
-        test!(u_error:      TerminalColours <- ["--colour=lovers"];    Both => Err(Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS)));  // and so is this one!
+        test!(no_u_error:   TerminalColours <- ["--color=upstream"];   Both => err Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS));  // the error is for --color
+        test!(u_error:      TerminalColours <- ["--colour=lovers"];    Both => err Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS));  // and so is this one!
 
         // Overriding
         test!(overridden_1: TerminalColours <- ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
@@ -573,9 +590,9 @@ mod test {
         test!(overridden_3: TerminalColours <- ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
         test!(overridden_4: TerminalColours <- ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
 
-        test!(overridden_5: TerminalColours <- ["--colour=auto", "--colour=never"];  Complain => Err(Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour"))));
-        test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => Err(Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour"))));
-        test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => Err(Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color"))));
-        test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => Err(Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color"))));
+        test!(overridden_5: TerminalColours <- ["--colour=auto", "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
+        test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
+        test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
+        test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
     }
 }
