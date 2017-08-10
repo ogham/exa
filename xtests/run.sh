@@ -15,6 +15,11 @@ testcases="/testcases"
 results="/vagrant/xtests"
 
 
+# We want to use strict mode here. It’s important that no combination of
+# testing flags happens to work by accident!
+export EXA_STRICT=1
+
+
 # Check that no files were created more than a year ago.
 # Files not from the current year use a different date format, meaning
 # that tests will fail until the VM gets re-provisioned.
@@ -54,6 +59,14 @@ COLUMNS=200 $exa $testcases/files -lG | diff -q - $results/files_lG_200  || exit
 COLUMNS=100 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_100  || exit 1
 COLUMNS=150 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_150  || exit 1
 COLUMNS=200 $exa $testcases/files/* -lG | diff -q - $results/files_star_lG_200  || exit 1
+
+
+# File size tests
+$exa $testcases/files -l --binary | diff -q - $results/files_l_binary  || exit 1
+$exa $testcases/files -l --bytes  | diff -q - $results/files_l_bytes   || exit 1
+
+EXA_STRICT= $exa $testcases/files -l --bytes --binary   | diff -q - $results/files_l_binary  || exit 1
+EXA_STRICT= $exa $testcases/files -l --binary --bytes   | diff -q - $results/files_l_bytes   || exit 1
 
 
 # Attributes
@@ -162,6 +175,10 @@ COLUMNS=80 $exa $testcases/hiddens -aa 2>&1 | diff -q - $results/hiddens_aa  || 
 $exa $testcases/hiddens -l     2>&1 | diff -q - $results/hiddens_l    || exit 1
 $exa $testcases/hiddens -l -a  2>&1 | diff -q - $results/hiddens_la   || exit 1
 $exa $testcases/hiddens -l -aa 2>&1 | diff -q - $results/hiddens_laa  || exit 1
+
+
+# Errors
+$exa --binary 2>&1 | diff -q - $results/errors_useless  || exit 1
 
 
 # And finally...

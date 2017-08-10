@@ -121,7 +121,13 @@ impl Options {
           V: Vars {
         use options::parser::{Matches, Strictness};
 
-        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, Strictness::UseLastArguments) {
+        let strictness = match vars.get("EXA_STRICT") {
+            None                         => Strictness::UseLastArguments,
+            Some(ref t) if t.is_empty()  => Strictness::UseLastArguments,
+            _                            => Strictness::ComplainAboutRedundantArguments,
+        };
+
+        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, strictness) {
             Ok(m)   => m,
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
