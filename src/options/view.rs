@@ -1,23 +1,20 @@
-use std::env::var_os;
-
 use output::Colours;
 use output::{View, Mode, grid, details};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
 
-use options::{flags, Misfire};
+use options::{flags, Misfire, Vars};
 use options::parser::MatchedFlags;
 
 use fs::feature::xattr;
 use info::filetype::FileExtensions;
 
-
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce(matches: &MatchedFlags) -> Result<View, Misfire> {
-        let mode = Mode::deduce(matches)?;
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<View, Misfire> {
+        let mode = Mode::deduce(matches, vars)?;
         let colours = Colours::deduce(matches)?;
         let style = FileStyle::deduce(matches)?;
         Ok(View { mode, colours, style })
@@ -28,7 +25,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce(matches: &MatchedFlags) -> Result<Mode, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -67,7 +64,7 @@ impl Mode {
         };
 
         let other_options_scan = || {
-            if let Some(width) = TerminalWidth::deduce()?.width() {
+            if let Some(width) = TerminalWidth::deduce(vars)?.width() {
                 if matches.has(&flags::ONE_LINE)? {
                     if matches.has(&flags::ACROSS)? {
                         Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
@@ -153,8 +150,8 @@ impl TerminalWidth {
     /// Determine a requested terminal width from the command-line arguments.
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce() -> Result<TerminalWidth, Misfire> {
-        if let Some(columns) = var_os("COLUMNS").and_then(|s| s.into_string().ok()) {
+    fn deduce<V: Vars>(vars: V) -> Result<TerminalWidth, Misfire> {
+        if let Some(columns) = vars.get("COLUMNS").and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(width)  => Ok(TerminalWidth::Set(width)),
                 Err(e)     => Err(Misfire::FailedParse(e)),
@@ -435,7 +432,8 @@ mod test {
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
                                    &flags::COLOR,  &flags::COLOUR,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE,
-                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG ];
+                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG,
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
 
     macro_rules! test {
 
@@ -467,6 +465,31 @@ mod test {
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    println!("Testing {:?}", result);
+                    match result {
+                        $pat => assert!(true),
+                        _    => assert!(false),
+                    }
+                }
+            }
+        };
+
+
+        ($name:ident: $type:ident <- $inputs:expr, $vars:expr; $stricts:expr => err $result:expr) => {
+            /// Like above, but with $vars.
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
+                    assert_eq!(result.unwrap_err(), $result);
+                }
+            }
+        };
+
+        ($name:ident: $type:ident <- $inputs:expr, $vars:expr; $stricts:expr => like $pat:pat) => {
+            /// Like further above, but with $vars.
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),
@@ -601,26 +624,45 @@ mod test {
 
     mod views {
         use super::*;
+        use output::grid::Options as GridOptions;
 
-        test!(just_header:   Mode <- ["--header"];  Last => like Ok(Mode::Grid(_)));
-        test!(just_header_2: Mode <- ["--header"];  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
+        // Default
+        test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
-        test!(just_group:    Mode <- ["--group"];   Last => like Ok(Mode::Grid(_)));
-        test!(just_group_2:  Mode <- ["--group"];   Complain => err Misfire::Useless(&flags::GROUP,  false, &flags::LONG));
+        // Grid views
+        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
+        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
+        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
+        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
 
-        test!(just_inode:    Mode <- ["--inode"];   Last => like Ok(Mode::Grid(_)));
-        test!(just_inode_2:  Mode <- ["--inode"];   Complain => err Misfire::Useless(&flags::INODE,  false, &flags::LONG));
+        // Lines views
+        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines));
+        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines));
 
-        test!(just_links:    Mode <- ["--links"];   Last => like Ok(Mode::Grid(_)));
-        test!(just_links_2:  Mode <- ["--links"];   Complain => err Misfire::Useless(&flags::LINKS,  false, &flags::LONG));
+        // Details views
+        test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
+        test!(ell:           Mode <- ["-l"], None;        Both => like Ok(Mode::Details(_)));
 
-        test!(just_blocks:   Mode <- ["--blocks"];  Last => like Ok(Mode::Grid(_)));
-        test!(just_blocks_2: Mode <- ["--blocks"];  Complain => err Misfire::Useless(&flags::BLOCKS, false, &flags::LONG));
+        // Grid-details views
+        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_, _)));
+        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_, _)));
 
-        test!(just_binary:   Mode <- ["--binary"];  Last => like Ok(Mode::Grid(_)));
-        test!(just_binary_2: Mode <- ["--binary"];  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
 
-        test!(just_bytes:    Mode <- ["--bytes"];  Last => like Ok(Mode::Grid(_)));
-        test!(just_bytes_2:  Mode <- ["--bytes"];  Complain => err Misfire::Useless(&flags::BYTES, false, &flags::LONG));
+        // Options that do nothing without --long
+        test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_group:    Mode <- ["--group"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_inode:    Mode <- ["--inode"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_links:    Mode <- ["--links"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_blocks:   Mode <- ["--blocks"], None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
+
+        test!(just_header_2: Mode <- ["--header"], None;  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
+        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err Misfire::Useless(&flags::GROUP,  false, &flags::LONG));
+        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err Misfire::Useless(&flags::INODE,  false, &flags::LONG));
+        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err Misfire::Useless(&flags::LINKS,  false, &flags::LONG));
+        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err Misfire::Useless(&flags::BLOCKS, false, &flags::LONG));
+        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
+        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err Misfire::Useless(&flags::BYTES,  false, &flags::LONG));
     }
 }

@@ -22,6 +22,7 @@ extern crate term_size;
 extern crate lazy_static;
 
 
+use std::env::var_os;
 use std::ffi::{OsStr, OsString};
 use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, PathBuf};
@@ -29,7 +30,7 @@ use std::path::{Component, PathBuf};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
-use options::Options;
+use options::{Options, Vars};
 pub use options::Misfire;
 use output::{escape, lines, grid, grid_details, details, View, Mode};
 
@@ -55,10 +56,20 @@ pub struct Exa<'args, 'w, W: Write + 'w> {
     pub args: Vec<&'args OsStr>,
 }
 
+/// The “real” environment variables type.
+/// Instead of just calling `var_os` from within the options module,
+/// the method of looking up environment variables has to be passed in.
+struct LiveVars;
+impl Vars for LiveVars {
+    fn get(&self, name: &'static str) -> Option<OsString> {
+        var_os(name)
+    }
+}
+
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
-        Options::getopts(args).map(move |(options, args)| {
+        Options::parse(args, LiveVars).map(move |(options, args)| {
             Exa { options, writer, args }
         })
     }

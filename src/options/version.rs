@@ -54,7 +54,7 @@ mod test {
     #[test]
     fn help() {
         let args = [ os("--version") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert!(opts.is_err())
     }
 }

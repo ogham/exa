@@ -112,10 +112,13 @@ pub struct Options {
 
 impl Options {
 
-    /// Call getopts on the given slice of command-line strings.
+    /// Parse the given iterator of command-line strings into an Options
+    /// struct and a list of free filenames, using the environment variables
+    /// for extra options.
     #[allow(unused_results)]
-    pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
-    where I: IntoIterator<Item=&'args OsString> {
+    pub fn parse<'args, I, V>(args: I, vars: V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
+    where I: IntoIterator<Item=&'args OsString>,
+          V: Vars {
         use options::parser::{Matches, Strictness};
 
         let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, Strictness::UseLastArguments) {
@@ -126,7 +129,7 @@ impl Options {
         HelpString::deduce(&flags).map_err(Misfire::Help)?;
         VersionString::deduce(&flags).map_err(Misfire::Version)?;
 
-        let options = Options::deduce(&flags)?;
+        let options = Options::deduce(&flags, vars)?;
         Ok((options, frees))
     }
 
@@ -143,23 +146,36 @@ impl Options {
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce(matches: &MatchedFlags) -> Result<Options, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
-        let view = View::deduce(matches)?;
+        let view = View::deduce(matches, vars)?;
 
         Ok(Options { dir_action, view, filter })
     }
 }
 
 
+/// Mockable wrapper for `std::env::var_os`.
+pub trait Vars {
+    fn get(&self, name: &'static str) -> Option<OsString>;
+}
+
+
+
 
 #[cfg(test)]
 pub mod test {
-    use super::{Options, Misfire, flags};
+    use super::{Options, Misfire, Vars, flags};
     use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
-    use fs::filter::{SortField, SortCase};
+
+    // Test impl that just returns the value it has.
+    impl Vars for Option<OsString> {
+        fn get(&self, _name: &'static str) -> Option<OsString> {
+            self.clone()
+        }
+    }
 
 
     #[derive(PartialEq, Debug)]
@@ -209,57 +225,36 @@ pub mod test {
     #[test]
     fn files() {
         let args = [ os("this file"), os("that file") ];
-        let outs = Options::getopts(&args).unwrap().1;
+        let outs = Options::parse(&args, None).unwrap().1;
         assert_eq!(outs, vec![ &os("this file"), &os("that file") ])
     }
 
     #[test]
     fn no_args() {
         let nothing: Vec<OsString> = Vec::new();
-        let outs = Options::getopts(&nothing).unwrap().1;
+        let outs = Options::parse(&nothing, None).unwrap().1;
         assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
     }
 
     #[test]
     fn long_across() {
         let args = [ os("--long"), os("--across") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
     }
 
     #[test]
     fn oneline_across() {
         let args = [ os("--oneline"), os("--across") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-    }
-
-    #[test]
-    fn test_sort_size() {
-        let args = [ os("--sort=size") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Size);
-    }
-
-    #[test]
-    fn test_sort_name() {
-        let args = [ os("--sort=name") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Sensitive));
-    }
-
-    #[test]
-    fn test_sort_name_lowercase() {
-        let args = [ os("--sort=Name") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Insensitive));
     }
 
     #[test]
     #[cfg(feature="git")]
     fn just_git() {
         let args = [ os("--git") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GIT, false, &flags::LONG))
     }
 }
