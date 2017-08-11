@@ -255,12 +255,4 @@ pub mod test {
         let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
     }
-
-    #[test]
-    #[cfg(feature="git")]
-    fn just_git() {
-        let args = [ os("--git") ];
-        let opts = Options::parse(&args, None);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GIT, false, &flags::LONG))
-    }
 }

@@ -44,25 +44,6 @@ impl Mode {
             }
         };
 
-        let long_options_scan = || {
-            for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
-                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
-                if matches.is_strict() && matches.has(option)? {
-                    return Err(Useless(*option, false, &flags::LONG));
-                }
-            }
-
-            if cfg!(feature="git") && matches.has(&flags::GIT)? {
-                Err(Useless(&flags::GIT, false, &flags::LONG))
-            }
-            else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
-                Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE))
-            }
-            else {
-                Ok(())
-            }
-        };
-
         let other_options_scan = || {
             if let Some(width) = TerminalWidth::deduce(vars)?.width() {
                 if matches.has(&flags::ONE_LINE)? {
@@ -124,7 +105,25 @@ impl Mode {
             }
         }
 
-        long_options_scan()?;
+        // If --long hasn’t been passed, then check if we need to warn the
+        // user about flags that won’t have any effect.
+        if matches.is_strict() {
+            for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
+                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
+                if matches.has(option)? {
+                    return Err(Useless(*option, false, &flags::LONG));
+                }
+            }
+
+            if cfg!(feature="git") && matches.has(&flags::GIT)? {
+                return Err(Useless(&flags::GIT, false, &flags::LONG));
+            }
+            else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
+                // TODO: I'm not sure if the code even gets this far.
+                // There is an identical check in dir_action
+                return Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
+            }
+        }
 
         other_options_scan()
     }
@@ -431,8 +430,8 @@ mod test {
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
                                    &flags::COLOR,  &flags::COLOUR,
-                                   &flags::HEADER, &flags::GROUP,  &flags::INODE,
-                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG,
+                                   &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
+                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
                                    &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
 
     macro_rules! test {
@@ -657,6 +656,9 @@ mod test {
         test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
         test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
 
+        #[cfg(feature="git")]
+        test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
+
         test!(just_header_2: Mode <- ["--header"], None;  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
         test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err Misfire::Useless(&flags::GROUP,  false, &flags::LONG));
         test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err Misfire::Useless(&flags::INODE,  false, &flags::LONG));
@@ -664,5 +666,8 @@ mod test {
         test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err Misfire::Useless(&flags::BLOCKS, false, &flags::LONG));
         test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
         test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err Misfire::Useless(&flags::BYTES,  false, &flags::LONG));
+
+        #[cfg(feature="git")]
+        test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err Misfire::Useless(&flags::GIT,    false, &flags::LONG));
     }
 }
