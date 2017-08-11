@@ -191,10 +191,31 @@ impl<'a> Render<'a> {
                     let mut errors = Vec::new();
                     let mut xattrs = Vec::new();
 
+                    // There are three “levels” of extended attribute support:
+                    //
+                    // 1. If we’re compiling without that feature, then
+                    //    exa pretends no files have attributes.
+                    // 2. If the feature is enabled but the --extended flag
+                    //    hasn’t been specified, then display an @ in the
+                    //    permissions column for files with xattrs, but don’t
+                    //    display anything else.
+                    // 3. If the --extended flag *has* been specified, then
+                    //    display the @, the attributes and their lengths,
+                    //    and any errors encountered when getting them.
+                    //
+                    // For a while, exa took a stricter approach to (2): if
+                    // an error occurred while checking a file’s xattrs, exa
+                    // would display that error even though the attributes
+                    // weren’t actually being shown! This was confusing, as
+                    // users were being shown errors for something they didn’t
+                    // explicitly ask for, and just cluttered up the output.
+                    // So now errors aren’t printed unless the user passes
+                    // --extended to signify that they want to see them.
+
                     if xattr::ENABLED {
                         match file.path.attributes() {
                             Ok(xs) => xattrs.extend(xs),
-                            Err(e) => errors.push((e, None)),
+                            Err(e) => if self.opts.xattr { errors.push((e, None)) },
                         };
                     }
 

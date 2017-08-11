@@ -86,11 +86,12 @@ sudo -u cassowary $exa $testcases/permissions -lghR 2>&1 | diff -q - $results/pe
 
 # File names
 # (Mostly escaping control characters in file names)
-COLUMNS=80 $exa $testcases/file-names    2>&1 | diff -q - $results/file_names   || exit 1
-COLUMNS=80 $exa $testcases/file-names -x 2>&1 | diff -q - $results/file_names_x || exit 1
-COLUMNS=80 $exa $testcases/file-names -R 2>&1 | diff -q - $results/file_names_R || exit 1
-           $exa $testcases/file-names -1 2>&1 | diff -q - $results/file_names_1 || exit 1
-           $exa $testcases/file-names -T 2>&1 | diff -q - $results/file_names_T || exit 1
+COLUMNS=80 $exa $testcases/file-names     2>&1 | diff -q - $results/file_names    || exit 1
+COLUMNS=80 $exa $testcases/file-names -x  2>&1 | diff -q - $results/file_names_x  || exit 1
+COLUMNS=80 $exa $testcases/file-names -R  2>&1 | diff -q - $results/file_names_R  || exit 1
+           $exa $testcases/file-names -1  2>&1 | diff -q - $results/file_names_1  || exit 1
+           $exa $testcases/file-names -T  2>&1 | diff -q - $results/file_names_T  || exit 1
+           $exa $testcases/file-names -T@ 2>&1 | diff -q - $results/file_names_T@ || exit 1
 
 # At least make sure it handles invalid UTF-8 arguments without crashing
 $exa $testcases/file-names/* >/dev/null || exit 1
@@ -144,10 +145,12 @@ env LANG=ja_JP.UTF-8  $exa $testcases/dates -l | diff -q - $results/dates_jp  ||
 
 
 # Links
-COLUMNS=80 $exa $testcases/links    2>&1 | diff -q - $results/links        || exit 1
-           $exa $testcases/links -1 2>&1 | diff -q - $results/links_1      || exit 1
-           $exa $testcases/links -T 2>&1 | diff -q - $results/links_T      || exit 1
-           $exa /proc/1/root     -T 2>&1 | diff -q - $results/proc_1_root  || exit 1
+COLUMNS=80 $exa $testcases/links     2>&1 | diff -q - $results/links         || exit 1
+           $exa $testcases/links -1  2>&1 | diff -q - $results/links_1       || exit 1
+           $exa $testcases/links -T  2>&1 | diff -q - $results/links_T       || exit 1
+           $exa $testcases/links -T@ 2>&1 | diff -q - $results/links_T@      || exit 1
+           $exa /proc/1/root     -T  2>&1 | diff -q - $results/proc_1_root   || exit 1
+           $exa /proc/1/root     -T@ 2>&1 | diff -q - $results/proc_1_root_@ || exit 1
 
 # There’ve been bugs where the target file wasn’t printed properly when the
 # symlink file was specified on the command-line directly.
