@@ -5,7 +5,7 @@ use std::num::ParseIntError;
 use glob;
 
 use options::{HelpString, VersionString};
-use options::parser::{Arg, ParseError};
+use options::parser::{Arg, Flag, ParseError};
 
 
 /// A list of legal choices for an argument-taking option
@@ -35,6 +35,9 @@ pub enum Misfire {
 
     /// The user wanted the version number.
     Version(VersionString),
+
+    /// An option was given twice or more in strict mode.
+    Duplicate(Flag, Flag),
 
     /// Two options were given that conflict with one another.
     Conflict(&'static Arg, &'static Arg),
@@ -89,16 +92,30 @@ impl fmt::Display for Misfire {
 
         match *self {
             BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no value {:?} (Choices: {})", a, b, c),
-            InvalidOptions(ref e)            => write!(f, "{:?}", e),
+            InvalidOptions(ref e)            => write!(f, "{}", e),
             Help(ref text)                   => write!(f, "{}", text),
             Version(ref version)             => write!(f, "{}", version),
             Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}.", a, b),
+            Duplicate(ref a, ref b)          => write!(f, "Flag {:?} conflicts with flag {:?}.", a, b),
             Useless(ref a, false, ref b)     => write!(f, "Option {} is useless without option {}.", a, b),
             Useless(ref a, true, ref b)      => write!(f, "Option {} is useless given option {}.", a, b),
             Useless2(ref a, ref b1, ref b2)  => write!(f, "Option {} is useless without options {} or {}.", a, b1, b2),
             TreeAllAll                       => write!(f, "Option --tree is useless given --all --all."),
             FailedParse(ref e)               => write!(f, "Failed to parse number: {}", e),
             FailedGlobPattern(ref e)         => write!(f, "Failed to parse glob pattern: {}", e),
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::ParseError::*;
+
+        match *self {
+            NeedsValue { ref flag }              => write!(f, "Flag {} needs a value", flag),
+            ForbiddenValue { ref flag }          => write!(f, "Flag {} cannot take a value", flag),
+            UnknownShortArgument { ref attempt } => write!(f, "Unknown argument -{}", *attempt as char),
+            UnknownArgument { ref attempt }      => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
         }
     }
 }

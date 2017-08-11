@@ -112,13 +112,22 @@ pub struct Options {
 
 impl Options {
 
-    /// Call getopts on the given slice of command-line strings.
+    /// Parse the given iterator of command-line strings into an Options
+    /// struct and a list of free filenames, using the environment variables
+    /// for extra options.
     #[allow(unused_results)]
-    pub fn getopts<'args, I>(args: I) -> Result<(Options, Vec<&'args OsStr>), Misfire>
-    where I: IntoIterator<Item=&'args OsString> {
-        use options::parser::Matches;
+    pub fn parse<'args, I, V>(args: I, vars: V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
+    where I: IntoIterator<Item=&'args OsString>,
+          V: Vars {
+        use options::parser::{Matches, Strictness};
 
-        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args) {
+        let strictness = match vars.get("EXA_STRICT") {
+            None                         => Strictness::UseLastArguments,
+            Some(ref t) if t.is_empty()  => Strictness::UseLastArguments,
+            _                            => Strictness::ComplainAboutRedundantArguments,
+        };
+
+        let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, strictness) {
             Ok(m)   => m,
             Err(e)  => return Err(Misfire::InvalidOptions(e)),
         };
@@ -126,7 +135,7 @@ impl Options {
         HelpString::deduce(&flags).map_err(Misfire::Help)?;
         VersionString::deduce(&flags).map_err(Misfire::Version)?;
 
-        let options = Options::deduce(&flags)?;
+        let options = Options::deduce(&flags, vars)?;
         Ok((options, frees))
     }
 
@@ -136,33 +145,84 @@ impl Options {
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
             Mode::Details(details::Options { table: Some(ref table), .. }) |
-            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.should_scan_for_git(),
+            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.extra_columns.should_scan_for_git(),
             _ => false,
         }
     }
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce(matches: &MatchedFlags) -> Result<Options, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
-        let view = View::deduce(matches)?;
+        let view = View::deduce(matches, vars)?;
 
         Ok(Options { dir_action, view, filter })
     }
 }
 
 
+/// Mockable wrapper for `std::env::var_os`.
+pub trait Vars {
+    fn get(&self, name: &'static str) -> Option<OsString>;
+}
+
+
+
 
 #[cfg(test)]
-mod test {
-    use super::{Options, Misfire, flags};
+pub mod test {
+    use super::{Options, Misfire, Vars, flags};
+    use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
-    use fs::filter::{SortField, SortCase};
+
+    // Test impl that just returns the value it has.
+    impl Vars for Option<OsString> {
+        fn get(&self, _name: &'static str) -> Option<OsString> {
+            self.clone()
+        }
+    }
+
+
+    #[derive(PartialEq, Debug)]
+    pub enum Strictnesses {
+        Last,
+        Complain,
+        Both,
+    }
+
+    /// This function gets used by the other testing modules.
+    /// It can run with one or both strictness values: if told to run with
+    /// both, then both should resolve to the same result.
+    ///
+    /// It returns a vector with one or two elements in.
+    /// These elements can then be tested with assert_eq or what have you.
+    pub fn parse_for_test<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F) -> Vec<T>
+    where F: Fn(&MatchedFlags) -> T
+    {
+        use self::Strictnesses::*;
+        use options::parser::{Args, Strictness};
+        use std::ffi::OsString;
+
+        let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+        let mut rezzies = Vec::new();
+
+        if strictnesses == Last || strictnesses == Both {
+            let results = Args(args).parse(bits.iter(), Strictness::UseLastArguments);
+            rezzies.push(get(&results.unwrap().flags));
+        }
+
+        if strictnesses == Complain || strictnesses == Both {
+            let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
+            rezzies.push(get(&results.unwrap().flags));
+        }
+
+        rezzies
+    }
 
     /// Creates an `OSStr` (used in tests)
     #[cfg(test)]
-    fn os(input: &'static str) -> OsString {
+    fn os(input: &str) -> OsString {
         let mut os = OsString::new();
         os.push(input);
         os
@@ -171,106 +231,36 @@ mod test {
     #[test]
     fn files() {
         let args = [ os("this file"), os("that file") ];
-        let outs = Options::getopts(&args).unwrap().1;
+        let outs = Options::parse(&args, None).unwrap().1;
         assert_eq!(outs, vec![ &os("this file"), &os("that file") ])
     }
 
     #[test]
     fn no_args() {
         let nothing: Vec<OsString> = Vec::new();
-        let outs = Options::getopts(&nothing).unwrap().1;
+        let outs = Options::parse(&nothing, None).unwrap().1;
         assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
-    }
-
-    #[test]
-    fn just_binary() {
-        let args = [ os("--binary") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BINARY, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_bytes() {
-        let args = [ os("--bytes") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BYTES, false, &flags::LONG))
     }
 
     #[test]
     fn long_across() {
         let args = [ os("--long"), os("--across") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
     }
 
     #[test]
     fn oneline_across() {
         let args = [ os("--oneline"), os("--across") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-    }
-
-    #[test]
-    fn just_header() {
-        let args = [ os("--header") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::HEADER, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_group() {
-        let args = [ os("--group") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GROUP, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_inode() {
-        let args = [ os("--inode") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::INODE, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_links() {
-        let args = [ os("--links") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::LINKS, false, &flags::LONG))
-    }
-
-    #[test]
-    fn just_blocks() {
-        let args = [ os("--blocks") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::BLOCKS, false, &flags::LONG))
-    }
-
-    #[test]
-    fn test_sort_size() {
-        let args = [ os("--sort=size") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Size);
-    }
-
-    #[test]
-    fn test_sort_name() {
-        let args = [ os("--sort=name") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Sensitive));
-    }
-
-    #[test]
-    fn test_sort_name_lowercase() {
-        let args = [ os("--sort=Name") ];
-        let opts = Options::getopts(&args);
-        assert_eq!(opts.unwrap().0.filter.sort_field, SortField::Name(SortCase::Insensitive));
     }
 
     #[test]
     #[cfg(feature="git")]
     fn just_git() {
         let args = [ os("--git") ];
-        let opts = Options::getopts(&args);
+        let opts = Options::parse(&args, None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::GIT, false, &flags::LONG))
     }
 }

@@ -31,6 +31,8 @@
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 
+use options::Misfire;
+
 
 /// A **short argument** is a single ASCII character.
 pub type ShortArg = u8;
@@ -50,7 +52,7 @@ pub enum Flag {
 }
 
 impl Flag {
-    fn matches(&self, arg: &Arg) -> bool {
+    pub fn matches(&self, arg: &Arg) -> bool {
         match *self {
             Flag::Short(short)  => arg.short == Some(short),
             Flag::Long(long)    => arg.long == long,
@@ -58,10 +60,17 @@ impl Flag {
     }
 }
 
+impl fmt::Display for Flag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Flag::Short(short) => write!(f, "-{}", short as char),
+            Flag::Long(long)   => write!(f, "--{}", long),
+        }
+    }
+}
 
 /// Whether redundant arguments should be considered a problem.
-#[derive(PartialEq, Debug)]
-#[allow(dead_code)] // until strict mode is actually implemented
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Strictness {
 
     /// Throw an error when an argument doesn’t do anything, either because
@@ -122,7 +131,7 @@ impl Args {
 
     /// Iterates over the given list of command-line arguments and parses
     /// them into a list of matched flags and free strings.
-    pub fn parse<'args, I>(&self, inputs: I) -> Result<Matches<'args>, ParseError>
+    pub fn parse<'args, I>(&self, inputs: I, strictness: Strictness) -> Result<Matches<'args>, ParseError>
     where I: IntoIterator<Item=&'args OsString> {
         use std::os::unix::ffi::OsStrExt;
         use self::TakesValue::*;
@@ -267,17 +276,17 @@ impl Args {
             }
         }
 
-        Ok(Matches { frees, flags: MatchedFlags { flags: result_flags } })
+        Ok(Matches { frees, flags: MatchedFlags { flags: result_flags, strictness } })
     }
 
-    fn lookup_short<'a>(&self, short: ShortArg) -> Result<&Arg, ParseError> {
+    fn lookup_short(&self, short: ShortArg) -> Result<&Arg, ParseError> {
         match self.0.into_iter().find(|arg| arg.short == Some(short)) {
             Some(arg)  => Ok(arg),
             None       => Err(ParseError::UnknownShortArgument { attempt: short })
         }
     }
 
-    fn lookup_long<'a>(&self, long: &'a OsStr) -> Result<&Arg, ParseError> {
+    fn lookup_long<'b>(&self, long: &'b OsStr) -> Result<&Arg, ParseError> {
         match self.0.into_iter().find(|arg| arg.long == long) {
             Some(arg)  => Ok(arg),
             None       => Err(ParseError::UnknownArgument { attempt: long.to_os_string() })
@@ -308,33 +317,92 @@ pub struct MatchedFlags<'args> {
     /// we usually want the one nearest the end to count, and to know this,
     /// we need to know where they are in relation to one another.
     flags: Vec<(Flag, Option<&'args OsStr>)>,
+
+    /// Whether to check for duplicate or redundant arguments.
+    strictness: Strictness,
 }
 
 impl<'a> MatchedFlags<'a> {
 
     /// Whether the given argument was specified.
-    pub fn has(&self, arg: &Arg) -> bool {
-        self.flags.iter().rev()
-            .find(|tuple| tuple.1.is_none() && tuple.0.matches(arg))
-            .is_some()
+    /// Returns `true` if it was, `false` if it wasn’t, and an error in
+    /// strict mode if it was specified more than once.
+    pub fn has(&self, arg: &'static Arg) -> Result<bool, Misfire> {
+        self.has_where(|flag| flag.matches(arg)).map(|flag| flag.is_some())
     }
 
-    /// If the given argument was specified, return its value.
-    /// The value is not guaranteed to be valid UTF-8.
-    pub fn get(&self, arg: &Arg) -> Option<&OsStr> {
-        self.flags.iter().rev()
-            .find(|tuple| tuple.1.is_some() && tuple.0.matches(arg))
-            .map(|tuple| tuple.1.unwrap())
+    /// Returns the first found argument that satisfies the predicate, or
+    /// nothing if none is found, or an error in strict mode if multiple
+    /// argument satisfy the predicate.
+    ///
+    /// You’ll have to test the resulting flag to see which argument it was.
+    pub fn has_where<P>(&self, predicate: P) -> Result<Option<&Flag>, Misfire>
+    where P: Fn(&Flag) -> bool {
+        if self.is_strict() {
+            let all = self.flags.iter()
+                          .filter(|tuple| tuple.1.is_none() && predicate(&tuple.0))
+                          .collect::<Vec<_>>();
+
+            if all.len() < 2 { Ok(all.first().map(|t| &t.0)) }
+                        else { Err(Misfire::Duplicate(all[0].0.clone(), all[1].0.clone())) }
+        }
+        else {
+            let any = self.flags.iter().rev()
+                          .find(|tuple| tuple.1.is_none() && predicate(&tuple.0))
+                          .map(|tuple| &tuple.0);
+            Ok(any)
+        }
+    }
+
+    // This code could probably be better.
+    // Both ‘has’ and ‘get’ immediately begin with a conditional, which makes
+    // me think the functionality could be moved to inside Strictness.
+
+    /// Returns the value of the given argument if it was specified, nothing
+    /// if it wasn’t, and an error in strict mode if it was specified more
+    /// than once.
+    pub fn get(&self, arg: &'static Arg) -> Result<Option<&OsStr>, Misfire> {
+        self.get_where(|flag| flag.matches(arg))
+    }
+
+    /// Returns the value of the argument that matches the predicate if it
+    /// was specified, nothing if it wasn't, and an error in strict mode if
+    /// multiple arguments matched the predicate.
+    ///
+    /// It’s not possible to tell which flag the value belonged to from this.
+    pub fn get_where<P>(&self, predicate: P) -> Result<Option<&OsStr>, Misfire>
+    where P: Fn(&Flag) -> bool {
+        if self.is_strict() {
+            let those = self.flags.iter()
+                            .filter(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                            .collect::<Vec<_>>();
+
+            if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
+                          else { Err(Misfire::Duplicate(those[0].0.clone(), those[1].0.clone())) }
+        }
+        else {
+            let found = self.flags.iter().rev()
+                            .find(|tuple| tuple.1.is_some() && predicate(&tuple.0))
+                            .map(|tuple| tuple.1.unwrap());
+            Ok(found)
+        }
     }
 
     // It’s annoying that ‘has’ and ‘get’ won’t work when accidentally given
     // flags that do/don’t take values, but this should be caught by tests.
 
-    /// Counts the number of occurrences of the given argument.
+    /// Counts the number of occurrences of the given argument, even in
+    /// strict mode.
     pub fn count(&self, arg: &Arg) -> usize {
         self.flags.iter()
             .filter(|tuple| tuple.0.matches(arg))
             .count()
+    }
+
+    /// Checks whether strict mode is on. This is usually done from within
+    /// ‘has’ and ‘get’, but it’s available in an emergency.
+    pub fn is_strict(&self) -> bool {
+        self.strictness == Strictness::ComplainAboutRedundantArguments
     }
 }
 
@@ -433,6 +501,13 @@ mod split_test {
 mod parse_test {
     use super::*;
 
+    pub fn os(input: &'static str) -> OsString {
+        let mut os = OsString::new();
+        os.push(input);
+        os
+    }
+
+
     macro_rules! test {
         ($name:ident: $inputs:expr => frees: $frees:expr, flags: $flags:expr) => {
             #[test]
@@ -445,15 +520,11 @@ mod parse_test {
                 let frees: Vec<OsString> = $frees.as_ref().into_iter().map(|&o| os(o)).collect();
                 let frees: Vec<&OsStr> = frees.iter().map(|os| os.as_os_str()).collect();
 
-                // And again for the flags
-                let flags: Vec<(Flag, Option<&OsStr>)> = $flags
-                    .as_ref()
-                    .into_iter()
-                    .map(|&(ref f, ref os): &(Flag, Option<&'static str>)| (f.clone(), os.map(OsStr::new)))
-                    .collect();
+                let flags = <[_]>::into_vec(Box::new($flags));
 
-                let got = Args(TEST_ARGS).parse(inputs.iter());
-                let expected = Ok(Matches { frees, flags: MatchedFlags { flags } });
+                let strictness = Strictness::UseLastArguments;  // this isn’t even used
+                let got = Args(TEST_ARGS).parse(inputs.iter(), strictness);
+                let expected = Ok(Matches { frees, flags: MatchedFlags { flags, strictness } });
                 assert_eq!(got, expected);
             }
         };
@@ -463,8 +534,9 @@ mod parse_test {
             fn $name() {
                 use self::ParseError::*;
 
+                let strictness = Strictness::UseLastArguments;  // this isn’t even used
                 let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let got = Args(TEST_ARGS).parse(bits.iter());
+                let got = Args(TEST_ARGS).parse(bits.iter(), strictness);
 
                 assert_eq!(got, Err($error));
             }
@@ -498,8 +570,8 @@ mod parse_test {
     // Long args with values
     test!(bad_equals:  ["--long=equals"]  => error ForbiddenValue { flag: Flag::Long("long") });
     test!(no_arg:      ["--count"]        => error NeedsValue     { flag: Flag::Long("count") });
-    test!(arg_equals:  ["--count=4"]      => frees: [],  flags: [ (Flag::Long("count"), Some("4")) ]);
-    test!(arg_then:    ["--count", "4"]   => frees: [],  flags: [ (Flag::Long("count"), Some("4")) ]);
+    test!(arg_equals:  ["--count=4"]      => frees: [],  flags: [ (Flag::Long("count"), Some(OsStr::new("4"))) ]);
+    test!(arg_then:    ["--count", "4"]   => frees: [],  flags: [ (Flag::Long("count"), Some(OsStr::new("4"))) ]);
 
 
     // Short args
@@ -511,11 +583,11 @@ mod parse_test {
     // Short args with values
     test!(bad_short:          ["-l=equals"]   => error ForbiddenValue { flag: Flag::Short(b'l') });
     test!(short_none:         ["-c"]          => error NeedsValue     { flag: Flag::Short(b'c') });
-    test!(short_arg_eq:       ["-c=4"]        => frees: [],  flags: [(Flag::Short(b'c'), Some("4")) ]);
-    test!(short_arg_then:     ["-c", "4"]     => frees: [],  flags: [(Flag::Short(b'c'), Some("4")) ]);
-    test!(short_two_together: ["-lctwo"]      => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
-    test!(short_two_equals:   ["-lc=two"]     => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
-    test!(short_two_next:     ["-lc", "two"]  => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some("two")) ]);
+    test!(short_arg_eq:       ["-c=4"]        => frees: [],  flags: [(Flag::Short(b'c'), Some(OsStr::new("4"))) ]);
+    test!(short_arg_then:     ["-c", "4"]     => frees: [],  flags: [(Flag::Short(b'c'), Some(OsStr::new("4"))) ]);
+    test!(short_two_together: ["-lctwo"]      => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(OsStr::new("two"))) ]);
+    test!(short_two_equals:   ["-lc=two"]     => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(OsStr::new("two"))) ]);
+    test!(short_two_next:     ["-lc", "two"]  => frees: [],  flags: [(Flag::Short(b'l'), None), (Flag::Short(b'c'), Some(OsStr::new("two"))) ]);
 
 
     // Unknown args
@@ -536,8 +608,12 @@ mod matches_test {
         ($name:ident: $input:expr, has $param:expr => $result:expr) => {
             #[test]
             fn $name() {
-                let flags = MatchedFlags { flags: $input.to_vec() };
-                assert_eq!(flags.has(&$param), $result);
+                let flags = MatchedFlags {
+                    flags: $input.to_vec(),
+                    strictness: Strictness::UseLastArguments,
+                };
+
+                assert_eq!(flags.has(&$param), Ok($result));
             }
         };
     }
@@ -557,8 +633,13 @@ mod matches_test {
     #[test]
     fn only_count() {
         let everything = os("everything");
-        let flags = MatchedFlags { flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ] };
-        assert_eq!(flags.get(&COUNT), Some(&*everything));
+
+        let flags = MatchedFlags {
+            flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ],
+            strictness: Strictness::UseLastArguments,
+        };
+
+        assert_eq!(flags.get(&COUNT), Ok(Some(&*everything)));
     }
 
     #[test]
@@ -568,16 +649,17 @@ mod matches_test {
 
         let flags = MatchedFlags {
             flags: vec![ (Flag::Short(b'c'), Some(&*everything)),
-                         (Flag::Short(b'c'), Some(&*nothing)) ]
+                         (Flag::Short(b'c'), Some(&*nothing)) ],
+            strictness: Strictness::UseLastArguments,
         };
 
-        assert_eq!(flags.get(&COUNT), Some(&*nothing));
+        assert_eq!(flags.get(&COUNT), Ok(Some(&*nothing)));
     }
 
     #[test]
     fn no_count() {
-        let flags = MatchedFlags { flags: Vec::new() };
+        let flags = MatchedFlags { flags: Vec::new(), strictness: Strictness::UseLastArguments };
 
-        assert!(!flags.has(&COUNT));
+        assert!(!flags.has(&COUNT).unwrap());
     }
 }

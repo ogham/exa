@@ -1,3 +1,5 @@
+//! Timestamp formatting.
+
 use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 use locale;
@@ -6,12 +8,47 @@ use std::cmp;
 use fs::fields::Time;
 
 
+/// Every timestamp in exa needs to be rendered by a **time format**.
+/// Formatting times is tricky, because how a timestamp is rendered can
+/// depend on one or more of the following:
+///
+/// - The user’s locale, for printing the month name as “Feb”, or as “fév”,
+///   or as “2月”;
+/// - The current year, because certain formats will be less precise when
+///   dealing with dates far in the past;
+/// - The formatting style that the user asked for on the command-line.
+///
+/// Because not all formatting styles need the same data, they all have their
+/// own enum variants. It’s not worth looking the locale up if the formatter
+/// prints month names as numbers.
+///
+/// Currently exa does not support *custom* styles, where the user enters a
+/// format string in an environment variable or something. Just these four.
+#[derive(Debug)]
 pub enum TimeFormat {
+
+    /// The **default format** uses the user’s locale to print month names,
+    /// and specifies the timestamp down to the minute for recent times, and
+    /// day for older times.
     DefaultFormat(DefaultFormat),
+
+    /// Use the **ISO format**, which specifies the timestamp down to the
+    /// minute for recent times, and day for older times. It uses a number
+    /// for the month so it doesn’t need a locale.
     ISOFormat(ISOFormat),
+
+    /// Use the **long ISO format**, which specifies the timestamp down to the
+    /// minute using only numbers, without needing the locale or year.
     LongISO,
+
+    /// Use the **full ISO format**, which specifies the timestamp down to the
+    /// millisecond and includes its offset down to the minute. This too uses
+    /// only numbers so doesn’t require any special consideration.
     FullISO,
 }
+
+// There are two different formatting functions because local and zoned
+// timestamps are separate types.
 
 impl TimeFormat {
     pub fn format_local(&self, time: Time) -> String {

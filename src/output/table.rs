@@ -23,7 +23,17 @@ pub struct Options {
     pub env: Environment,
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
+    pub extra_columns: Columns,
+}
+
+/// Extra columns to display in the table.
+#[derive(PartialEq, Debug)]
+pub struct Columns {
+
+    /// At least one of these timestamps will be shown.
     pub time_types: TimeTypes,
+
+    // The rest are just on/off
     pub inode: bool,
     pub links: bool,
     pub blocks: bool,
@@ -39,7 +49,7 @@ impl fmt::Debug for Options {
     }
 }
 
-impl Options {
+impl Columns {
     pub fn should_scan_for_git(&self) -> bool {
         self.git
     }
@@ -57,7 +67,7 @@ impl Options {
             columns.push(Column::HardLinks);
         }
 
-        columns.push(Column::FileSize(self.size_format));
+        columns.push(Column::FileSize);
 
         if self.blocks {
             columns.push(Column::Blocks);
@@ -98,7 +108,7 @@ impl Options {
 #[derive(Debug)]
 pub enum Column {
     Permissions,
-    FileSize(SizeFormat),
+    FileSize,
     Timestamp(TimeType),
     Blocks,
     User,
@@ -120,7 +130,7 @@ impl Column {
     /// Get the alignment this column should use.
     pub fn alignment(&self) -> Alignment {
         match *self {
-            Column::FileSize(_)
+            Column::FileSize
             | Column::HardLinks
             | Column::Inode
             | Column::Blocks
@@ -134,7 +144,7 @@ impl Column {
     pub fn header(&self) -> &'static str {
         match *self {
             Column::Permissions   => "Permissions",
-            Column::FileSize(_)   => "Size",
+            Column::FileSize      => "Size",
             Column::Timestamp(t)  => t.header(),
             Column::Blocks        => "Blocks",
             Column::User          => "User",
@@ -276,6 +286,7 @@ pub struct Table<'a> {
     env: &'a Environment,
     widths: TableWidths,
     time_format: &'a TimeFormat,
+    size_format: SizeFormat,
 }
 
 #[derive(Clone)]
@@ -285,9 +296,14 @@ pub struct Row {
 
 impl<'a, 'f> Table<'a> {
     pub fn new(options: &'a Options, dir: Option<&'a Dir>, colours: &'a Colours) -> Table<'a> {
-        let colz = options.for_dir(dir);
+        let colz = options.extra_columns.for_dir(dir);
         let widths = TableWidths::zero(colz.len());
-        Table { columns: colz, colours, env: &options.env, widths, time_format: &options.time_format }
+        Table { colours, widths,
+            columns: colz,
+            env:         &options.env,
+            time_format: &options.time_format,
+            size_format:  options.size_format,
+        }
     }
 
     pub fn widths(&self) -> &TableWidths {
@@ -327,7 +343,7 @@ impl<'a, 'f> Table<'a> {
 
         match *column {
             Column::Permissions    => self.permissions_plus(file, xattrs).render(&self.colours),
-            Column::FileSize(fmt)  => file.size().render(&self.colours, fmt, &self.env.numeric),
+            Column::FileSize       => file.size().render(&self.colours, self.size_format, &self.env.numeric),
             Column::HardLinks      => file.links().render(&self.colours, &self.env.numeric),
             Column::Inode          => file.inode().render(&self.colours),
             Column::Blocks         => file.blocks().render(&self.colours),
