@@ -95,10 +95,14 @@ impl Mode {
         if matches.has(&flags::LONG)? {
             let details = long()?;
             if matches.has(&flags::GRID)? {
-                match other_options_scan()? {
-                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold: Some(5) })),
-                    others            => return Ok(others),
-                };
+                let other_options_mode = other_options_scan()?;
+                if let Mode::Grid(grid) = other_options_mode {
+                    let row_threshold = Some(5);
+                    return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold }));
+                }
+                else {
+                    return Ok(other_options_mode);
+                }
             }
             else {
                 return Ok(Mode::Details(details));
