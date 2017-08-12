@@ -1,3 +1,5 @@
+//! Parsing the options for `FileFilter`.
+
 use fs::DotFilter;
 use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns};
 
@@ -7,8 +9,7 @@ use options::parser::MatchedFlags;
 
 impl FileFilter {
 
-    /// Determines the set of file filter options to use, based on the user’s
-    /// command-line arguments.
+    /// Determines which of all the file filter options to use.
     pub fn deduce(matches: &MatchedFlags) -> Result<FileFilter, Misfire> {
         Ok(FileFilter {
             list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
@@ -20,29 +21,23 @@ impl FileFilter {
     }
 }
 
-
-
-impl Default for SortField {
-    fn default() -> SortField {
-        SortField::Name(SortCase::Sensitive)
-    }
-}
-
 const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
                           "Extension", "modified", "accessed",
                           "created", "inode", "type", "none" ];
 
 impl SortField {
 
-    /// Determine the sort field to use, based on the presence of a “sort”
-    /// argument. This will return `Err` if the option is there, but does not
-    /// correspond to a valid field.
+    /// Determines which sort field to use based on the `--sort` argument.
+    /// This argument’s value can be one of several flags, listed above.
+    /// Returns the default sort field if none is given, or `Err` if the
+    /// value doesn’t correspond to a sort field we know about.
     fn deduce(matches: &MatchedFlags) -> Result<SortField, Misfire> {
         let word = match matches.get(&flags::SORT)? {
             Some(w)  => w,
             None     => return Ok(SortField::default()),
         };
 
+        // The field is an OsStr, so can’t be matched.
         if word == "name" || word == "filename" {
             Ok(SortField::Name(SortCase::Sensitive))
         }
@@ -82,8 +77,21 @@ impl SortField {
     }
 }
 
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::Name(SortCase::Sensitive)
+    }
+}
+
 
 impl DotFilter {
+
+    /// Determines the dot filter based on how many `--all` options were
+    /// given: one will show dotfiles, but two will show `.` and `..` too.
+    ///
+    /// It also checks for the `--tree` option in strict mode, because of a
+    /// special case where `--tree --all --all` won't work: listing the
+    /// parent directory in tree mode would loop onto itself!
     pub fn deduce(matches: &MatchedFlags) -> Result<DotFilter, Misfire> {
         let count = matches.count(&flags::ALL);
 
@@ -108,24 +116,27 @@ impl DotFilter {
 
 impl IgnorePatterns {
 
-    /// Determines the set of file filter options to use, based on the user’s
-    /// command-line arguments.
+    /// Determines the set of glob patterns to use based on the
+    /// `--ignore-patterns` argument’s value. This is a list of strings
+    /// separated by pipe (`|`) characters, given in any order.
     pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
 
+        // If there are no inputs, we return a set of patterns that doesn’t
+        // match anything, rather than, say, `None`.
         let inputs = match matches.get(&flags::IGNORE_GLOB)? {
             None => return Ok(IgnorePatterns::empty()),
             Some(is) => is,
         };
 
+        // Awkwardly, though, a glob pattern can be invalid, and we need to
+        // deal with invalid patterns somehow.
         let (patterns, mut errors) = IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
 
         // It can actually return more than one glob error,
-        // but we only use one.
-        if let Some(error) = errors.pop() {
-            return Err(error.into())
-        }
-        else {
-            Ok(patterns)
+        // but we only use one. (TODO)
+        match errors.pop() {
+            Some(e) => Err(e.into()),
+            None    => Ok(patterns),
         }
     }
 }
