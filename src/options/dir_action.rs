@@ -1,3 +1,5 @@
+//! Parsing the options for `DirAction`.
+
 use options::parser::MatchedFlags;
 use options::{flags, Misfire};
 
@@ -7,6 +9,9 @@ use fs::dir_action::{DirAction, RecurseOptions};
 impl DirAction {
 
     /// Determine which action to perform when trying to list a directory.
+    /// There are three possible actions, and they overlap somewhat: the
+    /// `--tree` flag is another form of recursion, so those two are allowed
+    /// to both be present, but the `--list-dirs` flag is used separately.
     pub fn deduce(matches: &MatchedFlags) -> Result<DirAction, Misfire> {
         let recurse = matches.has(&flags::RECURSE)?;
         let as_file = matches.has(&flags::LIST_DIRS)?;
@@ -43,7 +48,10 @@ impl DirAction {
 
 impl RecurseOptions {
 
-    /// Determine which files should be recursed into.
+    /// Determine which files should be recursed into, based on the `--level`
+    /// flag’s value, and whether the `--tree` flag was passed, which was
+    /// determined earlier. The maximum level should be a number, and this
+    /// will fail with an `Err` if it isn’t.
     pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<RecurseOptions, Misfire> {
         let max_depth = if let Some(level) = matches.get(&flags::LEVEL)? {
             match level.to_string_lossy().parse() {
