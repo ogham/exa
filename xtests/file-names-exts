@@ -4,8 +4,11 @@
 compiled.coffee
 [38;5;137mcompiled.js[0m
 [38;5;137mcompiled.o[0m
+[31mcompressed.deb[0m
 [31mcompressed.tar.gz[0m
+[31mcompressed.tar.xz[0m
 [31mcompressed.tgz[0m
+[31mcompressed.txz[0m
 [31mCOMPRESSED.ZIP[0m
 [38;5;109mcrypto.asc[0m
 [38;5;109mcrypto.signature[0m
