@@ -33,6 +33,6 @@ pub struct View {
 pub enum Mode {
     Grid(grid::Options),
     Details(details::Options),
-    GridDetails(grid::Options, details::Options),
+    GridDetails(grid_details::Options),
     Lines,
 }

@@ -1,5 +1,5 @@
 use output::Colours;
-use output::{View, Mode, grid, details};
+use output::{View, Mode, grid, details, grid_details};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
@@ -96,7 +96,7 @@ impl Mode {
             let details = long()?;
             if matches.has(&flags::GRID)? {
                 match other_options_scan()? {
-                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
+                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold: Some(5) })),
                     others            => return Ok(others),
                 };
             }
@@ -643,8 +643,8 @@ mod test {
         test!(ell:           Mode <- ["-l"], None;        Both => like Ok(Mode::Details(_)));
 
         // Grid-details views
-        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_, _)));
-        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_, _)));
+        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
 
 
         // Options that do nothing without --long

@@ -18,6 +18,14 @@ use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
 
 
+#[derive(Debug)]
+pub struct Options {
+    pub grid: GridOptions,
+    pub details: DetailsOptions,
+    pub row_threshold: Option<usize>,
+}
+
+
 pub struct Render<'a> {
 
     /// The directory that’s being rendered here.

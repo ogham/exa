@@ -73,8 +73,7 @@ use std::ffi::{OsStr, OsString};
 
 use fs::dir_action::DirAction;
 use fs::filter::FileFilter;
-use output::{View, Mode};
-use output::details;
+use output::{View, Mode, details, grid_details};
 
 mod dir_action;
 mod filter;
@@ -145,7 +144,7 @@ impl Options {
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
             Mode::Details(details::Options { table: Some(ref table), .. }) |
-            Mode::GridDetails(_, details::Options { table: Some(ref table), .. }) => table.extra_columns.should_scan_for_git(),
+            Mode::GridDetails(grid_details::Options { details: details::Options { table: Some(ref table), .. }, .. }) => table.extra_columns.should_scan_for_git(),
             _ => false,
         }
     }
