@@ -24,7 +24,7 @@ FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
   -d, --list-dirs            list directories like regular files
   -r, --reverse              reverse the sort order
-  -s, --sort SORT_FIELD      which field to sort by:
+  -s, --sort SORT_FIELD      which field to sort by
   --group-directories-first  list directories before other files
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
   Valid sort fields:         name, Name, extension, Extension, size, type,
