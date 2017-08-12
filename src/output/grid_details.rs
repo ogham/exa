@@ -13,7 +13,6 @@ use output::cell::TextCell;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
-use output::lines::Render as LinesRender;
 use output::file_name::FileStyle;
 use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
@@ -45,6 +44,10 @@ pub struct Render<'a> {
     /// render will already have been filtered and sorted, but any directories
     /// that we recurse into will have to have this applied.
     pub filter: &'a FileFilter,
+
+    /// The minimum number of rows that there need to be before grid-details
+    /// mode is activated.
+    pub row_threshold: Option<usize>,
 }
 
 impl<'a> Render<'a> {
@@ -67,13 +70,17 @@ impl<'a> Render<'a> {
         }
     }
 
-    /// Create a Lines render for when this grid-details render doesn’t fit
+    /// Create a Details render for when this grid-details render doesn’t fit
     /// in the terminal (or something has gone wrong) and we have given up.
-    pub fn lines(self) -> LinesRender<'a> {
-        LinesRender {
+    pub fn give_up(self) -> DetailsRender<'a> {
+        DetailsRender {
+            dir: self.dir,
             files: self.files,
             colours: self.colours,
             style: self.style,
+            opts: self.details,
+            recurse: None,
+            filter: &self.filter,
         }
     }
 
@@ -82,7 +89,7 @@ impl<'a> Render<'a> {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.lines().render(w)
+            self.give_up().render(w)
         }
     }
 
@@ -117,6 +124,15 @@ impl<'a> Render<'a> {
                 last_working_table = grid;
             }
             else {
+                // If we’ve figured out how many columns can fit in the user’s
+                // terminal, and it turns out there aren’t enough rows to
+                // make it worthwhile, then just resort to the lines view.
+                if let Some(thresh) = self.row_threshold {
+                    if last_working_table.fit_into_columns(column_count - 1).row_count() < thresh {
+                        return None;
+                    }
+                }
+
                 return Some((last_working_table, column_count - 1));
             }
         }
