@@ -1,3 +1,5 @@
+//! The grid-details view lists several details views side-by-side.
+
 use std::io::{Write, Result as IOResult};
 
 use ansi_term::ANSIStrings;
@@ -17,12 +19,30 @@ use output::tree::{TreeParams, TreeDepth};
 
 
 pub struct Render<'a> {
+
+    /// The directory that’s being rendered here.
+    /// We need this to know which columns to put in the output.
     pub dir: Option<&'a Dir>,
+
+    /// The files that have been read from the directory. They should all
+    /// hold a reference to it.
     pub files: Vec<File<'a>>,
+
+    /// How to colour various pieces of text.
     pub colours: &'a Colours,
+
+    /// How to format filenames.
     pub style: &'a FileStyle,
+
+    /// The grid part of the grid-details view.
     pub grid: &'a GridOptions,
+
+    /// The details part of the grid-details view.
     pub details: &'a DetailsOptions,
+
+    /// How to filter files after listing a directory. The files in this
+    /// render will already have been filtered and sorted, but any directories
+    /// that we recurse into will have to have this applied.
     pub filter: &'a FileFilter,
 }
 
@@ -43,7 +63,7 @@ impl<'a> Render<'a> {
 
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
-        let drender = self.clone().details();
+        let drender = self.details();
 
         let (first_table, _) = self.make_table(options, &drender);
 
