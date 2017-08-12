@@ -13,6 +13,7 @@ use output::cell::TextCell;
 use output::colours::Colours;
 use output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use output::grid::Options as GridOptions;
+use output::lines::Render as LinesRender;
 use output::file_name::FileStyle;
 use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
@@ -47,6 +48,13 @@ pub struct Render<'a> {
 }
 
 impl<'a> Render<'a> {
+
+    /// Create a temporary Details render that gets used for the columns of
+    /// the grid-details render that's being generated.
+    ///
+    /// This includes an empty files vector because the files get added to
+    /// the table in *this* file, not in details: we only want to insert every
+    /// *n* files into each column’s table, not all of them.
     pub fn details(&self) -> DetailsRender<'a> {
         DetailsRender {
             dir: self.dir.clone(),
@@ -59,8 +67,26 @@ impl<'a> Render<'a> {
         }
     }
 
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+    /// Create a Lines render for when this grid-details render doesn’t fit
+    /// in the terminal (or something has gone wrong) and we have given up.
+    pub fn lines(self) -> LinesRender<'a> {
+        LinesRender {
+            files: self.files,
+            colours: self.colours,
+            style: self.style,
+        }
+    }
 
+    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
+        if let Some((grid, width)) = self.find_fitting_grid() {
+            write!(w, "{}", grid.fit_into_columns(width))
+        }
+        else {
+            self.lines().render(w)
+        }
+    }
+
+    pub fn find_fitting_grid(&self) -> Option<(grid::Grid, grid::Width)> {
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
         let drender = self.details();
@@ -77,7 +103,9 @@ impl<'a> Render<'a> {
 
         let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
 
-        for column_count in 2.. {
+        // If we can’t fit everything in a grid 100 columns wide, then
+        // something has gone seriously awry
+        for column_count in 2..100 {
             let grid = self.make_grid(column_count, options, &file_names, rows.clone(), &drender);
 
             let the_grid_fits = {
@@ -89,11 +117,11 @@ impl<'a> Render<'a> {
                 last_working_table = grid;
             }
             else {
-                return write!(w, "{}", last_working_table.fit_into_columns(column_count - 1));
+                return Some((last_working_table, column_count - 1));
             }
         }
 
-        Ok(())
+        None
     }
 
     fn make_table<'t>(&'a self, options: &'a TableOptions, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
