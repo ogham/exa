@@ -1,5 +1,6 @@
 use output::Colours;
 use output::{View, Mode, grid, details};
+use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
@@ -13,7 +14,7 @@ use info::filetype::FileExtensions;
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<View, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches, vars)?;
         let colours = Colours::deduce(matches)?;
         let style = FileStyle::deduce(matches)?;
@@ -25,7 +26,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Mode, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -95,10 +96,14 @@ impl Mode {
         if matches.has(&flags::LONG)? {
             let details = long()?;
             if matches.has(&flags::GRID)? {
-                match other_options_scan()? {
-                    Mode::Grid(grid)  => return Ok(Mode::GridDetails(grid, details)),
-                    others            => return Ok(others),
-                };
+                let other_options_mode = other_options_scan()?;
+                if let Mode::Grid(grid) = other_options_mode {
+                    let row_threshold = RowThreshold::deduce(vars)?;
+                    return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold }));
+                }
+                else {
+                    return Ok(other_options_mode);
+                }
             }
             else {
                 return Ok(Mode::Details(details));
@@ -149,7 +154,7 @@ impl TerminalWidth {
     /// Determine a requested terminal width from the command-line arguments.
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce<V: Vars>(vars: V) -> Result<TerminalWidth, Misfire> {
+    fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
         if let Some(columns) = vars.get("COLUMNS").and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(width)  => Ok(TerminalWidth::Set(width)),
@@ -169,6 +174,24 @@ impl TerminalWidth {
             TerminalWidth::Set(width)       |
             TerminalWidth::Terminal(width)  => Some(width),
             TerminalWidth::Unset            => None,
+        }
+    }
+}
+
+
+impl RowThreshold {
+
+    /// Determine whether to use a row threshold based on the given
+    /// environment variables.
+    fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
+        if let Some(columns) = vars.get("EXA_GRID_ROWS").and_then(|s| s.into_string().ok()) {
+            match columns.parse() {
+                Ok(rows)  => Ok(RowThreshold::MinimumRows(rows)),
+                Err(e)    => Err(Misfire::FailedParse(e)),
+            }
+        }
+        else {
+            Ok(RowThreshold::AlwaysGrid)
         }
     }
 }
@@ -478,7 +501,7 @@ mod test {
             /// Like above, but with $vars.
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -488,7 +511,7 @@ mod test {
             /// Like further above, but with $vars.
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),
@@ -643,8 +666,8 @@ mod test {
         test!(ell:           Mode <- ["-l"], None;        Both => like Ok(Mode::Details(_)));
 
         // Grid-details views
-        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_, _)));
-        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_, _)));
+        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
 
 
         // Options that do nothing without --long

@@ -130,21 +130,21 @@ mod test {
     #[test]
     fn help() {
         let args = [ os("--help") ];
-        let opts = Options::parse(&args, None);
+        let opts = Options::parse(&args, &None);
         assert!(opts.is_err())
     }
 
     #[test]
     fn help_with_file() {
         let args = [ os("--help"), os("me") ];
-        let opts = Options::parse(&args, None);
+        let opts = Options::parse(&args, &None);
         assert!(opts.is_err())
     }
 
     #[test]
     fn unhelpful() {
         let args = [];
-        let opts = Options::parse(&args, None);
+        let opts = Options::parse(&args, &None);
         assert!(opts.is_ok())  // no help when --help isn’t passed
     }
 }

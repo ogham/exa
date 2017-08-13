@@ -69,7 +69,7 @@ impl Vars for LiveVars {
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
-        Options::parse(args, LiveVars).map(move |(options, args)| {
+        Options::parse(args, &LiveVars).map(move |(options, args)| {
             Exa { options, writer, args }
         })
     }
@@ -181,10 +181,18 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             let View { ref mode, ref colours, ref style } = self.options.view;
 
             match *mode {
-                Mode::Lines                  => lines::Render { files, colours, style }.render(self.writer),
-                Mode::Grid(ref opts)         => grid::Render { files, colours, style, opts }.render(self.writer),
-                Mode::Details(ref opts)      => details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer),
-                Mode::GridDetails(ref grid, ref details) => grid_details::Render { dir, files, colours, style, grid, details, filter: &self.options.filter }.render(self.writer),
+                Mode::Lines => {
+                    lines::Render { files, colours, style }.render(self.writer)
+                }
+                Mode::Grid(ref opts) => {
+                    grid::Render { files, colours, style, opts }.render(self.writer)
+                }
+                Mode::Details(ref opts) => {
+                    details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer)
+                }
+                Mode::GridDetails(ref opts) => {
+                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.writer)
+                }
             }
         }
         else {
