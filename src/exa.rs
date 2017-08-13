@@ -69,7 +69,7 @@ impl Vars for LiveVars {
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
-        Options::parse(args, LiveVars).map(move |(options, args)| {
+        Options::parse(args, &LiveVars).map(move |(options, args)| {
             Exa { options, writer, args }
         })
     }

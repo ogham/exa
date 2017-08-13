@@ -13,7 +13,7 @@ use info::filetype::FileExtensions;
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<View, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches, vars)?;
         let colours = Colours::deduce(matches)?;
         let style = FileStyle::deduce(matches)?;
@@ -25,7 +25,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Mode, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
         use options::misfire::Misfire::*;
 
         let long = || {
@@ -97,7 +97,7 @@ impl Mode {
             if matches.has(&flags::GRID)? {
                 let other_options_mode = other_options_scan()?;
                 if let Mode::Grid(grid) = other_options_mode {
-                    let row_threshold = Some(5);
+                    let row_threshold = RowThreshold::deduce(vars)?;
                     return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold }));
                 }
                 else {
@@ -153,7 +153,7 @@ impl TerminalWidth {
     /// Determine a requested terminal width from the command-line arguments.
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce<V: Vars>(vars: V) -> Result<TerminalWidth, Misfire> {
+    fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
         if let Some(columns) = vars.get("COLUMNS").and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(width)  => Ok(TerminalWidth::Set(width)),
@@ -482,7 +482,7 @@ mod test {
             /// Like above, but with $vars.
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -492,7 +492,7 @@ mod test {
             /// Like further above, but with $vars.
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, $vars)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),

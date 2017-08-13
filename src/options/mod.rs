@@ -115,7 +115,7 @@ impl Options {
     /// struct and a list of free filenames, using the environment variables
     /// for extra options.
     #[allow(unused_results)]
-    pub fn parse<'args, I, V>(args: I, vars: V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
+    pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString>,
           V: Vars {
         use options::parser::{Matches, Strictness};
@@ -151,7 +151,7 @@ impl Options {
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: V) -> Result<Options, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Options, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
@@ -230,28 +230,28 @@ pub mod test {
     #[test]
     fn files() {
         let args = [ os("this file"), os("that file") ];
-        let outs = Options::parse(&args, None).unwrap().1;
+        let outs = Options::parse(&args, &None).unwrap().1;
         assert_eq!(outs, vec![ &os("this file"), &os("that file") ])
     }
 
     #[test]
     fn no_args() {
         let nothing: Vec<OsString> = Vec::new();
-        let outs = Options::parse(&nothing, None).unwrap().1;
+        let outs = Options::parse(&nothing, &None).unwrap().1;
         assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
     }
 
     #[test]
     fn long_across() {
         let args = [ os("--long"), os("--across") ];
-        let opts = Options::parse(&args, None);
+        let opts = Options::parse(&args, &None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
     }
 
     #[test]
     fn oneline_across() {
         let args = [ os("--oneline"), os("--across") ];
-        let opts = Options::parse(&args, None);
+        let opts = Options::parse(&args, &None);
         assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
     }
 }
