@@ -1,5 +1,6 @@
 use output::Colours;
-use output::{View, Mode, grid, details, grid_details};
+use output::{View, Mode, grid, details};
+use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::file_name::{Classify, FileStyle};
 use output::time::TimeFormat;
@@ -173,6 +174,24 @@ impl TerminalWidth {
             TerminalWidth::Set(width)       |
             TerminalWidth::Terminal(width)  => Some(width),
             TerminalWidth::Unset            => None,
+        }
+    }
+}
+
+
+impl RowThreshold {
+
+    /// Determine whether to use a row threshold based on the given
+    /// environment variables.
+    fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
+        if let Some(columns) = vars.get("EXA_GRID_ROWS").and_then(|s| s.into_string().ok()) {
+            match columns.parse() {
+                Ok(rows)  => Ok(RowThreshold::MinimumRows(rows)),
+                Err(e)    => Err(Misfire::FailedParse(e)),
+            }
+        }
+        else {
+            Ok(RowThreshold::AlwaysGrid)
         }
     }
 }

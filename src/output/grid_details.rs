@@ -22,7 +22,25 @@ use output::tree::{TreeParams, TreeDepth};
 pub struct Options {
     pub grid: GridOptions,
     pub details: DetailsOptions,
-    pub row_threshold: Option<usize>,
+    pub row_threshold: RowThreshold,
+}
+
+/// The grid-details view can be configured to revert to just a details view
+/// (with one column) if it wouldn’t produce enough rows of output.
+///
+/// Doing this makes the resulting output look a bit better: when listing a
+/// small directory of four files in four columns, the files just look spaced
+/// out and it’s harder to see what’s going on. So it can be enabled just for
+/// larger directory listings.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RowThreshold {
+
+    /// Only use grid-details view if it would result in at least this many
+    /// rows of output.
+    MinimumRows(usize),
+
+    /// Use the grid-details view no matter what.
+    AlwaysGrid,
 }
 
 
@@ -55,7 +73,7 @@ pub struct Render<'a> {
 
     /// The minimum number of rows that there need to be before grid-details
     /// mode is activated.
-    pub row_threshold: Option<usize>,
+    pub row_threshold: RowThreshold,
 }
 
 impl<'a> Render<'a> {
@@ -135,7 +153,7 @@ impl<'a> Render<'a> {
                 // If we’ve figured out how many columns can fit in the user’s
                 // terminal, and it turns out there aren’t enough rows to
                 // make it worthwhile, then just resort to the lines view.
-                if let Some(thresh) = self.row_threshold {
+                if let RowThreshold::MinimumRows(thresh) = self.row_threshold {
                     if last_working_table.fit_into_columns(column_count - 1).row_count() < thresh {
                         return None;
                     }
