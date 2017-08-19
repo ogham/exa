@@ -76,41 +76,52 @@ Vagrant.configure(2) do |config|
     # Write some welcoming text.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
         rm -f /etc/update-motd.d/*
-            
+
         echo -e ""                        > /etc/motd
         echo -e "\033[1;33mThe exa development environment!\033[0m"  >> /etc/motd
+        echo -e "The source is at \033[33m/vagrant\033[0m."  >> /etc/motd
         echo -e ""                        >> /etc/motd
         echo -e "\033[4mCommands\033[0m"  >> /etc/motd
         echo -e "\033[32;1mb\033[0m or \033[32;1mbuild-exa\033[0m to run \033[1mcargo build\033[0m"  >> /etc/motd
         echo -e "\033[32;1mt\033[0m or \033[32;1mtest-exa\033[0m to run \033[1mcargo test\033[0m"   >> /etc/motd
         echo -e "\033[32;1mx\033[0m or \033[32;1mrun-xtests\033[0m to run \033[1m/vagrant/xtests/run.sh\033[0m"  >> /etc/motd
-        echo -e "\033[32;1mc\033[0m or \033[32;1mcompile-exa\033[0m to run all three\n"  >> /etc/motd
-        
+        echo -e "\033[32;1mc\033[0m or \033[32;1mcompile-exa\033[0m to run all three"  >> /etc/motd
+        echo -e "\033[32;1mdebug on\033[0;32m|\033[1moff\033[0m to toggle printing logs"  >> /etc/motd
+        echo -e "\033[32;1mstrict on\033[0;32m|\033[1moff\033[0m to toggle strict mode"  >> /etc/motd
+        echo -e "\033[32;1mls-colors on\033[0;32m|\033[1moff\033[0m to toggle LS_COLORS\n"  >> /etc/motd
+
         # help banner
         echo 'echo -e "\\033[4mVersions\\033[0m"' > /home/ubuntu/.bash_profile
         echo "rustc --version" >> /home/ubuntu/.bash_profile
         echo "cargo --version" >> /home/ubuntu/.bash_profile
         echo "echo" >> /home/ubuntu/.bash_profile
-        
+
         # cool prompt
         echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
         echo 'function debug_mode() { [ -n "$EXA_DEBUG" ] && echo "debug "; }' >> /home/ubuntu/.bash_profile
         echo 'function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }' >> /home/ubuntu/.bash_profile
-        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
-        
+        echo 'function lsc_mode() { [ -n "$LS_COLORS" ] && echo "lsc "; }' >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
+
         # environment setting
         echo 'function debug () {' >> /home/ubuntu/.bash_profile
         echo '  case "$1" in "on") export EXA_DEBUG=1 ;;' >> /home/ubuntu/.bash_profile
         echo '    "off") export EXA_DEBUG= ;;' >> /home/ubuntu/.bash_profile
         echo '    "") [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
         echo '    *) echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+
         echo 'function strict () {' >> /home/ubuntu/.bash_profile
         echo '  case "$1" in "on") export EXA_STRICT=1 ;;' >> /home/ubuntu/.bash_profile
         echo '    "off") export EXA_STRICT= ;;' >> /home/ubuntu/.bash_profile
         echo '    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;' >> /home/ubuntu/.bash_profile
         echo '    *) echo "Usage: strict on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
-        
+        echo 'function ls-colors () {' >> /home/ubuntu/.bash_profile
+        echo '  case "$1" in "on") export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43" ;;' >> /home/ubuntu/.bash_profile
+        echo '    "off") export LS_COLORS= ;;' >> /home/ubuntu/.bash_profile
+        echo '    "") [ -n "$LS_COLORS" ] && echo "LS_COLORS=$LS_COLORS" || echo "ls-colors off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *) echo "Usage: ls-colors on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
         systemctl restart sshd
