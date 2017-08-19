@@ -79,7 +79,8 @@ Vagrant.configure(2) do |config|
 
         echo -e ""                        > /etc/motd
         echo -e "\033[1;33mThe exa development environment!\033[0m"  >> /etc/motd
-        echo -e "The source is at \033[33m/vagrant\033[0m."  >> /etc/motd
+        echo -e "exa's source is available at \033[33m/vagrant\033[0m."  >> /etc/motd
+        echo -e "Binaries get built into \033[33m/home/ubuntu/target\033[0m."  >> /etc/motd
         echo -e ""                        >> /etc/motd
         echo -e "\033[4mCommands\033[0m"  >> /etc/motd
         echo -e "\033[32;1mb\033[0m or \033[32;1mbuild-exa\033[0m to run \033[1mcargo build\033[0m"  >> /etc/motd
