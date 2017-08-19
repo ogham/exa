@@ -56,6 +56,9 @@ pub fn configure_logger() {
     if present {
         logs.filter(None, log::LogLevelFilter::Debug);
     }
+    else {
+        logs.filter(None, log::LogLevelFilter::Off);
+    }
     
     if let Err(e) = logs.init() {
         writeln!(stderr(), "Failed to initialise logger: {}", e).unwrap();

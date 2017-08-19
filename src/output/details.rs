@@ -214,9 +214,18 @@ impl<'a> Render<'a> {
 
                     if xattr::ENABLED {
                         match file.path.attributes() {
-                            Ok(xs) => xattrs.extend(xs),
-                            Err(e) => if self.opts.xattr { errors.push((e, None)) },
-                        };
+                            Ok(xs) => {
+                                xattrs.extend(xs);
+                            }
+                            Err(e) => {
+                                if self.opts.xattr {
+                                    errors.push((e, None));
+                                }
+                                else {
+                                    error!("Error looking up xattr for {:?}: {:#?}", file.path, e);
+                                }
+                            }
+                        }
                     }
 
                     let table_row = table.as_ref().map(|t| t.row_for_file(&file, !xattrs.is_empty()));
