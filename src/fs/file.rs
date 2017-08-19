@@ -73,9 +73,13 @@ impl<'dir> File<'dir> {
     /// such as `/` or `..`, which have no `file_name` component. So instead, just
     /// use the last component as the name.
     pub fn filename(path: &Path) -> String {
-        match path.components().next_back() {
-            Some(back) => back.as_os_str().to_string_lossy().to_string(),
-            None       => path.display().to_string(),  // use the path as fallback
+        if let Some(back) = path.components().next_back() {
+            back.as_os_str().to_string_lossy().to_string()
+        }
+        else {
+            // use the path as fallback
+            error!("Path {:?} has no last component", path);
+            path.display().to_string()
         }
     }
 
