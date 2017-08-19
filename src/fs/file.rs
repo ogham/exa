@@ -200,13 +200,16 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        if let Ok(metadata) = fs::metadata(&absolute_path) {
-            let ext  = File::ext(&path);
-            let name = File::filename(&path);
-            FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
-        }
-        else {
-            FileTarget::Broken(path)
+        match fs::metadata(&absolute_path) {
+            Ok(metadata) => {
+                let ext  = File::ext(&path);
+                let name = File::filename(&path);
+                FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
+            }
+            Err(e) => {
+                error!("Error following link {:?}: {:#?}", &path, e);
+                FileTarget::Broken(path)
+            }
         }
     }
 
