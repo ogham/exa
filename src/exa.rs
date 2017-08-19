@@ -70,6 +70,9 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
         Options::parse(args, &LiveVars).map(move |(options, args)| {
+            debug!("Dir action from arguments: {:#?}", options.dir_action);
+            debug!("Filter from arguments: {:#?}", options.filter);
+            debug!("View from arguments: {:#?}", options.view.mode);
             Exa { options, writer, args }
         })
     }

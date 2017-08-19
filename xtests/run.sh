@@ -195,7 +195,7 @@ $exa -ll          2>&1 | diff -q - $results/error_twice      || exit 1
 
 # Debug mode
 # (uses an empty directory so it prints nothing to stdout)
-EXA_DEBUG="1" $exa $testcases/attributes/dirs/no-xattrs_empty -lh 2>&1 | diff -q - $results/debug  || exit 1
+EXA_DEBUG="1" $exa $testcases/attributes/dirs/no-xattrs_empty -lh 2>&1 | tail -n 2 | diff -q - $results/debug  || exit 1
 
 
 # And finally...
