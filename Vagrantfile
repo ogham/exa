@@ -60,7 +60,7 @@ Vagrant.configure(2) do |config|
         echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml" > /usr/bin/build-exa
         ln -sf /usr/bin/build-exa /usr/bin/b
       
-        echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml" > /usr/bin/test-exa
+        echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml --lib -- --quiet" > /usr/bin/test-exa
         ln -sf /usr/bin/test-exa /usr/bin/t
       
         echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/run-xtests
