@@ -95,7 +95,8 @@ Vagrant.configure(2) do |config|
         # cool prompt
         echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
         echo 'function debug_mode() { [ -n "$EXA_DEBUG" ] && echo "debug "; }' >> /home/ubuntu/.bash_profile
-        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
+        echo 'function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }' >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
         
         # environment setting
         echo 'function debug () {' >> /home/ubuntu/.bash_profile
@@ -103,6 +104,12 @@ Vagrant.configure(2) do |config|
         echo '    "off") export EXA_DEBUG= ;;' >> /home/ubuntu/.bash_profile
         echo '    "") [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
         echo '    *) echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+        echo 'function strict () {' >> /home/ubuntu/.bash_profile
+        echo '  case "$1" in "on") export EXA_STRICT=1 ;;' >> /home/ubuntu/.bash_profile
+        echo '    "off") export EXA_STRICT= ;;' >> /home/ubuntu/.bash_profile
+        echo '    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *) echo "Usage: strict on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+
         
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
