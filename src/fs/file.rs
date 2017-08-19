@@ -62,9 +62,11 @@ impl<'dir> File<'dir> {
           FN: Into<Option<String>>
     {
         let parent_dir = parent_dir.into();
-        let metadata   = fs::symlink_metadata(&path)?;
         let name       = filename.into().unwrap_or_else(|| File::filename(&path));
         let ext        = File::ext(&path);
+        
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
 
         Ok(File { path, parent_dir, metadata, ext, name })
     }
@@ -191,6 +193,7 @@ impl<'dir> File<'dir> {
         // this file -- which could be absolute or relative -- to the path
         // we actually look up and turn into a `File` -- which needs to be
         // absolute to be accessible from any directory.
+        debug!("Reading link {:?}", &self.path);
         let path = match fs::read_link(&self.path) {
             Ok(p)   => p,
             Err(e)  => return FileTarget::Err(e),
