@@ -101,7 +101,7 @@ Vagrant.configure(2) do |config|
         echo 'function debug_mode() { [ -n "$EXA_DEBUG" ] && echo "debug "; }' >> /home/ubuntu/.bash_profile
         echo 'function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }' >> /home/ubuntu/.bash_profile
         echo 'function lsc_mode() { [ -n "$LS_COLORS" ] && echo "lsc "; }' >> /home/ubuntu/.bash_profile
-        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[1;36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[0m\\] "' >> /home/ubuntu/.bash_profile
 
         # environment setting
         echo 'function debug () {' >> /home/ubuntu/.bash_profile
