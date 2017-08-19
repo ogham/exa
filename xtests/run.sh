@@ -5,6 +5,13 @@ set +xe
 # The exa binary
 exa_binary="$HOME/target/debug/exa"
 
+if [ ! -f "$exa_binary" ]; then
+  echo "exa binary ($exa_binary) does not exist"
+  echo -e "create it first with \033[1;32mbuild-exa\033[0m or \033[1;32mb\033[0m"
+  exit 1
+fi
+
+
 # The exa command that ends up being run
 exa="$exa_binary --colour=always"
 
