@@ -86,12 +86,23 @@ Vagrant.configure(2) do |config|
         echo -e "\033[32;1mx\033[0m or \033[32;1mrun-xtests\033[0m to run \033[1m/vagrant/xtests/run.sh\033[0m"  >> /etc/motd
         echo -e "\033[32;1mc\033[0m or \033[32;1mcompile-exa\033[0m to run all three\n"  >> /etc/motd
         
+        # help banner
         echo 'echo -e "\\033[4mVersions\\033[0m"' > /home/ubuntu/.bash_profile
         echo "rustc --version" >> /home/ubuntu/.bash_profile
         echo "cargo --version" >> /home/ubuntu/.bash_profile
         echo "echo" >> /home/ubuntu/.bash_profile
+        
+        # cool prompt
         echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
-        echo 'export PS1="\\[\\e[36m\\]\\h\\[\\e[m\\] \\[\\e[32m\\]\\w\\[\\e[m\\] \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[m\\]\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
+        echo 'function debug_mode() { [ -n "$EXA_DEBUG" ] && echo "debug "; }' >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
+        
+        # environment setting
+        echo 'function debug () {' >> /home/ubuntu/.bash_profile
+        echo '  case "$1" in "on") export EXA_DEBUG=1 ;;' >> /home/ubuntu/.bash_profile
+        echo '    "off") export EXA_DEBUG= ;;' >> /home/ubuntu/.bash_profile
+        echo '    "") [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *) echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
         
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
