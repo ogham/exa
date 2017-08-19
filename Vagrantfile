@@ -61,7 +61,10 @@ Vagrant.configure(2) do |config|
 
         echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \"\\$*\"" > /usr/bin/exa
         echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \"\\$*\"" > /usr/bin/rexa
-        chmod +x /usr/bin/{exa,rexa}
+        echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml" > /usr/bin/b
+        echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml" > /usr/bin/t
+        echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/x
+        chmod +x /usr/bin/{exa,rexa,b,t,x}
     EOF
 
 
