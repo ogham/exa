@@ -189,6 +189,8 @@ $exa --ternary    2>&1 | diff -q - $results/error_long       || exit 1
 $exa -4           2>&1 | diff -q - $results/error_short      || exit 1
 $exa --time       2>&1 | diff -q - $results/error_value      || exit 1
 $exa --long=time  2>&1 | diff -q - $results/error_overvalued || exit 1
+$exa -l --long    2>&1 | diff -q - $results/error_duplicate  || exit 1
+$exa -ll          2>&1 | diff -q - $results/error_twice      || exit 1
 
 
 # Debug mode
