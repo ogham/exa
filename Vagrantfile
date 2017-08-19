@@ -90,6 +90,8 @@ Vagrant.configure(2) do |config|
         echo "rustc --version" >> /home/ubuntu/.bash_profile
         echo "cargo --version" >> /home/ubuntu/.bash_profile
         echo "echo" >> /home/ubuntu/.bash_profile
+        echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[36m\\]\\h\\[\\e[m\\] \\[\\e[32m\\]\\w\\[\\e[m\\] \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[m\\]\\[\\e[36m\\]\\\\$\\[\\e[m\\] "' >> /home/ubuntu/.bash_profile
         
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
