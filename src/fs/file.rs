@@ -62,9 +62,11 @@ impl<'dir> File<'dir> {
           FN: Into<Option<String>>
     {
         let parent_dir = parent_dir.into();
-        let metadata   = fs::symlink_metadata(&path)?;
         let name       = filename.into().unwrap_or_else(|| File::filename(&path));
         let ext        = File::ext(&path);
+        
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
 
         Ok(File { path, parent_dir, metadata, ext, name })
     }
@@ -73,9 +75,13 @@ impl<'dir> File<'dir> {
     /// such as `/` or `..`, which have no `file_name` component. So instead, just
     /// use the last component as the name.
     pub fn filename(path: &Path) -> String {
-        match path.components().next_back() {
-            Some(back) => back.as_os_str().to_string_lossy().to_string(),
-            None       => path.display().to_string(),  // use the path as fallback
+        if let Some(back) = path.components().next_back() {
+            back.as_os_str().to_string_lossy().to_string()
+        }
+        else {
+            // use the path as fallback
+            error!("Path {:?} has no last component", path);
+            path.display().to_string()
         }
     }
 
@@ -187,6 +193,7 @@ impl<'dir> File<'dir> {
         // this file -- which could be absolute or relative -- to the path
         // we actually look up and turn into a `File` -- which needs to be
         // absolute to be accessible from any directory.
+        debug!("Reading link {:?}", &self.path);
         let path = match fs::read_link(&self.path) {
             Ok(p)   => p,
             Err(e)  => return FileTarget::Err(e),
@@ -196,13 +203,16 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        if let Ok(metadata) = fs::metadata(&absolute_path) {
-            let ext  = File::ext(&path);
-            let name = File::filename(&path);
-            FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
-        }
-        else {
-            FileTarget::Broken(path)
+        match fs::metadata(&absolute_path) {
+            Ok(metadata) => {
+                let ext  = File::ext(&path);
+                let name = File::filename(&path);
+                FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
+            }
+            Err(e) => {
+                error!("Error following link {:?}: {:#?}", &path, e);
+                FileTarget::Broken(path)
+            }
         }
     }
 

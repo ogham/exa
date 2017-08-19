@@ -17,7 +17,10 @@ results="/vagrant/xtests"
 
 # We want to use strict mode here. It’s important that no combination of
 # testing flags happens to work by accident!
-export EXA_STRICT=1
+export EXA_STRICT="1"
+
+# We also don’t want to see reams and reams of debug output.
+export EXA_DEBUG=""
 
 
 # Check that no files were created more than a year ago.
@@ -186,6 +189,11 @@ $exa --ternary    2>&1 | diff -q - $results/error_long       || exit 1
 $exa -4           2>&1 | diff -q - $results/error_short      || exit 1
 $exa --time       2>&1 | diff -q - $results/error_value      || exit 1
 $exa --long=time  2>&1 | diff -q - $results/error_overvalued || exit 1
+
+
+# Debug mode
+# (uses an empty directory so it prints nothing to stdout)
+EXA_DEBUG="1" $exa $testcases/attributes/dirs/no-xattrs_empty -lh 2>&1 | diff -q - $results/debug  || exit 1
 
 
 # And finally...

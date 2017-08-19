@@ -1,0 +1,2 @@
+DEBUG:exa::fs::file: Statting file "/testcases/attributes/dirs/no-xattrs_empty"
+INFO:exa::fs::dir: Reading directory "/testcases/attributes/dirs/no-xattrs_empty"
