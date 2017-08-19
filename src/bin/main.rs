@@ -2,12 +2,14 @@ extern crate exa;
 use exa::Exa;
 
 use std::ffi::OsString;
-use std::env::args_os;
+use std::env::{args_os, var_os};
 use std::io::{stdout, stderr, Write, ErrorKind};
 use std::process::exit;
 
 
 fn main() {
+    configure_logger();
+    
     let args: Vec<OsString> = args_os().skip(1).collect();
     match Exa::new(args.iter(), &mut stdout()) {
         Ok(mut exa) => {
@@ -35,6 +37,29 @@ fn main() {
             exit(exits::SUCCESS);
         },
     };
+}
+
+
+/// Sets up a global logger if one is asked for.
+/// The ‘EXA_DEBUG’ environment variable controls whether log messages are
+/// displayed or not. Currently there are just two settings (on and off)
+pub fn configure_logger() {
+    extern crate env_logger;
+    extern crate log;
+    
+    let present = match var_os("EXA_DEBUG") {
+        Some(debug)  => debug.len() > 0,
+        None         => false,
+    };
+    
+    let mut logs = env_logger::LogBuilder::new();
+    if present {
+        logs.filter(None, log::LogLevelFilter::Debug);
+    }
+    
+    if let Err(e) = logs.init() {
+        writeln!(stderr(), "Failed to initialise logger: {}", e).unwrap();
+    }
 }
 
 

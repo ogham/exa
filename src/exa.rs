@@ -18,8 +18,8 @@ extern crate term_size;
 
 #[cfg(feature="git")] extern crate git2;
 
-#[macro_use]
-extern crate lazy_static;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate log;
 
 
 use std::env::var_os;

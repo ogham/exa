@@ -15,6 +15,8 @@ impl Git {
     /// Discover a Git repository on or above this directory, scanning it for
     /// the files' statuses if one is found.
     pub fn scan(path: &Path) -> Result<Git, git2::Error> {
+        info!("Scanning for Git repository under {:?}", path);
+    
         let repo = git2::Repository::discover(path)?;
         let workdir = match repo.workdir() {
             Some(w) => w,
