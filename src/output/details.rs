@@ -64,6 +64,8 @@ use std::io::{Write, Error as IOError, Result as IOResult};
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
+use ansi_term::Style;
+
 use fs::{Dir, File};
 use fs::dir_action::RecurseOptions;
 use fs::filter::FileFilter;
@@ -340,15 +342,15 @@ impl<'a> Render<'a> {
             total_width: table.widths().total(),
             table: table,
             inner: rows.into_iter(),
-            colours: self.colours,
+            tree_style: self.colours.punctuation,
         }
     }
 
-    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter<'a> {
+    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter {
         Iter {
             tree_trunk: TreeTrunk::default(),
             inner: rows.into_iter(),
-            colours: self.colours,
+            tree_style: self.colours.punctuation,
         }
     }
 }
@@ -374,11 +376,12 @@ pub struct Row {
 
 
 pub struct TableIter<'a> {
-    table: Table<'a>,
-    tree_trunk: TreeTrunk,
-    total_width: usize,
-    colours: &'a Colours,
     inner: VecIntoIter<Row>,
+    table: Table<'a>,
+
+    total_width: usize,
+    tree_style:  Style,
+    tree_trunk:  TreeTrunk,
 }
 
 impl<'a> Iterator for TableIter<'a> {
@@ -397,7 +400,7 @@ impl<'a> Iterator for TableIter<'a> {
                 };
 
             for tree_part in self.tree_trunk.new_row(row.tree) {
-                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+                cell.push(self.tree_style.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
@@ -413,13 +416,13 @@ impl<'a> Iterator for TableIter<'a> {
 }
 
 
-pub struct Iter<'a> {
+pub struct Iter {
     tree_trunk: TreeTrunk,
-    colours: &'a Colours,
+    tree_style: Style,
     inner: VecIntoIter<Row>,
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl Iterator for Iter {
     type Item = TextCell;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -427,7 +430,7 @@ impl<'a> Iterator for Iter<'a> {
             let mut cell = TextCell::default();
 
             for tree_part in self.tree_trunk.new_row(row.tree) {
-                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+                cell.push(self.tree_style.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
