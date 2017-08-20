@@ -54,7 +54,7 @@ These options are available when running with --long (`-l`):
 - **--time-style**: how to format timestamps
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
-- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter are case-sensitive.
+- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter sort uppercase before lowercase.
 - Valid time fields are **modified**, **accessed**, and **created**.
 - Valid time styles are **default**, **iso**, **long-iso**, and **full-iso**.
 

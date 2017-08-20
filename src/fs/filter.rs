@@ -177,15 +177,22 @@ pub enum SortField {
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
 /// This determines which of the `natord` functions to use.
+///
+/// I kept on forgetting which one was sensitive and which one was
+/// insensitive. Would a case-sensitive sort put capital letters first because
+/// it takes the case of the letters into account, or intermingle them with
+/// lowercase letters because it takes the difference between the two cases
+/// into account? I gave up and just named these two variants after the
+/// effects they have.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortCase {
 
     /// Sort files case-sensitively with uppercase first, with ‘A’ coming
     /// before ‘a’.
-    Sensitive,
+    ABCabc,
 
     /// Sort files case-insensitively, with ‘A’ being equal to ‘a’.
-    Insensitive,
+    AaBbCc,
 }
 
 impl SortField {
@@ -199,13 +206,13 @@ impl SortField {
     /// together, so `file10` will sort after `file9`, instead of before it
     /// because of the `1`.
     pub fn compare_files(&self, a: &File, b: &File) -> Ordering {
-        use self::SortCase::{Sensitive, Insensitive};
+        use self::SortCase::{ABCabc, AaBbCc};
 
         match *self {
             SortField::Unsorted  => Ordering::Equal,
 
-            SortField::Name(Sensitive)    => natord::compare(&a.name, &b.name),
-            SortField::Name(Insensitive)  => natord::compare_ignore_case(&a.name, &b.name),
+            SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
+            SortField::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
             SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
             SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
@@ -218,12 +225,12 @@ impl SortField {
                 order            => order,
             },
 
-            SortField::Extension(Sensitive) => match a.ext.cmp(&b.ext) {
+            SortField::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::Extension(Insensitive) => match a.ext.cmp(&b.ext) {
+            SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
                 order            => order,
             },

@@ -77,7 +77,8 @@ reverse the sort order
 .B \-s, \-\-sort=\f[I]SORT_FIELD\f[]
 which field to sort by.
 Valid fields are name, Name, extension, Extension, size, modified, accessed, created, inode, type, and none.
-Fields starting with a capital letter are case-sensitive.
+Fields starting with a capital letter will sort uppercase before lowercase: 'A' then 'B' then 'a' then 'b'.
+Fields starting with a lowercase letter will mix them: 'A' then 'a' then 'B' then 'b'.
 .RS
 .RE
 .TP

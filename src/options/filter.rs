@@ -39,19 +39,19 @@ impl SortField {
 
         // The field is an OsStr, so can’t be matched.
         if word == "name" || word == "filename" {
-            Ok(SortField::Name(SortCase::Sensitive))
+            Ok(SortField::Name(SortCase::AaBbCc))
         }
         else if word == "Name" || word == "Filename" {
-            Ok(SortField::Name(SortCase::Insensitive))
+            Ok(SortField::Name(SortCase::ABCabc))
         }
         else if word == "size" || word == "filesize" {
             Ok(SortField::Size)
         }
         else if word == "ext" || word == "extension" {
-            Ok(SortField::Extension(SortCase::Sensitive))
+            Ok(SortField::Extension(SortCase::AaBbCc))
         }
         else if word == "Ext" || word == "Extension" {
-            Ok(SortField::Extension(SortCase::Insensitive))
+            Ok(SortField::Extension(SortCase::ABCabc))
         }
         else if word == "mod" || word == "modified" {
             Ok(SortField::ModifiedDate)
@@ -77,9 +77,41 @@ impl SortField {
     }
 }
 
+// I’ve gone back and forth between whether to sort case-sensitively or
+// insensitively by default. The default string sort in most programming
+// languages takes each character’s ASCII value into account, sorting
+// “Documents” before “apps”, but there’s usually an option to ignore
+// characters’ case, putting “apps” before “Documents”.
+//
+// The argument for following case is that it’s easy to forget whether an item
+// begins with an uppercase or lowercase letter and end up having to scan both
+// the uppercase and lowercase sub-lists to find the item you want. If you
+// happen to pick the sublist it’s not in, it looks like it’s missing, which
+// is worse than if you just take longer to find it.
+// (https://ux.stackexchange.com/a/79266)
+//
+// The argument for ignoring case is that it makes exa sort files differently
+// from shells. A user would expect a directory’s files to be in the same
+// order if they used “exa ~/directory” or “exa ~/directory/*”, but exa sorts
+// them in the first case, and the shell in the second case, so they wouldn’t
+// be exactly the same if exa does something non-conventional.
+//
+// However, exa already sorts files differently: it uses natural sorting from
+// the natord crate, sorting the string “2” before “10” because the number’s
+// smaller, because that’s usually what the user expects to happen. Users will
+// name their files with numbers expecting them to be treated like numbers,
+// rather than lists of numeric characters.
+// 
+// In the same way, users will name their files with letters expecting the
+// order of the letters to matter, rather than each letter’s character’s ASCII
+// value. So exa breaks from tradition and ignores case while sorting: 
+// “apps” first, then “Documents”.
+//
+// You can get the old behaviour back by sorting with `--sort=Name`.
+
 impl Default for SortField {
     fn default() -> SortField {
-        SortField::Name(SortCase::Sensitive)
+        SortField::Name(SortCase::AaBbCc)
     }
 }
 
@@ -90,7 +122,7 @@ impl DotFilter {
     /// given: one will show dotfiles, but two will show `.` and `..` too.
     ///
     /// It also checks for the `--tree` option in strict mode, because of a
-    /// special case where `--tree --all --all` won't work: listing the
+    /// special case where `--tree --all --all` won’t work: listing the
     /// parent directory in tree mode would loop onto itself!
     pub fn deduce(matches: &MatchedFlags) -> Result<DotFilter, Misfire> {
         let count = matches.count(&flags::ALL);
@@ -182,15 +214,15 @@ mod test {
         test!(one_arg:       SortField <- ["--sort=cr"];       Both => Ok(SortField::CreatedDate));
         test!(one_long:      SortField <- ["--sort=size"];     Both => Ok(SortField::Size));
         test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
-        test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::Sensitive)));
-        test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::Insensitive)));
+        test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
+        test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::ABCabc)));
 
         // Errors
         test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::bad_argument(&flags::SORT, &os("colour"), super::SORTS)));
 
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));
-        test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"];  Last => Ok(SortField::Extension(SortCase::Insensitive)));
+        test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"];  Last => Ok(SortField::Extension(SortCase::ABCabc)));
         test!(overridden_3:  SortField <- ["--sort=cr",       "--sort", "mod"];     Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
         test!(overridden_4:  SortField <- ["--sort", "none",  "--sort=Extension"];  Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
     }

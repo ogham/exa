@@ -108,10 +108,10 @@ $exa $testcases/file-names/* >/dev/null || exit 1
 
 
 # Sorting and extension file types
-$exa $testcases/file-names-exts -1 2>&1 --sort=Name | diff -q - $results/file-names-exts           || exit 1
-$exa $testcases/file-names-exts -1 2>&1 --sort=name | diff -q - $results/file-names-exts-case      || exit 1
-$exa $testcases/file-names-exts -1 2>&1 --sort=Ext  | diff -q - $results/file-names-exts-ext       || exit 1
-$exa $testcases/file-names-exts -1 2>&1 --sort=ext  | diff -q - $results/file-names-exts-ext-case  || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=name | diff -q - $results/file-names-exts           || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=Name | diff -q - $results/file-names-exts-case      || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=ext  | diff -q - $results/file-names-exts-ext       || exit 1
+$exa $testcases/file-names-exts -1 2>&1 --sort=Ext  | diff -q - $results/file-names-exts-ext-case  || exit 1
 
 # Pass multiple input arguments because there aren’t enough of different types
 # in one directory already
