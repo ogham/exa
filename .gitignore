@@ -1,4 +1,6 @@
 target
+/exa-linux-x86_64
+/exa-linux-x86_64.zip
 
 .vagrant
 ubuntu-xenial-16.04-cloudimg-console.log

@@ -2,12 +2,15 @@
 set +xe
 
 
-# The exa binary
-exa_binary="$HOME/target/debug/exa"
+# Release mode
+case "$1" in
+  "--release") echo "Testing release exa..."; exa_binary="$HOME/target/release/exa" ;;
+  *)           exa_binary="$HOME/target/debug/exa" ;;
+esac
 
 if [ ! -f "$exa_binary" ]; then
   echo "exa binary ($exa_binary) does not exist"
-  echo -e "create it first with \033[1;32mbuild-exa\033[0m or \033[1;32mb\033[0m"
+  if [ "$1" != "--release" ]; then echo -e "create it first with \033[1;32mbuild-exa\033[0m or \033[1;32mb\033[0m"; fi
   exit 1
 fi
 
@@ -150,7 +153,8 @@ env LANG=ja_JP.UTF-8  $exa $testcases/dates -l | diff -q - $results/dates_jp  ||
 # Paths and directories
 # These directories are created in the VM user’s home directory (the default
 # location) when a Cargo build is done.
-(cd; $exa -1d target target/debug target/debug/build | diff -q - $results/dir_paths) || exit 1
+(cd; mkdir -p target/debug/build
+     $exa -1d target target/debug target/debug/build | diff -q - $results/dir_paths) || exit 1
      $exa -1d . .. /                                 | diff -q - $results/dirs       || exit 1
 
 
