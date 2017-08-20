@@ -128,7 +128,7 @@ pub mod test {
     #[test]
     fn file_bytes() {
         let mut colours = Colours::default();
-    	colours.size.numbers = Blue.on(Red);
+        colours.size.numbers = Blue.on(Red);
 
         let directory = f::Size::Some(1048576);
         let expected = TextCell {
