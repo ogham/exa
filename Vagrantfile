@@ -93,6 +93,25 @@ Vagrant.configure(2) do |config|
         
         chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa}
     EOF
+    
+    
+    # Download my patched version of git2-rs.
+    # This is basically a hack and we should get rid of it as soon as
+    # a better solution comes along.
+    # See https://github.com/ogham/exa/issues/194
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        git clone https://github.com/ogham/git2-rs.git /home/ubuntu/git2-rs
+        mkdir -p /home/ubuntu/.cargo
+        echo 'paths = ["/home/ubuntu/git2-rs/libgit2-sys"]' > /home/ubuntu/.cargo/config
+    EOF
+    
+    # This fix is applied by changing the VM rather than changing the
+    # Cargo.toml file so it works for everyone because it’s such a niche
+    # build issue, it’s not worth specifying a non-crates.io dependency
+    # and losing the ability to `cargo publish` the exa crate there!
+    # It also isolates the hackiness to the one place I can test it
+    # actually works.
 
 
     # Write some welcoming text.
