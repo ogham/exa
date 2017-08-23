@@ -390,8 +390,8 @@ impl Colours {
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Always || (tc == Automatic && TERM_WIDTH.is_some()) {
-            let scale = matches.has(&flags::COLOR_SCALE)? || matches.has(&flags::COLOUR_SCALE)?;
-            Ok(Colours::colourful(scale))
+            let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
+            Ok(Colours::colourful(scale.is_some()))
         }
         else {
             Ok(Colours::plain())
@@ -452,7 +452,7 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
-                                   &flags::COLOR,  &flags::COLOUR,
+                                   &flags::COLOR,  &flags::COLOUR,  &flags::COLOR_SCALE, &flags::COLOUR_SCALE,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
                                    &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
@@ -641,6 +641,16 @@ mod test {
         test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
         test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
         test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+
+        test!(scale_1: Colours <- ["--color=always", "--color-scale", "--colour-scale"];   Last => like Ok(Colours { scale: true,  .. }));
+        test!(scale_2: Colours <- ["--color=always", "--color-scale",                 ];   Last => like Ok(Colours { scale: true,  .. }));
+        test!(scale_3: Colours <- ["--color=always",                  "--colour-scale"];   Last => like Ok(Colours { scale: true,  .. }));
+        test!(scale_4: Colours <- ["--color=always",                                  ];   Last => like Ok(Colours { scale: false, .. }));
+
+        test!(scale_5: Colours <- ["--color=always", "--color-scale", "--colour-scale"];   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
+        test!(scale_6: Colours <- ["--color=always", "--color-scale",                 ];   Complain => like Ok(Colours { scale: true,  .. }));
+        test!(scale_7: Colours <- ["--color=always",                  "--colour-scale"];   Complain => like Ok(Colours { scale: true,  .. }));
+        test!(scale_8: Colours <- ["--color=always",                                  ];   Complain => like Ok(Colours { scale: false, .. }));
     }
 
 
