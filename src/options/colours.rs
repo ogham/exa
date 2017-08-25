@@ -95,23 +95,19 @@ mod terminal_test {
     static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
 
     macro_rules! test {
-        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
-            /// Macro that writes a test.
-            /// If testing both strictnesses, they’ll both be done in the same function.
+        ($name:ident:  $inputs:expr;  $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
                     assert_eq!(result, $result);
                 }
             }
         };
 
-        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => err $result:expr) => {
-            /// Special macro for testing Err results.
-            /// This is needed because sometimes the Ok type doesn’t implement PartialEq.
+        ($name:ident:  $inputs:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -120,32 +116,32 @@ mod terminal_test {
 
 
     // Default
-    test!(empty:        TerminalColours <- [];                     Both => Ok(TerminalColours::default()));
+    test!(empty:         [];                     Both => Ok(TerminalColours::default()));
 
     // --colour
-    test!(u_always:     TerminalColours <- ["--colour=always"];    Both => Ok(TerminalColours::Always));
-    test!(u_auto:       TerminalColours <- ["--colour", "auto"];   Both => Ok(TerminalColours::Automatic));
-    test!(u_never:      TerminalColours <- ["--colour=never"];     Both => Ok(TerminalColours::Never));
+    test!(u_always:      ["--colour=always"];    Both => Ok(TerminalColours::Always));
+    test!(u_auto:        ["--colour", "auto"];   Both => Ok(TerminalColours::Automatic));
+    test!(u_never:       ["--colour=never"];     Both => Ok(TerminalColours::Never));
 
     // --color
-    test!(no_u_always:  TerminalColours <- ["--color", "always"];  Both => Ok(TerminalColours::Always));
-    test!(no_u_auto:    TerminalColours <- ["--color=auto"];       Both => Ok(TerminalColours::Automatic));
-    test!(no_u_never:   TerminalColours <- ["--color", "never"];   Both => Ok(TerminalColours::Never));
+    test!(no_u_always:   ["--color", "always"];  Both => Ok(TerminalColours::Always));
+    test!(no_u_auto:     ["--color=auto"];       Both => Ok(TerminalColours::Automatic));
+    test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
     // Errors
-    test!(no_u_error:   TerminalColours <- ["--color=upstream"];   Both => err Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS));  // the error is for --color
-    test!(u_error:      TerminalColours <- ["--colour=lovers"];    Both => err Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS));  // and so is this one!
+    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS));  // the error is for --color
+    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS));  // and so is this one!
 
     // Overriding
-    test!(overridden_1: TerminalColours <- ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
-    test!(overridden_2: TerminalColours <- ["--color=auto",  "--colour=never"];  Last => Ok(TerminalColours::Never));
-    test!(overridden_3: TerminalColours <- ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
-    test!(overridden_4: TerminalColours <- ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
+    test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
+    test!(overridden_2:  ["--color=auto",  "--colour=never"];  Last => Ok(TerminalColours::Never));
+    test!(overridden_3:  ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
+    test!(overridden_4:  ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
 
-    test!(overridden_5: TerminalColours <- ["--colour=auto", "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
-    test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
-    test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
-    test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
+    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
+    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
+    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
 }
 
 
@@ -162,28 +158,28 @@ mod colour_test {
                                    &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
 
     macro_rules! test {
-        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => $result:expr) => {
+        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
                     assert_eq!(result, $result);
                 }
             }
         };
 
-        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => err $result:expr) => {
+        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
         };
 
-        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => like $pat:pat) => {
+        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => like $pat:pat) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),
@@ -194,22 +190,22 @@ mod colour_test {
         };
     }
 
-    test!(width_1: Colours <- ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_2: Colours <- ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false)));
-    test!(width_3: Colours <- ["--colour", "never"],     || Some(80);  Both => Ok(Colours::plain()));
-    test!(width_4: Colours <- ["--colour", "never"],     || None;      Both => Ok(Colours::plain()));
-    test!(width_5: Colours <- ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_6: Colours <- ["--colour", "automatic"], || None;      Both => Ok(Colours::plain()));
-    test!(width_7: Colours <- [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_8: Colours <- [],                        || None;      Both => Ok(Colours::plain()));
+    test!(width_1:  ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_2:  ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false)));
+    test!(width_3:  ["--colour", "never"],     || Some(80);  Both => Ok(Colours::plain()));
+    test!(width_4:  ["--colour", "never"],     || None;      Both => Ok(Colours::plain()));
+    test!(width_5:  ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_6:  ["--colour", "automatic"], || None;      Both => Ok(Colours::plain()));
+    test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_8:  [],                        || None;      Both => Ok(Colours::plain()));
 
-    test!(scale_1: Colours <- ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_2: Colours <- ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_3: Colours <- ["--color=always",                  "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_4: Colours <- ["--color=always",                                  ], || None;   Last => like Ok(Colours { scale: false, .. }));
+    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
+    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
+    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
+    test!(scale_4:  ["--color=always",                                  ], || None;   Last => like Ok(Colours { scale: false, .. }));
 
-    test!(scale_5: Colours <- ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
-    test!(scale_6: Colours <- ["--color=always", "--color-scale",                 ], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_7: Colours <- ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_8: Colours <- ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
+    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
+    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => like Ok(Colours { scale: true,  .. }));
+    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
+    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
 }
