@@ -77,7 +77,7 @@ impl Colours {
 
 
 #[cfg(test)]
-mod test {
+mod terminal_test {
     use super::*;
     use std::ffi::OsString;
     use options::flags;
@@ -92,11 +92,9 @@ mod test {
         os
     }
 
-    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR,       &flags::COLOUR,
-                                   &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
+    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
 
     macro_rules! test {
-
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             /// Macro that writes a test.
             /// If testing both strictnesses, they’ll both be done in the same function.
@@ -115,46 +113,6 @@ mod test {
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
                     assert_eq!(result.unwrap_err(), $result);
-                }
-            }
-        };
-
-        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => like $pat:pat) => {
-            /// More general macro for testing against a pattern.
-            /// Instead of using PartialEq, this just tests if it matches a pat.
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
-                    println!("Testing {:?}", result);
-                    match result {
-                        $pat => assert!(true),
-                        _    => assert!(false),
-                    }
-                }
-            }
-        };
-
-
-        ($name:ident: $type:ident <- $inputs:expr, $vars:expr; $stricts:expr => err $result:expr) => {
-            /// Like above, but with $vars.
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
-                    assert_eq!(result.unwrap_err(), $result);
-                }
-            }
-        };
-
-        ($name:ident: $type:ident <- $inputs:expr, $vars:expr; $stricts:expr => like $pat:pat) => {
-            /// Like further above, but with $vars.
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$vars)) {
-                    println!("Testing {:?}", result);
-                    match result {
-                        $pat => assert!(true),
-                        _    => assert!(false),
-                    }
                 }
             }
         };
@@ -188,6 +146,44 @@ mod test {
     test!(overridden_6: TerminalColours <- ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
     test!(overridden_7: TerminalColours <- ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
     test!(overridden_8: TerminalColours <- ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+}
+
+
+#[cfg(test)]
+mod colour_test {
+    use super::*;
+    use options::flags;
+    use options::parser::{Flag, Arg};
+
+    use options::test::parse_for_test;
+    use options::test::Strictnesses::*;
+
+    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR,       &flags::COLOUR,
+                                   &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
+
+    macro_rules! test {
+        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => err $result:expr) => {
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                    assert_eq!(result.unwrap_err(), $result);
+                }
+            }
+        };
+
+        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => like $pat:pat) => {
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                    println!("Testing {:?}", result);
+                    match result {
+                        $pat => assert!(true),
+                        _    => assert!(false),
+                    }
+                }
+            }
+        };
+    }
 
     test!(scale_1: Colours <- ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
     test!(scale_2: Colours <- ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
