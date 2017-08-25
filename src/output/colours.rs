@@ -8,6 +8,7 @@ use output::render;
 pub struct Colours {
     pub scale: bool,
 
+    pub filekinds:  FileKinds,
     pub filetypes:  FileTypes,
     pub perms:      Permissions,
     pub size:       Size,
@@ -27,8 +28,9 @@ pub struct Colours {
     pub control_char:     Style,
 }
 
+// Colours for files depending on their filesystem type.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct FileTypes {
+pub struct FileKinds {
     pub normal: Style,
     pub directory: Style,
     pub symlink: Style,
@@ -37,6 +39,11 @@ pub struct FileTypes {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
+}
+
+// Colours for files depending on their name or extension.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct FileTypes {
     pub image: Style,
     pub video: Style,
     pub music: Style,
@@ -117,7 +124,7 @@ impl Colours {
         Colours {
             scale: scale,
 
-            filetypes: FileTypes {
+            filekinds: FileKinds {
                 normal:      Style::default(),
                 directory:   Blue.bold(),
                 symlink:     Cyan.normal(),
@@ -126,6 +133,9 @@ impl Colours {
                 socket:      Red.bold(),
                 special:     Yellow.normal(),
                 executable:  Green.bold(),
+            },
+
+            filetypes: FileTypes {
                 image:       Fixed(133).normal(),
                 video:       Fixed(135).normal(),
                 music:       Fixed(92).normal(),
@@ -213,13 +223,13 @@ impl render::BlocksColours for Colours {
 }
 
 impl render::FiletypeColours for Colours {
-	fn normal(&self)     -> Style { self.filetypes.normal }
-	fn directory(&self)  -> Style { self.filetypes.directory }
-	fn pipe(&self)       -> Style { self.filetypes.pipe }
-	fn symlink(&self)    -> Style { self.filetypes.symlink }
-	fn device(&self)     -> Style { self.filetypes.device }
-	fn socket(&self)     -> Style { self.filetypes.socket }
-	fn special(&self)    -> Style { self.filetypes.special }
+	fn normal(&self)     -> Style { self.filekinds.normal }
+	fn directory(&self)  -> Style { self.filekinds.directory }
+	fn pipe(&self)       -> Style { self.filekinds.pipe }
+	fn symlink(&self)    -> Style { self.filekinds.symlink }
+	fn device(&self)     -> Style { self.filekinds.device }
+	fn socket(&self)     -> Style { self.filekinds.socket }
+	fn special(&self)    -> Style { self.filekinds.special }
 }
 
 impl render::GitColours for Colours {
@@ -281,7 +291,7 @@ impl render::SizeColours for Colours {
 			self.size.numbers
 		}
 	}
-	
+
 	fn unit(&self)    -> Style { self.size.unit }
 	fn no_size(&self) -> Style { self.punctuation }
 	fn major(&self)   -> Style { self.size.major }

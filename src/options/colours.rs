@@ -78,7 +78,7 @@ impl Colours {
             let lsc = LSColors::parse(lsc.as_ref());
 
             if let Some(dir) = lsc.get("di") {
-                c.filetypes.directory = dir;
+                c.filekinds.directory = dir;
             }
         }
 
@@ -270,5 +270,5 @@ mod customs_test {
         }
     }
 
-    test!(override_1:  ls "di=34", exa ""  =>  |c: &mut Colours| { c.filetypes.directory = Blue.normal(); });
+    test!(override_1:  ls "di=34", exa ""  =>  |c: &mut Colours| { c.filekinds.directory = Blue.normal(); });
 }
