@@ -162,6 +162,15 @@ mod colour_test {
                                    &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
 
     macro_rules! test {
+        ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &$widther)) {
+                    assert_eq!(result, $result);
+                }
+            }
+        };
+
         ($name:ident: $type:ident <- $inputs:expr, $widther:expr; $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
@@ -184,6 +193,15 @@ mod colour_test {
             }
         };
     }
+
+    test!(width_1: Colours <- ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_2: Colours <- ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false)));
+    test!(width_3: Colours <- ["--colour", "never"],     || Some(80);  Both => Ok(Colours::plain()));
+    test!(width_4: Colours <- ["--colour", "never"],     || None;      Both => Ok(Colours::plain()));
+    test!(width_5: Colours <- ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_6: Colours <- ["--colour", "automatic"], || None;      Both => Ok(Colours::plain()));
+    test!(width_7: Colours <- [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_8: Colours <- [],                        || None;      Both => Ok(Colours::plain()));
 
     test!(scale_1: Colours <- ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
     test!(scale_2: Colours <- ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
