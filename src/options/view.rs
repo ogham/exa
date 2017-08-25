@@ -17,7 +17,7 @@ impl View {
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
         let mode = Mode::deduce(matches, vars)?;
-        let colours = Colours::deduce(matches, || *TERM_WIDTH)?;
+        let colours = Colours::deduce(matches, vars, || *TERM_WIDTH)?;
         let style = FileStyle::deduce(matches)?;
         Ok(View { mode, colours, style })
     }

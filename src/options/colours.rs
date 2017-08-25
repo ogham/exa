@@ -1,6 +1,6 @@
 use output::Colours;
 
-use options::{flags, Misfire};
+use options::{flags, Vars, Misfire};
 use options::parser::MatchedFlags;
 
 
@@ -60,18 +60,29 @@ impl TerminalColours {
 
 
 impl Colours {
-    pub fn deduce<TW>(matches: &MatchedFlags, widther: TW) -> Result<Colours, Misfire>
-    where TW: Fn() -> Option<usize> {
+    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Colours, Misfire>
+    where TW: Fn() -> Option<usize>, V: Vars {
         use self::TerminalColours::*;
+        use output::lsc::LSColors;
 
         let tc = TerminalColours::deduce(matches)?;
-        if tc == Always || (tc == Automatic && widther().is_some()) {
-            let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
-            Ok(Colours::colourful(scale.is_some()))
+        if tc == Never || (tc == Automatic && widther().is_none()) {
+            return Ok(Colours::plain());
         }
-        else {
-            Ok(Colours::plain())
+
+        let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
+        let mut c = Colours::colourful(scale.is_some());
+
+        if let Some(lsc) = vars.get("LS_COLORS") {
+            let lsc = lsc.to_string_lossy();
+            let lsc = LSColors::parse(lsc.as_ref());
+
+            if let Some(dir) = lsc.get("di") {
+                c.filetypes.directory = dir;
+            }
         }
+
+        Ok(c)
     }
 }
 
@@ -161,7 +172,7 @@ mod colour_test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &None, &$widther)) {
                     assert_eq!(result, $result);
                 }
             }
@@ -170,7 +181,7 @@ mod colour_test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &None, &$widther)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -179,7 +190,7 @@ mod colour_test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => like $pat:pat) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &$widther)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Colours::deduce(mf, &None, &$widther)) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),
@@ -208,4 +219,56 @@ mod colour_test {
     test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => like Ok(Colours { scale: true,  .. }));
     test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
     test!(scale_8:  ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
+}
+
+
+
+#[cfg(test)]
+mod customs_test {
+    use std::ffi::OsString;
+
+    use super::*;
+    use options::Vars;
+    use options::test::parse_for_test;
+    use options::test::Strictnesses::Both;
+
+    use ansi_term::Colour::*;
+
+    macro_rules! test {
+        ($name:ident:  ls $ls:expr, exa $exa:expr  =>  $resulter:expr) => {
+            #[test]
+            fn $name() {
+                let mut c = Colours::colourful(false);
+                $resulter(&mut c);
+
+                let vars = MockVars { ls: $ls, exa: $exa };
+
+                for result in parse_for_test(&[], &[], Both, |mf| Colours::deduce(mf, &vars, || Some(80))) {
+                    assert_eq!(result, Ok(c));
+                }
+            }
+        };
+    }
+
+    struct MockVars {
+        ls: &'static str,
+        exa: &'static str,
+    }
+
+    // Test impl that just returns the value it has.
+    impl Vars for MockVars {
+        fn get(&self, name: &'static str) -> Option<OsString> {
+            if name == "LS_COLORS" && !self.ls.is_empty() {
+                OsString::from(self.ls.clone()).into()
+            }
+            else if name == "EXA_COLORS" && !self.exa.is_empty() {
+                OsString::from(self.exa.clone()).into()
+            }
+            else {
+                None
+            }
+        }
+    }
+
+    test!(override_1:  ls "di=34", exa ""  =>  |c: &mut Colours| { c.filetypes.directory = Blue.normal(); });
 }

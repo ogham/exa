@@ -10,13 +10,13 @@ pub mod file_name;
 pub mod grid_details;
 pub mod grid;
 pub mod lines;
+pub mod lsc;
 pub mod table;
 pub mod time;
 
 mod cell;
 mod colours;
 mod escape;
-mod lsc;
 mod render;
 mod tree;
 

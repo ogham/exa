@@ -11,7 +11,7 @@ pub struct LSColors<'var> {
 }
 
 impl<'var> LSColors<'var> {
-    fn parse(input: &'var str) -> LSColors<'var> {
+    pub fn parse(input: &'var str) -> LSColors<'var> {
         let contents = input.split(":")
                             .flat_map(|mapping| {
 
@@ -25,7 +25,7 @@ impl<'var> LSColors<'var> {
         LSColors { contents }
     }
 
-    fn get(&self, facet_name: &str) -> Option<Style> {
+    pub fn get(&self, facet_name: &str) -> Option<Style> {
         self.contents.get(facet_name).map(ansi_to_style)
     }
 }
