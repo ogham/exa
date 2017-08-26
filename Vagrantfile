@@ -56,13 +56,13 @@ Vagrant.configure(2) do |config|
 
         echo -e "#!/bin/sh\n/home/#{developer}/target/debug/exa \"\\$*\"" > /usr/bin/exa
         echo -e "#!/bin/sh\n/home/#{developer}/target/release/exa \"\\$*\"" > /usr/bin/rexa
-      
+
         echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml" > /usr/bin/build-exa
         ln -sf /usr/bin/build-exa /usr/bin/b
-      
+
         echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml --lib -- --quiet" > /usr/bin/test-exa
         ln -sf /usr/bin/test-exa /usr/bin/t
-      
+
         echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/run-xtests
         ln -sf /usr/bin/run-xtests /usr/bin/x
 
@@ -71,41 +71,48 @@ Vagrant.configure(2) do |config|
 
         echo "#!/bin/bash"                                                      > /usr/bin/package-exa
         echo "set -e"                                                          >> /usr/bin/package-exa
-        
+
         echo 'echo -e "\nCompiling release version of exa..."'                 >> /usr/bin/package-exa
         echo "cargo build --release --manifest-path /vagrant/Cargo.toml"       >> /usr/bin/package-exa
         echo "cargo test --release --manifest-path /vagrant/Cargo.toml --lib"  >> /usr/bin/package-exa
         echo "/vagrant/xtests/run.sh --release"                                >> /usr/bin/package-exa
         echo "cp /home/ubuntu/target/release/exa /vagrant/exa-linux-x86_64"    >> /usr/bin/package-exa
-        
+
         echo 'echo -e "\nStripping binary..."'                                 >> /usr/bin/package-exa
         echo "strip /vagrant/exa-linux-x86_64"                                 >> /usr/bin/package-exa
-        
+
         echo 'echo -e "\nZipping binary..."'                                   >> /usr/bin/package-exa
         echo "rm -f /vagrant/exa-linux-x86_64.zip"                             >> /usr/bin/package-exa
         echo "zip /vagrant/exa-linux-x86_64.zip /vagrant/exa-linux-x86_64"     >> /usr/bin/package-exa
-        
+
         echo 'echo -e "\nLibraries linked:"'                                   >> /usr/bin/package-exa
         echo "ldd /vagrant/exa-linux-x86_64"                                   >> /usr/bin/package-exa
-        
+
         echo 'echo -e "\nAll done!"'                                           >> /usr/bin/package-exa
         echo '/vagrant/exa-linux-x86_64 /vagrant/exa-linux-x86_64* -lB'        >> /usr/bin/package-exa
-        
+
         chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa}
     EOF
-    
-    
+
+
     # Download my patched version of git2-rs.
     # This is basically a hack and we should get rid of it as soon as
     # a better solution comes along.
     # See https://github.com/ogham/exa/issues/194
     config.vm.provision :shell, privileged: false, inline: <<-EOF
         set -xe
-        git clone https://github.com/ogham/git2-rs.git /home/ubuntu/git2-rs
+
+        if [ -d /home/ubuntu/git2-rs ]; then
+            cd /home/ubuntu/git2-rs
+            git pull https://github.com/ogham/git2-rs.git || echo "Failed to update git2-rs fork"
+        else
+            git clone https://github.com/ogham/git2-rs.git /home/ubuntu/git2-rs
+        fi
+
         mkdir -p /home/ubuntu/.cargo
         echo 'paths = ["/home/ubuntu/git2-rs/libgit2-sys"]' > /home/ubuntu/.cargo/config
     EOF
-    
+
     # This fix is applied by changing the VM rather than changing the
     # Cargo.toml file so it works for everyone because it’s such a niche
     # build issue, it’s not worth specifying a non-crates.io dependency
