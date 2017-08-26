@@ -15,6 +15,11 @@ pub static COLUMNS: &str = "COLUMNS";
 
 // exa-specific variables
 
+/// Environment variable used to colour exa’s interface when colours are
+/// enabled. This includes all the colours that LS_COLORS would recognise,
+/// overriding them if necessary. It can also contain exa-specific codes.
+pub static EXA_COLORS: &str = "EXA_COLORS";
+
 /// Environment variable used to switch on strict argument checking, such as
 /// complaining if an argument was specified twice, or if two conflict.
 /// This is meant to be so you don’t accidentally introduce the wrong

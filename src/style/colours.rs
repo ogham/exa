@@ -4,6 +4,8 @@ use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 use output::render;
 use output::file_name::Colours as FileNameColours;
 
+use style::lsc::Pair;
+
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Colours {
@@ -187,6 +189,83 @@ impl Colours {
             broken_arrow:     Red.normal(),
             broken_filename:  Red.underline(),
             control_char:     Red.normal(),
+        }
+    }
+}
+
+
+impl Colours {
+    pub fn set_ls(&mut self, pair: &Pair) {
+        match pair.key {
+            "di" => self.filekinds.directory    = pair.to_style(),
+            "ex" => self.filekinds.executable   = pair.to_style(),
+            "fi" => self.filekinds.normal       = pair.to_style(),
+            "pi" => self.filekinds.pipe         = pair.to_style(),
+            "so" => self.filekinds.socket       = pair.to_style(),
+            "bd" => self.filekinds.block_device = pair.to_style(),
+            "cd" => self.filekinds.char_device  = pair.to_style(),
+            "ln" => self.filekinds.symlink      = pair.to_style(),
+            "or" => self.broken_arrow           = pair.to_style(),
+            "mi" => self.broken_filename        = pair.to_style(),
+             _   => {/* don’t change anything */},
+        }
+    }
+
+    pub fn set_exa(&mut self, pair: &Pair) {
+        match pair.key {
+            "di" => self.filekinds.directory      = pair.to_style(),
+            "ex" => self.filekinds.executable     = pair.to_style(),
+            "fi" => self.filekinds.normal         = pair.to_style(),
+            "pi" => self.filekinds.pipe           = pair.to_style(),
+            "so" => self.filekinds.socket         = pair.to_style(),
+            "bd" => self.filekinds.block_device   = pair.to_style(),
+            "cd" => self.filekinds.char_device    = pair.to_style(),
+            "ln" => self.filekinds.symlink        = pair.to_style(),
+            "or" => self.broken_arrow             = pair.to_style(),
+            "mi" => self.broken_filename          = pair.to_style(),
+
+            "ur" => self.perms.user_read          = pair.to_style(),
+            "uw" => self.perms.user_write         = pair.to_style(),
+            "ux" => self.perms.user_execute_file  = pair.to_style(),
+            "ue" => self.perms.user_execute_other = pair.to_style(),
+            "gr" => self.perms.group_read         = pair.to_style(),
+            "gw" => self.perms.group_write        = pair.to_style(),
+            "gx" => self.perms.group_execute      = pair.to_style(),
+            "tr" => self.perms.other_read         = pair.to_style(),
+            "tw" => self.perms.other_write        = pair.to_style(),
+            "tx" => self.perms.other_execute      = pair.to_style(),
+            "su" => self.perms.special_user_file  = pair.to_style(),
+            "sf" => self.perms.special_other      = pair.to_style(),
+            "xa" => self.perms.attribute          = pair.to_style(),
+
+            "sn" => self.size.numbers             = pair.to_style(),
+            "sb" => self.size.unit                = pair.to_style(),
+            "df" => self.size.major               = pair.to_style(),
+            "ds" => self.size.minor               = pair.to_style(),
+
+            "uu" => self.users.user_you           = pair.to_style(),
+            "un" => self.users.user_someone_else  = pair.to_style(),
+            "gu" => self.users.group_yours        = pair.to_style(),
+            "gn" => self.users.group_not_yours    = pair.to_style(),
+
+            "lc" => self.links.normal             = pair.to_style(),
+            "lm" => self.links.multi_link_file    = pair.to_style(),
+
+            "ga" => self.git.new                  = pair.to_style(),
+            "gm" => self.git.modified             = pair.to_style(),
+            "gd" => self.git.deleted              = pair.to_style(),
+            "gv" => self.git.renamed              = pair.to_style(),
+            "gt" => self.git.typechange           = pair.to_style(),
+
+            "xx" => self.punctuation              = pair.to_style(),
+            "da" => self.date                     = pair.to_style(),
+            "in" => self.inode                    = pair.to_style(),
+            "bl" => self.blocks                   = pair.to_style(),
+            "hd" => self.header                   = pair.to_style(),
+            "lp" => self.symlink_path             = pair.to_style(),
+            "cc" => self.control_char             = pair.to_style(),
+
+             _   => {/* still don’t change anything */},
         }
     }
 }
