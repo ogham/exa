@@ -342,18 +342,18 @@ impl<'a, 'f> Table<'a> {
         use output::table::TimeType::*;
 
         match *column {
-            Column::Permissions    => self.permissions_plus(file, xattrs).render(&self.colours),
-            Column::FileSize       => file.size().render(&self.colours, self.size_format, &self.env.numeric),
-            Column::HardLinks      => file.links().render(&self.colours, &self.env.numeric),
-            Column::Inode          => file.inode().render(&self.colours),
-            Column::Blocks         => file.blocks().render(&self.colours),
-            Column::User           => file.user().render(&self.colours, &*self.env.lock_users()),
-            Column::Group          => file.group().render(&self.colours, &*self.env.lock_users()),
-            Column::GitStatus      => file.git_status().render(&self.colours),
+            Column::Permissions    => self.permissions_plus(file, xattrs).render(self.colours),
+            Column::FileSize       => file.size().render(self.colours, self.size_format, &self.env.numeric),
+            Column::HardLinks      => file.links().render(self.colours, &self.env.numeric),
+            Column::Inode          => file.inode().render(self.colours.inode),
+            Column::Blocks         => file.blocks().render(self.colours),
+            Column::User           => file.user().render(self.colours, &*self.env.lock_users()),
+            Column::Group          => file.group().render(self.colours, &*self.env.lock_users()),
+            Column::GitStatus      => file.git_status().render(self.colours),
 
-            Column::Timestamp(Modified)  => file.modified_time().render(&self.colours, &self.env.tz, &self.time_format),
-            Column::Timestamp(Created)   => file.created_time().render( &self.colours, &self.env.tz, &self.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(&self.colours, &self.env.tz, &self.time_format),
+            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
+            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, &self.time_format),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, &self.time_format),
         }
     }
 

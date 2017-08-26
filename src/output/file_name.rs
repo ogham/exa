@@ -247,14 +247,14 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         // Otherwise, just apply a bunch of rules in order. For example,
         // executable image files should be executable rather than images.
         match self.file {
-            f if f.is_directory()        => self.colours.filetypes.directory,
-            f if f.is_executable_file()  => self.colours.filetypes.executable,
-            f if f.is_link()             => self.colours.filetypes.symlink,
-            f if f.is_pipe()             => self.colours.filetypes.pipe,
-            f if f.is_char_device()
-               | f.is_block_device()     => self.colours.filetypes.device,
-            f if f.is_socket()           => self.colours.filetypes.socket,
-            f if !f.is_file()            => self.colours.filetypes.special,
+            f if f.is_directory()        => self.colours.filekinds.directory,
+            f if f.is_executable_file()  => self.colours.filekinds.executable,
+            f if f.is_link()             => self.colours.filekinds.symlink,
+            f if f.is_pipe()             => self.colours.filekinds.pipe,
+            f if f.is_block_device()     => self.colours.filekinds.block_device,
+            f if f.is_char_device()      => self.colours.filekinds.char_device,
+            f if f.is_socket()           => self.colours.filekinds.socket,
+            f if !f.is_file()            => self.colours.filekinds.special,
 
             f if self.exts.is_immediate(f)   => self.colours.filetypes.immediate,
             f if self.exts.is_image(f)       => self.colours.filetypes.image,
@@ -266,7 +266,8 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             f if self.exts.is_compressed(f)  => self.colours.filetypes.compressed,
             f if self.exts.is_temp(f)        => self.colours.filetypes.temp,
             f if self.exts.is_compiled(f)    => self.colours.filetypes.compiled,
-            _                                => self.colours.filetypes.normal,
+
+            _                                => self.colours.filekinds.normal,
         }
     }
 }

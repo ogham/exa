@@ -159,10 +159,12 @@ Vagrant.configure(2) do |config|
         echo '    *) echo "Usage: strict on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
         echo 'function ls-colors () {' >> /home/ubuntu/.bash_profile
-        echo '  case "$1" in "on") export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43" ;;' >> /home/ubuntu/.bash_profile
-        echo '    "off") export LS_COLORS= ;;' >> /home/ubuntu/.bash_profile
-        echo '    "") [ -n "$LS_COLORS" ] && echo "LS_COLORS=$LS_COLORS" || echo "ls-colors off" ;;' >> /home/ubuntu/.bash_profile
-        echo '    *) echo "Usage: ls-colors on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+        echo '  case "$1" in ' >> /home/ubuntu/.bash_profile
+        echo '    "on")      export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43" ;;' >> /home/ubuntu/.bash_profile
+        echo '    "hacker")  export LS_COLORS="di=32:ex=32:fi=32:pi=32:so=32:bd=32:cd=32:ln=32:or=32:mi=32" ;;' >> /home/ubuntu/.bash_profile
+        echo '    "off")     export LS_COLORS= ;;' >> /home/ubuntu/.bash_profile
+        echo '    "")       [ -n "$LS_COLORS" ] && echo "LS_COLORS=$LS_COLORS" || echo "ls-colors off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *)        echo "Usage: ls-colors on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config

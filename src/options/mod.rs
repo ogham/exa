@@ -75,6 +75,7 @@ use fs::dir_action::DirAction;
 use fs::filter::FileFilter;
 use output::{View, Mode, details, grid_details};
 
+mod colours;
 mod dir_action;
 mod filter;
 mod view;

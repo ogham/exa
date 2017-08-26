@@ -1,11 +1,14 @@
 use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
+use output::render;
+
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Colours {
     pub scale: bool,
 
+    pub filekinds:  FileKinds,
     pub filetypes:  FileTypes,
     pub perms:      Permissions,
     pub size:       Size,
@@ -25,16 +28,23 @@ pub struct Colours {
     pub control_char:     Style,
 }
 
+// Colours for files depending on their filesystem type.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct FileTypes {
+pub struct FileKinds {
     pub normal: Style,
     pub directory: Style,
     pub symlink: Style,
     pub pipe: Style,
-    pub device: Style,
+    pub block_device: Style,
+    pub char_device: Style,
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
+}
+
+// Colours for files depending on their name or extension.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct FileTypes {
     pub image: Style,
     pub video: Style,
     pub music: Style,
@@ -115,15 +125,19 @@ impl Colours {
         Colours {
             scale: scale,
 
+            filekinds: FileKinds {
+                normal:       Style::default(),
+                directory:    Blue.bold(),
+                symlink:      Cyan.normal(),
+                pipe:         Yellow.normal(),
+                block_device: Yellow.bold(),
+                char_device:  Yellow.bold(),
+                socket:       Red.bold(),
+                special:      Yellow.normal(),
+                executable:   Green.bold(),
+            },
+
             filetypes: FileTypes {
-                normal:      Style::default(),
-                directory:   Blue.bold(),
-                symlink:     Cyan.normal(),
-                pipe:        Yellow.normal(),
-                device:      Yellow.bold(),
-                socket:      Red.bold(),
-                special:     Yellow.normal(),
-                executable:  Green.bold(),
                 image:       Fixed(133).normal(),
                 video:       Fixed(135).normal(),
                 music:       Fixed(92).normal(),
@@ -202,8 +216,63 @@ impl Colours {
             control_char:     Red.normal(),
         }
     }
+}
 
-    pub fn file_size(&self, size: u64) -> Style {
+
+impl render::BlocksColours for Colours {
+    fn block_count(&self)  -> Style { self.blocks }
+    fn no_blocks(&self)    -> Style { self.punctuation }
+}
+
+impl render::FiletypeColours for Colours {
+    fn normal(&self)       -> Style { self.filekinds.normal }
+    fn directory(&self)    -> Style { self.filekinds.directory }
+    fn pipe(&self)         -> Style { self.filekinds.pipe }
+    fn symlink(&self)      -> Style { self.filekinds.symlink }
+    fn block_device(&self) -> Style { self.filekinds.block_device }
+    fn char_device(&self)  -> Style { self.filekinds.char_device }
+    fn socket(&self)       -> Style { self.filekinds.socket }
+    fn special(&self)      -> Style { self.filekinds.special }
+}
+
+impl render::GitColours for Colours {
+    fn not_modified(&self)  -> Style { self.punctuation }
+    fn new(&self)           -> Style { self.git.new }
+    fn modified(&self)      -> Style { self.git.modified }
+    fn deleted(&self)       -> Style { self.git.deleted }
+    fn renamed(&self)       -> Style { self.git.renamed }
+    fn type_change(&self)   -> Style { self.git.typechange }
+}
+
+impl render::GroupColours for Colours {
+    fn yours(&self)      -> Style { self.users.group_yours }
+    fn not_yours(&self)  -> Style { self.users.group_not_yours }
+}
+
+impl render::LinksColours for Colours {
+    fn normal(&self)           -> Style { self.links.normal }
+    fn multi_link_file(&self)  -> Style { self.links.multi_link_file }
+}
+
+impl render::PermissionsColours for Colours {
+    fn dash(&self)               -> Style { self.punctuation }
+    fn user_read(&self)          -> Style { self.perms.user_read }
+    fn user_write(&self)         -> Style { self.perms.user_write }
+    fn user_execute_file(&self)  -> Style { self.perms.user_execute_file }
+    fn user_execute_other(&self) -> Style { self.perms.user_execute_other }
+    fn group_read(&self)         -> Style { self.perms.group_read }
+    fn group_write(&self)        -> Style { self.perms.group_write }
+    fn group_execute(&self)      -> Style { self.perms.group_execute }
+    fn other_read(&self)         -> Style { self.perms.other_read }
+    fn other_write(&self)        -> Style { self.perms.other_write }
+    fn other_execute(&self)      -> Style { self.perms.other_execute }
+    fn special_user_file(&self)  -> Style { self.perms.special_user_file }
+    fn special_other(&self)      -> Style { self.perms.special_other }
+    fn attribute(&self)          -> Style { self.perms.attribute }
+}
+
+impl render::SizeColours for Colours {
+    fn size(&self, size: u64)  -> Style {
         if self.scale {
             if size < 1024 {
                 self.size.scale_byte
@@ -225,4 +294,16 @@ impl Colours {
             self.size.numbers
         }
     }
+
+    fn unit(&self)    -> Style { self.size.unit }
+    fn no_size(&self) -> Style { self.punctuation }
+    fn major(&self)   -> Style { self.size.major }
+    fn comma(&self)   -> Style { self.punctuation }
+    fn minor(&self)   -> Style { self.size.minor }
 }
+
+impl render::UserColours for Colours {
+    fn you(&self)           -> Style { self.users.user_you }
+    fn someone_else(&self)  -> Style { self.users.user_someone_else }
+}
+

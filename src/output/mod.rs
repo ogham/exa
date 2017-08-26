@@ -3,12 +3,14 @@ use output::file_name::FileStyle;
 pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
 pub use self::colours::Colours;
 pub use self::escape::escape;
+pub use self::lsc::LSColors;
 
 pub mod details;
 pub mod file_name;
 pub mod grid_details;
 pub mod grid;
 pub mod lines;
+pub mod lsc;
 pub mod table;
 pub mod time;
 
