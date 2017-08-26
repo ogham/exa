@@ -1,4 +1,4 @@
-use output::Colours;
+use style::Colours;
 
 use options::{flags, Vars, Misfire};
 use options::parser::MatchedFlags;
@@ -63,7 +63,8 @@ impl Colours {
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Colours, Misfire>
     where TW: Fn() -> Option<usize>, V: Vars {
         use self::TerminalColours::*;
-        use output::lsc::LSColors;
+        use style::LSColors;
+        use options::vars;
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Never || (tc == Automatic && widther().is_none()) {
@@ -73,20 +74,14 @@ impl Colours {
         let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
         let mut colours = Colours::colourful(scale.is_some());
 
-        if let Some(lsc) = vars.get("LS_COLORS") {
+        if let Some(lsc) = vars.get(vars::LS_COLORS) {
             let lsc = lsc.to_string_lossy();
-            let lsc = LSColors::parse(lsc.as_ref());
+            LSColors(lsc.as_ref()).each_pair(|pair| colours.set_ls(&pair));
+        }
 
-            if let Some(c) = lsc.get("di") { colours.filekinds.directory    = c; }
-            if let Some(c) = lsc.get("ex") { colours.filekinds.executable   = c; }
-            if let Some(c) = lsc.get("fi") { colours.filekinds.normal       = c; }
-            if let Some(c) = lsc.get("pi") { colours.filekinds.pipe         = c; }
-            if let Some(c) = lsc.get("so") { colours.filekinds.socket       = c; }
-            if let Some(c) = lsc.get("bd") { colours.filekinds.block_device = c; }
-            if let Some(c) = lsc.get("cd") { colours.filekinds.char_device  = c; }
-            if let Some(c) = lsc.get("ln") { colours.filekinds.symlink      = c; }
-            if let Some(c) = lsc.get("or") { colours.broken_arrow           = c; }
-            if let Some(c) = lsc.get("mi") { colours.broken_filename        = c; }
+        if let Some(exa) = vars.get(vars::EXA_COLORS) {
+            let exa = exa.to_string_lossy();
+            LSColors(exa.as_ref()).each_pair(|pair| colours.set_exa(&pair));
         }
 
         Ok(colours)
@@ -251,7 +246,7 @@ mod customs_test {
                 let vars = MockVars { ls: $ls, exa: $exa };
 
                 for result in parse_for_test(&[], &[], Both, |mf| Colours::deduce(mf, &vars, || Some(80))) {
-                    assert_eq!(result, Ok(c));
+                    assert_eq!(result.as_ref(), Ok(&c));
                 }
             }
         };
@@ -265,10 +260,12 @@ mod customs_test {
     // Test impl that just returns the value it has.
     impl Vars for MockVars {
         fn get(&self, name: &'static str) -> Option<OsString> {
-            if name == "LS_COLORS" && !self.ls.is_empty() {
+            use options::vars;
+
+            if name == vars::LS_COLORS && !self.ls.is_empty() {
                 OsString::from(self.ls.clone()).into()
             }
-            else if name == "EXA_COLORS" && !self.exa.is_empty() {
+            else if name == vars::EXA_COLORS && !self.exa.is_empty() {
                 OsString::from(self.exa.clone()).into()
             }
             else {

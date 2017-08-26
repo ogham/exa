@@ -32,6 +32,10 @@ export EXA_STRICT="1"
 # We also don’t want to see reams and reams of debug output.
 export EXA_DEBUG=""
 
+# And default colours by default
+export LS_COLORS=""
+export EXA_COLORS=""
+
 
 # Check that no files were created more than a year ago.
 # Files not from the current year use a different date format, meaning
@@ -177,6 +181,10 @@ COLUMNS=80 $exa_binary                    $testcases/files -l | diff -q - $resul
 COLUMNS=80 $exa_binary --colour=always    $testcases/files -l | diff -q - $results/files_l     || exit 1
 COLUMNS=80 $exa_binary --colour=never     $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
 COLUMNS=80 $exa_binary --colour=automatic $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
+
+# Switching colour off
+COLUMNS=80 $exa_binary --colour=never     $testcases/file-names      | diff -q - $results/file_names_bw       || exit 1
+COLUMNS=80 $exa_binary --colour=never     $testcases/file-names-exts | diff -q - $results/file-names-exts-bw  || exit 1
 
 
 # Git

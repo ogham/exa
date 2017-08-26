@@ -2,14 +2,17 @@ use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
 use output::render;
+use output::file_name::Colours as FileNameColours;
+
+use style::lsc::Pair;
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Colours {
+    pub colourful: bool,
     pub scale: bool,
 
     pub filekinds:  FileKinds,
-    pub filetypes:  FileTypes,
     pub perms:      Permissions,
     pub size:       Size,
     pub users:      Users,
@@ -28,7 +31,6 @@ pub struct Colours {
     pub control_char:     Style,
 }
 
-// Colours for files depending on their filesystem type.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FileKinds {
     pub normal: Style,
@@ -40,21 +42,6 @@ pub struct FileKinds {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
-}
-
-// Colours for files depending on their name or extension.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct FileTypes {
-    pub image: Style,
-    pub video: Style,
-    pub music: Style,
-    pub lossless: Style,
-    pub crypto: Style,
-    pub document: Style,
-    pub compressed: Style,
-    pub temp: Style,
-    pub immediate: Style,
-    pub compiled: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -123,6 +110,7 @@ impl Colours {
 
     pub fn colourful(scale: bool) -> Colours {
         Colours {
+            colourful: true,
             scale: scale,
 
             filekinds: FileKinds {
@@ -135,19 +123,6 @@ impl Colours {
                 socket:       Red.bold(),
                 special:      Yellow.normal(),
                 executable:   Green.bold(),
-            },
-
-            filetypes: FileTypes {
-                image:       Fixed(133).normal(),
-                video:       Fixed(135).normal(),
-                music:       Fixed(92).normal(),
-                lossless:    Fixed(93).normal(),
-                crypto:      Fixed(109).normal(),
-                document:    Fixed(105).normal(),
-                compressed:  Red.normal(),
-                temp:        Fixed(244).normal(),
-                immediate:   Yellow.bold().underline(),
-                compiled:    Fixed(137).normal(),
             },
 
             perms: Permissions {
@@ -214,6 +189,83 @@ impl Colours {
             broken_arrow:     Red.normal(),
             broken_filename:  Red.underline(),
             control_char:     Red.normal(),
+        }
+    }
+}
+
+
+impl Colours {
+    pub fn set_ls(&mut self, pair: &Pair) {
+        match pair.key {
+            "di" => self.filekinds.directory    = pair.to_style(),
+            "ex" => self.filekinds.executable   = pair.to_style(),
+            "fi" => self.filekinds.normal       = pair.to_style(),
+            "pi" => self.filekinds.pipe         = pair.to_style(),
+            "so" => self.filekinds.socket       = pair.to_style(),
+            "bd" => self.filekinds.block_device = pair.to_style(),
+            "cd" => self.filekinds.char_device  = pair.to_style(),
+            "ln" => self.filekinds.symlink      = pair.to_style(),
+            "or" => self.broken_arrow           = pair.to_style(),
+            "mi" => self.broken_filename        = pair.to_style(),
+             _   => {/* don’t change anything */},
+        }
+    }
+
+    pub fn set_exa(&mut self, pair: &Pair) {
+        match pair.key {
+            "di" => self.filekinds.directory      = pair.to_style(),
+            "ex" => self.filekinds.executable     = pair.to_style(),
+            "fi" => self.filekinds.normal         = pair.to_style(),
+            "pi" => self.filekinds.pipe           = pair.to_style(),
+            "so" => self.filekinds.socket         = pair.to_style(),
+            "bd" => self.filekinds.block_device   = pair.to_style(),
+            "cd" => self.filekinds.char_device    = pair.to_style(),
+            "ln" => self.filekinds.symlink        = pair.to_style(),
+            "or" => self.broken_arrow             = pair.to_style(),
+            "mi" => self.broken_filename          = pair.to_style(),
+
+            "ur" => self.perms.user_read          = pair.to_style(),
+            "uw" => self.perms.user_write         = pair.to_style(),
+            "ux" => self.perms.user_execute_file  = pair.to_style(),
+            "ue" => self.perms.user_execute_other = pair.to_style(),
+            "gr" => self.perms.group_read         = pair.to_style(),
+            "gw" => self.perms.group_write        = pair.to_style(),
+            "gx" => self.perms.group_execute      = pair.to_style(),
+            "tr" => self.perms.other_read         = pair.to_style(),
+            "tw" => self.perms.other_write        = pair.to_style(),
+            "tx" => self.perms.other_execute      = pair.to_style(),
+            "su" => self.perms.special_user_file  = pair.to_style(),
+            "sf" => self.perms.special_other      = pair.to_style(),
+            "xa" => self.perms.attribute          = pair.to_style(),
+
+            "sn" => self.size.numbers             = pair.to_style(),
+            "sb" => self.size.unit                = pair.to_style(),
+            "df" => self.size.major               = pair.to_style(),
+            "ds" => self.size.minor               = pair.to_style(),
+
+            "uu" => self.users.user_you           = pair.to_style(),
+            "un" => self.users.user_someone_else  = pair.to_style(),
+            "gu" => self.users.group_yours        = pair.to_style(),
+            "gn" => self.users.group_not_yours    = pair.to_style(),
+
+            "lc" => self.links.normal             = pair.to_style(),
+            "lm" => self.links.multi_link_file    = pair.to_style(),
+
+            "ga" => self.git.new                  = pair.to_style(),
+            "gm" => self.git.modified             = pair.to_style(),
+            "gd" => self.git.deleted              = pair.to_style(),
+            "gv" => self.git.renamed              = pair.to_style(),
+            "gt" => self.git.typechange           = pair.to_style(),
+
+            "xx" => self.punctuation              = pair.to_style(),
+            "da" => self.date                     = pair.to_style(),
+            "in" => self.inode                    = pair.to_style(),
+            "bl" => self.blocks                   = pair.to_style(),
+            "hd" => self.header                   = pair.to_style(),
+            "lp" => self.symlink_path             = pair.to_style(),
+            "cc" => self.control_char             = pair.to_style(),
+
+             _   => {/* still don’t change anything */},
         }
     }
 }
@@ -305,5 +357,14 @@ impl render::SizeColours for Colours {
 impl render::UserColours for Colours {
     fn you(&self)           -> Style { self.users.user_you }
     fn someone_else(&self)  -> Style { self.users.user_someone_else }
+}
+
+impl FileNameColours for Colours {
+    fn broken_arrow(&self)    -> Style { self.broken_arrow }
+    fn broken_filename(&self) -> Style { self.broken_filename }
+    fn normal_arrow(&self)    -> Style { self.punctuation }
+    fn control_char(&self)    -> Style { self.control_char }
+    fn symlink_path(&self)    -> Style { self.symlink_path }
+    fn executable_file(&self) -> Style { self.filekinds.executable }
 }
 

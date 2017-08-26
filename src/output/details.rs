@@ -70,7 +70,7 @@ use fs::{Dir, File};
 use fs::dir_action::RecurseOptions;
 use fs::filter::FileFilter;
 use fs::feature::xattr::{Attribute, FileAttributes};
-use output::colours::Colours;
+use style::Colours;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::FileStyle;

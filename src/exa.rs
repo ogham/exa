@@ -38,6 +38,7 @@ mod fs;
 mod info;
 mod options;
 mod output;
+mod style;
 
 
 /// The main program wrapper.

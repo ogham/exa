@@ -1,0 +1,6 @@
+ansi: [\u{1b}[34mblue\u{1b}[0m]  form-feed: [\u{c}]      new-line-dir: [\n]
+ascii: hello                     invalid-utf8-1: [�]     new-line: [\n]
+backspace: [\u{8}]               invalid-utf8-2: [�(]    return: [\r]
+bell: [\u{7}]                    invalid-utf8-3: [�(]    tab: [\t]
+emoji: [🆒]                      invalid-utf8-4: [�(�(]  utf-8: pâté
+escape: [\u{1b}]                 links                   vertical-tab: [\u{b}]

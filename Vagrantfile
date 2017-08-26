@@ -135,9 +135,9 @@ Vagrant.configure(2) do |config|
         echo -e "\033[32;1mt\033[0m or \033[32;1mtest-exa\033[0m to run \033[1mcargo test\033[0m"   >> /etc/motd
         echo -e "\033[32;1mx\033[0m or \033[32;1mrun-xtests\033[0m to run \033[1m/vagrant/xtests/run.sh\033[0m"  >> /etc/motd
         echo -e "\033[32;1mc\033[0m or \033[32;1mcompile-exa\033[0m to run all three"  >> /etc/motd
-        echo -e "\033[32;1mdebug on\033[0;32m|\033[1moff\033[0m to toggle printing logs"  >> /etc/motd
-        echo -e "\033[32;1mstrict on\033[0;32m|\033[1moff\033[0m to toggle strict mode"  >> /etc/motd
-        echo -e "\033[32;1mls-colors on\033[0;32m|\033[1moff\033[0m to toggle LS_COLORS\n"  >> /etc/motd
+        echo -e "\033[32;1mdebug\033[0m to toggle printing logs"  >> /etc/motd
+        echo -e "\033[32;1mstrict\033[0m to toggle strict mode"  >> /etc/motd
+        echo -e "\033[32;1mcolors\033[0m to toggle custom colours\n"  >> /etc/motd
 
         # help banner
         echo 'echo -e "\\033[4mVersions\\033[0m"' > /home/ubuntu/.bash_profile
@@ -147,17 +147,18 @@ Vagrant.configure(2) do |config|
 
         # cool prompt
         echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
-        echo 'function debug_mode() { [ -n "$EXA_DEBUG" ] && echo "debug "; }' >> /home/ubuntu/.bash_profile
+        echo 'function debug_mode()  { [ -n "$EXA_DEBUG" ]  && echo "debug "; }'  >> /home/ubuntu/.bash_profile
         echo 'function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }' >> /home/ubuntu/.bash_profile
-        echo 'function lsc_mode() { [ -n "$LS_COLORS" ] && echo "lsc "; }' >> /home/ubuntu/.bash_profile
-        echo 'export PS1="\\[\\e[1;36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[0m\\] "' >> /home/ubuntu/.bash_profile
+        echo 'function lsc_mode()    { [ -n "$LS_COLORS" ]  && echo "lsc "; }'    >> /home/ubuntu/.bash_profile
+        echo 'function exac_mode()   { [ -n "$EXA_COLORS" ] && echo "exac "; }'   >> /home/ubuntu/.bash_profile
+        echo 'export PS1="\\[\\e[1;36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[1;32m\\]\\`exac_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[0m\\] "' >> /home/ubuntu/.bash_profile
 
         # environment setting
         echo 'function debug () {' >> /home/ubuntu/.bash_profile
         echo '  case "$1" in "on") export EXA_DEBUG=1 ;;' >> /home/ubuntu/.bash_profile
         echo '    "off") export EXA_DEBUG= ;;' >> /home/ubuntu/.bash_profile
-        echo '    "") [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
-        echo '    *) echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+        echo '    "")    [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *)     echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
         echo 'function strict () {' >> /home/ubuntu/.bash_profile
         echo '  case "$1" in "on") export EXA_STRICT=1 ;;' >> /home/ubuntu/.bash_profile
@@ -165,13 +166,21 @@ Vagrant.configure(2) do |config|
         echo '    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;' >> /home/ubuntu/.bash_profile
         echo '    *) echo "Usage: strict on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
-        echo 'function ls-colors () {' >> /home/ubuntu/.bash_profile
+        echo 'function colors () {' >> /home/ubuntu/.bash_profile
         echo '  case "$1" in ' >> /home/ubuntu/.bash_profile
-        echo '    "on")      export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43" ;;' >> /home/ubuntu/.bash_profile
-        echo '    "hacker")  export LS_COLORS="di=32:ex=32:fi=32:pi=32:so=32:bd=32:cd=32:ln=32:or=32:mi=32" ;;' >> /home/ubuntu/.bash_profile
-        echo '    "off")     export LS_COLORS= ;;' >> /home/ubuntu/.bash_profile
-        echo '    "")       [ -n "$LS_COLORS" ] && echo "LS_COLORS=$LS_COLORS" || echo "ls-colors off" ;;' >> /home/ubuntu/.bash_profile
-        echo '    *)        echo "Usage: ls-colors on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+        echo '    "ls")' >> /home/ubuntu/.bash_profile
+        echo '      export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"'  >> /home/ubuntu/.bash_profile
+        echo '      export EXA_COLORS="" ;;' >> /home/ubuntu/.bash_profile
+        echo '    "hacker")' >> /home/ubuntu/.bash_profile
+        echo '      export LS_COLORS="di=32:ex=32:fi=32:pi=32:so=32:bd=32:cd=32:ln=32:or=32:mi=32"' >> /home/ubuntu/.bash_profile
+        echo '      export EXA_COLORS="ur=32:uw=32:ux=32:ue=32:gr=32:gw=32:gx=32:tr=32:tw=32:tx=32:su=32:sf=32:xa=32:sn=32:sb=32:df=32:ds=32:uu=32:un=32:gu=32:gn=32:lc=32:lm=32:ga=32:gm=32:gd=32:gv=32:gt=32:xx=32:da=32:in=32:bl=32:hd=32:lp=32:cc=32:" ;;' >> /home/ubuntu/.bash_profile
+        echo '    "off")' >> /home/ubuntu/.bash_profile
+        echo '      export LS_COLORS=' >> /home/ubuntu/.bash_profile
+        echo '      export EXA_COLORS= ;;' >> /home/ubuntu/.bash_profile
+        echo '    "")' >> /home/ubuntu/.bash_profile
+        echo '      [ -n "$LS_COLORS" ]  && echo "LS_COLORS=$LS_COLORS"   || echo "ls-colors off"'     >> /home/ubuntu/.bash_profile
+        echo '      [ -n "$EXA_COLORS" ] && echo "EXA_COLORS=$EXA_COLORS" || echo "exa-colors off" ;;' >> /home/ubuntu/.bash_profile
+        echo '    *) echo "Usage: ls-colors ls|hacker|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
 
         # Disable last login date in sshd
         sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
