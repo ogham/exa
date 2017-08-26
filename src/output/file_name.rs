@@ -232,6 +232,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
     /// depending on which “type” of file it appears to be -- either from the
     /// class on the filesystem or from its name.
     pub fn style(&self) -> Style {
+        use output::render::FiletypeColours;
 
         // Override the style with the “broken link” style when this file is
         // a link that we can’t follow for whatever reason. This is used when
@@ -247,14 +248,14 @@ impl<'a, 'dir> FileName<'a, 'dir> {
         // Otherwise, just apply a bunch of rules in order. For example,
         // executable image files should be executable rather than images.
         match self.file {
-            f if f.is_directory()        => self.colours.filekinds.directory,
+            f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.filekinds.executable,
-            f if f.is_link()             => self.colours.filekinds.symlink,
-            f if f.is_pipe()             => self.colours.filekinds.pipe,
-            f if f.is_block_device()     => self.colours.filekinds.block_device,
-            f if f.is_char_device()      => self.colours.filekinds.char_device,
-            f if f.is_socket()           => self.colours.filekinds.socket,
-            f if !f.is_file()            => self.colours.filekinds.special,
+            f if f.is_link()             => self.colours.symlink(),
+            f if f.is_pipe()             => self.colours.pipe(),
+            f if f.is_block_device()     => self.colours.block_device(),
+            f if f.is_char_device()      => self.colours.char_device(),
+            f if f.is_socket()           => self.colours.socket(),
+            f if !f.is_file()            => self.colours.special(),
 
             f if self.exts.is_immediate(f)   => self.colours.filetypes.immediate,
             f if self.exts.is_image(f)       => self.colours.filetypes.image,
@@ -267,7 +268,7 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             f if self.exts.is_temp(f)        => self.colours.filetypes.temp,
             f if self.exts.is_compiled(f)    => self.colours.filetypes.compiled,
 
-            _                                => self.colours.filekinds.normal,
+            _                                => self.colours.normal(),
         }
     }
 }
