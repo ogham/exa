@@ -188,8 +188,9 @@ COLUMNS=80 $exa_binary --colour=never     $testcases/file-names-exts | diff -q -
 
 
 # Git
-$exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  || exit 1
-$exa $testcases/git/edits     -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
+$exa $testcases/git/additions         -l --git 2>&1 | diff -q - $results/git_additions  || exit 1
+$exa $testcases/git/edits             -l --git 2>&1 | diff -q - $results/git_edits      || exit 1
+$exa $testcases/git/{additions,edits} -l --git 2>&1 | diff -q - $results/git_both       || exit 1
 
 
 # Hidden files
