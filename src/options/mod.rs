@@ -89,6 +89,9 @@ use self::version::VersionString;
 mod misfire;
 pub use self::misfire::Misfire;
 
+mod vars;
+pub use self::vars::Vars;
+
 mod parser;
 mod flags;
 use self::parser::MatchedFlags;
@@ -162,27 +165,12 @@ impl Options {
 }
 
 
-/// Mockable wrapper for `std::env::var_os`.
-pub trait Vars {
-    fn get(&self, name: &'static str) -> Option<OsString>;
-}
-
-
-
 
 #[cfg(test)]
 pub mod test {
-    use super::{Options, Misfire, Vars, flags};
+    use super::{Options, Misfire, flags};
     use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
-
-    // Test impl that just returns the value it has.
-    impl Vars for Option<OsString> {
-        fn get(&self, _name: &'static str) -> Option<OsString> {
-            self.clone()
-        }
-    }
-
 
     #[derive(PartialEq, Debug)]
     pub enum Strictnesses {
