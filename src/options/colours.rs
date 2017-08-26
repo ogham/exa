@@ -77,16 +77,16 @@ impl Colours {
             let lsc = lsc.to_string_lossy();
             let lsc = LSColors::parse(lsc.as_ref());
 
-            if let Some(c) = lsc.get("di") { colours.filekinds.directory  = c; }
-            if let Some(c) = lsc.get("ex") { colours.filekinds.executable = c; }
-            if let Some(c) = lsc.get("fi") { colours.filekinds.normal     = c; }
-            if let Some(c) = lsc.get("pi") { colours.filekinds.pipe       = c; }
-            if let Some(c) = lsc.get("so") { colours.filekinds.socket     = c; }
-            if let Some(c) = lsc.get("bd") { colours.filekinds.device     = c; }
-            if let Some(c) = lsc.get("cd") { colours.filekinds.device     = c; }
-            if let Some(c) = lsc.get("ln") { colours.filekinds.symlink    = c; }
-            if let Some(c) = lsc.get("or") { colours.broken_arrow         = c; }
-            if let Some(c) = lsc.get("mi") { colours.broken_filename      = c; }
+            if let Some(c) = lsc.get("di") { colours.filekinds.directory    = c; }
+            if let Some(c) = lsc.get("ex") { colours.filekinds.executable   = c; }
+            if let Some(c) = lsc.get("fi") { colours.filekinds.normal       = c; }
+            if let Some(c) = lsc.get("pi") { colours.filekinds.pipe         = c; }
+            if let Some(c) = lsc.get("so") { colours.filekinds.socket       = c; }
+            if let Some(c) = lsc.get("bd") { colours.filekinds.block_device = c; }
+            if let Some(c) = lsc.get("cd") { colours.filekinds.char_device  = c; }
+            if let Some(c) = lsc.get("ln") { colours.filekinds.symlink      = c; }
+            if let Some(c) = lsc.get("or") { colours.broken_arrow           = c; }
+            if let Some(c) = lsc.get("mi") { colours.broken_filename        = c; }
         }
 
         Ok(colours)
@@ -277,14 +277,14 @@ mod customs_test {
         }
     }
 
-    test!(ls_di:  ls "di=31", exa ""  =>  |c: &mut Colours| { c.filekinds.directory  = Red.normal();    });  // Directory
-    test!(ls_ex:  ls "ex=32", exa ""  =>  |c: &mut Colours| { c.filekinds.executable = Green.normal();  });  // Executable file
-    test!(ls_fi:  ls "fi=33", exa ""  =>  |c: &mut Colours| { c.filekinds.normal     = Yellow.normal(); });  // Regular file
-    test!(ls_pi:  ls "pi=34", exa ""  =>  |c: &mut Colours| { c.filekinds.pipe       = Blue.normal();   });  // FIFO
-    test!(ls_so:  ls "so=35", exa ""  =>  |c: &mut Colours| { c.filekinds.socket     = Purple.normal(); });  // Socket
-    test!(ls_bd:  ls "bd=36", exa ""  =>  |c: &mut Colours| { c.filekinds.device     = Cyan.normal();   });  // Block device
-    test!(ls_cd:  ls "cd=35", exa ""  =>  |c: &mut Colours| { c.filekinds.device     = Purple.normal(); });  // Character device
-    test!(ls_ln:  ls "ln=34", exa ""  =>  |c: &mut Colours| { c.filekinds.symlink    = Blue.normal();   });  // Symlink
-    test!(ls_or:  ls "or=33", exa ""  =>  |c: &mut Colours| { c.broken_arrow         = Yellow.normal(); });  // Broken link
-    test!(ls_mi:  ls "mi=32", exa ""  =>  |c: &mut Colours| { c.broken_filename      = Green.normal();  });  // Broken link target
+    test!(ls_di:  ls "di=31", exa ""  =>  |c: &mut Colours| { c.filekinds.directory    = Red.normal();    });  // Directory
+    test!(ls_ex:  ls "ex=32", exa ""  =>  |c: &mut Colours| { c.filekinds.executable   = Green.normal();  });  // Executable file
+    test!(ls_fi:  ls "fi=33", exa ""  =>  |c: &mut Colours| { c.filekinds.normal       = Yellow.normal(); });  // Regular file
+    test!(ls_pi:  ls "pi=34", exa ""  =>  |c: &mut Colours| { c.filekinds.pipe         = Blue.normal();   });  // FIFO
+    test!(ls_so:  ls "so=35", exa ""  =>  |c: &mut Colours| { c.filekinds.socket       = Purple.normal(); });  // Socket
+    test!(ls_bd:  ls "bd=36", exa ""  =>  |c: &mut Colours| { c.filekinds.block_device = Cyan.normal();   });  // Block device
+    test!(ls_cd:  ls "cd=35", exa ""  =>  |c: &mut Colours| { c.filekinds.char_device  = Purple.normal(); });  // Character device
+    test!(ls_ln:  ls "ln=34", exa ""  =>  |c: &mut Colours| { c.filekinds.symlink      = Blue.normal();   });  // Symlink
+    test!(ls_or:  ls "or=33", exa ""  =>  |c: &mut Colours| { c.broken_arrow           = Yellow.normal(); });  // Broken link
+    test!(ls_mi:  ls "mi=32", exa ""  =>  |c: &mut Colours| { c.broken_filename        = Green.normal();  });  // Broken link target
 }

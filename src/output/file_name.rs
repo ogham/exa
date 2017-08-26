@@ -251,8 +251,8 @@ impl<'a, 'dir> FileName<'a, 'dir> {
             f if f.is_executable_file()  => self.colours.filekinds.executable,
             f if f.is_link()             => self.colours.filekinds.symlink,
             f if f.is_pipe()             => self.colours.filekinds.pipe,
-            f if f.is_char_device()
-               | f.is_block_device()     => self.colours.filekinds.device,
+            f if f.is_block_device()     => self.colours.filekinds.block_device,
+            f if f.is_char_device()      => self.colours.filekinds.char_device,
             f if f.is_socket()           => self.colours.filekinds.socket,
             f if !f.is_file()            => self.colours.filekinds.special,
 

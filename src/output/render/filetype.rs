@@ -10,8 +10,8 @@ impl f::Type {
             f::Type::Directory   => colours.directory().paint("d"),
             f::Type::Pipe        => colours.pipe().paint("|"),
             f::Type::Link        => colours.symlink().paint("l"),
-            f::Type::CharDevice  => colours.device().paint("c"),
-            f::Type::BlockDevice => colours.device().paint("b"),
+            f::Type::BlockDevice => colours.block_device().paint("b"),
+            f::Type::CharDevice  => colours.char_device().paint("c"),
             f::Type::Socket      => colours.socket().paint("s"),
             f::Type::Special     => colours.special().paint("?"),
         }
@@ -24,7 +24,8 @@ pub trait Colours {
     fn directory(&self) -> Style;
     fn pipe(&self) -> Style;
     fn symlink(&self) -> Style;
-    fn device(&self) -> Style;
+    fn block_device(&self) -> Style;
+    fn char_device(&self) -> Style;
     fn socket(&self) -> Style;
     fn special(&self) -> Style;
 }
