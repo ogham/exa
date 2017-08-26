@@ -1,69 +1,66 @@
-#![allow(dead_code)]
-
-use std::collections::HashMap;
+use std::ops::FnMut;
 
 use ansi_term::Style;
 use ansi_term::Colour::*;
 
 
-pub struct LSColors<'var> {
-    contents: HashMap<&'var str, &'var str>
-}
+pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
-    pub fn parse(input: &'var str) -> LSColors<'var> {
-        let contents = input.split(":")
-                            .flat_map(|mapping| {
+    pub fn each_pair<C>(&mut self, mut callback: C) where C: FnMut(Pair<'var>) -> () {
+        for next in self.0.split(":") {
+            let bits = next.split("=")
+                           .take(3)
+                           .collect::<Vec<_>>();
 
-            let bits = mapping.split("=")
-                              .take(3)
-                              .collect::<Vec<_>>();
-
-            if bits.len() != 2 || bits[0].is_empty() || bits[1].is_empty() { None }
-            else { Some( (bits[0], bits[1]) ) }
-        }).collect();
-        LSColors { contents }
-    }
-
-    pub fn get(&self, facet_name: &str) -> Option<Style> {
-        self.contents.get(facet_name).map(ansi_to_style)
+            if bits.len() == 2 && !bits[0].is_empty() && !bits[1].is_empty() {
+                callback(Pair { key: bits[0], value: bits[1] });
+            }
+        }
     }
 }
 
-fn ansi_to_style(ansi: &&str) -> Style {
-    let mut style = Style::default();
+pub struct Pair<'var> {
+    pub key: &'var str,
+    pub value: &'var str,
+}
 
-    for num in ansi.split(";") {
-        match num {
+impl<'var> Pair<'var> {
+    pub fn to_style(&self) -> Style {
+        let mut style = Style::default();
 
-            // Bold and italic
-            "1"  => style = style.bold(),
-            "4"  => style = style.underline(),
+        for num in self.value.split(";") {
+            match num {
 
-            // Foreground colours
-            "30" => style = style.fg(Black),
-            "31" => style = style.fg(Red),
-            "32" => style = style.fg(Green),
-            "33" => style = style.fg(Yellow),
-            "34" => style = style.fg(Blue),
-            "35" => style = style.fg(Purple),
-            "36" => style = style.fg(Cyan),
-            "37" => style = style.fg(White),
+                // Bold and italic
+                "1"  => style = style.bold(),
+                "4"  => style = style.underline(),
 
-            // Background colours
-            "40" => style = style.on(Black),
-            "41" => style = style.on(Red),
-            "42" => style = style.on(Green),
-            "43" => style = style.on(Yellow),
-            "44" => style = style.on(Blue),
-            "45" => style = style.on(Purple),
-            "46" => style = style.on(Cyan),
-            "47" => style = style.on(White),
-             _    => {/* ignore the error and do nothing */},
+                // Foreground colours
+                "30" => style = style.fg(Black),
+                "31" => style = style.fg(Red),
+                "32" => style = style.fg(Green),
+                "33" => style = style.fg(Yellow),
+                "34" => style = style.fg(Blue),
+                "35" => style = style.fg(Purple),
+                "36" => style = style.fg(Cyan),
+                "37" => style = style.fg(White),
+
+                // Background colours
+                "40" => style = style.on(Black),
+                "41" => style = style.on(Red),
+                "42" => style = style.on(Green),
+                "43" => style = style.on(Yellow),
+                "44" => style = style.on(Blue),
+                "45" => style = style.on(Purple),
+                "46" => style = style.on(Cyan),
+                "47" => style = style.on(White),
+                 _    => {/* ignore the error and do nothing */},
+            }
         }
-    }
 
-    style
+        style
+    }
 }
 
 
@@ -76,7 +73,7 @@ mod ansi_test {
         ($name:ident: $input:expr => $result:expr) => {
             #[test]
             fn $name() {
-                assert_eq!(ansi_to_style(&$input), $result);
+                assert_eq!(Pair { key: "", value: $input }.to_style(), $result);
             }
         };
     }
@@ -105,44 +102,40 @@ mod test {
     use super::*;
 
     macro_rules! test {
-        ($name:ident: $input:expr, $facet:expr => $result:expr) => {
+        ($name:ident: $input:expr => $result:expr) => {
             #[test]
             fn $name() {
-                let lsc = LSColors::parse($input);
-                assert_eq!(lsc.get($facet), $result.into());
-                assert_eq!(lsc.get(""), None);
+                let mut lscs = Vec::new();
+                LSColors($input).each_pair(|p| lscs.push( (p.key.clone(), p.to_style()) ));
+                assert_eq!(lscs, $result.to_vec());
             }
         };
     }
 
     // Bad parses
-    test!(empty:    "",       "di" => None);
-    test!(jibber:   "blah",   "di" => None);
+    test!(empty:    ""       => []);
+    test!(jibber:   "blah"   => []);
 
-    test!(equals:     "=",    "di" => None);
-    test!(starts:     "=di",  "di" => None);
-    test!(ends:     "id=",    "id" => None);
+    test!(equals:     "="    => []);
+    test!(starts:     "=di"  => []);
+    test!(ends:     "id="    => []);
 
     // Foreground colours
-    test!(red:     "di=31",   "di" => Red.normal());
-    test!(green:   "cb=32",   "cb" => Green.normal());
-    test!(blue:    "la=34",   "la" => Blue.normal());
+    test!(green:   "cb=32"   => [ ("cb", Green.normal()) ]);
+    test!(red:     "di=31"   => [ ("di", Red.normal()) ]);
+    test!(blue:    "la=34"   => [ ("la", Blue.normal()) ]);
 
     // Background colours
-    test!(yellow:  "do=43",   "do" => Style::default().on(Yellow));
-    test!(purple:  "re=45",   "re" => Style::default().on(Purple));
-    test!(cyan:    "mi=46",   "mi" => Style::default().on(Cyan));
+    test!(yellow:  "do=43"   => [ ("do", Style::default().on(Yellow)) ]);
+    test!(purple:  "re=45"   => [ ("re", Style::default().on(Purple)) ]);
+    test!(cyan:    "mi=46"   => [ ("mi", Style::default().on(Cyan)) ]);
 
     // Bold and underline
-    test!(bold:    "fa=1",    "fa" => Style::default().bold());
-    test!(under:   "so=4",    "so" => Style::default().underline());
-    test!(both:    "la=1;4",  "la" => Style::default().bold().underline());
+    test!(bold:    "fa=1"    => [ ("fa", Style::default().bold()) ]);
+    test!(under:   "so=4"    => [ ("so", Style::default().underline()) ]);
+    test!(both:    "la=1;4"  => [ ("la", Style::default().bold().underline()) ]);
 
     // More and many
-    test!(more_1:  "me=43;21;55;34:yu=1;4;1", "me" => Blue.on(Yellow));
-    test!(more_2:  "me=43;21;55;34:yu=1;4;1", "yu" => Style::default().bold().underline());
-
-    test!(many_1:  "red=31:green=32:blue=34", "red"   => Red.normal());
-    test!(many_2:  "red=31:green=32:blue=34", "green" => Green.normal());
-    test!(many_3:  "red=31:green=32:blue=34", "blue"  => Blue.normal());
+    test!(more:  "me=43;21;55;34:yu=1;4;1"  => [ ("me", Blue.on(Yellow)), ("yu", Style::default().bold().underline()) ]);
+    test!(many:  "red=31:green=32:blue=34"  => [ ("red", Red.normal()), ("green", Green.normal()), ("blue", Blue.normal()) ]);
 }

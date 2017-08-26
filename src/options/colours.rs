@@ -76,18 +76,21 @@ impl Colours {
 
         if let Some(lsc) = vars.get(vars::LS_COLORS) {
             let lsc = lsc.to_string_lossy();
-            let lsc = LSColors::parse(lsc.as_ref());
-
-            if let Some(c) = lsc.get("di") { colours.filekinds.directory    = c; }
-            if let Some(c) = lsc.get("ex") { colours.filekinds.executable   = c; }
-            if let Some(c) = lsc.get("fi") { colours.filekinds.normal       = c; }
-            if let Some(c) = lsc.get("pi") { colours.filekinds.pipe         = c; }
-            if let Some(c) = lsc.get("so") { colours.filekinds.socket       = c; }
-            if let Some(c) = lsc.get("bd") { colours.filekinds.block_device = c; }
-            if let Some(c) = lsc.get("cd") { colours.filekinds.char_device  = c; }
-            if let Some(c) = lsc.get("ln") { colours.filekinds.symlink      = c; }
-            if let Some(c) = lsc.get("or") { colours.broken_arrow           = c; }
-            if let Some(c) = lsc.get("mi") { colours.broken_filename        = c; }
+            LSColors(lsc.as_ref()).each_pair(|pair| {
+                match pair.key {
+                    "di" => colours.filekinds.directory    = pair.to_style(),
+                    "ex" => colours.filekinds.executable   = pair.to_style(),
+                    "fi" => colours.filekinds.normal       = pair.to_style(),
+                    "pi" => colours.filekinds.pipe         = pair.to_style(),
+                    "so" => colours.filekinds.socket       = pair.to_style(),
+                    "bd" => colours.filekinds.block_device = pair.to_style(),
+                    "cd" => colours.filekinds.char_device  = pair.to_style(),
+                    "ln" => colours.filekinds.symlink      = pair.to_style(),
+                    "or" => colours.broken_arrow           = pair.to_style(),
+                    "mi" => colours.broken_filename        = pair.to_style(),
+                     _   => {/* don’t change anything */},
+                }
+            })
         }
 
         Ok(colours)
