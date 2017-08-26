@@ -10,12 +10,10 @@ use locale;
 
 use users::UsersCache;
 
+use style::Colours;
 use output::cell::TextCell;
-use output::colours::Colours;
 use output::time::TimeFormat;
-
 use fs::{File, Dir, fields as f};
-
 
 
 /// Options for displaying a table.

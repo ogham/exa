@@ -3,7 +3,7 @@ use std::io::{Write, Result as IOResult};
 use term_grid as tg;
 
 use fs::File;
-use output::colours::Colours;
+use style::Colours;
 use output::file_name::FileStyle;
 
 

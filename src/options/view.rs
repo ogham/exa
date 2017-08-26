@@ -1,4 +1,5 @@
-use output::Colours;
+use style::Colours;
+
 use output::{View, Mode, grid, details};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};

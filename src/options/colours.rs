@@ -1,4 +1,4 @@
-use output::Colours;
+use style::Colours;
 
 use options::{flags, Vars, Misfire};
 use options::parser::MatchedFlags;
@@ -63,7 +63,7 @@ impl Colours {
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Colours, Misfire>
     where TW: Fn() -> Option<usize>, V: Vars {
         use self::TerminalColours::*;
-        use output::lsc::LSColors;
+        use style::LSColors;
         use options::vars;
 
         let tc = TerminalColours::deduce(matches)?;

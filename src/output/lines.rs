@@ -1,10 +1,10 @@
 use std::io::{Write, Result as IOResult};
 
 use ansi_term::ANSIStrings;
-use fs::File;
 
+use fs::File;
 use output::file_name::{FileName, FileStyle};
-use super::colours::Colours;
+use style::Colours;
 
 
 /// The lines view literally just displays each file, line-by-line.
