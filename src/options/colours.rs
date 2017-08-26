@@ -64,6 +64,7 @@ impl Colours {
     where TW: Fn() -> Option<usize>, V: Vars {
         use self::TerminalColours::*;
         use output::lsc::LSColors;
+        use options::vars;
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Never || (tc == Automatic && widther().is_none()) {
@@ -73,7 +74,7 @@ impl Colours {
         let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
         let mut colours = Colours::colourful(scale.is_some());
 
-        if let Some(lsc) = vars.get("LS_COLORS") {
+        if let Some(lsc) = vars.get(vars::LS_COLORS) {
             let lsc = lsc.to_string_lossy();
             let lsc = LSColors::parse(lsc.as_ref());
 

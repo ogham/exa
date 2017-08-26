@@ -89,7 +89,7 @@ use self::version::VersionString;
 mod misfire;
 pub use self::misfire::Misfire;
 
-mod vars;
+pub mod vars;
 pub use self::vars::Vars;
 
 mod parser;
@@ -123,8 +123,9 @@ impl Options {
     where I: IntoIterator<Item=&'args OsString>,
           V: Vars {
         use options::parser::{Matches, Strictness};
+        use options::vars;
 
-        let strictness = match vars.get("EXA_STRICT") {
+        let strictness = match vars.get(vars::EXA_STRICT) {
             None                         => Strictness::UseLastArguments,
             Some(ref t) if t.is_empty()  => Strictness::UseLastArguments,
             _                            => Strictness::ComplainAboutRedundantArguments,

@@ -155,7 +155,9 @@ impl TerminalWidth {
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
     fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
-        if let Some(columns) = vars.get("COLUMNS").and_then(|s| s.into_string().ok()) {
+        use options::vars;
+
+        if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(width)  => Ok(TerminalWidth::Set(width)),
                 Err(e)     => Err(Misfire::FailedParse(e)),
@@ -184,7 +186,9 @@ impl RowThreshold {
     /// Determine whether to use a row threshold based on the given
     /// environment variables.
     fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
-        if let Some(columns) = vars.get("EXA_GRID_ROWS").and_then(|s| s.into_string().ok()) {
+        use options::vars;
+
+        if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
                 Ok(rows)  => Ok(RowThreshold::MinimumRows(rows)),
                 Err(e)    => Err(Misfire::FailedParse(e)),
