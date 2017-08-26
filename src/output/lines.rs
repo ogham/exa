@@ -1,7 +1,6 @@
 use std::io::{Write, Result as IOResult};
 
 use ansi_term::ANSIStrings;
-
 use fs::File;
 
 use output::file_name::{FileName, FileStyle};
@@ -25,7 +24,7 @@ impl<'a> Render<'a> {
         Ok(())
     }
 
-    fn render_file<'f>(&self, file: &'f File<'a>) -> FileName<'f, 'a> {
+    fn render_file<'f>(&self, file: &'f File<'a>) -> FileName<'f, 'a, Colours> {
         self.style.for_file(file, self.colours).with_link_paths()
     }
 }

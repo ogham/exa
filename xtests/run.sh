@@ -178,6 +178,10 @@ COLUMNS=80 $exa_binary --colour=always    $testcases/files -l | diff -q - $resul
 COLUMNS=80 $exa_binary --colour=never     $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
 COLUMNS=80 $exa_binary --colour=automatic $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
 
+# Switching colour off
+COLUMNS=80 $exa_binary --colour=never     $testcases/file-names      | diff -q - $results/file_names_bw       || exit 1
+COLUMNS=80 $exa_binary --colour=never     $testcases/file-names-exts | diff -q - $results/file-names-exts-bw  || exit 1
+
 
 # Git
 $exa $testcases/git/additions -l --git 2>&1 | diff -q - $results/git_additions  || exit 1

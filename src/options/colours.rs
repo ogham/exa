@@ -251,7 +251,7 @@ mod customs_test {
                 let vars = MockVars { ls: $ls, exa: $exa };
 
                 for result in parse_for_test(&[], &[], Both, |mf| Colours::deduce(mf, &vars, || Some(80))) {
-                    assert_eq!(result, Ok(c));
+                    assert_eq!(result.as_ref(), Ok(&c));
                 }
             }
         };

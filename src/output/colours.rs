@@ -2,14 +2,15 @@ use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
 use output::render;
+use output::file_name::Colours as FileNameColours;
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Colours {
+    pub colourful: bool,
     pub scale: bool,
 
     pub filekinds:  FileKinds,
-    pub filetypes:  FileTypes,
     pub perms:      Permissions,
     pub size:       Size,
     pub users:      Users,
@@ -28,7 +29,6 @@ pub struct Colours {
     pub control_char:     Style,
 }
 
-// Colours for files depending on their filesystem type.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FileKinds {
     pub normal: Style,
@@ -40,21 +40,6 @@ pub struct FileKinds {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
-}
-
-// Colours for files depending on their name or extension.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct FileTypes {
-    pub image: Style,
-    pub video: Style,
-    pub music: Style,
-    pub lossless: Style,
-    pub crypto: Style,
-    pub document: Style,
-    pub compressed: Style,
-    pub temp: Style,
-    pub immediate: Style,
-    pub compiled: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -123,6 +108,7 @@ impl Colours {
 
     pub fn colourful(scale: bool) -> Colours {
         Colours {
+            colourful: true,
             scale: scale,
 
             filekinds: FileKinds {
@@ -135,19 +121,6 @@ impl Colours {
                 socket:       Red.bold(),
                 special:      Yellow.normal(),
                 executable:   Green.bold(),
-            },
-
-            filetypes: FileTypes {
-                image:       Fixed(133).normal(),
-                video:       Fixed(135).normal(),
-                music:       Fixed(92).normal(),
-                lossless:    Fixed(93).normal(),
-                crypto:      Fixed(109).normal(),
-                document:    Fixed(105).normal(),
-                compressed:  Red.normal(),
-                temp:        Fixed(244).normal(),
-                immediate:   Yellow.bold().underline(),
-                compiled:    Fixed(137).normal(),
             },
 
             perms: Permissions {
@@ -305,5 +278,14 @@ impl render::SizeColours for Colours {
 impl render::UserColours for Colours {
     fn you(&self)           -> Style { self.users.user_you }
     fn someone_else(&self)  -> Style { self.users.user_someone_else }
+}
+
+impl FileNameColours for Colours {
+    fn broken_arrow(&self)    -> Style { self.broken_arrow }
+    fn broken_filename(&self) -> Style { self.broken_filename }
+    fn normal_arrow(&self)    -> Style { self.punctuation }
+    fn control_char(&self)    -> Style { self.control_char }
+    fn symlink_path(&self)    -> Style { self.symlink_path }
+    fn executable_file(&self) -> Style { self.filekinds.executable }
 }
 
