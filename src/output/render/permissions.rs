@@ -78,25 +78,25 @@ impl f::Permissions {
 
 
 pub trait Colours {
-	fn dash(&self) -> Style;
-	
-	fn user_read(&self) -> Style;
-	fn user_write(&self) -> Style;
-	fn user_execute_file(&self) -> Style;
-	fn user_execute_other(&self) -> Style;
+    fn dash(&self) -> Style;
 
-	fn group_read(&self) -> Style;
-	fn group_write(&self) -> Style;
-	fn group_execute(&self) -> Style;
+    fn user_read(&self) -> Style;
+    fn user_write(&self) -> Style;
+    fn user_execute_file(&self) -> Style;
+    fn user_execute_other(&self) -> Style;
 
-	fn other_read(&self) -> Style;
-	fn other_write(&self) -> Style;
-	fn other_execute(&self) -> Style;
+    fn group_read(&self) -> Style;
+    fn group_write(&self) -> Style;
+    fn group_execute(&self) -> Style;
 
-	fn special_user_file(&self) -> Style;
-	fn special_other(&self) -> Style;
+    fn other_read(&self) -> Style;
+    fn other_write(&self) -> Style;
+    fn other_execute(&self) -> Style;
 
-	fn attribute(&self) -> Style;
+    fn special_user_file(&self) -> Style;
+    fn special_other(&self) -> Style;
+
+    fn attribute(&self) -> Style;
 }
 
 
@@ -109,25 +109,25 @@ pub mod test {
 
     use ansi_term::Colour::*;
     use ansi_term::Style;
-    
-    
+
+
     struct TestColours;
-    
+
     impl Colours for TestColours {
-    	fn dash(&self)                -> Style { Fixed(11).normal() }
-		fn user_read(&self)           -> Style { Fixed(101).normal() }
-		fn user_write(&self)          -> Style { Fixed(102).normal() }
-		fn user_execute_file(&self)   -> Style { Fixed(103).normal() }
-		fn user_execute_other(&self)  -> Style { Fixed(113).normal() }
-		fn group_read(&self)          -> Style { Fixed(104).normal() }
-		fn group_write(&self)         -> Style { Fixed(105).normal() }
-		fn group_execute(&self)       -> Style { Fixed(106).normal() }
-		fn other_read(&self)          -> Style { Fixed(107).normal() }
-		fn other_write(&self)         -> Style { Fixed(108).normal() }
-		fn other_execute(&self)       -> Style { Fixed(109).normal() }
-		fn special_user_file(&self)   -> Style { Fixed(110).normal() }
-		fn special_other(&self)       -> Style { Fixed(111).normal() }
-		fn attribute(&self)           -> Style { Fixed(112).normal() }
+        fn dash(&self)                -> Style { Fixed(11).normal() }
+        fn user_read(&self)           -> Style { Fixed(101).normal() }
+        fn user_write(&self)          -> Style { Fixed(102).normal() }
+        fn user_execute_file(&self)   -> Style { Fixed(103).normal() }
+        fn user_execute_other(&self)  -> Style { Fixed(113).normal() }
+        fn group_read(&self)          -> Style { Fixed(104).normal() }
+        fn group_write(&self)         -> Style { Fixed(105).normal() }
+        fn group_execute(&self)       -> Style { Fixed(106).normal() }
+        fn other_read(&self)          -> Style { Fixed(107).normal() }
+        fn other_write(&self)         -> Style { Fixed(108).normal() }
+        fn other_execute(&self)       -> Style { Fixed(109).normal() }
+        fn special_user_file(&self)   -> Style { Fixed(110).normal() }
+        fn special_other(&self)       -> Style { Fixed(111).normal() }
+        fn attribute(&self)           -> Style { Fixed(112).normal() }
     }
 
 

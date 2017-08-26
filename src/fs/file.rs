@@ -64,7 +64,7 @@ impl<'dir> File<'dir> {
         let parent_dir = parent_dir.into();
         let name       = filename.into().unwrap_or_else(|| File::filename(&path));
         let ext        = File::ext(&path);
-        
+
         debug!("Statting file {:?}", &path);
         let metadata   = fs::symlink_metadata(&path)?;
 

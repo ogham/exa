@@ -38,7 +38,7 @@ impl Dir {
     /// ourselves after the files have been read.
     pub fn read_dir(path: PathBuf, git: bool) -> IOResult<Dir> {
         info!("Reading directory {:?}", &path);
-      
+
         let contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
                                                  .map(|result| result.map(|entry| entry.path()))
                                                  .collect());

@@ -15,27 +15,27 @@ impl f::Blocks {
 
 
 pub trait Colours {
-	fn block_count(&self) -> Style;
-	fn no_blocks(&self) -> Style;
+    fn block_count(&self) -> Style;
+    fn no_blocks(&self) -> Style;
 }
 
 
 #[cfg(test)]
 pub mod test {
-	use ansi_term::Style;
-	use ansi_term::Colour::*;
-	
-	use super::Colours;
+    use ansi_term::Style;
+    use ansi_term::Colour::*;
+
+    use super::Colours;
     use output::cell::TextCell;
     use fs::fields as f;
 
 
-	struct TestColours;
-	
-	impl Colours for TestColours {
-		fn block_count(&self) -> Style { Red.blink() }
-		fn no_blocks(&self)   -> Style { Green.italic() }
-	}
+    struct TestColours;
+
+    impl Colours for TestColours {
+        fn block_count(&self) -> Style { Red.blink() }
+        fn no_blocks(&self)   -> Style { Green.italic() }
+    }
 
 
     #[test]

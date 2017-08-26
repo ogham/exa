@@ -16,7 +16,7 @@ impl Git {
     /// the files' statuses if one is found.
     pub fn scan(path: &Path) -> Result<Git, git2::Error> {
         info!("Scanning for Git repository under {:?}", path);
-    
+
         let repo = git2::Repository::discover(path)?;
         let workdir = match repo.workdir() {
             Some(w) => w,
@@ -24,8 +24,8 @@ impl Git {
         };
 
         let statuses = repo.statuses(None)?.iter()
-                                                .map(|e| (workdir.join(Path::new(e.path().unwrap())), e.status()))
-                                                .collect();
+										   .map(|e| (workdir.join(Path::new(e.path().unwrap())), e.status()))
+										   .collect();
 
         Ok(Git { statuses: statuses })
     }

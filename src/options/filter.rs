@@ -101,10 +101,10 @@ impl SortField {
 // smaller, because that’s usually what the user expects to happen. Users will
 // name their files with numbers expecting them to be treated like numbers,
 // rather than lists of numeric characters.
-// 
+//
 // In the same way, users will name their files with letters expecting the
 // order of the letters to matter, rather than each letter’s character’s ASCII
-// value. So exa breaks from tradition and ignores case while sorting: 
+// value. So exa breaks from tradition and ignores case while sorting:
 // “apps” first, then “Documents”.
 //
 // You can get the old behaviour back by sorting with `--sort=Name`.

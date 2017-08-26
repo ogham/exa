@@ -69,19 +69,19 @@ impl f::DeviceIDs {
 
 
 pub trait Colours {
-	fn size(&self, size: u64) -> Style;
-	fn unit(&self) -> Style;
-	fn no_size(&self) -> Style;
+    fn size(&self, size: u64) -> Style;
+    fn unit(&self) -> Style;
+    fn no_size(&self) -> Style;
 
-	fn major(&self) -> Style;
-	fn comma(&self) -> Style;
-	fn minor(&self) -> Style;
+    fn major(&self) -> Style;
+    fn comma(&self) -> Style;
+    fn minor(&self) -> Style;
 }
 
 
 #[cfg(test)]
 pub mod test {
-	use super::Colours;
+    use super::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use output::table::SizeFormat;
     use fs::fields as f;
@@ -89,18 +89,18 @@ pub mod test {
     use locale::Numeric as NumericLocale;
     use ansi_term::Colour::*;
     use ansi_term::Style;
-    
-    
+
+
     struct TestColours;
-    
+
     impl Colours for TestColours {
-    	fn size(&self, _size: u64) -> Style { Fixed(66).normal() }
-    	fn unit(&self)             -> Style { Fixed(77).bold() }
-    	fn no_size(&self)          -> Style { Black.italic() }
-    	
-    	fn major(&self) -> Style { Blue.on(Red) }
-    	fn comma(&self) -> Style { Green.italic() }
-		fn minor(&self) -> Style { Cyan.on(Yellow) }
+        fn size(&self, _size: u64) -> Style { Fixed(66).normal() }
+        fn unit(&self)             -> Style { Fixed(77).bold() }
+        fn no_size(&self)          -> Style { Black.italic() }
+
+        fn major(&self) -> Style { Blue.on(Red) }
+        fn comma(&self) -> Style { Green.italic() }
+        fn minor(&self) -> Style { Cyan.on(Yellow) }
     }
 
 

@@ -21,15 +21,15 @@ impl f::User {
 
 
 pub trait Colours {
-	fn you(&self) -> Style;
-	fn someone_else(&self) -> Style;
+    fn you(&self) -> Style;
+    fn someone_else(&self) -> Style;
 }
 
 
 #[cfg(test)]
 #[allow(unused_results)]
 pub mod test {
-	use super::Colours;
+    use super::Colours;
     use fs::fields as f;
     use output::cell::TextCell;
 
@@ -37,15 +37,15 @@ pub mod test {
     use users::mock::MockUsers;
     use ansi_term::Colour::*;
     use ansi_term::Style;
-    
-    
+
+
     struct TestColours;
-    
+
     impl Colours for TestColours {
-    	fn you(&self)          -> Style { Red.bold() }
-    	fn someone_else(&self) -> Style { Blue.underline() }
+        fn you(&self)          -> Style { Red.bold() }
+        fn someone_else(&self) -> Style { Blue.underline() }
     }
-    
+
 
     #[test]
     fn named() {

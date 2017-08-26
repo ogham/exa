@@ -9,7 +9,7 @@ use std::process::exit;
 
 fn main() {
     configure_logger();
-    
+
     let args: Vec<OsString> = args_os().skip(1).collect();
     match Exa::new(args.iter(), &mut stdout()) {
         Ok(mut exa) => {
@@ -46,12 +46,12 @@ fn main() {
 pub fn configure_logger() {
     extern crate env_logger;
     extern crate log;
-    
+
     let present = match var_os("EXA_DEBUG") {
         Some(debug)  => debug.len() > 0,
         None         => false,
     };
-    
+
     let mut logs = env_logger::LogBuilder::new();
     if present {
         logs.filter(None, log::LogLevelFilter::Debug);
@@ -59,7 +59,7 @@ pub fn configure_logger() {
     else {
         logs.filter(None, log::LogLevelFilter::Off);
     }
-    
+
     if let Err(e) = logs.init() {
         writeln!(stderr(), "Failed to initialise logger: {}", e).unwrap();
     }

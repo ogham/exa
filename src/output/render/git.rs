@@ -43,14 +43,14 @@ pub trait Colours {
 
 #[cfg(test)]
 pub mod test {
-	use super::Colours;
+    use super::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;
-    
-    
+
+
     struct TestColours;
 
     impl Colours for TestColours {
@@ -60,7 +60,7 @@ pub mod test {
         fn deleted(&self)      -> Style { Fixed(93).normal() }
         fn renamed(&self)      -> Style { Fixed(94).normal() }
         fn type_change(&self)  -> Style { Fixed(95).normal() }
-    }    
+    }
 
 
     #[test]

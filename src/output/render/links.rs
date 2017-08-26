@@ -16,27 +16,27 @@ impl f::Links {
 
 
 pub trait Colours {
-	fn normal(&self) -> Style;
-	fn multi_link_file(&self) -> Style;
+    fn normal(&self) -> Style;
+    fn multi_link_file(&self) -> Style;
 }
 
 
 #[cfg(test)]
 pub mod test {
-	use super::Colours;
+    use super::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;
     use locale;
-    
-    
+
+
     struct TestColours;
-    
+
     impl Colours for TestColours {
-    	fn normal(&self)           -> Style { Blue.normal() }
-    	fn multi_link_file(&self)  -> Style { Blue.on(Red) }
+        fn normal(&self)           -> Style { Blue.normal() }
+        fn multi_link_file(&self)  -> Style { Blue.on(Red) }
     }
 
 
