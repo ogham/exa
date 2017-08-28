@@ -15,19 +15,6 @@ pub struct GitRepo {
     workdir: PathBuf,
 }
 
-impl GitRepo {
-    fn discover(path: &Path) -> Option<GitRepo> {
-    	info!("Searching for Git repository above {:?}", path);
-        if let Ok(repo) = git2::Repository::discover(&path) {
-            if let Some(workdir) = repo.workdir().map(|wd| wd.to_path_buf()) {
-                return Some(GitRepo { repo, workdir });
-            }
-        }
-
-        None
-    }
-}
-
 use std::iter::FromIterator;
 impl FromIterator<PathBuf> for GitCache {
     fn from_iter<I: IntoIterator<Item=PathBuf>>(iter: I) -> Self {
@@ -36,7 +23,7 @@ impl FromIterator<PathBuf> for GitCache {
 
         for path in iter {
             if repos.contains_key(&path) {
-            	debug!("Skipping {:?} because we already queried it", path);
+                debug!("Skipping {:?} because we already queried it", path);
             }
             else {
                 let repo = GitRepo::discover(&path);
@@ -48,16 +35,33 @@ impl FromIterator<PathBuf> for GitCache {
     }
 }
 
+impl GitRepo {
+    fn discover(path: &Path) -> Option<GitRepo> {
+        info!("Searching for Git repository above {:?}", path);
+        if let Ok(repo) = git2::Repository::discover(&path) {
+            if let Some(workdir) = repo.workdir().map(|wd| wd.to_path_buf()) {
+                return Some(GitRepo { repo, workdir });
+            }
+        }
+
+        None
+    }
+}
+
 impl GitCache {
     pub fn get(&self, index: &Path) -> Option<Git> {
         let repo = match self.repos[index] {
             Some(ref r) => r,
-            None => return None,
+            None        => return None,
         };
 
+        info!("Getting Git statuses for repo with workdir {:?}", &repo.workdir);
         let iter = match repo.repo.statuses(None) {
             Ok(es) => es,
-            Err(_) => return None,
+            Err(e) => {
+                error!("Error looking up Git statuses: {:?}", e);
+                return None;
+            }
         };
 
         let mut statuses = Vec::new();
