@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use fs::feature::Git;
+use fs::feature::git::{Git, GitCache};
 use fs::{File, fields};
 
 
@@ -26,6 +26,10 @@ pub struct Dir {
     git: Option<Git>,
 }
 
+pub struct DirOptions<'exa> {
+    pub git: Option<&'exa GitCache>
+}
+
 impl Dir {
 
     /// Create a new Dir object filled with all the files in the directory
@@ -36,14 +40,14 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf, git: bool) -> IOResult<Dir> {
+    pub fn read_dir(path: PathBuf, options: DirOptions) -> IOResult<Dir> {
         info!("Reading directory {:?}", &path);
 
         let contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
                                                  .map(|result| result.map(|entry| entry.path()))
                                                  .collect());
 
-        let git = if git { Git::scan(&path).ok() } else { None };
+        let git = options.git.and_then(|cache| cache.get(&path));
         Ok(Dir { contents, path, git })
     }
 

@@ -3,24 +3,39 @@ pub mod xattr;
 
 // Git support
 
-#[cfg(feature="git")] mod git;
-#[cfg(feature="git")] pub use self::git::Git;
-
-#[cfg(not(feature="git"))] pub struct Git;
-#[cfg(not(feature="git"))] use std::path::Path;
-#[cfg(not(feature="git"))] use fs::fields;
+#[cfg(feature="git")] pub mod git;
 
 #[cfg(not(feature="git"))]
-impl Git {
-    pub fn scan(_: &Path) -> Result<Git, ()> {
-        Err(())
+pub mod git {
+    use std::iter::FromIterator;
+    use std::path::{Path, PathBuf};
+
+    use fs::fields;
+
+
+    pub struct GitCache;
+
+    impl FromIterator<PathBuf> for GitCache {
+        fn from_iter<I: IntoIterator<Item=PathBuf>>(_iter: I) -> Self {
+            GitCache
+        }
     }
 
-    pub fn status(&self, _: &Path) -> fields::Git {
-        panic!("Tried to access a Git repo without Git support!");
+    impl GitCache {
+        pub fn get(&self, _index: &Path) -> Option<Git> {
+            panic!("Tried to query a Git cache, but Git support is disabled")
+        }
     }
 
-    pub fn dir_status(&self, path: &Path) -> fields::Git {
-        self.status(path)
+    pub struct Git;
+
+    impl Git {
+        pub fn status(&self, _: &Path) -> fields::Git {
+            panic!("Tried to get a Git status, but Git support is disabled")
+        }
+
+        pub fn dir_status(&self, path: &Path) -> fields::Git {
+            self.status(path)
+        }
     }
 }

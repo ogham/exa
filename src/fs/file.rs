@@ -6,7 +6,7 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 
-use fs::dir::Dir;
+use fs::dir::{Dir, DirOptions};
 use fs::fields as f;
 
 
@@ -115,8 +115,8 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn't be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(self.path.clone(), scan_for_git)
+    pub fn to_dir(&self, options: DirOptions) -> IOResult<Dir> {
+        Dir::read_dir(self.path.clone(), options)
     }
 
     /// Whether this file is a regular file on the filesystem - that is, not a

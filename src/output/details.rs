@@ -178,6 +178,7 @@ impl<'a> Render<'a> {
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
         use fs::feature::xattr;
+        use fs::DirOptions;
 
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
@@ -240,7 +241,7 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
-                            match file.to_dir(false) {
+                            match file.to_dir(DirOptions { git: None }) {
                                 Ok(d)  => { dir = Some(d); },
                                 Err(e) => { errors.push((e, None)) },
                             }

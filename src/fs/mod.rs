@@ -1,5 +1,5 @@
 mod dir;
-pub use self::dir::{Dir, DotFilter};
+pub use self::dir::{Dir, DirOptions, DotFilter};
 
 mod file;
 pub use self::file::{File, FileTarget};

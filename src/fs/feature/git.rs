@@ -1,8 +1,76 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use git2;
 
 use fs::fields as f;
+
+
+pub struct GitCache {
+    repos: HashMap<PathBuf, Option<GitRepo>>,
+}
+
+pub struct GitRepo {
+    repo: git2::Repository,
+    workdir: PathBuf,
+}
+
+impl GitRepo {
+    fn discover(path: &Path) -> Option<GitRepo> {
+    	info!("Searching for Git repository above {:?}", path);
+        if let Ok(repo) = git2::Repository::discover(&path) {
+            if let Some(workdir) = repo.workdir().map(|wd| wd.to_path_buf()) {
+                return Some(GitRepo { repo, workdir });
+            }
+        }
+
+        None
+    }
+}
+
+use std::iter::FromIterator;
+impl FromIterator<PathBuf> for GitCache {
+    fn from_iter<I: IntoIterator<Item=PathBuf>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let mut repos = HashMap::with_capacity(iter.size_hint().0);
+
+        for path in iter {
+            if repos.contains_key(&path) {
+            	debug!("Skipping {:?} because we already queried it", path);
+            }
+            else {
+                let repo = GitRepo::discover(&path);
+                let _ = repos.insert(path, repo);
+            }
+        }
+
+        GitCache { repos }
+    }
+}
+
+impl GitCache {
+    pub fn get(&self, index: &Path) -> Option<Git> {
+        let repo = match self.repos[index] {
+            Some(ref r) => r,
+            None => return None,
+        };
+
+        let iter = match repo.repo.statuses(None) {
+            Ok(es) => es,
+            Err(_) => return None,
+        };
+
+        let mut statuses = Vec::new();
+
+        for e in iter.iter() {
+            let path = repo.workdir.join(Path::new(e.path().unwrap()));
+            let elem = (path, e.status());
+            statuses.push(elem);
+        }
+
+        Some(Git { statuses })
+    }
+}
 
 
 /// Container of Git statuses for all the files in this folder's Git repository.
@@ -11,24 +79,6 @@ pub struct Git {
 }
 
 impl Git {
-
-    /// Discover a Git repository on or above this directory, scanning it for
-    /// the files' statuses if one is found.
-    pub fn scan(path: &Path) -> Result<Git, git2::Error> {
-        info!("Scanning for Git repository under {:?}", path);
-
-        let repo = git2::Repository::discover(path)?;
-        let workdir = match repo.workdir() {
-            Some(w) => w,
-            None => return Ok(Git { statuses: vec![] }),  // bare repo
-        };
-
-        let statuses = repo.statuses(None)?.iter()
-										   .map(|e| (workdir.join(Path::new(e.path().unwrap())), e.status()))
-										   .collect();
-
-        Ok(Git { statuses: statuses })
-    }
 
     /// Get the status for the file at the given path, if present.
     pub fn status(&self, path: &Path) -> f::Git {

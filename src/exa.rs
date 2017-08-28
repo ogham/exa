@@ -30,6 +30,7 @@ use std::path::{Component, PathBuf};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
+use fs::feature::git::GitCache;
 use options::{Options, Vars};
 pub use options::Misfire;
 use output::{escape, lines, grid, grid_details, details, View, Mode};
@@ -79,6 +80,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     }
 
     pub fn run(&mut self) -> IOResult<i32> {
+        use fs::DirOptions;
+
         let mut files = Vec::new();
         let mut dirs = Vec::new();
         let mut exit_status = 0;
@@ -88,6 +91,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             self.args = vec![ OsStr::new(".") ];
         }
 
+        let git = self.git_options(&*self.args);
+
         for file_path in &self.args {
             match File::new(PathBuf::from(file_path), None, None) {
                 Err(e) => {
@@ -96,7 +101,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
-                        match f.to_dir(self.options.should_scan_for_git()) {
+                        match f.to_dir(DirOptions { git: git.as_ref() }) {
                             Ok(d) => dirs.push(d),
                             Err(e) => writeln!(stderr(), "{:?}: {}", file_path, e)?,
                         }
@@ -121,7 +126,18 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         self.print_dirs(dirs, no_files, is_only_dir, exit_status)
     }
 
+    fn git_options(&self, args: &[&OsStr]) -> Option<GitCache> {
+        if self.options.should_scan_for_git() {
+            Some(args.iter().map(|os| PathBuf::from(os)).collect())
+        }
+        else {
+            None
+        }
+    }
+
     fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32) -> IOResult<i32> {
+        use fs::DirOptions;
+
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and
@@ -156,7 +172,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
 
                     let mut child_dirs = Vec::new();
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
-                        match child_dir.to_dir(false) {
+                        match child_dir.to_dir(DirOptions { git: None }) {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }
