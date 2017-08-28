@@ -544,6 +544,11 @@ Vagrant.configure(2) do |config|
         mkdir "target"
         touch "target/another ignored file"
 
+        mkdir "deeply/nested/repository"
+        cd    "deeply/nested/repository"
+        git init
+        touch subfile
+
         find "#{test_dir}/git2" -exec touch {} -t #{some_date} \\;
         sudo chown #{user}:#{user} -R "#{test_dir}/git2"
     EOF

@@ -196,13 +196,14 @@ $exa $testcases/git/additions         -l --git 2>&1 | diff -q - $results/git_1_a
 $exa $testcases/git/edits             -l --git 2>&1 | diff -q - $results/git_1_edits      || exit 1
 $exa $testcases/git/{additions,edits} -l --git 2>&1 | diff -q - $results/git_1_both       || exit 1
 
-$exa $testcases/git2                          -l --git 2>&1 | diff -q - $results/git_2_long      || exit 1
-$exa $testcases/git2                          -l       2>&1 | diff -q - $results/git_2_nogit     || exit 1
-$exa $testcases/git2                   --tree -l --git 2>&1 | diff -q - $results/git_2_tree      || exit 1
-$exa $testcases/git2                --recurse -l --git 2>&1 | diff -q - $results/git_2_recurse   || exit 1
-$exa $testcases/git2/ignoreds                 -l --git 2>&1 | diff -q - $results/git_2_ignoreds  || exit 1
-$exa $testcases/git2/target                   -l --git 2>&1 | diff -q - $results/git_2_target    || exit 1
-$exa $testcases/git2/{deeply,ignoreds,target} -l --git 2>&1 | diff -q - $results/git_2_all       || exit 1
+$exa $testcases/git2                          -l --git 2>&1 | diff -q - $results/git_2_long        || exit 1
+$exa $testcases/git2                          -l       2>&1 | diff -q - $results/git_2_nogit       || exit 1
+$exa $testcases/git2                   --tree -l --git 2>&1 | diff -q - $results/git_2_tree        || exit 1
+$exa $testcases/git2                --recurse -l --git 2>&1 | diff -q - $results/git_2_recurse     || exit 1
+$exa $testcases/git2/ignoreds                 -l --git 2>&1 | diff -q - $results/git_2_ignoreds    || exit 1
+$exa $testcases/git2/target                   -l --git 2>&1 | diff -q - $results/git_2_target      || exit 1
+$exa $testcases/git2/deeply/nested/repository -l --git 2>&1 | diff -q - $results/git_2_repository  || exit 1
+$exa $testcases/git2/{deeply,ignoreds,target} -l --git 2>&1 | diff -q - $results/git_2_all         || exit 1
 
 $exa $testcases/git $testcases/git2 --git --long | diff -q - $results/git_12  || exit 1
 
