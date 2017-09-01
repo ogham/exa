@@ -23,7 +23,7 @@ pub struct GitCache {
 
 impl GitCache {
     pub fn has_anything_for(&self, index: &Path) -> bool {
-        true
+        self.repos.iter().any(|e| e.has_path(index))
     }
 
     pub fn get(&self, index: &Path, prefix_lookup: bool) -> f::Git {

@@ -213,7 +213,8 @@ $exa $testcases/git/additions $testcases/git2/deeply \
 $exa $testcases/git2/deeply/nested/directory $testcases/git/edits \
      $testcases/git2/target $testcases/git2/deeply $testcases/git  --git --long | diff -q - $results/git_21221  || exit 1
 
-
+            $exa $testcases/files -l  --git | diff -q - $results/files_l      || exit 1    # no git status for dirs
+COLUMNS=40  $exa $testcases/files -lG --git | diff -q - $results/files_lG_40  || exit 1    # that aren't under git
 
 
 # Hidden files

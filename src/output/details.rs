@@ -144,7 +144,8 @@ impl<'a> Render<'a> {
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-        	if self.dir.is_none() { git = None }
+            if self.dir.is_none() { git = None }
+            if let (Some(g), Some(d)) = (git, self.dir) { if !g.has_anything_for(&d.path) { git = None } }
             let mut table = Table::new(&table, git, &self.colours);
 
             if self.opts.header {
