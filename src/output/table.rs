@@ -29,7 +29,7 @@ pub struct Options {
 // and Mutex<UsersCache> is not that!
 impl fmt::Debug for Options {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "<table options>")
+        write!(f, "Table({:#?})", self.extra_columns)
     }
 }
 
