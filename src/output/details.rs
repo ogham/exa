@@ -69,6 +69,7 @@ use ansi_term::Style;
 use fs::{Dir, File};
 use fs::dir_action::RecurseOptions;
 use fs::filter::FileFilter;
+use fs::feature::git::GitCache;
 use fs::feature::xattr::{Attribute, FileAttributes};
 use style::Colours;
 use output::cell::TextCell;
@@ -139,11 +140,11 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            let mut table = Table::new(&table, self.dir, &self.colours);
+            let mut table = Table::new(&table, self.dir, git, &self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -178,7 +179,6 @@ impl<'a> Render<'a> {
         use scoped_threadpool::Pool;
         use std::sync::{Arc, Mutex};
         use fs::feature::xattr;
-        use fs::DirOptions;
 
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
@@ -241,7 +241,7 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
-                            match file.to_dir(DirOptions { git: None }) {
+                            match file.to_dir() {
                                 Ok(d)  => { dir = Some(d); },
                                 Err(e) => { errors.push((e, None)) },
                             }

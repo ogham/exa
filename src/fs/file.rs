@@ -6,7 +6,7 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 
-use fs::dir::{Dir, DirOptions};
+use fs::dir::Dir;
 use fs::fields as f;
 
 
@@ -19,7 +19,7 @@ use fs::fields as f;
 /// start and hold on to all the information.
 pub struct File<'dir> {
 
-    /// The filename portion of this file's path, including the extension.
+    /// The filename portion of this file’s path, including the extension.
     ///
     /// This is used to compare against certain filenames (such as checking if
     /// it’s “Makefile” or something) and to highlight only the filename in
@@ -33,26 +33,27 @@ pub struct File<'dir> {
 
     /// The path that begat this file.
     ///
-    /// Even though the file's name is extracted, the path needs to be kept
-    /// around, as certain operations involve looking up the file's absolute
-    /// location (such as the Git status, or searching for compiled files).
+    /// Even though the file’s name is extracted, the path needs to be kept
+    /// around, as certain operations involve looking up the file’s absolute
+    /// location (such as searching for compiled files) or using its original
+    /// path (following a symlink).
     pub path: PathBuf,
 
-    /// A cached `metadata` call for this file.
+    /// A cached `metadata` (`stat`) call for this file.
     ///
     /// This too is queried multiple times, and is *not* cached by the OS, as
-    /// it could easily change between invocations - but exa is so short-lived
+    /// it could easily change between invocations — but exa is so short-lived
     /// it's better to just cache it.
     pub metadata: fs::Metadata,
 
-    /// A reference to the directory that contains this file, if present.
+    /// A reference to the directory that contains this file, if any.
     ///
     /// Filenames that get passed in on the command-line directly will have no
-    /// parent directory reference - although they technically have one on the
-    /// filesystem, we'll never need to look at it, so it'll be `None`.
+    /// parent directory reference — although they technically have one on the
+    /// filesystem, we’ll never need to look at it, so it’ll be `None`.
     /// However, *directories* that get passed in will produce files that
     /// contain a reference to it, which is used in certain operations (such
-    /// as looking up a file's Git status).
+    /// as looking up compiled files).
     pub parent_dir: Option<&'dir Dir>,
 }
 
@@ -88,11 +89,11 @@ impl<'dir> File<'dir> {
     /// Extract an extension from a file path, if one is present, in lowercase.
     ///
     /// The extension is the series of characters after the last dot. This
-    /// deliberately counts dotfiles, so the ".git" folder has the extension "git".
+    /// deliberately counts dotfiles, so the “.git” folder has the extension “git”.
     ///
     /// ASCII lowercasing is used because these extensions are only compared
     /// against a pre-compiled list of extensions which are known to only exist
-    /// within ASCII, so it's alright.
+    /// within ASCII, so it’s alright.
     fn ext(path: &Path) -> Option<String> {
         use std::ascii::AsciiExt;
 
@@ -110,24 +111,24 @@ impl<'dir> File<'dir> {
     }
 
     /// If this file is a directory on the filesystem, then clone its
-    /// `PathBuf` for use in one of our own `Dir` objects, and read a list of
+    /// `PathBuf` for use in one of our own `Dir` values, and read a list of
     /// its contents.
     ///
-    /// Returns an IO error upon failure, but this shouldn't be used to check
+    /// Returns an IO error upon failure, but this shouldn’t be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, options: DirOptions) -> IOResult<Dir> {
-        Dir::read_dir(self.path.clone(), options)
+    pub fn to_dir(&self) -> IOResult<Dir> {
+        Dir::read_dir(self.path.clone())
     }
 
-    /// Whether this file is a regular file on the filesystem - that is, not a
+    /// Whether this file is a regular file on the filesystem — that is, not a
     /// directory, a link, or anything else treated specially.
     pub fn is_file(&self) -> bool {
         self.metadata.is_file()
     }
 
     /// Whether this file is both a regular file *and* executable for the
-    /// current user. Executable files have different semantics than
-    /// executable directories, and so should be highlighted differently.
+    /// current user. An executable file has a different purpose from an
+    /// executable directory, so they should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
         let bit = modes::USER_EXECUTE;
         self.is_file() && (self.metadata.permissions().mode() & bit) == bit
@@ -159,7 +160,7 @@ impl<'dir> File<'dir> {
     }
 
 
-    /// Re-prefixes the path pointed to by this file, if it's a symlink, to
+    /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
     /// directory exa is being run from.
     fn reorient_target_path(&self, path: &Path) -> PathBuf {
@@ -190,8 +191,8 @@ impl<'dir> File<'dir> {
     pub fn link_target(&self) -> FileTarget<'dir> {
 
         // We need to be careful to treat the path actually pointed to by
-        // this file -- which could be absolute or relative -- to the path
-        // we actually look up and turn into a `File` -- which needs to be
+        // this file — which could be absolute or relative — to the path
+        // we actually look up and turn into a `File` — which needs to be
         // absolute to be accessible from any directory.
         debug!("Reading link {:?}", &self.path);
         let path = match fs::read_link(&self.path) {
@@ -216,11 +217,11 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file's number of hard links.
+    /// This file’s number of hard links.
     ///
     /// It also reports whether this is both a regular file, and a file with
     /// multiple links. This is important, because a file with multiple links
-    /// is uncommon, while you can come across directories and other types
+    /// is uncommon, while you come across directories and other types
     /// with multiple links much more often. Thus, it should get highlighted
     /// more attentively.
     pub fn links(&self) -> f::Links {
@@ -377,28 +378,6 @@ impl<'dir> File<'dir> {
     /// that get passed in.
     pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
         choices.contains(&&self.name[..])
-    }
-
-    /// This file's Git status as two flags: one for staged changes, and the
-    /// other for unstaged changes.
-    ///
-    /// This requires looking at the `git` field of this file's parent
-    /// directory, so will not work if this file has just been passed in on
-    /// the command line.
-    pub fn git_status(&self) -> f::Git {
-        use std::env::current_dir;
-
-        match self.parent_dir {
-            None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
-            Some(d) => {
-                let cwd = match current_dir() {
-                    Err(_)  => Path::new(".").join(&self.path),
-                    Ok(dir) => dir.join(&self.path),
-                };
-
-                d.git_status(&cwd, self.is_directory())
-            },
-        }
     }
 }
 

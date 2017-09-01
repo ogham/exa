@@ -14,6 +14,7 @@ use style::Colours;
 use output::cell::TextCell;
 use output::time::TimeFormat;
 use fs::{File, Dir, fields as f};
+use fs::feature::git::GitCache;
 
 
 /// Options for displaying a table.
@@ -22,6 +23,14 @@ pub struct Options {
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
     pub extra_columns: Columns,
+}
+
+// I had to make other types derive Debug,
+// and Mutex<UsersCache> is not that!
+impl fmt::Debug for Options {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "<table options>")
+    }
 }
 
 /// Extra columns to display in the table.
@@ -36,24 +45,12 @@ pub struct Columns {
     pub links: bool,
     pub blocks: bool,
     pub group: bool,
-    pub git: bool
-}
-
-impl fmt::Debug for Options {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        // I had to make other types derive Debug,
-        // and Mutex<UsersCache> is not that!
-        writeln!(f, "<table options>")
-    }
+    pub git: bool,
 }
 
 impl Columns {
-    pub fn should_scan_for_git(&self) -> bool {
-        self.git
-    }
-
-    pub fn for_dir(&self, dir: Option<&Dir>) -> Vec<Column> {
-        let mut columns = vec![];
+    pub fn collect(&self, actually_enable_git: bool) -> Vec<Column> {
+        let mut columns = Vec::with_capacity(4);
 
         if self.inode {
             columns.push(Column::Inode);
@@ -89,12 +86,8 @@ impl Columns {
             columns.push(Column::Timestamp(TimeType::Accessed));
         }
 
-        if cfg!(feature="git") {
-            if let Some(d) = dir {
-                if self.should_scan_for_git() && d.has_git_repo() {
-                    columns.push(Column::GitStatus);
-                }
-            }
+        if cfg!(feature="git") && self.git && actually_enable_git {
+            columns.push(Column::GitStatus);
         }
 
         columns
@@ -275,9 +268,6 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 }
 
 
-
-
-
 pub struct Table<'a> {
     columns: Vec<Column>,
     colours: &'a Colours,
@@ -285,6 +275,7 @@ pub struct Table<'a> {
     widths: TableWidths,
     time_format: &'a TimeFormat,
     size_format: SizeFormat,
+    git: Option<&'a GitCache>,
 }
 
 #[derive(Clone)]
@@ -293,11 +284,13 @@ pub struct Row {
 }
 
 impl<'a, 'f> Table<'a> {
-    pub fn new(options: &'a Options, dir: Option<&'a Dir>, colours: &'a Colours) -> Table<'a> {
-        let colz = options.extra_columns.for_dir(dir);
-        let widths = TableWidths::zero(colz.len());
-        Table { colours, widths,
-            columns: colz,
+    pub fn new(options: &'a Options, dir: Option<&'a Dir>, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
+        let has_git = if let (Some(g), Some(d)) = (git, dir) { g.has_anything_for(&d.path) } else { false };
+        let columns = options.extra_columns.collect(has_git);
+        let widths = TableWidths::zero(columns.len());
+
+        Table {
+            colours, widths, columns, git,
             env:         &options.env,
             time_format: &options.time_format,
             size_format:  options.size_format,
@@ -347,12 +340,19 @@ impl<'a, 'f> Table<'a> {
             Column::Blocks         => file.blocks().render(self.colours),
             Column::User           => file.user().render(self.colours, &*self.env.lock_users()),
             Column::Group          => file.group().render(self.colours, &*self.env.lock_users()),
-            Column::GitStatus      => file.git_status().render(self.colours),
+            Column::GitStatus      => self.git_status(file).render(self.colours),
 
             Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
             Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, &self.time_format),
             Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, &self.time_format),
         }
+    }
+
+    fn git_status(&self, file: &File) -> f::Git {
+        debug!("Getting Git status for file {:?}", file.path);
+        self.git
+            .map(|g| g.get(&file.path, file.is_directory()))
+            .unwrap_or_default()
     }
 
     pub fn render(&self, row: Row) -> TextCell {

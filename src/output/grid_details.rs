@@ -6,6 +6,7 @@ use ansi_term::ANSIStrings;
 use term_grid as grid;
 
 use fs::{Dir, File};
+use fs::feature::git::GitCache;
 use fs::feature::xattr::FileAttributes;
 use fs::filter::FileFilter;
 
@@ -110,21 +111,21 @@ impl<'a> Render<'a> {
         }
     }
 
-    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
-        if let Some((grid, width)) = self.find_fitting_grid() {
+    pub fn render<W: Write>(self, git: Option<&GitCache>, w: &mut W) -> IOResult<()> {
+        if let Some((grid, width)) = self.find_fitting_grid(git) {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.give_up().render(w)
+            self.give_up().render(git, w)
         }
     }
 
-    pub fn find_fitting_grid(&self) -> Option<(grid::Grid, grid::Width)> {
+    pub fn find_fitting_grid(&self, git: Option<&GitCache>) -> Option<(grid::Grid, grid::Width)> {
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
         let drender = self.details();
 
-        let (first_table, _) = self.make_table(options, &drender);
+        let (first_table, _) = self.make_table(options, git, &drender);
 
         let rows = self.files.iter()
                        .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
@@ -134,12 +135,12 @@ impl<'a> Render<'a> {
                              .map(|file| self.style.for_file(file, self.colours).paint().promote())
                              .collect::<Vec<TextCell>>();
 
-        let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
+        let mut last_working_table = self.make_grid(1, options, git, &file_names, rows.clone(), &drender);
 
         // If we can’t fit everything in a grid 100 columns wide, then
         // something has gone seriously awry
         for column_count in 2..100 {
-            let grid = self.make_grid(column_count, options, &file_names, rows.clone(), &drender);
+            let grid = self.make_grid(column_count, options, git, &file_names, rows.clone(), &drender);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -166,8 +167,8 @@ impl<'a> Render<'a> {
         None
     }
 
-    fn make_table<'t>(&'a self, options: &'a TableOptions, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
-        let mut table = Table::new(options, self.dir, self.colours);
+    fn make_table<'t>(&'a self, options: &'a TableOptions, git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+        let mut table = Table::new(options, self.dir, git, self.colours);
         let mut rows = Vec::new();
 
         if self.details.header {
@@ -179,11 +180,11 @@ impl<'a> Render<'a> {
         (table, rows)
     }
 
-    fn make_grid(&'a self, column_count: usize, options: &'a TableOptions, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
+    fn make_grid(&'a self, column_count: usize, options: &'a TableOptions, git: Option<&GitCache>, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
 
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
-            tables.push(self.make_table(options, drender));
+            tables.push(self.make_table(options, git, drender));
         }
 
         let mut num_cells = rows.len();
