@@ -167,8 +167,9 @@ impl<'a> Render<'a> {
         None
     }
 
-    fn make_table<'t>(&'a self, options: &'a TableOptions, git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
-        let mut table = Table::new(options, self.dir, git, self.colours);
+    fn make_table<'t>(&'a self, options: &'a TableOptions, mut git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+        if self.dir.is_none() { git = None }
+        let mut table = Table::new(options, git, self.colours);
         let mut rows = Vec::new();
 
         if self.details.header {

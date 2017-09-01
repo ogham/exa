@@ -140,11 +140,12 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            let mut table = Table::new(&table, self.dir, git, &self.colours);
+        	if self.dir.is_none() { git = None }
+            let mut table = Table::new(&table, git, &self.colours);
 
             if self.opts.header {
                 let header = table.header_row();

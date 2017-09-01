@@ -13,7 +13,7 @@ use users::UsersCache;
 use style::Colours;
 use output::cell::TextCell;
 use output::time::TimeFormat;
-use fs::{File, Dir, fields as f};
+use fs::{File, fields as f};
 use fs::feature::git::GitCache;
 
 
@@ -284,9 +284,8 @@ pub struct Row {
 }
 
 impl<'a, 'f> Table<'a> {
-    pub fn new(options: &'a Options, dir: Option<&'a Dir>, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
-        let has_git = if let (Some(g), Some(d)) = (git, dir) { g.has_anything_for(&d.path) } else { false };
-        let columns = options.extra_columns.collect(has_git);
+    pub fn new(options: &'a Options, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
+        let columns = options.extra_columns.collect(git.is_some());
         let widths = TableWidths::zero(columns.len());
 
         Table {
