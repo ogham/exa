@@ -69,6 +69,7 @@ use ansi_term::Style;
 use fs::{Dir, File};
 use fs::dir_action::RecurseOptions;
 use fs::filter::FileFilter;
+use fs::feature::git::GitCache;
 use fs::feature::xattr::{Attribute, FileAttributes};
 use style::Colours;
 use output::cell::TextCell;
@@ -139,11 +140,17 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            let mut table = Table::new(&table, self.dir, &self.colours);
+            match (git, self.dir) {
+                (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
+                (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+                (None,    _)        => {/* Keep Git how it is */},
+            }
+
+            let mut table = Table::new(&table, git, &self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -151,7 +158,7 @@ impl<'a> Render<'a> {
                 rows.push(self.render_header(header));
             }
 
-            // This is weird, but I can't find a way around it:
+            // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
             self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth::root());
@@ -240,7 +247,7 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
-                            match file.to_dir(false) {
+                            match file.to_dir() {
                                 Ok(d)  => { dir = Some(d); },
                                 Err(e) => { errors.push((e, None)) },
                             }

@@ -480,10 +480,7 @@ Vagrant.configure(2) do |config|
             touch $dir/that-file
         done
 
-        touch -t #{some_date} "#{test_dir}/attributes"         # there's probably
-        touch -t #{some_date} "#{test_dir}/attributes"/*       # a better
-        touch -t #{some_date} "#{test_dir}/attributes"/*/*     # way to
-        touch -t #{some_date} "#{test_dir}/attributes"/*/*/*   # do this
+        find "#{test_dir}/attributes" -exec touch {} -t #{some_date} \\;
 
         # I want to use the following to test,
         # but it only works on macos:
@@ -519,11 +516,42 @@ Vagrant.configure(2) do |config|
         echo "more modifications!" | tee edits/unstaged edits/both additions/edited
         touch additions/unstaged
 
-
-        touch -t #{some_date} "#{test_dir}/git/"*/*
+        find "#{test_dir}/git" -exec touch {} -t #{some_date} \\;
         sudo chown #{user}:#{user} -R "#{test_dir}/git"
     EOF
 
+
+    # A second Git repository
+    # for testing two at once
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+        set -xe
+        mkdir -p "#{test_dir}/git2/deeply/nested/directory"
+        cd       "#{test_dir}/git2"
+        git init
+
+        touch "deeply/nested/directory/upd8d"
+        git add "deeply/nested/directory/upd8d"
+        git commit -m "Automated test commit"
+
+        echo "Now with contents" > "deeply/nested/directory/upd8d"
+        touch "deeply/nested/directory/l8st"
+
+        echo -e "target\n*.mp3" > ".gitignore"
+        mkdir "ignoreds"
+        touch "ignoreds/music.mp3"
+        touch "ignoreds/music.m4a"
+
+        mkdir "target"
+        touch "target/another ignored file"
+
+        mkdir "deeply/nested/repository"
+        cd    "deeply/nested/repository"
+        git init
+        touch subfile
+
+        find "#{test_dir}/git2" -exec touch {} -t #{some_date} \\;
+        sudo chown #{user}:#{user} -R "#{test_dir}/git2"
+    EOF
 
     # Hidden and dot file testcases.
     # We need to set the permissions of `.` and `..` because they actually

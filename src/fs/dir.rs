@@ -3,8 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use fs::feature::Git;
-use fs::{File, fields};
+use fs::File;
 
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
@@ -20,10 +19,6 @@ pub struct Dir {
 
     /// The path that was read.
     pub path: PathBuf,
-
-    /// Holds a `Git` object if scanning for Git repositories is switched on,
-    /// and this directory happens to contain one.
-    git: Option<Git>,
 }
 
 impl Dir {
@@ -36,15 +31,14 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf, git: bool) -> IOResult<Dir> {
+    pub fn read_dir(path: PathBuf) -> IOResult<Dir> {
         info!("Reading directory {:?}", &path);
 
         let contents: Vec<PathBuf> = try!(fs::read_dir(&path)?
-                                                 .map(|result| result.map(|entry| entry.path()))
-                                                 .collect());
+                                             .map(|result| result.map(|entry| entry.path()))
+                                             .collect());
 
-        let git = if git { Git::scan(&path).ok() } else { None };
-        Ok(Dir { contents, path, git })
+        Ok(Dir { contents, path })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
@@ -66,20 +60,6 @@ impl Dir {
     /// Append a path onto the path specified by this directory.
     pub fn join(&self, child: &Path) -> PathBuf {
         self.path.join(child)
-    }
-
-    /// Return whether there's a Git repository on or above this directory.
-    pub fn has_git_repo(&self) -> bool {
-        self.git.is_some()
-    }
-
-    /// Get a string describing the Git status of the given file.
-    pub fn git_status(&self, path: &Path, prefix_lookup: bool) -> fields::Git {
-        match (&self.git, prefix_lookup) {
-            (&Some(ref git), false)  => git.status(path),
-            (&Some(ref git), true)   => git.dir_status(path),
-            (&None, _)               => fields::Git::empty()
-        }
     }
 }
 

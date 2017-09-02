@@ -1,3 +1,4 @@
+
 //! Wrapper types for the values returned from `File`s.
 //!
 //! The methods of `File` that return information about the entry on the
@@ -206,10 +207,11 @@ pub struct Git {
     pub unstaged: GitStatus,
 }
 
-impl Git {
+use std::default::Default;
+impl Default for Git {
 
     /// Create a Git status for a file with nothing done to it.
-    pub fn empty() -> Git {
+    fn default() -> Git {
         Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
     }
 }

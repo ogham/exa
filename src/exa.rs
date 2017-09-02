@@ -30,6 +30,7 @@ use std::path::{Component, PathBuf};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
+use fs::feature::git::GitCache;
 use options::{Options, Vars};
 pub use options::Misfire;
 use output::{escape, lines, grid, grid_details, details, View, Mode};
@@ -55,6 +56,11 @@ pub struct Exa<'args, 'w, W: Write + 'w> {
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
     pub args: Vec<&'args OsStr>,
+
+    /// A global Git cache, if the option was passed in.
+    /// This has to last the lifetime of the program, because the user might
+    /// want to list several directories in the same repository.
+    pub git: Option<GitCache>,
 }
 
 /// The “real” environment variables type.
@@ -67,14 +73,33 @@ impl Vars for LiveVars {
     }
 }
 
+/// Create a Git cache populated with the arguments that are going to be
+/// listed before they’re actually listed, if the options demand it.
+fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
+    if options.should_scan_for_git() {
+        Some(args.iter().map(|os| PathBuf::from(os)).collect())
+    }
+    else {
+        None
+    }
+}
+
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
-        Options::parse(args, &LiveVars).map(move |(options, args)| {
+        Options::parse(args, &LiveVars).map(move |(options, mut args)| {
             debug!("Dir action from arguments: {:#?}", options.dir_action);
             debug!("Filter from arguments: {:#?}", options.filter);
             debug!("View from arguments: {:#?}", options.view.mode);
-            Exa { options, writer, args }
+
+            // List the current directory by default, like ls.
+            // This has to be done here, otherwise git_options won’t see it.
+            if args.is_empty() {
+                args = vec![ OsStr::new(".") ];
+            }
+
+            let git = git_options(&options, &args);
+            Exa { options, writer, args, git }
         })
     }
 
@@ -82,11 +107,6 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
         let mut exit_status = 0;
-
-        // List the current directory by default, like ls.
-        if self.args.is_empty() {
-            self.args = vec![ OsStr::new(".") ];
-        }
 
         for file_path in &self.args {
             match File::new(PathBuf::from(file_path), None, None) {
@@ -96,7 +116,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                 },
                 Ok(f) => {
                     if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
-                        match f.to_dir(self.options.should_scan_for_git()) {
+                        match f.to_dir() {
                             Ok(d) => dirs.push(d),
                             Err(e) => writeln!(stderr(), "{:?}: {}", file_path, e)?,
                         }
@@ -156,7 +176,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
 
                     let mut child_dirs = Vec::new();
                     for child_dir in children.iter().filter(|f| f.is_directory()) {
-                        match child_dir.to_dir(false) {
+                        match child_dir.to_dir() {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }
@@ -192,10 +212,10 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     grid::Render { files, colours, style, opts }.render(self.writer)
                 }
                 Mode::Details(ref opts) => {
-                    details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer)
+                    details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.git.as_ref(), self.writer)
                 }
                 Mode::GridDetails(ref opts) => {
-                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.writer)
+                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.git.as_ref(), self.writer)
                 }
             }
         }
