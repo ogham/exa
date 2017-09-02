@@ -188,13 +188,14 @@ COLUMNS=80 $exa_binary --colour=never     $testcases/file-names-exts | diff -q -
 
 
 # Git
-$exa $testcases/git                   -l --git 2>&1 | diff -q - $results/git_1_long       || exit 1
-$exa $testcases/git                   -l       2>&1 | diff -q - $results/git_1_nogit      || exit 1
-$exa $testcases/git            --tree -l --git 2>&1 | diff -q - $results/git_1_tree       || exit 1
-$exa $testcases/git         --recurse -l --git 2>&1 | diff -q - $results/git_1_recurse    || exit 1
-$exa $testcases/git/additions         -l --git 2>&1 | diff -q - $results/git_1_additions  || exit 1
-$exa $testcases/git/edits             -l --git 2>&1 | diff -q - $results/git_1_edits      || exit 1
-$exa $testcases/git/{additions,edits} -l --git 2>&1 | diff -q - $results/git_1_both       || exit 1
+$exa $testcases/git                      -l --git 2>&1 | diff -q - $results/git_1_long       || exit 1
+$exa $testcases/git                      -l       2>&1 | diff -q - $results/git_1_nogit      || exit 1
+$exa $testcases/git            --recurse -l --git 2>&1 | diff -q - $results/git_1_recurse    || exit 1
+$exa $testcases/git               --tree -l --git 2>&1 | diff -q - $results/git_1_tree       || exit 1
+$exa $testcases/git/moves/thither --tree -l --git 2>&1 | diff -q - $results/git_1_file       || exit 1
+$exa $testcases/git/additions            -l --git 2>&1 | diff -q - $results/git_1_additions  || exit 1
+$exa $testcases/git/edits                -l --git 2>&1 | diff -q - $results/git_1_edits      || exit 1
+$exa $testcases/git/{additions,edits}    -l --git 2>&1 | diff -q - $results/git_1_both       || exit 1
 
 $exa $testcases/git2                          -l --git 2>&1 | diff -q - $results/git_2_long        || exit 1
 $exa $testcases/git2                          -l       2>&1 | diff -q - $results/git_2_nogit       || exit 1
@@ -204,6 +205,8 @@ $exa $testcases/git2/ignoreds                 -l --git 2>&1 | diff -q - $results
 $exa $testcases/git2/target                   -l --git 2>&1 | diff -q - $results/git_2_target      || exit 1
 $exa $testcases/git2/deeply/nested/repository -l --git 2>&1 | diff -q - $results/git_2_repository  || exit 1
 $exa $testcases/git2/{deeply,ignoreds,target} -l --git 2>&1 | diff -q - $results/git_2_all         || exit 1
+
+COLUMNS=150 $exa $testcases/git/**/* $testcases --git --long --grid -d | diff -q - $results/git_1_files  || exit 1
 
 $exa $testcases/git $testcases/git2 --git --long | diff -q - $results/git_12  || exit 1
 

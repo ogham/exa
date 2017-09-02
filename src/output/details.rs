@@ -144,8 +144,12 @@ impl<'a> Render<'a> {
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            if self.dir.is_none() { git = None }
-            if let (Some(g), Some(d)) = (git, self.dir) { if !g.has_anything_for(&d.path) { git = None } }
+            match (git, self.dir) {
+                (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
+                (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+                (None,    _)        => {/* Keep Git how it is */},
+            }
+
             let mut table = Table::new(&table, git, &self.colours);
 
             if self.opts.header {
@@ -154,7 +158,7 @@ impl<'a> Render<'a> {
                 rows.push(self.render_header(header));
             }
 
-            // This is weird, but I can't find a way around it:
+            // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
             self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth::root());

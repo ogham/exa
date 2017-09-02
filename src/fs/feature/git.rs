@@ -212,6 +212,14 @@ fn repo_to_statuses(repo: git2::Repository, workdir: &Path) -> Git {
     Git { statuses }
 }
 
+// The `repo.statuses` call above takes a long time. exa debug output:
+//
+//   20.311276  INFO:exa::fs::feature::git: Getting Git statuses for repo with workdir "/vagrant/"
+//   20.799610  DEBUG:exa::output::table: Getting Git status for file "./Cargo.toml"
+//
+// Even inserting another logging line immediately afterwards doesn't make it
+// look any faster.
+
 
 /// Container of Git statuses for all the files in this folder’s Git repository.
 struct Git {
