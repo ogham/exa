@@ -1,6 +1,6 @@
 use std::ops::FnMut;
 
-use ansi_term::Style;
+use ansi_term::{Colour, Style};
 use ansi_term::Colour::*;
 
 
@@ -25,11 +25,30 @@ pub struct Pair<'var> {
     pub value: &'var str,
 }
 
+use std::iter::Peekable;
+fn parse_into_high_colour<'a, I>(iter: &mut Peekable<I>) -> Option<Colour>
+where I: Iterator<Item=&'a str> {
+    match iter.peek() {
+        Some(&"5") => {
+            let _5 = iter.next();
+            if let Some(byte) = iter.next() {
+                if let Ok(num) = byte.parse() {
+                    return Some(Fixed(num));
+                }
+            }
+        }
+        _ => {},
+    }
+
+    None
+}
+
 impl<'var> Pair<'var> {
     pub fn to_style(&self) -> Style {
         let mut style = Style::default();
+        let mut iter = self.value.split(";").peekable();
 
-        for num in self.value.split(";") {
+        while let Some(num) = iter.next() {
             match num {
 
                 // Bold and italic
@@ -45,6 +64,7 @@ impl<'var> Pair<'var> {
                 "35" => style = style.fg(Purple),
                 "36" => style = style.fg(Cyan),
                 "37" => style = style.fg(White),
+                "38" => if let Some(c) = parse_into_high_colour(&mut iter) { style = style.fg(c) },
 
                 // Background colours
                 "40" => style = style.on(Black),
@@ -55,6 +75,8 @@ impl<'var> Pair<'var> {
                 "45" => style = style.on(Purple),
                 "46" => style = style.on(Cyan),
                 "47" => style = style.on(White),
+                "48" => if let Some(c) = parse_into_high_colour(&mut iter) { style = style.on(c) },
+
                  _    => {/* ignore the error and do nothing */},
             }
         }
@@ -93,6 +115,16 @@ mod ansi_test {
     test!(semis: ";;;;;;"    => Style::default());
     test!(nines: "99999999"  => Style::default());
     test!(word:  "GREEN"     => Style::default());
+
+    // Higher colours
+    test!(hifg:  "38;5;149"  => Fixed(149).normal());
+    test!(hibg:  "48;5;1"    => Style::default().on(Fixed(1)));
+    test!(hibo:  "48;5;1;1"  => Style::default().on(Fixed(1)).bold());
+    test!(hiund: "4;48;5;1"  => Style::default().on(Fixed(1)).underline());
+
+    test!(fgbg:  "38;5;121;48;5;212"  => Fixed(121).on(Fixed(212)));
+    test!(bgfg:  "48;5;121;38;5;212"  => Fixed(212).on(Fixed(121)));
+    test!(toohi: "48;5;999"           => Style::default());
 }
 
 
