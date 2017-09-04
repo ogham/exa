@@ -9,7 +9,7 @@
 
 ## Options
 
-exa’s options are similar, but not exactly the same, as `ls`.
+exa’s options are almost, but not quite, entirely unlike `ls`'s.
 
 ### Display Options
 
