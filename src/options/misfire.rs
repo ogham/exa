@@ -4,7 +4,7 @@ use std::num::ParseIntError;
 
 use glob;
 
-use options::{HelpString, VersionString};
+use options::{flags, HelpString, VersionString};
 use options::parser::{Arg, Flag, ParseError};
 
 
@@ -118,5 +118,17 @@ impl fmt::Display for ParseError {
             UnknownShortArgument { ref attempt } => write!(f, "Unknown argument -{}", *attempt as char),
             UnknownArgument { ref attempt }      => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
         }
+    }
+}
+
+impl Misfire {
+    pub fn suggestion(&self) -> Option<&'static str> {
+        if let Misfire::BadArgument(ref time, ref r, ref _choices) = *self {
+            if *time == &flags::TIME && r == "r" {
+                return Some("To sort newest files first, try \"--sort modified\", or just \"-stime\"");
+            }
+        }
+
+        None
     }
 }

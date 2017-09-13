@@ -28,7 +28,13 @@ fn main() {
         },
 
         Err(ref e) if e.is_error() => {
-            writeln!(stderr(), "{}", e).unwrap();
+            let mut stderr = stderr();
+            writeln!(stderr, "{}", e).unwrap();
+
+            if let Some(s) = e.suggestion() {
+                let _ = writeln!(stderr, "{}", s);
+            }
+
             exit(exits::OPTIONS_ERROR);
         },
 

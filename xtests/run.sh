@@ -263,6 +263,9 @@ $exa -l --long          2>&1 | diff -q - $results/error_duplicate   || exit 1
 $exa -ll                2>&1 | diff -q - $results/error_twice       || exit 1
 $exa -l --time-style=24 2>&1 | diff -q - $results/error_setting     || exit 1
 
+# Error suggestions
+$exa -ltr 2>&1 | diff -q - $results/error_ltr  || exit 1
+
 
 # Debug mode
 # (uses an empty directory so it prints nothing to stdout)
