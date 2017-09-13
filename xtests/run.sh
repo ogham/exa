@@ -252,13 +252,14 @@ EXA_COLORS="di=38;5;195:fi=38;5;250:xx=38;5;237:ur=38;5;194:uw=38;5;193:ux=38;5;
 EXA_COLORS="reset" $exa $testcases/file-names-exts -1  2>&1 | diff -q - $results/themed_un  || exit 1
 
 # Errors
-$exa --binary     2>&1 | diff -q - $results/error_useless     || exit 1
-$exa --ternary    2>&1 | diff -q - $results/error_long        || exit 1
-$exa -4           2>&1 | diff -q - $results/error_short       || exit 1
-$exa --time       2>&1 | diff -q - $results/error_value       || exit 1
-$exa --long=time  2>&1 | diff -q - $results/error_overvalued  || exit 1
-$exa -l --long    2>&1 | diff -q - $results/error_duplicate   || exit 1
-$exa -ll          2>&1 | diff -q - $results/error_twice       || exit 1
+$exa --binary           2>&1 | diff -q - $results/error_useless     || exit 1
+$exa --ternary          2>&1 | diff -q - $results/error_long        || exit 1
+$exa -4                 2>&1 | diff -q - $results/error_short       || exit 1
+$exa --time             2>&1 | diff -q - $results/error_value       || exit 1
+$exa --long=time        2>&1 | diff -q - $results/error_overvalued  || exit 1
+$exa -l --long          2>&1 | diff -q - $results/error_duplicate   || exit 1
+$exa -ll                2>&1 | diff -q - $results/error_twice       || exit 1
+$exa -l --time-style=24 2>&1 | diff -q - $results/error_setting     || exit 1
 
 
 # Debug mode

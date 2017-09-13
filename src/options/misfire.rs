@@ -14,7 +14,7 @@ pub struct Choices(&'static [&'static str]);
 
 impl fmt::Display for Choices {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(choices: {})", self.0.join(", "))
+        write!(f, "choices: {}", self.0.join(", "))
     }
 }
 
@@ -91,7 +91,7 @@ impl fmt::Display for Misfire {
         use self::Misfire::*;
 
         match *self {
-            BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no value {:?} (Choices: {})", a, b, c),
+            BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no {:?} setting ({})", a, b, c),
             InvalidOptions(ref e)            => write!(f, "{}", e),
             Help(ref text)                   => write!(f, "{}", text),
             Version(ref version)             => write!(f, "{}", version),
