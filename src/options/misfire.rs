@@ -8,16 +8,6 @@ use options::{flags, HelpString, VersionString};
 use options::parser::{Arg, Flag, ParseError};
 
 
-/// A list of legal choices for an argument-taking option
-#[derive(PartialEq, Debug)]
-pub struct Choices(&'static [&'static str]);
-
-impl fmt::Display for Choices {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "choices: {}", self.0.join(", "))
-    }
-}
-
 /// A **misfire** is a thing that can happen instead of listing files -- a
 /// catch-all for anything outside the program’s normal execution.
 #[derive(PartialEq, Debug)]
@@ -130,5 +120,16 @@ impl Misfire {
         }
 
         None
+    }
+}
+
+
+/// A list of legal choices for an argument-taking option.
+#[derive(PartialEq, Debug)]
+pub struct Choices(&'static [&'static str]);
+
+impl fmt::Display for Choices {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "choices: {}", self.0.join(", "))
     }
 }
