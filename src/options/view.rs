@@ -13,10 +13,10 @@ impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
-        use options::style::Style;
+        use options::style::Styles;
 
         let mode = Mode::deduce(matches, vars)?;
-        let Style { colours, style } = Style::deduce(matches, vars, || *TERM_WIDTH)?;
+        let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
         Ok(View { mode, colours, style })
     }
 }

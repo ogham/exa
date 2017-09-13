@@ -60,12 +60,22 @@ impl TerminalColours {
 }
 
 
-pub struct Style {
+/// **Styles**, which is already an overloaded term, is a pair of view option
+/// sets that happen to both be affected by `LS_COLORS` and `EXA_COLORS`.
+/// Because it’s better to only iterate through that once, the two are deduced
+/// together.
+pub struct Styles {
+
+    /// The colours to paint user interface elements, like the date column,
+    /// and file kinds, such as directories.
     pub colours: Colours,
+
+    /// The colours to paint the names of files that match glob patterns
+    /// (and the classify option).
     pub style: FileStyle,
 }
 
-impl Style {
+impl Styles {
 
     #[allow(trivial_casts)]   // the "as Box<_>" stuff below warns about this for some reason
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
@@ -80,7 +90,7 @@ impl Style {
 
         let tc = TerminalColours::deduce(matches)?;
         if tc == Never || (tc == Automatic && widther().is_none()) {
-            return Ok(Style {
+            return Ok(Styles {
                 colours: Colours::plain(),
                 style: FileStyle { classify, exts: Box::new(NoFileColours) },
             });
@@ -101,14 +111,14 @@ impl Style {
             LSColors(exa.as_ref()).each_pair(|pair| {
                 colours.set_exa(&pair);
             });
+        let style = FileStyle { classify, exts };
+        Ok(Styles { colours, style })
         }
 
         let classify = Classify::deduce(matches)?;
         let exts = if colours.colourful { Box::new(FileExtensions) as Box<_> }
                                    else { Box::new(NoFileColours)  as Box<_> };
 
-        let style = FileStyle { classify, exts };
-        Ok(Style { colours, style })
     }
 }
 
