@@ -285,3 +285,13 @@ impl FileColours for NoFileColours {
     fn colour_file(&self, _file: &File) -> Option<Style> { None }
 }
 
+// When getting the colour of a file from a *pair* of colourisers, try the
+// first one then try the second one. This lets the user provide their own
+// file type associations, while falling back to the default set if not set
+// explicitly.
+impl<A, B> FileColours for (A, B)
+where A: FileColours, B: FileColours {
+    fn colour_file(&self, file: &File) -> Option<Style> {
+        self.0.colour_file(file).or_else(|| self.1.colour_file(file))
+    }
+}

@@ -158,17 +158,17 @@ env LANG=ja_JP.UTF-8  $exa $testcases/dates -l | diff -q - $results/dates_jp  ||
 # These directories are created in the VM user’s home directory (the default
 # location) when a Cargo build is done.
 (cd; mkdir -p target/debug/build
-     $exa -1d target target/debug target/debug/build | diff -q - $results/dir_paths) || exit 1
-     $exa -1d . .. /                                 | diff -q - $results/dirs       || exit 1
+     $exa -1d target target/debug target/debug/build | diff -q - $results/dir_paths)  || exit 1
+     $exa -1d . .. /                                 | diff -q - $results/dirs        || exit 1
 
 
 # Links
-COLUMNS=80 $exa $testcases/links     2>&1 | diff -q - $results/links         || exit 1
-           $exa $testcases/links -1  2>&1 | diff -q - $results/links_1       || exit 1
-           $exa $testcases/links -T  2>&1 | diff -q - $results/links_T       || exit 1
-           $exa $testcases/links -T@ 2>&1 | diff -q - $results/links_T@      || exit 1
-           $exa /proc/1/root     -T  2>&1 | diff -q - $results/proc_1_root   || exit 1
-           $exa /proc/1/root     -T@ 2>&1 | diff -q - $results/proc_1_root_@ || exit 1
+COLUMNS=80 $exa $testcases/links     2>&1 | diff -q - $results/links          || exit 1
+           $exa $testcases/links -1  2>&1 | diff -q - $results/links_1        || exit 1
+           $exa $testcases/links -T  2>&1 | diff -q - $results/links_T        || exit 1
+           $exa $testcases/links -T@ 2>&1 | diff -q - $results/links_T@       || exit 1
+           $exa /proc/1/root     -T  2>&1 | diff -q - $results/proc_1_root    || exit 1
+           $exa /proc/1/root     -T@ 2>&1 | diff -q - $results/proc_1_root_@  || exit 1
 
 # There’ve been bugs where the target file wasn’t printed properly when the
 # symlink file was specified on the command-line directly.
@@ -230,14 +230,35 @@ $exa $testcases/hiddens -l -a  2>&1 | diff -q - $results/hiddens_la   || exit 1
 $exa $testcases/hiddens -l -aa 2>&1 | diff -q - $results/hiddens_laa  || exit 1
 
 
+# Themes
+LS_COLORS="bd=31:cd=32:pi=34"  $exa -1 $testcases/specials 2>&1 | diff -q - $results/themed_specials  || exit 1
+EXA_COLORS="bd=31:cd=32:pi=34" $exa -1 $testcases/specials 2>&1 | diff -q - $results/themed_specials  || exit 1
+
+             LS_COLORS="*.deb=1;37:*.tar.*=1;37" $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds  || exit 1
+EXA_COLORS="*.deb=1;37:*.tar.*=1;37"             $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds  || exit 1
+EXA_COLORS="*.deb=1;37" LS_COLORS="*.tar.*=1;37" $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds  || exit 1
+
+ LS_COLORS="reset:*.deb=1;37:*.tar.*=1;37"       $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds    || exit 1
+EXA_COLORS="reset:*.deb=1;37:*.tar.*=1;37"       $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds_r  || exit 1
+
+EXA_COLORS="or=32:mi=32;1;4:cc=34;1:ln=34:lp=36;4:xx=32" $exa -1 $testcases/file-names/links 2>&1     | diff -q - $results/themed_links  || exit 1
+
+# EXA_COLORS overrides LS_COLORS
+LS_COLORS="bd=32:cd=34:pi=31" EXA_COLORS="bd=31:cd=32:pi=34" $exa -1 $testcases/specials 2>&1 | diff -q - $results/themed_specials  || exit 1
+
+EXA_COLORS="di=38;5;195:fi=38;5;250:xx=38;5;237:ur=38;5;194:uw=38;5;193:ux=38;5;192:gr=38;5;191:gw=38;5;190:gx=38;5;118:tr=38;5;119:tw=38;5;120:tx=38;5;121:su=38;5;51:sf=38;5;50:sn=38;5;49:un=38;5;46:da=38;5;47:ex=38;5;48" \
+    $exa --long $testcases/permissions 2>&1 | diff -q - $results/themed_long  || exit 1
+
+EXA_COLORS="reset" $exa $testcases/file-names-exts -1  2>&1 | diff -q - $results/themed_un  || exit 1
+
 # Errors
-$exa --binary     2>&1 | diff -q - $results/error_useless    || exit 1
-$exa --ternary    2>&1 | diff -q - $results/error_long       || exit 1
-$exa -4           2>&1 | diff -q - $results/error_short      || exit 1
-$exa --time       2>&1 | diff -q - $results/error_value      || exit 1
-$exa --long=time  2>&1 | diff -q - $results/error_overvalued || exit 1
-$exa -l --long    2>&1 | diff -q - $results/error_duplicate  || exit 1
-$exa -ll          2>&1 | diff -q - $results/error_twice      || exit 1
+$exa --binary     2>&1 | diff -q - $results/error_useless     || exit 1
+$exa --ternary    2>&1 | diff -q - $results/error_long        || exit 1
+$exa -4           2>&1 | diff -q - $results/error_short       || exit 1
+$exa --time       2>&1 | diff -q - $results/error_value       || exit 1
+$exa --long=time  2>&1 | diff -q - $results/error_overvalued  || exit 1
+$exa -l --long    2>&1 | diff -q - $results/error_duplicate   || exit 1
+$exa -ll          2>&1 | diff -q - $results/error_twice       || exit 1
 
 
 # Debug mode
@@ -246,8 +267,8 @@ EXA_DEBUG="1" $exa $testcases/attributes/dirs/no-xattrs_empty -lh 2>&1 | tail -n
 
 
 # And finally...
-$exa --help        | diff -q - $results/help      || exit 1
-$exa --help --long | diff -q - $results/help_long || exit 1
+$exa --help        | diff -q - $results/help       || exit 1
+$exa --help --long | diff -q - $results/help_long  || exit 1
 
 
 echo "All the tests passed!"

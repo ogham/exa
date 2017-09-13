@@ -1,9 +1,6 @@
-use style::Colours;
-
 use output::{View, Mode, grid, details};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
-use output::file_name::{Classify, FileStyle, NoFileColours};
 use output::time::TimeFormat;
 
 use options::{flags, Misfire, Vars};
@@ -16,9 +13,10 @@ impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
+        use options::style::Styles;
+
         let mode = Mode::deduce(matches, vars)?;
-        let colours = Colours::deduce(matches, vars, || *TERM_WIDTH)?;
-        let style = FileStyle::deduce(matches, &colours)?;
+        let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
         Ok(View { mode, colours, style })
     }
 }
@@ -331,30 +329,6 @@ impl TimeTypes {
         else {
             Ok(TimeTypes::default())
         }
-    }
-}
-
-
-impl FileStyle {
-
-    #[allow(trivial_casts)]
-    fn deduce(matches: &MatchedFlags, colours: &Colours) -> Result<FileStyle, Misfire> {
-        use info::filetype::FileExtensions;
-
-        let classify = Classify::deduce(matches)?;
-        let exts = if colours.colourful { Box::new(FileExtensions) as Box<_> }
-                                   else { Box::new(NoFileColours)  as Box<_> };
-
-        Ok(FileStyle { classify, exts })
-    }
-}
-
-impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Result<Classify, Misfire> {
-        let flagged = matches.has(&flags::CLASSIFY)?;
-
-        Ok(if flagged { Classify::AddFileIndicators }
-                 else { Classify::JustFilenames })
     }
 }
 

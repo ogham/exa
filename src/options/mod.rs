@@ -64,7 +64,7 @@
 //! if no aliases are being used!
 //!
 //! Finally, this isn’t just useful when options could override each other.
-//! Creating an alias `exal=”exa --long --inode --header”` then invoking `exal
+//! Creating an alias `exal="exa --long --inode --header"` then invoking `exal
 //! --grid --long` shouldn’t complain about `--long` being given twice when
 //! it’s clear what the user wants.
 
@@ -75,7 +75,7 @@ use fs::dir_action::DirAction;
 use fs::filter::FileFilter;
 use output::{View, Mode, details, grid_details};
 
-mod colours;
+mod style;
 mod dir_action;
 mod filter;
 mod view;
