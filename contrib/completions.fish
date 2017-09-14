@@ -23,7 +23,9 @@ complete -c exa -s 'L' -l 'level'     -d "Limit the depth of recursion" -a "1 2 
 complete -c exa -s 'r' -l 'reverse'   -d "Reverse the sort order"
 complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
     accessed\t'Sort by file accessed time'
+    age\t'Sort by file modified time (newest first)'
     created\t'Sort by file modified time'
+    date\t'Sort by file modified time'
     ext\t'Sort by file extension'
     Ext\t'Sort by file extension (uppercase first)'
     extension\t'Sort by file extension'
@@ -34,8 +36,11 @@ complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
     modified\t'Sort by file modified time'
     name\t'Sort by filename'
     Name\t'Sort by filename (uppercase first)'
+    newest\t'Sort by file modified time (newest first)'
     none\t'Do not sort files at all'
+    oldest\t'Sort by file modified time'
     size\t'Sort by file size'
+    time\t'Sort by file modified time'
     type\t'Sort by file type'
 "
 

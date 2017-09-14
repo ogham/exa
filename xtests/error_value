@@ -1,1 +1,1 @@
-Flag --time needs a value
+Flag --time needs a value (choices: modified, accessed, created)

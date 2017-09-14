@@ -21,10 +21,6 @@ impl FileFilter {
     }
 }
 
-const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
-                          "Extension", "modified", "accessed",
-                          "created", "inode", "type", "none" ];
-
 impl SortField {
 
     /// Determines which sort field to use based on the `--sort` argument.
@@ -53,8 +49,18 @@ impl SortField {
         else if word == "Ext" || word == "Extension" {
             Ok(SortField::Extension(SortCase::ABCabc))
         }
-        else if word == "mod" || word == "modified" {
+        else if word == "date" || word == "time" || word == "mod" || word == "modified" || word == "new" || word == "newest" {
+            // “new” sorts oldest at the top and newest at the bottom; “old”
+            // sorts newest at the top and oldest at the bottom. I think this
+            // is the right way round to do this: “size” puts the smallest at
+            // the top and the largest at the bottom, doesn’t it?
             Ok(SortField::ModifiedDate)
+        }
+        else if word == "age" || word == "old" || word == "oldest" {
+            // Similarly, “age” means that files with the least age (the
+            // newest files) get sorted at the top, and files with the most
+            // age (the oldest) at the bottom.
+            Ok(SortField::ModifiedAge)
         }
         else if word == "acc" || word == "accessed" {
             Ok(SortField::AccessedDate)
@@ -72,7 +78,7 @@ impl SortField {
             Ok(SortField::Unsorted)
         }
         else {
-            Err(Misfire::bad_argument(&flags::SORT, word, SORTS))
+            Err(Misfire::BadArgument(&flags::SORT, word.into()))
         }
     }
 }
@@ -182,12 +188,6 @@ mod test {
     use options::flags;
     use options::parser::Flag;
 
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
-
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
@@ -216,9 +216,14 @@ mod test {
         test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
         test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
         test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::ABCabc)));
+        test!(old:           SortField <- ["--sort", "new"];   Both => Ok(SortField::ModifiedDate));
+        test!(oldest:        SortField <- ["--sort=newest"];   Both => Ok(SortField::ModifiedDate));
+        test!(new:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedAge));
+        test!(newest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedAge));
+        test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
 
         // Errors
-        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::bad_argument(&flags::SORT, &os("colour"), super::SORTS)));
+        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
 
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));

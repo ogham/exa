@@ -28,7 +28,8 @@ FILTERING AND SORTING OPTIONS
   --group-directories-first  list directories before other files
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
   Valid sort fields:         name, Name, extension, Extension, size, type,
-                             modified, accessed, created, inode, none
+                             modified, accessed, created, inode, and none.
+                             date, time, old, and new all refer to modified.
 "##;
 
 static LONG_OPTIONS: &str = r##"

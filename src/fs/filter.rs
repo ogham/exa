@@ -142,14 +142,14 @@ pub enum SortField {
     /// files were created on the filesystem, more or less.
     FileInode,
 
-    /// The time this file was modified (the “mtime”).
+    /// The time the file was modified (the “mtime”).
     ///
     /// As this is stored as a Unix timestamp, rather than a local time
     /// instance, the time zone does not matter and will only be used to
     /// display the timestamps, not compare them.
     ModifiedDate,
 
-    /// The time file was accessed (the “atime”).
+    /// The time the was accessed (the “atime”).
     ///
     /// Oddly enough, this field rarely holds the *actual* accessed time.
     /// Recording a read time means writing to the file each time it’s read
@@ -159,7 +159,7 @@ pub enum SortField {
     /// http://unix.stackexchange.com/a/8842
     AccessedDate,
 
-    /// The time this file was changed or created (the “ctime”).
+    /// The time the file was changed or created (the “ctime”).
     ///
     /// Contrary to the name, this field is used to mark the time when a
     /// file’s metadata changed -- its permissions, owners, or link count.
@@ -173,6 +173,17 @@ pub enum SortField {
     /// Files are ordered according to the `PartialOrd` implementation of
     /// `fs::fields::Type`, so changing that will change this.
     FileType,
+
+    /// The “age” of the file, which is the time it was modified sorted
+    /// backwards. The reverse of the `ModifiedDate` ordering!
+    ///
+    /// It turns out that listing the most-recently-modified files first is a
+    /// common-enough use case that it deserves its own variant. This would be
+    /// implemented by just using the modified date and setting the reverse
+    /// flag, but this would make reversing *that* output not work, which is
+    /// bad, even though that’s kind of nonsensical. So it’s its own variant
+    /// that can be reversed like usual.
+    ModifiedAge,
 }
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
@@ -219,6 +230,7 @@ impl SortField {
             SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
             SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
             SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
+            SortField::ModifiedAge   => b.metadata.mtime().cmp(&a.metadata.mtime()),  // flip b and a
 
             SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),

@@ -1,22 +1,12 @@
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::fmt;
 use std::num::ParseIntError;
 
 use glob;
 
-use options::{HelpString, VersionString};
+use options::{flags, HelpString, VersionString};
 use options::parser::{Arg, Flag, ParseError};
 
-
-/// A list of legal choices for an argument-taking option
-#[derive(PartialEq, Debug)]
-pub struct Choices(&'static [&'static str]);
-
-impl fmt::Display for Choices {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "choices: {}", self.0.join(", "))
-    }
-}
 
 /// A **misfire** is a thing that can happen instead of listing files -- a
 /// catch-all for anything outside the program’s normal execution.
@@ -27,7 +17,7 @@ pub enum Misfire {
     InvalidOptions(ParseError),
 
     /// The user supplied an illegal choice to an Argument.
-    BadArgument(&'static Arg, OsString, Choices),
+    BadArgument(&'static Arg, OsString),
 
     /// The user asked for help. This isn’t strictly an error, which is why
     /// this enum isn’t named Error!
@@ -70,14 +60,6 @@ impl Misfire {
             _                   => true,
         }
     }
-
-    /// The Misfire that happens when an option gets given the wrong
-    /// argument. This has to use one of the `getopts` failure
-    /// variants--it’s meant to take just an option name, rather than an
-    /// option *and* an argument, but it works just as well.
-    pub fn bad_argument(option: &'static Arg, otherwise: &OsStr, legal: &'static [&'static str]) -> Misfire {
-        Misfire::BadArgument(option, otherwise.to_os_string(), Choices(legal))
-    }
 }
 
 impl From<glob::PatternError> for Misfire {
@@ -88,10 +70,18 @@ impl From<glob::PatternError> for Misfire {
 
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use options::parser::TakesValue;
         use self::Misfire::*;
 
         match *self {
-            BadArgument(ref a, ref b, ref c) => write!(f, "Option {} has no {:?} setting ({})", a, b, c),
+            BadArgument(ref arg, ref attempt) => {
+                if let TakesValue::Necessary(Some(values)) = arg.takes_value {
+                    write!(f, "Option {} has no {:?} setting ({})", arg, attempt, Choices(values))
+                }
+                else {
+                    write!(f, "Option {} has no {:?} setting", arg, attempt)
+                }
+            },
             InvalidOptions(ref e)            => write!(f, "{}", e),
             Help(ref text)                   => write!(f, "{}", text),
             Version(ref version)             => write!(f, "{}", version),
@@ -113,10 +103,43 @@ impl fmt::Display for ParseError {
         use self::ParseError::*;
 
         match *self {
-            NeedsValue { ref flag }              => write!(f, "Flag {} needs a value", flag),
-            ForbiddenValue { ref flag }          => write!(f, "Flag {} cannot take a value", flag),
-            UnknownShortArgument { ref attempt } => write!(f, "Unknown argument -{}", *attempt as char),
-            UnknownArgument { ref attempt }      => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
+            NeedsValue { ref flag, values: None }     => write!(f, "Flag {} needs a value", flag),
+            NeedsValue { ref flag, values: Some(cs) } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
+            ForbiddenValue { ref flag }               => write!(f, "Flag {} cannot take a value", flag),
+            UnknownShortArgument { ref attempt }      => write!(f, "Unknown argument -{}", *attempt as char),
+            UnknownArgument { ref attempt }           => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
         }
+    }
+}
+
+impl Misfire {
+    /// Try to second-guess what the user was trying to do, depending on what
+    /// went wrong.
+    pub fn suggestion(&self) -> Option<&'static str> {
+        // ‘ls -lt’ and ‘ls -ltr’ are common combinations
+        if let Misfire::BadArgument(ref time, ref r) = *self {
+            if *time == &flags::TIME && r == "r" {
+                return Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"");
+            }
+        }
+
+        if let Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, values: _ }) = *self {
+            if *flag == Flag::Short(b't') {
+                return Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"");
+            }
+        }
+
+        None
+    }
+}
+
+
+/// A list of legal choices for an argument-taking option.
+#[derive(PartialEq, Debug)]
+pub struct Choices(&'static [&'static str]);
+
+impl fmt::Display for Choices {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "choices: {}", self.0.join(", "))
     }
 }
