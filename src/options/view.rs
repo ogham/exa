@@ -248,8 +248,6 @@ impl SizeFormat {
 }
 
 
-const TIME_STYLES: &[&str] = &["default", "long-iso", "full-iso", "iso"];
-
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
@@ -274,13 +272,11 @@ impl TimeFormat {
             Ok(TimeFormat::FullISO)
         }
         else {
-            Err(Misfire::bad_argument(&flags::TIME_STYLE, word, TIME_STYLES))
+            Err(Misfire::BadArgument(&flags::TIME_STYLE, word.into()))
         }
     }
 }
 
-
-static TIMES: &[&str] = &["modified", "accessed", "created"];
 
 impl TimeTypes {
 
@@ -320,7 +316,7 @@ impl TimeTypes {
                 Ok(TimeTypes { accessed: false, modified: false, created: true  })
             }
             else {
-                Err(Misfire::bad_argument(&flags::TIME, word, TIMES))
+                Err(Misfire::BadArgument(&flags::TIME, word.into()))
             }
         }
         else if modified || created || accessed {
@@ -357,12 +353,6 @@ mod test {
 
     use options::test::parse_for_test;
     use options::test::Strictnesses::*;
-
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
@@ -461,7 +451,6 @@ mod test {
 
     mod time_formats {
         use super::*;
-        use std::ffi::OsStr;
 
         // These tests use pattern matching because TimeFormat doesn’t
         // implement PartialEq.
@@ -483,7 +472,7 @@ mod test {
         test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         // Errors
-        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => err Misfire::bad_argument(&flags::TIME_STYLE, OsStr::new("24-hour"), TIME_STYLES));
+        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => err Misfire::BadArgument(&flags::TIME_STYLE, OsString::from("24-hour")));
     }
 
 
@@ -515,8 +504,8 @@ mod test {
         test!(time_uu:   TimeTypes <- ["-uU"];                 Both => Ok(TimeTypes { accessed: true,   modified: false,  created: true  }));
 
         // Errors
-        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => err Misfire::bad_argument(&flags::TIME, &os("tea"), super::TIMES));
-        test!(time_ea:   TimeTypes <- ["-tea"];                Both => err Misfire::bad_argument(&flags::TIME, &os("ea"), super::TIMES));
+        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => err Misfire::BadArgument(&flags::TIME, OsString::from("tea")));
+        test!(time_ea:   TimeTypes <- ["-tea"];                Both => err Misfire::BadArgument(&flags::TIME, OsString::from("ea")));
 
         // Overriding
         test!(overridden:   TimeTypes <- ["-tcr", "-tmod"];    Last => Ok(TimeTypes { accessed: false,  modified: true,   created: false }));

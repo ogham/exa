@@ -21,10 +21,6 @@ impl FileFilter {
     }
 }
 
-const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
-                          "Extension", "modified", "accessed",
-                          "created", "inode", "type", "none" ];
-
 impl SortField {
 
     /// Determines which sort field to use based on the `--sort` argument.
@@ -75,7 +71,7 @@ impl SortField {
             Ok(SortField::Unsorted)
         }
         else {
-            Err(Misfire::bad_argument(&flags::SORT, word, SORTS))
+            Err(Misfire::BadArgument(&flags::SORT, word.into()))
         }
     }
 }
@@ -185,12 +181,6 @@ mod test {
     use options::flags;
     use options::parser::Flag;
 
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
-
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
@@ -226,7 +216,7 @@ mod test {
         test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
 
         // Errors
-        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::bad_argument(&flags::SORT, &os("colour"), super::SORTS)));
+        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
 
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));
