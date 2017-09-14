@@ -10,7 +10,7 @@ pub mod git {
     use std::iter::FromIterator;
     use std::path::{Path, PathBuf};
 
-    use fs::fields;
+    use fs::fields as f;
 
 
     pub struct GitCache;
@@ -22,20 +22,12 @@ pub mod git {
     }
 
     impl GitCache {
-        pub fn get(&self, _index: &Path) -> Option<Git> {
+        pub fn has_anything_for(&self, _index: &Path) -> bool {
+            false
+        }
+
+        pub fn get(&self, _index: &Path, _prefix_lookup: bool) -> f::Git {
             panic!("Tried to query a Git cache, but Git support is disabled")
-        }
-    }
-
-    pub struct Git;
-
-    impl Git {
-        pub fn status(&self, _: &Path) -> fields::Git {
-            panic!("Tried to get a Git status, but Git support is disabled")
-        }
-
-        pub fn dir_status(&self, path: &Path) -> fields::Git {
-            self.status(path)
         }
     }
 }
