@@ -113,10 +113,19 @@ impl fmt::Display for ParseError {
 }
 
 impl Misfire {
+    /// Try to second-guess what the user was trying to do, depending on what
+    /// went wrong.
     pub fn suggestion(&self) -> Option<&'static str> {
+        // ‘ls -lt’ and ‘ls -ltr’ are common combinations
         if let Misfire::BadArgument(ref time, ref r) = *self {
             if *time == &flags::TIME && r == "r" {
-                return Some("To sort newest files first, try \"--sort modified\", or just \"-stime\"");
+                return Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"");
+            }
+        }
+
+        if let Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, values: _ }) = *self {
+            if *flag == Flag::Short(b't') {
+                return Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"");
             }
         }
 

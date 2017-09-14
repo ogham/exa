@@ -143,8 +143,9 @@ $exa $testcases/file-names-exts/music.* -I "*.OGG|*.mp3" -1 2>&1 | diff -q - $re
 # Dates and times
 $exa $testcases/dates -lh --accessed --sort=accessed 2>&1 | diff -q - $results/dates_accessed  || exit 1
 $exa $testcases/dates -lh            --sort=modified 2>&1 | diff -q - $results/dates_modified  || exit 1
-$exa $testcases/dates -lh         -r --sort=newest   2>&1 | diff -q - $results/dates_modified  || exit 1
-$exa $testcases/dates -lh            --sort=newest   2>&1 | diff -q - $results/dates_deifidom  || exit 1
+$exa $testcases/dates -lh            --sort=newest   2>&1 | diff -q - $results/dates_modified  || exit 1
+$exa $testcases/dates -lh         -r --sort=newest   2>&1 | diff -q - $results/dates_deifidom  || exit 1
+$exa $testcases/dates -lh            --sort=oldest   2>&1 | diff -q - $results/dates_deifidom  || exit 1
 $exa $testcases/dates -l       --time-style=long-iso 2>&1 | diff -q - $results/dates_long_iso  || exit 1
 $exa $testcases/dates -l       --time-style=full-iso 2>&1 | diff -q - $results/dates_full_iso  || exit 1
 $exa $testcases/dates -l       --time-style=iso      2>&1 | diff -q - $results/dates_iso       || exit 1
@@ -265,6 +266,7 @@ $exa -l --time-style=24 2>&1 | diff -q - $results/error_setting     || exit 1
 
 # Error suggestions
 $exa -ltr 2>&1 | diff -q - $results/error_ltr  || exit 1
+$exa -lt  2>&1 | diff -q - $results/error_lt   || exit 1
 
 
 # Debug mode

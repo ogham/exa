@@ -49,10 +49,17 @@ impl SortField {
         else if word == "Ext" || word == "Extension" {
             Ok(SortField::Extension(SortCase::ABCabc))
         }
-        else if word == "date" || word == "time" || word == "mod" || word == "modified" || word == "old" || word == "oldest" {
+        else if word == "date" || word == "time" || word == "mod" || word == "modified" || word == "new" || word == "newest" {
+            // “new” sorts oldest at the top and newest at the bottom; “old”
+            // sorts newest at the top and oldest at the bottom. I think this
+            // is the right way round to do this: “size” puts the smallest at
+            // the top and the largest at the bottom, doesn’t it?
             Ok(SortField::ModifiedDate)
         }
-        else if word == "age" || word == "new" || word == "newest" {
+        else if word == "age" || word == "old" || word == "oldest" {
+            // Similarly, “age” means that files with the least age (the
+            // newest files) get sorted at the top, and files with the most
+            // age (the oldest) at the bottom.
             Ok(SortField::ModifiedAge)
         }
         else if word == "acc" || word == "accessed" {
@@ -209,10 +216,10 @@ mod test {
         test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
         test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
         test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::ABCabc)));
-        test!(old:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedDate));
-        test!(oldest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedDate));
-        test!(new:           SortField <- ["--sort", "new"];   Both => Ok(SortField::ModifiedAge));
-        test!(newest:        SortField <- ["--sort=newest"];   Both => Ok(SortField::ModifiedAge));
+        test!(old:           SortField <- ["--sort", "new"];   Both => Ok(SortField::ModifiedDate));
+        test!(oldest:        SortField <- ["--sort=newest"];   Both => Ok(SortField::ModifiedDate));
+        test!(new:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedAge));
+        test!(newest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedAge));
         test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
 
         // Errors
