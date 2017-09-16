@@ -1,0 +1,2 @@
+Flag -t needs a value (choices: modified, accessed, created)
+To sort newest files last, try "--sort newest", or just "-snew"

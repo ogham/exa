@@ -34,7 +34,6 @@ impl Default for TerminalColours {
     }
 }
 
-const COLOURS: &[&str] = &["always", "auto", "never"];
 
 impl TerminalColours {
 
@@ -56,7 +55,7 @@ impl TerminalColours {
             Ok(TerminalColours::Never)
         }
         else {
-            Err(Misfire::bad_argument(&flags::COLOR, word, COLOURS))
+            Err(Misfire::BadArgument(&flags::COLOR, word.into()))
         }
     }
 }
@@ -217,12 +216,6 @@ mod terminal_test {
     use options::test::parse_for_test;
     use options::test::Strictnesses::*;
 
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
-
     static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
 
     macro_rules! test {
@@ -260,8 +253,8 @@ mod terminal_test {
     test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
     // Errors
-    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::bad_argument(&flags::COLOR, &os("upstream"), super::COLOURS));  // the error is for --color
-    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::bad_argument(&flags::COLOR, &os("lovers"),   super::COLOURS));  // and so is this one!
+    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
+    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
 
     // Overriding
     test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
