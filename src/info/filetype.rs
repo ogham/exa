@@ -81,7 +81,7 @@ impl FileExtensions {
     fn is_temp(&self, file: &File) -> bool {
         file.name.ends_with('~')
             || (file.name.starts_with('#') && file.name.ends_with('#'))
-            || file.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak" ])
+            || file.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak", "bk" ])
     }
 
     fn is_compiled(&self, file: &File) -> bool {
