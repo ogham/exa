@@ -28,6 +28,7 @@ pub static LEVEL:       Arg = Arg { short: Some(b'L'), long: "level",       take
 pub static REVERSE:     Arg = Arg { short: Some(b'r'), long: "reverse",     takes_value: TakesValue::Forbidden };
 pub static SORT:        Arg = Arg { short: Some(b's'), long: "sort",        takes_value: TakesValue::Necessary(Some(SORTS)) };
 pub static IGNORE_GLOB: Arg = Arg { short: Some(b'I'), long: "ignore-glob", takes_value: TakesValue::Necessary(None) };
+pub static GIT_IGNORE:  Arg = Arg { short: None, long: "git-ignore",           takes_value: TakesValue::Forbidden };
 pub static DIRS_FIRST:  Arg = Arg { short: None, long: "group-directories-first",  takes_value: TakesValue::Forbidden };
 const SORTS: Values = &[ "name", "Name", "size", "extension",
                              "Extension", "modified", "accessed",
@@ -60,7 +61,8 @@ pub static ALL_ARGS: Args = Args(&[
     &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY,
     &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
 
-    &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &IGNORE_GLOB, &DIRS_FIRST,
+    &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
+    &IGNORE_GLOB, &GIT_IGNORE,
 
     &BINARY, &BYTES, &GROUP, &HEADER, &INODE, &LINKS, &MODIFIED, &BLOCKS,
     &TIME, &ACCESSED, &CREATED, &TIME_STYLE,

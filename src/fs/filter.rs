@@ -305,6 +305,26 @@ impl IgnorePatterns {
 }
 
 
+/// Whether to ignore or display files that are mentioned in `.gitignore` files.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum GitIgnore {
+
+    /// Ignore files that Git would ignore. This means doing a check for a
+    /// `.gitignore` file, possibly recursively up the filesystem tree.
+    CheckAndIgnore,
+
+    /// Display files, even if Git would ignore them.
+    Off,
+}
+
+// This is not fully baked yet. The `ignore` crate lists a lot more files that
+// we aren’t checking:
+//
+// > By default, all ignore files found are respected. This includes .ignore,
+// > .gitignore, .git/info/exclude and even your global gitignore globs,
+// > usually found in $XDG_CONFIG_HOME/git/ignore.
+
+
 
 #[cfg(test)]
 mod test_ignores {
