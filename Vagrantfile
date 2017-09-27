@@ -541,6 +541,9 @@ Vagrant.configure(2) do |config|
         mkdir "ignoreds"
         touch "ignoreds/music.mp3"
         touch "ignoreds/music.m4a"
+        mkdir "ignoreds/nested"
+        touch "ignoreds/nested/70s grove.mp3"
+        touch "ignoreds/nested/funky chicken.m4a"
 
         mkdir "target"
         touch "target/another ignored file"
