@@ -20,6 +20,7 @@ Vagrant.configure(2) do |config|
     # apt can do.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
         set -xe
+        apt-get update
         apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
           git cmake curl attr libgit2-dev zip \
           fish zsh bash bash-completion
