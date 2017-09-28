@@ -6,15 +6,17 @@
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::RwLock;
 
 use fs::filter::IgnorePatterns;
 
 
 /// An **ignore cache** holds sets of glob patterns paired with the
-/// directories that they should be ignored underneath.
+/// directories that they should be ignored underneath. Believe it or not,
+/// that’s a valid English sentence.
 #[derive(Default, Debug)]
 pub struct IgnoreCache {
-    entries: Vec<(PathBuf, IgnorePatterns)>
+    entries: RwLock<Vec<(PathBuf, IgnorePatterns)>>
 }
 
 impl IgnoreCache {
@@ -23,19 +25,26 @@ impl IgnoreCache {
     }
 
     #[allow(unused_results)]  // don’t do this
-    pub fn discover_underneath(&mut self, path: &Path) {
+    pub fn discover_underneath(&self, path: &Path) {
         let mut path = Some(path);
+        let mut entries = self.entries.write().unwrap();
 
         while let Some(p) = path {
+            if p.components().next().is_none() { break }
+
             let ignore_file = p.join(".gitignore");
             if ignore_file.is_file() {
+                debug!("Found a .gitignore file: {:?}", ignore_file);
                 if let Ok(mut file) = File::open(ignore_file) {
                     let mut contents = String::new();
                     file.read_to_string(&mut contents).expect("Reading gitignore failed");
 
                     let (patterns, mut _errors) = IgnorePatterns::parse_from_iter(contents.lines());
-                    self.entries.push((p.into(), patterns));
+                    entries.push((p.into(), patterns));
                 }
+            }
+            else {
+                debug!("Found no .gitignore file at {:?}", ignore_file);
             }
 
             path = p.parent();
@@ -43,7 +52,8 @@ impl IgnoreCache {
     }
 
     pub fn is_ignored(&self, suspect: &Path) -> bool {
-        self.entries.iter().any(|&(ref base_path, ref patterns)| {
+        let entries = self.entries.read().unwrap();
+        entries.iter().any(|&(ref base_path, ref patterns)| {
             if let Ok(suffix) = suspect.strip_prefix(&base_path) {
                 patterns.is_ignored_path(suffix)
             }
@@ -53,7 +63,6 @@ impl IgnoreCache {
         })
     }
 }
-
 
 
 #[cfg(test)]

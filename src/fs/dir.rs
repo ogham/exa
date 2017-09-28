@@ -45,6 +45,8 @@ impl Dir {
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
     pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
+        if let Some(i) = ignore { i.discover_underneath(&self.path); }
+
         Files {
             inner:     self.contents.iter(),
             dir:       self,
@@ -102,6 +104,10 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
             if let Some(path) = self.inner.next() {
                 let filename = File::filename(path);
                 if !self.dotfiles && filename.starts_with(".") { continue }
+
+                if let Some(i) = self.ignore {
+                    if i.is_ignored(path) { continue }
+                }
 
                 return Some(File::new(path.clone(), self.dir, filename)
                                  .map_err(|e| (path.clone(), e)))

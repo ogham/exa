@@ -230,7 +230,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.git.as_ref(), self.ignore.as_ref(), self.writer)
                 }
                 Mode::GridDetails(ref opts) => {
-                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.git.as_ref(), self.ignore.as_ref(), self.writer)
+                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.git.as_ref(), self.writer)
                 }
             }
         }

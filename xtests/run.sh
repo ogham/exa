@@ -223,6 +223,11 @@ $exa $testcases/git2/deeply/nested/directory $testcases/git/edits \
 COLUMNS=40  $exa $testcases/files -lG --git | diff -q - $results/files_lG_40  || exit 1    # that aren't under git
 
 
+# .gitignore
+$exa $testcases/git2 --recurse --long --git-ignore 2>&1 | diff - $results/git_2_ignore_recurse
+$exa $testcases/git2    --tree --long --git-ignore 2>&1 | diff - $results/git_2_ignore_tree
+
+
 # Hidden files
 COLUMNS=80 $exa $testcases/hiddens     2>&1 | diff -q - $results/hiddens     || exit 1
 COLUMNS=80 $exa $testcases/hiddens -a  2>&1 | diff -q - $results/hiddens_a   || exit 1
