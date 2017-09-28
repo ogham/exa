@@ -125,11 +125,21 @@ mod test {
     }
 
 
+    fn test_cache(dir: &'static str, pats: Vec<&str>) -> IgnoreCache {
+        IgnoreCache { entries: RwLock::new(vec![ (dir.into(), IgnorePatterns::parse_from_iter(pats.into_iter()).0) ]) }
+    }
 
     #[test]
     fn an_empty_cache_ignores_nothing() {
         let ignores = IgnoreCache::default();
         assert_eq!(false, ignores.is_ignored(Path::new("/usr/bin/drinking")));
         assert_eq!(false, ignores.is_ignored(Path::new("target/debug/exa")));
+    }
+
+    #[test]
+    fn a_nonempty_cache_ignores_some_things() {
+        let ignores = test_cache("/vagrant", vec![ "target" ]);
+        assert_eq!(false, ignores.is_ignored(Path::new("/vagrant/src")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("/vagrant/target")));
     }
 }
