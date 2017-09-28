@@ -74,6 +74,8 @@ where I: Iterator<Item=&'a str>
     let iter = iter.filter(|el| !el.is_empty());
     let iter = iter.filter(|el| !el.starts_with("#"));
 
+    // TODO: Figure out if this should trim whitespace or not
+
     // Errors are currently being ignored... not a good look
     IgnorePatterns::parse_from_iter(iter).0
 }
@@ -114,6 +116,13 @@ mod test {
         assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
     }
 
+    #[test]
+    fn parse_some_whitespacey_lines() {
+        let stuff = vec![ " *.mp3", "  ", "  a  ", "README.md   " ];
+        let reals = vec![ " *.mp3", "  ", "  a  ", "README.md   " ];
+        let (patterns, _) = IgnorePatterns::parse_from_iter(reals.into_iter());
+        assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
+    }
 
 
 
