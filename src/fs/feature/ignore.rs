@@ -142,4 +142,17 @@ mod test {
         assert_eq!(false, ignores.is_ignored(Path::new("/vagrant/src")));
         assert_eq!(true,  ignores.is_ignored(Path::new("/vagrant/target")));
     }
+
+    #[test]
+    fn ignore_some_globs() {
+        let ignores = test_cache("/vagrant", vec![ "*.ipr", "*.iws", ".docker" ]);
+        assert_eq!(true,  ignores.is_ignored(Path::new("/vagrant/exa.ipr")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("/vagrant/exa.iws")));
+        assert_eq!(false, ignores.is_ignored(Path::new("/vagrant/exa.iwiwal")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("/vagrant/.docker")));
+        assert_eq!(false, ignores.is_ignored(Path::new("/vagrant/exa.docker")));
+
+        assert_eq!(false, ignores.is_ignored(Path::new("/srcode/exa.ipr")));
+        assert_eq!(false, ignores.is_ignored(Path::new("/srcode/exa.iws")));
+    }
 }
