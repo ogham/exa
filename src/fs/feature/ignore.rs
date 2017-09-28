@@ -69,7 +69,11 @@ impl IgnoreCache {
 
 
 fn file_lines_to_patterns<'a, I>(iter: I) -> IgnorePatterns
-where I: Iterator<Item=&'a str> {
+where I: Iterator<Item=&'a str>
+{
+    let iter = iter.filter(|el| !el.is_empty());
+    let iter = iter.filter(|el| !el.starts_with("#"));
+
     // Errors are currently being ignored... not a good look
     IgnorePatterns::parse_from_iter(iter).0
 }
@@ -89,13 +93,32 @@ mod test {
     #[test]
     fn parse_some_globs() {
         let stuff = vec![ "*.mp3", "README.md" ];
-        let (patterns, _) = IgnorePatterns::parse_from_iter(stuff.iter().cloned());
+        let reals = vec![ "*.mp3", "README.md" ];
+        let (patterns, _) = IgnorePatterns::parse_from_iter(reals.into_iter());
+        assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
+    }
+
+    #[test]
+    fn parse_some_comments() {
+        let stuff = vec![ "*.mp3", "# I am a comment!", "#", "README.md" ];
+        let reals = vec![ "*.mp3",                           "README.md" ];
+        let (patterns, _) = IgnorePatterns::parse_from_iter(reals.into_iter());
+        assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
+    }
+
+    #[test]
+    fn parse_some_blank_lines() {
+        let stuff = vec![ "*.mp3", "", "", "README.md" ];
+        let reals = vec![ "*.mp3",         "README.md" ];
+        let (patterns, _) = IgnorePatterns::parse_from_iter(reals.into_iter());
         assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
     }
 
 
+
+
     #[test]
-    fn empty() {
+    fn an_empty_cache_ignores_nothing() {
         let ignores = IgnoreCache::default();
         assert_eq!(false, ignores.is_ignored(Path::new("/usr/bin/drinking")));
         assert_eq!(false, ignores.is_ignored(Path::new("target/debug/exa")));
