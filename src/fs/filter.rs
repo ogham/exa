@@ -156,7 +156,7 @@ pub enum SortField {
     /// display the timestamps, not compare them.
     ModifiedDate,
 
-    /// The time the was accessed (the “atime”).
+    /// The time the file was accessed (the “atime”).
     ///
     /// Oddly enough, this field rarely holds the *actual* accessed time.
     /// Recording a read time means writing to the file each time it’s read
