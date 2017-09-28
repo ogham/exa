@@ -24,7 +24,6 @@ impl IgnoreCache {
         IgnoreCache::default()
     }
 
-    #[allow(unused_results)]  // don’t do this
     pub fn discover_underneath(&self, path: &Path) {
         let mut path = Some(path);
         let mut entries = self.entries.write().unwrap();
@@ -37,10 +36,14 @@ impl IgnoreCache {
                 debug!("Found a .gitignore file: {:?}", ignore_file);
                 if let Ok(mut file) = File::open(ignore_file) {
                     let mut contents = String::new();
-                    file.read_to_string(&mut contents).expect("Reading gitignore failed");
 
-                    let (patterns, mut _errors) = IgnorePatterns::parse_from_iter(contents.lines());
-                    entries.push((p.into(), patterns));
+                    match file.read_to_string(&mut contents) {
+                        Ok(_) => {
+                            let (patterns, mut _errors) = IgnorePatterns::parse_from_iter(contents.lines());
+                            entries.push((p.into(), patterns));
+                        }
+                        Err(e) => debug!("Failed to read a .gitignore: {:?}", e)
+                    }
                 }
             }
             else {
