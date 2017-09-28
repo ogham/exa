@@ -39,7 +39,7 @@ impl IgnoreCache {
 
                     match file.read_to_string(&mut contents) {
                         Ok(_) => {
-                            let (patterns, mut _errors) = IgnorePatterns::parse_from_iter(contents.lines());
+                            let patterns = file_lines_to_patterns(contents.lines());
                             entries.push((p.into(), patterns));
                         }
                         Err(e) => debug!("Failed to read a .gitignore: {:?}", e)
@@ -68,9 +68,31 @@ impl IgnoreCache {
 }
 
 
+fn file_lines_to_patterns<'a, I>(iter: I) -> IgnorePatterns
+where I: Iterator<Item=&'a str> {
+    // Errors are currently being ignored... not a good look
+    IgnorePatterns::parse_from_iter(iter).0
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn parse_nothing() {
+        use std::iter::empty;
+        let (patterns, _) = IgnorePatterns::parse_from_iter(empty());
+        assert_eq!(patterns, file_lines_to_patterns(empty()));
+    }
+
+    #[test]
+    fn parse_some_globs() {
+        let stuff = vec![ "*.mp3", "README.md" ];
+        let (patterns, _) = IgnorePatterns::parse_from_iter(stuff.iter().cloned());
+        assert_eq!(patterns, file_lines_to_patterns(stuff.into_iter()));
+    }
+
 
     #[test]
     fn empty() {
