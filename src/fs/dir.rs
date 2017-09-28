@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
 use fs::File;
+use fs::feature::ignore::IgnoreCache;
 
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
@@ -43,12 +44,13 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files(&self, dots: DotFilter) -> Files {
+    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
         Files {
             inner:     self.contents.iter(),
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
+            ignore:    ignore,
         }
     }
 
@@ -65,7 +67,7 @@ impl Dir {
 
 
 /// Iterator over reading the contents of a directory as `File` objects.
-pub struct Files<'dir> {
+pub struct Files<'dir, 'ig> {
 
     /// The internal iterator over the paths that have been read already.
     inner: SliceIter<'dir, PathBuf>,
@@ -79,9 +81,11 @@ pub struct Files<'dir> {
     /// Whether the `.` or `..` directories should be produced first, before
     /// any files have been listed.
     dots: Dots,
+
+    ignore: Option<&'ig IgnoreCache>,
 }
 
-impl<'dir> Files<'dir> {
+impl<'dir, 'ig> Files<'dir, 'ig> {
     fn parent(&self) -> PathBuf {
         // We can’t use `Path#parent` here because all it does is remove the
         // last path component, which is no good for us if the path is
@@ -124,7 +128,7 @@ enum Dots {
 }
 
 
-impl<'dir> Iterator for Files<'dir> {
+impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -30,6 +30,7 @@ use std::path::{Component, PathBuf};
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
+use fs::feature::ignore::IgnoreCache;
 use fs::feature::git::GitCache;
 use options::{Options, Vars};
 pub use options::Misfire;
@@ -61,6 +62,10 @@ pub struct Exa<'args, 'w, W: Write + 'w> {
     /// This has to last the lifetime of the program, because the user might
     /// want to list several directories in the same repository.
     pub git: Option<GitCache>,
+
+    /// A cache of git-ignored files.
+    /// This lasts the lifetime of the program too, for the same reason.
+    pub ignore: Option<IgnoreCache>,
 }
 
 /// The “real” environment variables type.
@@ -84,6 +89,15 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
     }
 }
 
+fn ignore_cache(options: &Options) -> Option<IgnoreCache> {
+    use fs::filter::GitIgnore;
+
+    match options.filter.git_ignore {
+        GitIgnore::CheckAndIgnore => Some(IgnoreCache::new()),
+        GitIgnore::Off            => None,
+    }
+}
+
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
     pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
@@ -99,7 +113,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             }
 
             let git = git_options(&options, &args);
-            Exa { options, writer, args, git }
+            let ignore = ignore_cache(&options);
+            Exa { options, writer, args, git, ignore }
         })
     }
 
@@ -160,7 +175,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files(self.options.filter.dot_filter) {
+            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref()) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
@@ -212,10 +227,10 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     grid::Render { files, colours, style, opts }.render(self.writer)
                 }
                 Mode::Details(ref opts) => {
-                    details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.git.as_ref(), self.writer)
+                    details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.git.as_ref(), self.ignore.as_ref(), self.writer)
                 }
                 Mode::GridDetails(ref opts) => {
-                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.git.as_ref(), self.writer)
+                    grid_details::Render { dir, files, colours, style, grid: &opts.grid, details: &opts.details, filter: &self.options.filter, row_threshold: opts.row_threshold }.render(self.git.as_ref(), self.ignore.as_ref(), self.writer)
                 }
             }
         }

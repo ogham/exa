@@ -17,6 +17,7 @@ impl FileFilter {
             sort_field:      SortField::deduce(matches)?,
             dot_filter:      DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
+            git_ignore:      GitIgnore::deduce(matches)?,
         })
     }
 }

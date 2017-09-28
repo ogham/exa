@@ -6,6 +6,7 @@ use ansi_term::ANSIStrings;
 use term_grid as grid;
 
 use fs::{Dir, File};
+use fs::feature::ignore::IgnoreCache;
 use fs::feature::git::GitCache;
 use fs::feature::xattr::FileAttributes;
 use fs::filter::FileFilter;
@@ -111,16 +112,16 @@ impl<'a> Render<'a> {
         }
     }
 
-    pub fn render<W: Write>(self, git: Option<&GitCache>, w: &mut W) -> IOResult<()> {
-        if let Some((grid, width)) = self.find_fitting_grid(git) {
+    pub fn render<W: Write>(self, git: Option<&GitCache>, ignore: Option<&'a IgnoreCache>, w: &mut W) -> IOResult<()> {
+        if let Some((grid, width)) = self.find_fitting_grid(git, ignore) {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.give_up().render(git, w)
+            self.give_up().render(git, ignore, w)
         }
     }
 
-    pub fn find_fitting_grid(&self, git: Option<&GitCache>) -> Option<(grid::Grid, grid::Width)> {
+    pub fn find_fitting_grid(&self, git: Option<&GitCache>, ignore: Option<&'a IgnoreCache>) -> Option<(grid::Grid, grid::Width)> {
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
         let drender = self.details();
