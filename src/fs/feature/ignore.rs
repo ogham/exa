@@ -155,4 +155,42 @@ mod test {
         assert_eq!(false, ignores.is_ignored(Path::new("/srcode/exa.ipr")));
         assert_eq!(false, ignores.is_ignored(Path::new("/srcode/exa.iws")));
     }
+
+    #[test] #[ignore]
+    fn ignore_relatively() {
+        let ignores = test_cache(".", vec![ "target" ]);
+        assert_eq!(true,  ignores.is_ignored(Path::new("./target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/project/target")));
+
+        assert_eq!(false, ignores.is_ignored(Path::new("./.target")));
+    }
+
+    #[test] #[ignore]
+    fn ignore_relatively_sometimes() {
+        let ignores = test_cache(".", vec![ "project/target" ]);
+        assert_eq!(false, ignores.is_ignored(Path::new("./target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/project/target")));
+    }
+
+    #[test] #[ignore]
+    fn ignore_relatively_absolutely() {
+        let ignores = test_cache(".", vec![ "/project/target" ]);
+        assert_eq!(false, ignores.is_ignored(Path::new("./target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/project/target")));
+    }
+
+    #[test] #[ignore]   // not 100% sure if dot works this way...
+    fn ignore_relatively_absolutely_dot() {
+        let ignores = test_cache(".", vec![ "./project/target" ]);
+        assert_eq!(false, ignores.is_ignored(Path::new("./target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/target")));
+        assert_eq!(true,  ignores.is_ignored(Path::new("./project/project/project/target")));
+    }
 }
