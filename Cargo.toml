@@ -24,7 +24,7 @@ path = "src/exa.rs"
 
 [dependencies]
 ansi_term = "0.8.0"
-datetime = "0.4.3"
+datetime = "0.4.5"
 env_logger = "0.3"
 getopts = "0.2.14"
 glob = "0.2"
@@ -40,6 +40,7 @@ term_grid = "0.1.6"
 term_size = "0.3.0"
 unicode-width = "0.1.4"
 users = "0.5.2"
+zoneinfo_compiled = "0.4.5"
 
 [features]
 default = [ "git" ]
@@ -55,6 +56,3 @@ panic = "abort"
 version = "0.6.4"
 optional = true
 default-features = false
-
-[dependencies.zoneinfo_compiled]
-git = "https://github.com/rust-datetime/zoneinfo-compiled.git"
