@@ -193,6 +193,246 @@ To display a tree of files, three levels deep:
 exa\ \-\-long\ \-\-tree\ \-\-level=3
 \f[]
 .fi
+.SH ENVIRONMENT VARIABLES
+.PP
+exa responds to the following environment variables:
+.SS \f[C]COLUMNS\f[]
+.PP
+Overrides the width of the terminal, in characters.
+For example, \f[C]COLUMNS=80\ exa\f[] will show a grid view with a
+maximum width of 80 characters.
+.PP
+This option won\[aq]t do anything when exa\[aq]s output doesn\[aq]t
+wrap, such as when using the \f[C]\-\-long\f[] view.
+.SS \f[C]EXA_STRICT\f[]
+.PP
+Enables \f[I]strict mode\f[], which will make exa error when two
+command\-line options are incompatible.
+Usually, options can override each other going right\-to\-left on the
+command line, so that exa can be given aliases: creating an alias
+\f[C]exa=exa\ \-\-sort=ext\f[] then running \f[C]exa\ \-\-sort=size\f[]
+with that alias will run \f[C]exa\ \-\-sort=ext\ \-\-sort=size\f[], and
+the sorting specified by the user will override the sorting specified by
+the alias.
+In strict mode, the two options will not co\-operate, and exa will
+error.
+.PP
+This option is intended for use with automated scripts and other
+situations where you want to be \f[I]certain\f[] you\[aq]re typing in
+the right command.
+.SS \f[C]EXA_GRID_ROWS\f[]
+.PP
+Limits the grid\-details view (\f[C]exa\ \-\-grid\ \-\-long\f[]) so
+it\[aq]s only activated when at least the given number of rows of output
+would be generated.
+With widescreen displays, it\[aq]s possible for the grid to look very
+wide and sparse, on just one or two lines with none of the columns
+lining up.
+By specifying a minimum number of rows, you can only use the view if
+it\[aq]s going to be worth using.
+.SS \f[C]LS_COLORS\f[] and \f[C]EXA_COLORS\f[]
+.PP
+The \f[C]EXA_COLORS\f[] variable is the traditional way of customising
+the colours used by \f[C]ls\f[].
+.PP
+You can use the \f[C]dircolors\f[] program to generate a script that
+sets the variable from an input file, or if you don\[aq]t mind editing
+long strings of text, you can just type it out directly.
+These variables have the following structure:
+.IP \[bu] 2
+A list of key\-value pairs separated by \f[C]=\f[], such as
+\f[C]*.txt=32\f[].
+.IP \[bu] 2
+Multiple ANSI formatting codes are separated by \f[C];\f[], such as
+\f[C]*.txt=32;1;4\f[].
+.IP \[bu] 2
+Finally, multiple pairs are separated by \f[C]:\f[], such as
+\f[C]*.txt=32:*.mp3=1;35\f[].
+.PP
+The key half of the pair can either be a two\-letter code or a file
+glob, and anything that\[aq]s not a valid code will be treated as a
+glob, including keys that happen to be two letters long.
+.PP
+\f[C]LS_COLORS\f[] can use these ten codes:
+.IP \[bu] 2
+\f[B]di\f[], directories
+.IP \[bu] 2
+\f[B]ex\f[], executable files
+.IP \[bu] 2
+\f[B]fi\f[], regular files
+.IP \[bu] 2
+\f[B]pi\f[], named pipes
+.IP \[bu] 2
+\f[B]so\f[], sockets
+.IP \[bu] 2
+\f[B]bd\f[], block devices
+.IP \[bu] 2
+\f[B]cd\f[], character devices
+.IP \[bu] 2
+\f[B]ln\f[], symlinks
+.IP \[bu] 2
+\f[B]or\f[], symlinks with no target
+.IP \[bu] 2
+\f[B]mi\f[], a missing symlink target
+.PP
+\f[C]EXA_COLORS\f[] can use many more:
+.IP \[bu] 2
+\f[B]ur\f[], the user\-read permission bit
+.IP \[bu] 2
+\f[B]uw\f[], the user\-write permission bit
+.IP \[bu] 2
+\f[B]ux\f[], the user\-execute permission bit for regular files
+.IP \[bu] 2
+\f[B]ue\f[], the user\-execute for other file kinds
+.IP \[bu] 2
+\f[B]gr\f[], the group\-read permission bit
+.IP \[bu] 2
+\f[B]gw\f[], the group\-write permission bit
+.IP \[bu] 2
+\f[B]gx\f[], the group\-execute permission bit
+.IP \[bu] 2
+\f[B]tr\f[], the others\-read permission bit
+.IP \[bu] 2
+\f[B]tw\f[], the others\-write permission bit
+.IP \[bu] 2
+\f[B]tx\f[], the others\-execute permission bit
+.IP \[bu] 2
+\f[B]su\f[], setuid, setgid, and sticky permission bits for files
+.IP \[bu] 2
+\f[B]sf\f[], setuid, setgid, and sticky for other file kinds
+.IP \[bu] 2
+\f[B]xa\f[], the extended attribute indicator
+.IP \[bu] 2
+\f[B]sn\f[], the numbers of a file\[aq]s size
+.IP \[bu] 2
+\f[B]sb\f[], the units of a file\[aq]s size
+.IP \[bu] 2
+\f[B]df\f[], a device\[aq]s major ID
+.IP \[bu] 2
+\f[B]ds\f[], a device\[aq]s minor ID
+.IP \[bu] 2
+\f[B]uu\f[], a user that\[aq]s you
+.IP \[bu] 2
+\f[B]un\f[], a user that\[aq]s someone else
+.IP \[bu] 2
+\f[B]gu\f[], a group that you belong to
+.IP \[bu] 2
+\f[B]gn\f[], a group you aren\[aq]t a member of
+.IP \[bu] 2
+\f[B]lc\f[], a number of hard links
+.IP \[bu] 2
+\f[B]lm\f[], a number of hard links for a regular file with at least two
+.IP \[bu] 2
+\f[B]ga\f[], a new file in Git
+.IP \[bu] 2
+\f[B]gm\f[], a modified file in Git
+.IP \[bu] 2
+\f[B]gd\f[], a deleted file in Git
+.IP \[bu] 2
+\f[B]gv\f[], a renamed file in Git
+.IP \[bu] 2
+\f[B]gt\f[], a file with modified metadata in Git
+.IP \[bu] 2
+\f[B]xx\f[], "punctuation", including many background UI elements
+.IP \[bu] 2
+\f[B]da\f[], a file\[aq]s date
+.IP \[bu] 2
+\f[B]in\f[], a file\[aq]s inode number
+.IP \[bu] 2
+\f[B]bl\f[], a file\[aq]s number of blocks
+.IP \[bu] 2
+\f[B]hd\f[], the header row of a table
+.IP \[bu] 2
+\f[B]lp\f[], the path of a symlink
+.IP \[bu] 2
+\f[B]cc\f[], an escaped character in a filename
+.PP
+Values in \f[C]EXA_COLORS\f[] override those given in
+\f[C]LS_COLORS\f[], so you don\[aq]t need to re\-write an existing
+\f[C]LS_COLORS\f[] variable with proprietary extensions.
+.PP
+Unlike some versions of \f[C]ls\f[], the given ANSI values must be valid
+colour codes: exa won\[aq]t just print out whichever characters are
+given.
+The codes accepted by exa are:
+.IP \[bu] 2
+\f[C]1\f[], for bold
+.IP \[bu] 2
+\f[C]4\f[], for underline
+.IP \[bu] 2
+\f[C]31\f[], for red text
+.IP \[bu] 2
+\f[C]32\f[], for green text
+.IP \[bu] 2
+\f[C]33\f[], for yellow text
+.IP \[bu] 2
+\f[C]34\f[], for blue text
+.IP \[bu] 2
+\f[C]35\f[], for purple text
+.IP \[bu] 2
+\f[C]36\f[], for cyan text
+.IP \[bu] 2
+\f[C]37\f[], for white text
+.IP \[bu] 2
+\f[C]38;5;\f[]\f[I]\f[C]nnn\f[]\f[], for a colour from 0 to 255 (replace
+the \f[I]nnn\f[] part)
+.PP
+Many terminals will treat bolded text as a different colour, or at least
+provide the option to.
+.PP
+exa provides its own built\-in set of file extension mappings that cover
+a large range of common file extensions, including documents, archives,
+media, and temporary files.
+Any mappings in the environment variables will override this default
+set: running exa with \f[C]LS_COLORS="*.zip=32"\f[] will turn zip files
+green but leave the colours of other compressed files alone.
+.PP
+You can also disable this built\-in set entirely by including a
+\f[C]reset\f[] entry at the beginning of \f[C]EXA_COLORS\f[].
+So setting \f[C]EXA_COLORS="reset:*.txt=31"\f[] will highlight only text
+files; setting \f[C]EXA_COLORS="reset"\f[] will highlight nothing.
+.SS Examples
+.IP \[bu] 2
+Disable the "current user" highlighting: \f[C]EXA_COLORS="uu=0:gu=0"\f[]
+.IP \[bu] 2
+Turn the date column green: \f[C]EXA_COLORS="da=32"\f[]
+.IP \[bu] 2
+Highlight Vagrantfiles: \f[C]EXA_COLORS="Vagrantfile=1;4;33"\f[]
+.IP \[bu] 2
+Override the existing zip colour: \f[C]EXA_COLORS="*.zip=38;5;125"\f[]
+.IP \[bu] 2
+Markdown files a shade of green, log files a shade of grey:
+\f[C]EXA_COLORS="*.md=38;5;121:*.log=38;5;248"\f[]
+.SS BUILT\-IN EXTENSIONS
+.IP \[bu] 2
+"Immediate" files are the files you should look at when downloading and
+building a project for the first time: READMEs, Makefiles, Cargo.toml,
+and others.
+They\[aq]re highlighted in yellow and underlined.
+.IP \[bu] 2
+Images (png, jpeg, gif) are purple.
+.IP \[bu] 2
+Videos (mp4, ogv, m2ts) are a slightly purpler purple.
+.IP \[bu] 2
+Music (mp3, m4a, ogg) is a deeper purple.
+.IP \[bu] 2
+Lossless music (flac, alac, wav) is deeper than \f[I]that\f[] purple.
+In general, most media files are some shade of purple.
+.IP \[bu] 2
+Cryptographic files (asc, enc, p12) are a faint blue.
+.IP \[bu] 2
+Documents (pdf, doc, dvi) are a less faint blue.
+.IP \[bu] 2
+Compressed files (zip, tgz, Z) are red.
+.IP \[bu] 2
+Temporary files (tmp, swp, ~) are grey.
+.IP \[bu] 2
+Compiled files (class, o, pyc) are faint orange.
+A file is also counted as compiled if it uses a common extension and is
+in the same directory as one of its source files: \[aq]styles.css\[aq]
+will count as compiled when next to \[aq]styles.less\[aq] or
+\[aq]styles.sass\[aq], and \[aq]scripts.js\[aq] when next to
+\[aq]scripts.ts\[aq] or \[aq]scripts.coffee\[aq].
 .SH AUTHOR
 .PP
 \f[C]exa\f[] is maintained by Benjamin \[aq]ogham\[aq] Sago and many
