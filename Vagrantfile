@@ -84,7 +84,7 @@ Vagrant.configure(2) do |config|
 
         echo 'echo -e "\nZipping binary..."'                                   >> /usr/bin/package-exa
         echo "rm -f /vagrant/exa-linux-x86_64.zip"                             >> /usr/bin/package-exa
-        echo "zip /vagrant/exa-linux-x86_64.zip /vagrant/exa-linux-x86_64"     >> /usr/bin/package-exa
+      echo "zip -j /vagrant/exa-linux-x86_64.zip /vagrant/exa-linux-x86_64"  >> /usr/bin/package-exa
 
         echo 'echo -e "\nLibraries linked:"'                                   >> /usr/bin/package-exa
         echo "ldd /vagrant/exa-linux-x86_64"                                   >> /usr/bin/package-exa
