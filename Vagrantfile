@@ -78,27 +78,7 @@ Vagrant.configure(2) do |config|
       echo -e "#!/bin/sh\nbuild-exa && test-exa && run-xtests" > /usr/bin/compile-exa
       ln -sf /usr/bin/compile-exa /usr/bin/c
 
-      echo "#!/bin/bash"                                                      > /usr/bin/package-exa
-      echo "set -e"                                                          >> /usr/bin/package-exa
-
-      echo 'echo -e "\nCompiling release version of exa..."'                 >> /usr/bin/package-exa
-      echo "cargo build --release --manifest-path /vagrant/Cargo.toml"       >> /usr/bin/package-exa
-      echo "cargo test --release --manifest-path /vagrant/Cargo.toml --lib"  >> /usr/bin/package-exa
-      echo "/vagrant/xtests/run.sh --release"                                >> /usr/bin/package-exa
-      echo "cp /home/ubuntu/target/release/exa /vagrant/exa-linux-x86_64"    >> /usr/bin/package-exa
-
-      echo 'echo -e "\nStripping binary..."'                                 >> /usr/bin/package-exa
-      echo "strip /vagrant/exa-linux-x86_64"                                 >> /usr/bin/package-exa
-
-      echo 'echo -e "\nZipping binary..."'                                   >> /usr/bin/package-exa
-      echo "rm -f /vagrant/exa-linux-x86_64.zip"                             >> /usr/bin/package-exa
-      echo "zip -j /vagrant/exa-linux-x86_64.zip /vagrant/exa-linux-x86_64"  >> /usr/bin/package-exa
-
-      echo 'echo -e "\nLibraries linked:"'                                   >> /usr/bin/package-exa
-      echo "ldd /vagrant/exa-linux-x86_64"                                   >> /usr/bin/package-exa
-
-      echo 'echo -e "\nAll done!"'                                           >> /usr/bin/package-exa
-      echo '/vagrant/exa-linux-x86_64 /vagrant/exa-linux-x86_64* -lB'        >> /usr/bin/package-exa
+      echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh"   > /usr/bin/package-exa
 
       chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa}
     EOF
