@@ -574,5 +574,24 @@ Vagrant.configure(2) do |config|
       set -xe
       apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
     EOF
+
+    # This thing also has its own welcoming text.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      rm -f /etc/update-motd.d/*
+
+      # Capture the help text so it gets displayed first
+      bash /vagrant/devtools/dev-help-testvm.sh > /etc/motd
+
+      # Disable last login date in sshd
+      sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
+      systemctl restart sshd
+    EOF
+
+    # Make the checker script a command.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      set -xe
+      echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-download-and-check-release.sh \"\\$*\"" > /usr/bin/check-release
+      chmod +x /usr/bin/check-release
+    EOF
   end
 end
