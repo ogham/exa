@@ -4,7 +4,7 @@ set +xe
 
 # Release mode
 case "$1" in
-  "--release") echo "Testing release exa..."; exa_binary="$HOME/target/release/exa" ;;
+  "--release") exa_binary="$HOME/target/release/exa" ;;
   *)           exa_binary="$HOME/target/debug/exa" ;;
 esac
 

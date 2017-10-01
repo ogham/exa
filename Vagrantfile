@@ -78,27 +78,7 @@ Vagrant.configure(2) do |config|
       echo -e "#!/bin/sh\nbuild-exa && test-exa && run-xtests" > /usr/bin/compile-exa
       ln -sf /usr/bin/compile-exa /usr/bin/c
 
-      echo "#!/bin/bash"                                                      > /usr/bin/package-exa
-      echo "set -e"                                                          >> /usr/bin/package-exa
-
-      echo 'echo -e "\nCompiling release version of exa..."'                 >> /usr/bin/package-exa
-      echo "cargo build --release --manifest-path /vagrant/Cargo.toml"       >> /usr/bin/package-exa
-      echo "cargo test --release --manifest-path /vagrant/Cargo.toml --lib"  >> /usr/bin/package-exa
-      echo "/vagrant/xtests/run.sh --release"                                >> /usr/bin/package-exa
-      echo "cp /home/ubuntu/target/release/exa /vagrant/exa-linux-x86_64"    >> /usr/bin/package-exa
-
-      echo 'echo -e "\nStripping binary..."'                                 >> /usr/bin/package-exa
-      echo "strip /vagrant/exa-linux-x86_64"                                 >> /usr/bin/package-exa
-
-      echo 'echo -e "\nZipping binary..."'                                   >> /usr/bin/package-exa
-      echo "rm -f /vagrant/exa-linux-x86_64.zip"                             >> /usr/bin/package-exa
-      echo "zip -j /vagrant/exa-linux-x86_64.zip /vagrant/exa-linux-x86_64"  >> /usr/bin/package-exa
-
-      echo 'echo -e "\nLibraries linked:"'                                   >> /usr/bin/package-exa
-      echo "ldd /vagrant/exa-linux-x86_64"                                   >> /usr/bin/package-exa
-
-      echo 'echo -e "\nAll done!"'                                           >> /usr/bin/package-exa
-      echo '/vagrant/exa-linux-x86_64 /vagrant/exa-linux-x86_64* -lB'        >> /usr/bin/package-exa
+      echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh"   > /usr/bin/package-exa
 
       chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa}
     EOF
@@ -130,66 +110,15 @@ Vagrant.configure(2) do |config|
     # actually works.
 
 
-    # Write some welcoming text.
+    # Configure the welcoming text that gets shown.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
       rm -f /etc/update-motd.d/*
 
-      echo -e ""                        > /etc/motd
-      echo -e "\033[1;33mThe exa development environment!\033[0m"  >> /etc/motd
-      echo -e "exa's source is available at \033[33m/vagrant\033[0m."  >> /etc/motd
-      echo -e "Binaries get built into \033[33m/home/ubuntu/target\033[0m."  >> /etc/motd
-      echo -e ""                        >> /etc/motd
-      echo -e "\033[4mCommands\033[0m"  >> /etc/motd
-      echo -e "\033[32;1mb\033[0m or \033[32;1mbuild-exa\033[0m to run \033[1mcargo build\033[0m"  >> /etc/motd
-      echo -e "\033[32;1mt\033[0m or \033[32;1mtest-exa\033[0m to run \033[1mcargo test\033[0m"   >> /etc/motd
-      echo -e "\033[32;1mx\033[0m or \033[32;1mrun-xtests\033[0m to run \033[1m/vagrant/xtests/run.sh\033[0m"  >> /etc/motd
-      echo -e "\033[32;1mc\033[0m or \033[32;1mcompile-exa\033[0m to run all three"  >> /etc/motd
-      echo -e "\033[32;1mdebug\033[0m to toggle printing logs"  >> /etc/motd
-      echo -e "\033[32;1mstrict\033[0m to toggle strict mode"  >> /etc/motd
-      echo -e "\033[32;1mcolors\033[0m to toggle custom colours\n"  >> /etc/motd
+      # Capture the help text so it gets displayed first
+      bash /vagrant/devtools/dev-help.sh > /etc/motd
 
-      # help banner
-      echo 'echo -e "\\033[4mVersions\\033[0m"' > /home/ubuntu/.bash_profile
-      echo "rustc --version" >> /home/ubuntu/.bash_profile
-      echo "cargo --version" >> /home/ubuntu/.bash_profile
-      echo "echo" >> /home/ubuntu/.bash_profile
-
-      # cool prompt
-      echo 'function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }' >> /home/ubuntu/.bash_profile
-      echo 'function debug_mode()  { [ -n "$EXA_DEBUG" ]  && echo "debug "; }'  >> /home/ubuntu/.bash_profile
-      echo 'function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }' >> /home/ubuntu/.bash_profile
-      echo 'function lsc_mode()    { [ -n "$LS_COLORS" ]  && echo "lsc "; }'    >> /home/ubuntu/.bash_profile
-      echo 'function exac_mode()   { [ -n "$EXA_COLORS" ] && echo "exac "; }'   >> /home/ubuntu/.bash_profile
-      echo 'export PS1="\\[\\e[1;36m\\]\\h \\[\\e[32m\\]\\w \\[\\e[31m\\]\\`nonzero_return\\`\\[\\e[35m\\]\\`debug_mode\\`\\[\\e[32m\\]\\`lsc_mode\\`\\[\\e[1;32m\\]\\`exac_mode\\`\\[\\e[33m\\]\\`strict_mode\\`\\[\\e[36m\\]\\\\$\\[\\e[0m\\] "' >> /home/ubuntu/.bash_profile
-
-      # environment setting
-      echo 'function debug () {' >> /home/ubuntu/.bash_profile
-      echo '  case "$1" in "on") export EXA_DEBUG=1 ;;' >> /home/ubuntu/.bash_profile
-      echo '    "off") export EXA_DEBUG= ;;' >> /home/ubuntu/.bash_profile
-      echo '    "")    [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;' >> /home/ubuntu/.bash_profile
-      echo '    *)     echo "Usage: debug on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
-
-      echo 'function strict () {' >> /home/ubuntu/.bash_profile
-      echo '  case "$1" in "on") export EXA_STRICT=1 ;;' >> /home/ubuntu/.bash_profile
-      echo '    "off") export EXA_STRICT= ;;' >> /home/ubuntu/.bash_profile
-      echo '    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;' >> /home/ubuntu/.bash_profile
-      echo '    *) echo "Usage: strict on|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
-
-      echo 'function colors () {' >> /home/ubuntu/.bash_profile
-      echo '  case "$1" in ' >> /home/ubuntu/.bash_profile
-      echo '    "ls")' >> /home/ubuntu/.bash_profile
-      echo '      export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"'  >> /home/ubuntu/.bash_profile
-      echo '      export EXA_COLORS="" ;;' >> /home/ubuntu/.bash_profile
-      echo '    "hacker")' >> /home/ubuntu/.bash_profile
-      echo '      export LS_COLORS="di=32:ex=32:fi=32:pi=32:so=32:bd=32:cd=32:ln=32:or=32:mi=32"' >> /home/ubuntu/.bash_profile
-      echo '      export EXA_COLORS="ur=32:uw=32:ux=32:ue=32:gr=32:gw=32:gx=32:tr=32:tw=32:tx=32:su=32:sf=32:xa=32:sn=32:sb=32:df=32:ds=32:uu=32:un=32:gu=32:gn=32:lc=32:lm=32:ga=32:gm=32:gd=32:gv=32:gt=32:xx=32:da=32:in=32:bl=32:hd=32:lp=32:cc=32:" ;;' >> /home/ubuntu/.bash_profile
-      echo '    "off")' >> /home/ubuntu/.bash_profile
-      echo '      export LS_COLORS=' >> /home/ubuntu/.bash_profile
-      echo '      export EXA_COLORS= ;;' >> /home/ubuntu/.bash_profile
-      echo '    "")' >> /home/ubuntu/.bash_profile
-      echo '      [ -n "$LS_COLORS" ]  && echo "LS_COLORS=$LS_COLORS"   || echo "ls-colors off"'     >> /home/ubuntu/.bash_profile
-      echo '      [ -n "$EXA_COLORS" ] && echo "EXA_COLORS=$EXA_COLORS" || echo "exa-colors off" ;;' >> /home/ubuntu/.bash_profile
-      echo '    *) echo "Usage: ls-colors ls|hacker|off"; return 1 ;; esac; }' >> /home/ubuntu/.bash_profile
+      # Tell bash to execute a bunch of stuff when a session starts
+      echo "source /vagrant/devtools/dev-bash.sh" > /home/ubuntu/.bash_profile
 
       # Disable last login date in sshd
       sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
@@ -639,5 +568,30 @@ Vagrant.configure(2) do |config|
       v.memory = 384
       v.cpus = 1
     end
+
+    # Well, we do need *one* dependency...
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      set -xe
+      apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
+    EOF
+
+    # This thing also has its own welcoming text.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      rm -f /etc/update-motd.d/*
+
+      # Capture the help text so it gets displayed first
+      bash /vagrant/devtools/dev-help-testvm.sh > /etc/motd
+
+      # Disable last login date in sshd
+      sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
+      systemctl restart sshd
+    EOF
+
+    # Make the checker script a command.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      set -xe
+      echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-download-and-check-release.sh \"\\$*\"" > /usr/bin/check-release
+      chmod +x /usr/bin/check-release
+    EOF
   end
 end
