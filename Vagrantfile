@@ -568,5 +568,11 @@ Vagrant.configure(2) do |config|
       v.memory = 384
       v.cpus = 1
     end
+
+    # Well, we do need *one* dependency...
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      set -xe
+      apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
+    EOF
   end
 end
