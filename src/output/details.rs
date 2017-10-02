@@ -327,12 +327,14 @@ impl<'a> Render<'a> {
     }
 
     fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
+        use output::file_name::Colours;
+
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
             None       => format!("<{}>", error),
         };
 
-        let name = TextCell::paint(self.colours.broken_arrow, error_message);
+        let name = TextCell::paint(self.colours.broken_arrow(), error_message);
         Row { cells: None, name, tree }
     }
 
