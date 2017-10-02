@@ -79,8 +79,9 @@ Vagrant.configure(2) do |config|
       ln -sf /usr/bin/compile-exa /usr/bin/c
 
       echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh"   > /usr/bin/package-exa
+      echo -e "#!/bin/sh\ncat /etc/motd"   > /usr/bin/halp
 
-      chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa}
+      chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
     EOF
 
 
