@@ -428,8 +428,7 @@ mod customs_test {
     test!(ls_bd:   ls "bd=36", exa ""  =>  colours c -> { c.filekinds.block_device = Cyan.normal();   });
     test!(ls_cd:   ls "cd=35", exa ""  =>  colours c -> { c.filekinds.char_device  = Purple.normal(); });
     test!(ls_ln:   ls "ln=34", exa ""  =>  colours c -> { c.filekinds.symlink      = Blue.normal();   });
-    test!(ls_or:   ls "or=33", exa ""  =>  colours c -> { c.broken_arrow           = Yellow.normal(); });
-    test!(ls_mi:   ls "mi=32", exa ""  =>  colours c -> { c.broken_filename        = Green.normal();  });
+    test!(ls_or:   ls "or=33", exa ""  =>  colours c -> { c.broken_symlink         = Yellow.normal(); });
 
     // EXA_COLORS can affect all those colours too:
     test!(exa_di:  ls "", exa "di=32"  =>  colours c -> { c.filekinds.directory    = Green.normal();  });
@@ -440,8 +439,7 @@ mod customs_test {
     test!(exa_bd:  ls "", exa "bd=35"  =>  colours c -> { c.filekinds.block_device = Purple.normal(); });
     test!(exa_cd:  ls "", exa "cd=34"  =>  colours c -> { c.filekinds.char_device  = Blue.normal();   });
     test!(exa_ln:  ls "", exa "ln=33"  =>  colours c -> { c.filekinds.symlink      = Yellow.normal(); });
-    test!(exa_or:  ls "", exa "or=32"  =>  colours c -> { c.broken_arrow           = Green.normal();  });
-    test!(exa_mi:  ls "", exa "mi=31"  =>  colours c -> { c.broken_filename        = Red.normal();    });
+    test!(exa_or:  ls "", exa "or=32"  =>  colours c -> { c.broken_symlink         = Green.normal();  });
 
     // EXA_COLORS will even override options from LS_COLORS:
     test!(ls_exa_di: ls "di=31", exa "di=32"  =>  colours c -> { c.filekinds.directory  = Green.normal();  });
@@ -489,6 +487,7 @@ mod customs_test {
     test!(exa_hd:  ls "", exa "hd=38;5;132"  =>  colours c -> { c.header                    = Fixed(132).normal(); });
     test!(exa_lp:  ls "", exa "lp=38;5;133"  =>  colours c -> { c.symlink_path              = Fixed(133).normal(); });
     test!(exa_cc:  ls "", exa "cc=38;5;134"  =>  colours c -> { c.control_char              = Fixed(134).normal(); });
+    test!(exa_bo:  ls "", exa "bO=4"         =>  colours c -> { c.broken_path_overlay       = Style::default().underline(); });
 
     // All the while, LS_COLORS treats them as filenames:
     test!(ls_uu:   ls "uu=38;5;117", exa ""  =>  exts [ ("uu", Fixed(117).normal()) ]);

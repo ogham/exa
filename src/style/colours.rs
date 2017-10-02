@@ -25,10 +25,10 @@ pub struct Colours {
     pub blocks:       Style,
     pub header:       Style,
 
-    pub symlink_path:     Style,
-    pub broken_arrow:     Style,
-    pub broken_filename:  Style,
-    pub control_char:     Style,
+    pub symlink_path:         Style,
+    pub control_char:         Style,
+    pub broken_symlink:       Style,
+    pub broken_path_overlay:  Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -185,33 +185,73 @@ impl Colours {
             blocks:       Cyan.normal(),
             header:       Style::default().underline(),
 
-            symlink_path:     Cyan.normal(),
-            broken_arrow:     Red.normal(),
-            broken_filename:  Red.underline(),
-            control_char:     Red.normal(),
+            symlink_path:         Cyan.normal(),
+            control_char:         Red.normal(),
+            broken_symlink:       Red.normal(),
+            broken_path_overlay:  Style::default().underline(),
         }
     }
 }
 
 
+/// Some of the styles are **overlays**: although they have the same attribute
+/// set as regular styles (foreground and background colours, bold, underline,
+/// etc), they’re intended to be used to *amend* existing styles.
+///
+/// For example, the target path of a broken symlink is displayed in a red,
+/// underlined style by default. Paths can contain control characters, so
+/// these control characters need to be underlined too, otherwise it looks
+/// weird. So instead of having four separate configurable styles for “link
+/// path”, “broken link path”, “control character” and “broken control
+/// character”, there are styles for “link path”, “control character”, and
+/// “broken link overlay”, the latter of which is just set to override the
+/// underline attribute on the other two.
+fn apply_overlay(mut base: Style, overlay: Style) -> Style {
+    if let Some(fg) = overlay.foreground { base.foreground = Some(fg); }
+    if let Some(bg) = overlay.background { base.background = Some(bg); }
+
+    if overlay.is_bold          { base.is_bold          = true; }
+    if overlay.is_dimmed        { base.is_dimmed        = true; }
+    if overlay.is_italic        { base.is_italic        = true; }
+    if overlay.is_underline     { base.is_underline     = true; }
+    if overlay.is_blink         { base.is_blink         = true; }
+    if overlay.is_reverse       { base.is_reverse       = true; }
+    if overlay.is_hidden        { base.is_hidden        = true; }
+    if overlay.is_strikethrough { base.is_strikethrough = true; }
+
+    base
+}
+// TODO: move this function to the ansi_term crate
+
+
 impl Colours {
+
+    /// Sets a value on this set of colours using one of the keys understood
+    /// by the `LS_COLORS` environment variable. Invalid keys set nothing, but
+    /// return false.
     pub fn set_ls(&mut self, pair: &Pair) -> bool {
         match pair.key {
-            "di" => self.filekinds.directory    = pair.to_style(),
-            "ex" => self.filekinds.executable   = pair.to_style(),
-            "fi" => self.filekinds.normal       = pair.to_style(),
-            "pi" => self.filekinds.pipe         = pair.to_style(),
-            "so" => self.filekinds.socket       = pair.to_style(),
-            "bd" => self.filekinds.block_device = pair.to_style(),
-            "cd" => self.filekinds.char_device  = pair.to_style(),
-            "ln" => self.filekinds.symlink      = pair.to_style(),
-            "or" => self.broken_arrow           = pair.to_style(),
-            "mi" => self.broken_filename        = pair.to_style(),
+            "di" => self.filekinds.directory    = pair.to_style(),  // DIR
+            "ex" => self.filekinds.executable   = pair.to_style(),  // EXEC
+            "fi" => self.filekinds.normal       = pair.to_style(),  // FILE
+            "pi" => self.filekinds.pipe         = pair.to_style(),  // FIFO
+            "so" => self.filekinds.socket       = pair.to_style(),  // SOCK
+            "bd" => self.filekinds.block_device = pair.to_style(),  // BLK
+            "cd" => self.filekinds.char_device  = pair.to_style(),  // CHR
+            "ln" => self.filekinds.symlink      = pair.to_style(),  // LINK
+            "or" => self.broken_symlink         = pair.to_style(),  // ORPHAN
              _   => return false,
+             // Codes we don’t do anything with:
+             // MULTIHARDLINK, DOOR, SETUID, SETGID, CAPABILITY,
+             // STICKY_OTHER_WRITABLE, OTHER_WRITABLE, STICKY, MISSING
         }
         true
     }
 
+    /// Sets a value on this set of colours using one of the keys understood
+    /// by the `EXA_COLORS` environment variable. Invalid keys set nothing,
+    /// but return false. This doesn’t take the `LS_COLORS` keys into account,
+    /// so `set_ls` should have been run first.
     pub fn set_exa(&mut self, pair: &Pair) -> bool {
         match pair.key {
             "ur" => self.perms.user_read          = pair.to_style(),
@@ -254,6 +294,7 @@ impl Colours {
             "hd" => self.header                   = pair.to_style(),
             "lp" => self.symlink_path             = pair.to_style(),
             "cc" => self.control_char             = pair.to_style(),
+            "bO" => self.broken_path_overlay      = pair.to_style(),
 
              _   => return false,
         }
@@ -351,11 +392,12 @@ impl render::UserColours for Colours {
 }
 
 impl FileNameColours for Colours {
-    fn broken_arrow(&self)    -> Style { self.broken_arrow }
-    fn broken_filename(&self) -> Style { self.broken_filename }
-    fn normal_arrow(&self)    -> Style { self.punctuation }
-    fn control_char(&self)    -> Style { self.control_char }
-    fn symlink_path(&self)    -> Style { self.symlink_path }
-    fn executable_file(&self) -> Style { self.filekinds.executable }
+    fn normal_arrow(&self)        -> Style { self.punctuation }
+    fn broken_arrow(&self)        -> Style { self.broken_symlink }
+    fn broken_filename(&self)     -> Style { apply_overlay(self.broken_symlink, self.broken_path_overlay) }
+    fn broken_control_char(&self) -> Style { apply_overlay(self.control_char,   self.broken_path_overlay) }
+    fn control_char(&self)        -> Style { self.control_char }
+    fn symlink_path(&self)        -> Style { self.symlink_path }
+    fn executable_file(&self)     -> Style { self.filekinds.executable }
 }
 

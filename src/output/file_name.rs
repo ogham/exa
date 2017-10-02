@@ -157,7 +157,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_arrow().paint("->"));
                     bits.push(Style::default().paint(" "));
-                    escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename(), self.colours.control_char().underline());
+                    escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename(), self.colours.broken_control_char());
                 },
 
                 FileTarget::Err(_) => {
@@ -262,14 +262,35 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     }
 }
 
+
+/// The set of colours that are needed to paint a file name.
 pub trait Colours: FiletypeColours {
-    fn broken_arrow(&self) -> Style;
-    fn broken_filename(&self) -> Style;
-    fn normal_arrow(&self) -> Style;
-    fn control_char(&self) -> Style;
+
+    /// The style to paint the path of a symlink’s target, up to but not
+    /// including the file’s name.
     fn symlink_path(&self) -> Style;
+
+    /// The style to paint the arrow between a link and its target.
+    fn normal_arrow(&self) -> Style;
+
+    /// The style to paint the arrow between a link and its target, when the
+    /// link is broken.
+    fn broken_arrow(&self) -> Style;
+
+    /// The style to paint the entire filename of a broken link.
+    fn broken_filename(&self) -> Style;
+
+    /// The style to paint a non-displayable control character in a filename.
+    fn control_char(&self) -> Style;
+
+    /// The style to paint a non-displayable control character in a filename,
+    /// when the filename is being displayed as a broken link target.
+    fn broken_control_char(&self) -> Style;
+
+    /// The style to paint a file that has its executable bit set.
     fn executable_file(&self) -> Style;
 }
+
 
 // needs Debug because FileStyle derives it
 use std::fmt::Debug;

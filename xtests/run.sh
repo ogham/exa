@@ -186,8 +186,9 @@ COLUMNS=80 $exa_binary --colour=never     $testcases/files -l | diff -q - $resul
 COLUMNS=80 $exa_binary --colour=automatic $testcases/files -l | diff -q - $results/files_l_bw  || exit 1
 
 # Switching colour off
-COLUMNS=80 $exa_binary --colour=never     $testcases/file-names      | diff -q - $results/file_names_bw       || exit 1
-COLUMNS=80 $exa_binary --colour=never     $testcases/file-names-exts | diff -q - $results/file-names-exts-bw  || exit 1
+COLUMNS=80 $exa_binary --colour=never    $testcases/file-names       | diff -q - $results/file_names_bw       || exit 1
+COLUMNS=80 $exa_binary --colour=never    $testcases/file-names-exts  | diff -q - $results/file-names-exts-bw  || exit 1
+COLUMNS=80 $exa_binary --colour=never -T $testcases/file-names/links | diff -q - $results/links_bw            || exit 1
 
 
 # Git
@@ -249,7 +250,7 @@ EXA_COLORS="*.deb=1;37" LS_COLORS="*.tar.*=1;37" $exa -1 $testcases/file-names-e
  LS_COLORS="reset:*.deb=1;37:*.tar.*=1;37"       $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds    || exit 1
 EXA_COLORS="reset:*.deb=1;37:*.tar.*=1;37"       $exa -1 $testcases/file-names-exts/compressed.* 2>&1 | diff -q - $results/themed_compresseds_r  || exit 1
 
-EXA_COLORS="or=32:mi=32;1;4:cc=34;1:ln=34:lp=36;4:xx=32" $exa -1 $testcases/file-names/links 2>&1     | diff -q - $results/themed_links  || exit 1
+EXA_COLORS="or=32:bO=1:cc=35:ln=31:xx=33"        $exa -1 $testcases/file-names/links 2>&1     | diff -q - $results/themed_links  || exit 1
 
 # EXA_COLORS overrides LS_COLORS
 LS_COLORS="bd=32:cd=34:pi=31" EXA_COLORS="bd=31:cd=32:pi=34" $exa -1 $testcases/specials 2>&1 | diff -q - $results/themed_specials  || exit 1
