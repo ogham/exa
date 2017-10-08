@@ -1,16 +1,16 @@
+//! Printing the version string.
+//!
+//! The code that works out which string to print is done in `build.rs`.
+
 use std::fmt;
 
 use options::flags;
 use options::parser::MatchedFlags;
 
 
-/// All the information needed to display the version information.
 #[derive(PartialEq, Debug)]
-pub struct VersionString {
-
-    /// The version number from cargo.
-    cargo: &'static str,
-}
+pub struct VersionString;
+// There were options here once, but there aren’t anymore!
 
 impl VersionString {
 
@@ -21,7 +21,7 @@ impl VersionString {
     /// Like --help, this doesn’t bother checking for errors.
     pub fn deduce(matches: &MatchedFlags) -> Result<(), VersionString> {
         if matches.count(&flags::VERSION) > 0 {
-            Err(VersionString { cargo: env!("CARGO_PKG_VERSION") })
+            Err(VersionString)
         }
         else {
             Ok(())  // no version needs to be shown
@@ -30,14 +30,10 @@ impl VersionString {
 }
 
 impl fmt::Display for VersionString {
-
-    /// Format this help options into an actual string of help
-    /// text to be displayed to the user.
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "exa v{}", self.cargo)
+        write!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
     }
 }
-
 
 
 #[cfg(test)]
