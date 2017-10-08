@@ -27,7 +27,7 @@ path = "src/exa.rs"
 
 [dependencies]
 ansi_term = "0.10.2"
-datetime = "0.4.5"
+datetime = "0.4.7"
 env_logger = "0.3"
 glob = "0.2"
 lazy_static = "0.2"
@@ -42,10 +42,10 @@ term_grid = "0.1.6"
 term_size = "0.3.0"
 unicode-width = "0.1.4"
 users = "0.5.2"
-zoneinfo_compiled = "0.4.5"
+zoneinfo_compiled = "0.4.7"
 
 [build-dependencies]
-datetime = "0.4.5"
+datetime = "0.4.7"
 
 [features]
 default = [ "git" ]
