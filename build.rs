@@ -29,7 +29,9 @@ fn main() {
 }
 
 fn is_development_version() -> bool {
-    env::var("PROFILE").unwrap() == "debug"
+    // Both weekly releases and actual releases are --release releases,
+    // but actual releases will have a proper version number
+    cargo_version().ends_with("-pre") || env::var("PROFILE").unwrap() == "debug"
 }
 
 fn cargo_version() -> String {

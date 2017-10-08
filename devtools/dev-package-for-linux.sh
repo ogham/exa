@@ -25,6 +25,13 @@ eval exa_$(grep version $toml_file | head -n 1 | sed "s/ //g")
 if [ -z "$exa_version" ]; then
   echo "Failed to parse version number! Can't build exa!"
   exit 1
+fi
+
+# Weekly builds have a bit more information in their version number (see build.rs).
+if [[ "$1" == "--weekly" ]]; then
+  git_hash=`GIT_DIR=/vagrant/.git git rev-parse --short --verify HEAD`
+  date=`date +"%Y-%m-%d"`
+  echo "Building exa weekly v$exa_version, date $date, Git hash $git_hash"
 else
   echo "Building exa v$exa_version"
 fi
@@ -50,7 +57,10 @@ strip -v "$exa_linux_binary"
 # the binaries can have consistent names, and it’s still possible to tell
 # different *downloads* apart.
 echo -e "\n\033[4mZipping binary...\033[0m"
-exa_linux_zip="/vagrant/exa-linux-x86_64-${exa_version}.zip"
+if [[ "$1" == "--weekly" ]]
+  then exa_linux_zip="/vagrant/exa-linux-x86_64-${exa_version}-${date}-${git_hash}.zip"
+  else exa_linux_zip="/vagrant/exa-linux-x86_64-${exa_version}.zip"
+fi
 rm -vf "$exa_linux_zip"
 zip -j "$exa_linux_zip" "$exa_linux_binary"
 
