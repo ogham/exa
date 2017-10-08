@@ -393,7 +393,7 @@ impl render::UserColours for Colours {
 
 impl FileNameColours for Colours {
     fn normal_arrow(&self)        -> Style { self.punctuation }
-    fn broken_arrow(&self)        -> Style { self.broken_symlink }
+    fn broken_symlink(&self)      -> Style { self.broken_symlink }
     fn broken_filename(&self)     -> Style { apply_overlay(self.broken_symlink, self.broken_path_overlay) }
     fn broken_control_char(&self) -> Style { apply_overlay(self.control_char,   self.broken_path_overlay) }
     fn control_char(&self)        -> Style { self.control_char }
