@@ -72,13 +72,13 @@ If you’re unable to compile libgit2, you can opt out of Git support by running
 
 If you’re using a recent version of Cargo (0.5.0 or higher), you can use the `cargo install` command:
 
-    cargo install --git https://github.com/ogham/exa
+    cargo install exa
 
 or:
 
-    cargo install --no-default-features --git https://github.com/ogham/exa
+    cargo install --no-default-features exa
 
-Cargo will clone the repository to a temporary directory, build it there and place the `exa` binary to: `$HOME/.cargo` (and can be overridden by setting the `--root` option).
+Cargo will build the `exa` binary and place it in `$HOME/.cargo` (this location can be overridden by setting the `--root` option).
 
 
 ## Testing with Vagrant
