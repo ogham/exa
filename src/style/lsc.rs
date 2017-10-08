@@ -52,8 +52,8 @@ impl<'var> Pair<'var> {
             match num {
 
                 // Bold and italic
-                "1"  => style = style.bold(),
-                "4"  => style = style.underline(),
+                "1" | "01" => style = style.bold(),
+                "4" | "04" => style = style.underline(),
 
                 // Foreground colours
                 "30" => style = style.fg(Black),
