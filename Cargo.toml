@@ -1,7 +1,8 @@
 [package]
 name = "exa"
-version = "0.8.0"
+version = "0.9.0-pre"
 authors = [ "ogham@bsago.me" ]
+build = "build.rs"
 
 description = "A modern replacement for ls"
 homepage = "https://the.exa.website/"
@@ -13,10 +14,12 @@ categories = ["command-line-utilities"]
 keywords = ["ls", "files", "command-line"]
 license = "MIT"
 
+
 [[bin]]
 name = "exa"
 path = "src/bin/main.rs"
 doc = false
+
 
 [lib]
 name = "exa"
@@ -40,6 +43,9 @@ term_size = "0.3.0"
 unicode-width = "0.1.4"
 users = "0.5.2"
 zoneinfo_compiled = "0.4.5"
+
+[build-dependencies]
+datetime = "0.4.5"
 
 [features]
 default = [ "git" ]
