@@ -24,7 +24,12 @@ pub static EXA_COLORS: &str = "EXA_COLORS";
 /// complaining if an argument was specified twice, or if two conflict.
 /// This is meant to be so you don’t accidentally introduce the wrong
 /// behaviour in a script, rather than for general command-line use.
+/// Any non-empty value will turn strict mode on.
 pub static EXA_STRICT: &str = "EXA_STRICT";
+
+/// Environment variable used to make exa print out debugging information as
+/// it runs. Any non-empty value will turn debug mode on.
+pub static EXA_DEBUG: &str = "EXA_DEBUG";
 
 /// Environment variable used to limit the grid-details view
 /// (`--grid --long`) so it’s only activated if there’s at least the given

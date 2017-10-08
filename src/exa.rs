@@ -33,6 +33,7 @@ use fs::{Dir, File};
 use fs::feature::ignore::IgnoreCache;
 use fs::feature::git::GitCache;
 use options::{Options, Vars};
+pub use options::vars;
 pub use options::Misfire;
 use output::{escape, lines, grid, grid_details, details, View, Mode};
 
