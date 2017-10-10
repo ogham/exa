@@ -41,6 +41,8 @@ install-fish-completions:
 test: target/release/exa
 	cargo test --release $(CARGO_OPTS)
 
+check: test
+
 uninstall:
 	-rm -f -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
 	-rm -f -- "$(DESTDIR)$(PREFIX)/bin/exa"
