@@ -80,6 +80,19 @@ or:
 
 Cargo will build the `exa` binary and place it in `$HOME/.cargo` (this location can be overridden by setting the `--root` option).
 
+### Alternative ways of installation
+
+MacOS/OSX with [Homebrew](https://brew.sh/):
+
+    brew install exa
+
+Arch:
+
+    pacman -S exa
+
+NixOS (or using its pacakge manager [Nix](https://nixos.org/nix/) which can be installed on any Linux distribution:
+
+    nix-env -i exa
 
 ## Testing with Vagrant
 
