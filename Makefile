@@ -12,13 +12,13 @@ ZSHDIR  = /usr/share/zsh/vendor-completions
 $(eval $(call compdir,FISHDIR,fish,$(PREFIX)/share/fish/vendor_completions.d))
 
 FEATURES ?= default
-
+CARGO_OPTS := --no-default-features --features "$(FEATURES)"
 
 all: target/release/exa
 build: target/release/exa
 
 target/release/exa:
-	cargo build --release --no-default-features --features "$(FEATURES)"
+	cargo build --release $(CARGO_OPTS)
 
 install: install-exa install-man
 
@@ -37,6 +37,11 @@ install-zsh-completions:
 
 install-fish-completions:
 	install -m644 -- contrib/completions.fish "$(DESTDIR)$(FISHDIR)/exa.fish"
+
+test: target/release/exa
+	cargo test --release $(CARGO_OPTS)
+
+check: test
 
 uninstall:
 	-rm -f -- "$(DESTDIR)$(PREFIX)/share/man/man1/exa.1"
@@ -59,6 +64,7 @@ help:
 	@echo '  install     - build and install exa and manpage'
 	@echo '  install-exa - build and install exa'
 	@echo '  install-man - install the manpage'
+	@echo '  test        - run `cargo test`'
 	@echo '  uninstall   - uninstall fish, manpage, and completions'
 	@echo '  preview-man - preview the manpage without installing'
 	@echo '  help        - print this help'
