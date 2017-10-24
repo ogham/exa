@@ -191,6 +191,9 @@ pub enum SortField {
     /// bad, even though that’s kind of nonsensical. So it’s its own variant
     /// that can be reversed like usual.
     ModifiedAge,
+
+    /// Sort canonically to `ls`.
+    Canonical,
 }
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
@@ -251,6 +254,11 @@ impl SortField {
 
             SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
+                order            => order,
+            },
+
+            SortField::Canonical => match a.name.cmp(&b.name) {
+                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
         }
