@@ -31,8 +31,9 @@ pub static IGNORE_GLOB: Arg = Arg { short: Some(b'I'), long: "ignore-glob", take
 pub static GIT_IGNORE:  Arg = Arg { short: None, long: "git-ignore",           takes_value: TakesValue::Forbidden };
 pub static DIRS_FIRST:  Arg = Arg { short: None, long: "group-directories-first",  takes_value: TakesValue::Forbidden };
 const SORTS: Values = &[ "name", "Name", "size", "extension",
-                             "Extension", "modified", "accessed",
-                             "created", "inode", "type", "none" ];
+                         "Extension", "modified", "accessed",
+                         "created", "inode", "type", "canonical", 
+                         "none" ];
 
 // display options
 pub static BINARY:     Arg = Arg { short: Some(b'b'), long: "binary",     takes_value: TakesValue::Forbidden };
