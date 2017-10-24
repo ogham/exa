@@ -231,6 +231,7 @@ impl SortField {
 
         match *self {
             SortField::Unsorted  => Ordering::Equal,
+            SortField::Canonical => a.name.cmp(&b.name),
 
             SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
             SortField::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
@@ -254,11 +255,6 @@ impl SortField {
 
             SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
-                order            => order,
-            },
-
-            SortField::Canonical => match a.name.cmp(&b.name) {
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
         }
