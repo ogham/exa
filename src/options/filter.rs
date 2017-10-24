@@ -78,6 +78,9 @@ impl SortField {
         else if word == "none" {
             Ok(SortField::Unsorted)
         }
+        else if word == "canonical" {
+            Ok(SortField::Canonical)
+        }
         else {
             Err(Misfire::BadArgument(&flags::SORT, word.into()))
         }
@@ -217,22 +220,23 @@ mod test {
         use super::*;
 
         // Default behaviour
-        test!(empty:         SortField <- [];                  Both => Ok(SortField::default()));
+        test!(empty:         SortField <- [];                      Both => Ok(SortField::default()));
 
         // Sort field arguments
-        test!(one_arg:       SortField <- ["--sort=cr"];       Both => Ok(SortField::CreatedDate));
-        test!(one_long:      SortField <- ["--sort=size"];     Both => Ok(SortField::Size));
-        test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
-        test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
-        test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::ABCabc)));
-        test!(old:           SortField <- ["--sort", "new"];   Both => Ok(SortField::ModifiedDate));
-        test!(oldest:        SortField <- ["--sort=newest"];   Both => Ok(SortField::ModifiedDate));
-        test!(new:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedAge));
-        test!(newest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedAge));
-        test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
+        test!(one_arg:       SortField <- ["--sort=cr"];           Both => Ok(SortField::CreatedDate));
+        test!(one_long:      SortField <- ["--sort=size"];         Both => Ok(SortField::Size));
+        test!(one_short:     SortField <- ["-saccessed"];          Both => Ok(SortField::AccessedDate));
+        test!(lowercase:     SortField <- ["--sort", "name"];      Both => Ok(SortField::Name(SortCase::AaBbCc)));
+        test!(uppercase:     SortField <- ["--sort", "Name"];      Both => Ok(SortField::Name(SortCase::ABCabc)));
+        test!(old:           SortField <- ["--sort", "new"];       Both => Ok(SortField::ModifiedDate));
+        test!(oldest:        SortField <- ["--sort=newest"];       Both => Ok(SortField::ModifiedDate));
+        test!(new:           SortField <- ["--sort", "old"];       Both => Ok(SortField::ModifiedAge));
+        test!(newest:        SortField <- ["--sort=oldest"];       Both => Ok(SortField::ModifiedAge));
+        test!(age:           SortField <- ["-sage"];               Both => Ok(SortField::ModifiedAge));
+        test!(canonical:     SortField <- ["--sort", "canonical"]; Both => Ok(SortField::Canonical));
 
         // Errors
-        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
+        test!(error:         SortField <- ["--sort=colour"];       Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
 
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));
