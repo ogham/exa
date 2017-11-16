@@ -341,9 +341,9 @@ impl<'a, 'f> Table<'a> {
             Column::Group          => file.group().render(self.colours, &*self.env.lock_users()),
             Column::GitStatus      => self.git_status(file).render(self.colours),
 
-            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, &self.time_format),
+            Column::Timestamp(Modified)  => file.modified_time().render(self.colours, &self.env.tz, &self.time_format),
+            Column::Timestamp(Created)   => file.created_time() .render(self.colours, &self.env.tz, &self.time_format),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours, &self.env.tz, &self.time_format),
         }
     }
 

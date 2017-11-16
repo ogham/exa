@@ -15,12 +15,12 @@ pub struct Colours {
     pub filekinds:  FileKinds,
     pub perms:      Permissions,
     pub size:       Size,
+    pub date:       Date,
     pub users:      Users,
     pub links:      Links,
     pub git:        Git,
 
     pub punctuation:  Style,
-    pub date:         Style,
     pub inode:        Style,
     pub blocks:       Style,
     pub header:       Style,
@@ -79,6 +79,17 @@ pub struct Size {
     pub scale_giga: Style,
     pub scale_huge: Style,
 }
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Date {
+    pub time_today: Style,
+    pub time_yesterday: Style,
+    pub time_week: Style,
+    pub time_month: Style,
+    pub time_year: Style,
+    pub time_past: Style,
+}
+
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Users {
@@ -179,9 +190,17 @@ impl Colours {
                 typechange:  Purple.normal(),
             },
 
+            date: Date {
+                time_today:     Fixed(93).normal(),
+                time_yesterday: Fixed(99).normal(),
+                time_week:      Fixed(105).normal(),
+                time_month:     Fixed(111).normal(),
+                time_year:      Fixed(117).normal(),
+                time_past:      Fixed(123).normal(),
+            },
+
             punctuation:  Fixed(244).normal(),
-            date:         Blue.normal(),
-            inode:        Purple.normal(),
+                    inode:        Purple.normal(),
             blocks:       Cyan.normal(),
             header:       Style::default().underline(),
 
@@ -288,7 +307,7 @@ impl Colours {
             "gt" => self.git.typechange           = pair.to_style(),
 
             "xx" => self.punctuation              = pair.to_style(),
-            "da" => self.date                     = pair.to_style(),
+            "da" => self.date.time_today          = pair.to_style(),
             "in" => self.inode                    = pair.to_style(),
             "bl" => self.blocks                   = pair.to_style(),
             "hd" => self.header                   = pair.to_style(),
@@ -384,6 +403,25 @@ impl render::SizeColours for Colours {
     fn major(&self)   -> Style { self.size.major }
     fn comma(&self)   -> Style { self.punctuation }
     fn minor(&self)   -> Style { self.size.minor }
+}
+
+impl render::TimeColours for Colours
+{
+  fn stamp_age (&self, age: i64) -> Style {
+      if age < 60 * 60 * 24 {
+          self.date.time_today
+      } else if age < 60 * 60 * 24 * 2 {
+          self.date.time_yesterday
+      } else if age < 60 * 60 * 24 * 7 {
+          self.date.time_week
+      } else if age < 60 * 60 * 24 * 30 {
+          self.date.time_month
+      } else if age < 60 * 60 * 24 * 365 {
+          self.date.time_year
+      } else {
+          self.date.time_past
+      }
+  }
 }
 
 impl render::UserColours for Colours {

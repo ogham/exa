@@ -23,7 +23,7 @@ mod size;
 pub use self::size::Colours as SizeColours;
 
 mod times;
-// times does too
+pub use self::times::Colours as TimeColours;
 
 mod users;
 pub use self::users::Colours as UserColours;
