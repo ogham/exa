@@ -480,13 +480,20 @@ mod customs_test {
     test!(exa_gv:  ls "", exa "gv=38;5;126"  =>  colours c -> { c.git.renamed               = Fixed(126).normal(); });
     test!(exa_gt:  ls "", exa "gt=38;5;127"  =>  colours c -> { c.git.typechange            = Fixed(127).normal(); });
 
-    test!(exa_xx:  ls "", exa "xx=38;5;128"  =>  colours c -> { c.punctuation               = Fixed(128).normal(); });
-    test!(exa_da:  ls "", exa "da=38;5;129"  =>  colours c -> { c.date                      = Fixed(129).normal(); });
-    test!(exa_in:  ls "", exa "in=38;5;130"  =>  colours c -> { c.inode                     = Fixed(130).normal(); });
-    test!(exa_bl:  ls "", exa "bl=38;5;131"  =>  colours c -> { c.blocks                    = Fixed(131).normal(); });
-    test!(exa_hd:  ls "", exa "hd=38;5;132"  =>  colours c -> { c.header                    = Fixed(132).normal(); });
-    test!(exa_lp:  ls "", exa "lp=38;5;133"  =>  colours c -> { c.symlink_path              = Fixed(133).normal(); });
-    test!(exa_cc:  ls "", exa "cc=38;5;134"  =>  colours c -> { c.control_char              = Fixed(134).normal(); });
+
+    test!(exa_dato:  ls "", exa "dato=38;5;128"  =>  colours c -> { c.date.today                = Fixed(128).normal(); });
+    test!(exa_dayd:  ls "", exa "dayd=38;5;129"  =>  colours c -> { c.date.yesterday            = Fixed(129).normal(); });
+    test!(exa_dawe:  ls "", exa "dawe=38;5;130"  =>  colours c -> { c.date.week                 = Fixed(130).normal(); });
+    test!(exa_damo:  ls "", exa "damo=38;5;131"  =>  colours c -> { c.date.month                = Fixed(131).normal(); });
+    test!(exa_dayr:  ls "", exa "dayr=38;5;132"  =>  colours c -> { c.date.year                 = Fixed(132).normal(); });
+    test!(exa_daps:  ls "", exa "daps=38;5;133"  =>  colours c -> { c.date.past                 = Fixed(133).normal(); });
+
+    test!(exa_xx:  ls "", exa "xx=38;5;134"  =>  colours c -> { c.punctuation               = Fixed(134).normal(); });
+    test!(exa_in:  ls "", exa "in=38;5;135"  =>  colours c -> { c.inode                     = Fixed(135).normal(); });
+    test!(exa_bl:  ls "", exa "bl=38;5;136"  =>  colours c -> { c.blocks                    = Fixed(136).normal(); });
+    test!(exa_hd:  ls "", exa "hd=38;5;137"  =>  colours c -> { c.header                    = Fixed(137).normal(); });
+    test!(exa_lp:  ls "", exa "lp=38;5;138"  =>  colours c -> { c.symlink_path              = Fixed(138).normal(); });
+    test!(exa_cc:  ls "", exa "cc=38;5;139"  =>  colours c -> { c.control_char              = Fixed(139).normal(); });
     test!(exa_bo:  ls "", exa "bO=4"         =>  colours c -> { c.broken_path_overlay       = Style::default().underline(); });
 
     // All the while, LS_COLORS treats them as filenames:
