@@ -99,7 +99,8 @@ impl Styles {
 
         // Parse the environment variables into colours and extension mappings
         let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
-        let mut colours = Colours::colourful(scale.is_some());
+        let time_scale = matches.has_where(|f| f.matches(&flags::COLOR_TIME) || f.matches(&flags::COLOUR_TIME))?;
+        let mut colours = Colours::colourful(scale.is_some(), time_scale.is_some());
 
         let (exts, use_default_filetypes) = parse_color_vars(vars, &mut colours);
 
@@ -314,13 +315,13 @@ mod colour_test {
         };
     }
 
-    test!(width_1:  ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_2:  ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false)));
+    test!(width_1:  ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false, false)));
+    test!(width_2:  ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false, false)));
     test!(width_3:  ["--colour", "never"],     || Some(80);  Both => Ok(Colours::plain()));
     test!(width_4:  ["--colour", "never"],     || None;      Both => Ok(Colours::plain()));
-    test!(width_5:  ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_5:  ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false, false)));
     test!(width_6:  ["--colour", "automatic"], || None;      Both => Ok(Colours::plain()));
-    test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
+    test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false, false)));
     test!(width_8:  [],                        || None;      Both => Ok(Colours::plain()));
 
     test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
@@ -350,12 +351,12 @@ mod customs_test {
             #[test]
             #[allow(unused_mut)]
             fn $name() {
-                let mut $expected = Colours::colourful(false);
+                let mut $expected = Colours::colourful(false, false);
                 $process_expected();
 
                 let vars = MockVars { ls: $ls, exa: $exa };
 
-                let mut result = Colours::colourful(false);
+                let mut result = Colours::colourful(false, false);
                 let (_exts, _reset) = parse_color_vars(&vars, &mut result);
                 assert_eq!($expected, result);
             }
@@ -370,7 +371,7 @@ mod customs_test {
 
                 let vars = MockVars { ls: $ls, exa: $exa };
 
-                let mut meh = Colours::colourful(false);
+                let mut meh = Colours::colourful(false, false);
                 let (result, _reset) = parse_color_vars(&vars, &mut meh);
                 assert_eq!(ExtensionMappings { mappings }, result);
             }
@@ -379,7 +380,7 @@ mod customs_test {
             #[test]
             #[allow(unused_mut)]
             fn $name() {
-                let mut $expected = Colours::colourful(false);
+                let mut $expected = Colours::colourful(false, false);
                 $process_expected();
 
                 let mappings: Vec<(glob::Pattern, Style)>
@@ -389,7 +390,7 @@ mod customs_test {
 
                 let vars = MockVars { ls: $ls, exa: $exa };
 
-                let mut meh = Colours::colourful(false);
+                let mut meh = Colours::colourful(false, false);
                 let (result, _reset) = parse_color_vars(&vars, &mut meh);
                 assert_eq!(ExtensionMappings { mappings }, result);
                 assert_eq!($expected, meh);
@@ -481,12 +482,12 @@ mod customs_test {
     test!(exa_gt:  ls "", exa "gt=38;5;127"  =>  colours c -> { c.git.typechange            = Fixed(127).normal(); });
 
 
-    test!(exa_dato:  ls "", exa "dato=38;5;128"  =>  colours c -> { c.date.today                = Fixed(128).normal(); });
-    test!(exa_dayd:  ls "", exa "dayd=38;5;129"  =>  colours c -> { c.date.yesterday            = Fixed(129).normal(); });
-    test!(exa_dawe:  ls "", exa "dawe=38;5;130"  =>  colours c -> { c.date.week                 = Fixed(130).normal(); });
-    test!(exa_damo:  ls "", exa "damo=38;5;131"  =>  colours c -> { c.date.month                = Fixed(131).normal(); });
-    test!(exa_dayr:  ls "", exa "dayr=38;5;132"  =>  colours c -> { c.date.year                 = Fixed(132).normal(); });
-    test!(exa_daps:  ls "", exa "daps=38;5;133"  =>  colours c -> { c.date.past                 = Fixed(133).normal(); });
+    test!(exa_dato:  ls "", exa "dato=38;5;128"  =>  colours c -> { c.date.time_today       = Fixed(128).normal(); });
+    test!(exa_dayd:  ls "", exa "dayd=38;5;129"  =>  colours c -> { c.date.time_yesterday   = Fixed(129).normal(); });
+    test!(exa_dawe:  ls "", exa "dawe=38;5;130"  =>  colours c -> { c.date.time_week        = Fixed(130).normal(); });
+    test!(exa_damo:  ls "", exa "damo=38;5;131"  =>  colours c -> { c.date.time_month       = Fixed(131).normal(); });
+    test!(exa_dayr:  ls "", exa "dayr=38;5;132"  =>  colours c -> { c.date.time_year        = Fixed(132).normal(); });
+    test!(exa_daps:  ls "", exa "daps=38;5;133"  =>  colours c -> { c.date.time_past        = Fixed(133).normal(); });
 
     test!(exa_xx:  ls "", exa "xx=38;5;134"  =>  colours c -> { c.punctuation               = Fixed(134).normal(); });
     test!(exa_in:  ls "", exa "in=38;5;135"  =>  colours c -> { c.inode                     = Fixed(135).normal(); });
@@ -523,5 +524,5 @@ mod customs_test {
 
     // Finally, colours get applied right-to-left:
     test!(ls_overwrite:  ls "pi=31:pi=32:pi=33", exa ""  =>  colours c -> { c.filekinds.pipe = Yellow.normal(); });
-    test!(exa_overwrite: ls "", exa "da=36:da=35:da=34"  =>  colours c -> { c.date = Blue.normal(); });
+    test!(exa_overwrite: ls "", exa "da=36:da=35:da=34"  =>  colours c -> { c.date.time = Blue.normal(); });
 }

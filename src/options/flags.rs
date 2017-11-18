@@ -20,6 +20,8 @@ const COLOURS: &[&str] = &["always", "auto", "never"];
 
 pub static COLOR_SCALE:  Arg = Arg { short: None, long: "color-scale",  takes_value: TakesValue::Forbidden };
 pub static COLOUR_SCALE: Arg = Arg { short: None, long: "colour-scale", takes_value: TakesValue::Forbidden };
+pub static COLOR_TIME:   Arg = Arg { short: None, long: "color-time", takes_value: TakesValue::Forbidden};
+pub static COLOUR_TIME:   Arg = Arg { short: None, long: "colour-time", takes_value: TakesValue::Forbidden};
 
 // filtering and sorting options
 pub static ALL:         Arg = Arg { short: Some(b'a'), long: "all",         takes_value: TakesValue::Forbidden };
@@ -59,7 +61,7 @@ pub static ALL_ARGS: Args = Args(&[
     &VERSION, &HELP,
 
     &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY,
-    &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
+    &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE, &COLOR_TIME, &COLOUR_TIME,
 
     &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
     &IGNORE_GLOB, &GIT_IGNORE,
