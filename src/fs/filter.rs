@@ -191,6 +191,10 @@ pub enum SortField {
     /// bad, even though that’s kind of nonsensical. So it’s its own variant
     /// that can be reversed like usual.
     ModifiedAge,
+
+    /// The file's name, however if the name of the file begins with `.`
+    /// ignore the leading `.` and then sort as Name
+    NameMixHidden(SortCase),
 }
 
 /// Whether a field should be sorted case-sensitively or case-insensitively.
@@ -253,6 +257,23 @@ impl SortField {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
                 order            => order,
             },
+
+            SortField::NameMixHidden(ABCabc) => natord::compare(
+                SortField::strip_dot(&a.name),
+                SortField::strip_dot(&b.name)
+            ),
+            SortField::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
+                SortField::strip_dot(&a.name),
+                SortField::strip_dot(&b.name)
+            )
+        }
+    }
+
+    fn strip_dot(n: &str) -> &str {
+        if n.starts_with(".") {
+            &n[1..]
+        } else {
+            n
         }
     }
 }

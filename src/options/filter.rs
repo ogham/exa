@@ -41,6 +41,12 @@ impl SortField {
         else if word == "Name" || word == "Filename" {
             Ok(SortField::Name(SortCase::ABCabc))
         }
+        else if word == ".name" || word == ".filename" {
+            Ok(SortField::NameMixHidden(SortCase::AaBbCc))
+        }
+        else if word == ".Name" || word == ".Filename" {
+            Ok(SortField::NameMixHidden(SortCase::ABCabc))
+        }
         else if word == "size" || word == "filesize" {
             Ok(SortField::Size)
         }
@@ -230,6 +236,9 @@ mod test {
         test!(new:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedAge));
         test!(newest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedAge));
         test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
+
+        test!(mix_hidden_lowercase:     SortField <- ["--sort", ".name"];  Both => Ok(SortField::NameMixHidden(SortCase::AaBbCc)));
+        test!(mix_hidden_uppercase:     SortField <- ["--sort", ".Name"];  Both => Ok(SortField::NameMixHidden(SortCase::ABCabc)));
 
         // Errors
         test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
