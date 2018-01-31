@@ -95,8 +95,6 @@ impl<'dir> File<'dir> {
     /// against a pre-compiled list of extensions which are known to only exist
     /// within ASCII, so it’s alright.
     fn ext(path: &Path) -> Option<String> {
-        use std::ascii::AsciiExt;
-
         let name = match path.file_name() {
             Some(f) => f.to_string_lossy().to_string(),
             None => return None,
