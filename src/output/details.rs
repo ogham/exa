@@ -77,6 +77,7 @@ use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::FileStyle;
 use output::table::{Table, Options as TableOptions, Row as TableRow};
+use scoped_threadpool::Pool;
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -142,6 +143,8 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 impl<'a> Render<'a> {
     pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, ignore: Option<&'a IgnoreCache>, w: &mut W) -> IOResult<()> {
+        use num_cpus;
+        let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
@@ -162,14 +165,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut table, &mut rows, &self.files, ignore, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, ignore, TreeDepth::root());
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut None, &mut rows, &self.files, ignore, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, ignore, TreeDepth::root());
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -181,13 +184,10 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, 'ig>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
-        use num_cpus;
-        use scoped_threadpool::Pool;
+    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
         use fs::feature::xattr;
 
-        let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
 
         pool.scoped(|scoped| {
@@ -301,7 +301,7 @@ impl<'a> Render<'a> {
                         rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(table, rows, &files, ignore, depth.deeper());
+                    self.add_files_to_table(pool, table, rows, &files, ignore, depth.deeper());
                     continue;
                 }
             }
