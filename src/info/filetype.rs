@@ -19,7 +19,7 @@ impl FileExtensions {
     /// in order to kick off the build of a project. It’s usually only present
     /// in directories full of source code.
     fn is_immediate(&self, file: &File) -> bool {
-        file.name.starts_with("README") || file.name_is_one_of( &[
+        file.name.to_lowercase().starts_with("readme") || file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "Rakefile", "Gruntfile.js",
             "Gruntfile.coffee",
