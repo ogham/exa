@@ -22,7 +22,7 @@ impl FileExtensions {
         file.name.starts_with("README") || file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "Rakefile", "Gruntfile.js",
-            "Gruntfile.coffee",
+            "Gruntfile.coffee", "BUILD", "WORKSPACE", "build.xml"
         ])
     }
 
