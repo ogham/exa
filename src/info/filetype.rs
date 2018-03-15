@@ -39,7 +39,6 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
             "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts",
-            "ts",
         ])
     }
 
