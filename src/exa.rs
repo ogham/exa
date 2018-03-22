@@ -35,7 +35,7 @@ use fs::feature::git::GitCache;
 use options::{Options, Vars};
 pub use options::vars;
 pub use options::Misfire;
-use output::{escape, lines, grid, grid_details, details, View, Mode};
+use output::{escape, icons, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
 mod info;
@@ -221,6 +221,11 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             let View { ref mode, ref colours, ref style } = self.options.view;
 
             match *mode {
+                Mode::Icons(ref opts) => {
+                    println!("ICONS MODE");
+                    let r = icons::Render { files, colours, style, opts };
+                    r.render(self.writer)
+                }
                 Mode::Lines => {
                     let r = lines::Render { files, colours, style };
                     r.render(self.writer)

@@ -1,4 +1,4 @@
-use output::{View, Mode, grid, details};
+use output::{View, Mode, grid, details, icons};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::time::TimeFormat;
@@ -62,6 +62,13 @@ impl Mode {
                     };
 
                     Ok(Mode::Details(details))
+                }
+                else if matches.has(&flags::ICONS)? {
+                    let grid = icons::Options {
+                        across: matches.has(&flags::ACROSS)?,
+                        console_width: width,
+                    };
+                    Ok(Mode::Icons(grid))
                 }
                 else {
                     let grid = grid::Options {
