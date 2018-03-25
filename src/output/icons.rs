@@ -40,11 +40,14 @@ impl<'a> Render<'a> {
 
         for file in self.files.iter() {
             let file_icon = icon(&file);
+            let painted_icon = self.style.exts
+                .colour_file(&file)
+                .map_or(file_icon.to_string(), |c| { c.paint(format!("{}", file_icon)).to_string() });
             let filename = self.style.for_file(file, self.colours).paint();
             let width = DisplayWidth::from(2) + filename.width();
 
             grid.add(tg::Cell {
-                contents:  format!("{} {}", file_icon, filename.strings().to_string()),
+                contents:  format!("{} {}", painted_icon, filename.strings().to_string()),
                 width:     *width,
             });
         }
