@@ -1,4 +1,4 @@
-use output::{View, Mode, grid, details, icons};
+use output::{View, Mode, grid, details};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::time::TimeFormat;
@@ -63,17 +63,11 @@ impl Mode {
 
                     Ok(Mode::Details(details))
                 }
-                else if matches.has(&flags::ICONS)? {
-                    let grid = icons::Options {
-                        across: matches.has(&flags::ACROSS)?,
-                        console_width: width,
-                    };
-                    Ok(Mode::Icons(grid))
-                }
                 else {
                     let grid = grid::Options {
                         across: matches.has(&flags::ACROSS)?,
                         console_width: width,
+                        icons: matches.has(&flags::ICONS)?,
                     };
 
                     Ok(Mode::Grid(grid))
@@ -363,9 +357,9 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CREATED, &flags::ACCESSED,
-                                   &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
-                                   &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
+                                   &flags::HEADER, &flags::GROUP,  &flags::ICONS,     &flags::INODE, 
+                                   &flags::GIT,    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  
+                                   &flags::LEVEL,  &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
 
     macro_rules! test {
 
@@ -528,10 +522,11 @@ mod test {
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
         // Grid views
-        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
-        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
-        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
-        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
+        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
+        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
+        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
+        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
+        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { across: _, console_width: _, icons: true})));
 
         // Lines views
         test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines));

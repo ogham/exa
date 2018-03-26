@@ -1,71 +1,13 @@
-use std::io::{Write, Result as IOResult};
-
-use term_grid as tg;
-
 use fs::File;
-use style::Colours;
 use output::file_name::FileStyle;
-use output::cell::DisplayWidth;
 
+pub fn painted_icon(file: &File, style: &FileStyle) -> String {
+    let file_icon = icon(&file).to_string();
+    let painted = style.exts
+            .colour_file(&file)
+            .map_or(file_icon.to_string(), |c| { c.paint(file_icon).to_string() });
+    format!("{} ", painted)
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct Options {
-    pub across: bool,
-    pub console_width: usize,
-}
-
-impl Options {
-    pub fn direction(&self) -> tg::Direction {
-        if self.across { tg::Direction::LeftToRight }
-                  else { tg::Direction::TopToBottom }
-    }
-}
-
-
-pub struct Render<'a> {
-    pub files: Vec<File<'a>>,
-    pub colours: &'a Colours,
-    pub style: &'a FileStyle,
-    pub opts: &'a Options,
-}
-
-impl<'a> Render<'a> {
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
-        let mut grid = tg::Grid::new(tg::GridOptions {
-            direction:  self.opts.direction(),
-            filling:    tg::Filling::Spaces(2),
-        });
-
-        grid.reserve(self.files.len());
-
-        for file in self.files.iter() {
-            let file_icon = icon(&file);
-            let painted_icon = self.style.exts
-                .colour_file(&file)
-                .map_or(file_icon.to_string(), |c| { c.paint(format!("{}", file_icon)).to_string() });
-            let filename = self.style.for_file(file, self.colours).paint();
-            let width = DisplayWidth::from(2) + filename.width();
-
-            grid.add(tg::Cell {
-                contents:  format!("{} {}", painted_icon, filename.strings().to_string()),
-                width:     *width,
-            });
-        }
-
-        if let Some(display) = grid.fit_into_width(self.opts.console_width) {
-            write!(w, "{}", display)
-        }
-        else {
-            // File names too long for a grid - drop down to just listing them!
-            // This isn’t *quite* the same as the lines view, which also
-            // displays full link paths.
-            for file in self.files.iter() {
-                let name_cell = self.style.for_file(file, self.colours).paint();
-                writeln!(w, "{}", name_cell.strings())?;
-            }
-            Ok(())
-        }
-    }
 }
 
 fn icon(file: &File) -> char {
@@ -121,6 +63,7 @@ fn icon(file: &File) -> char {
                 "r" => '\u{f25d}',
                 "rb" => '\u{e21e}',
                 "rdb" => '\u{e76d}',
+                "rs" => '\u{e7a8}',
                 "rss" => '\u{f09e}',
                 "rubydoc" => '\u{e73b}',
                 "sass" => '\u{e603}',
