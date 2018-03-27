@@ -1,6 +1,27 @@
 use ansi_term::Style;
 use fs::File;
+use info::filetype::FileExtensions;
 use output::file_name::FileStyle;
+
+pub trait FileIcon {
+    fn icon_file(&self, file: &File) -> Option<char>;
+}
+
+pub enum Icons {
+    Audio,
+    Image,
+    Video,
+}
+
+impl Icons {
+    pub fn value(&self) -> char {
+        match *self {
+            Icons::Audio => '\u{f001}',
+            Icons::Image => '\u{f1c5}',
+            Icons::Video => '\u{f03d}',
+        }
+    }
+}
 
 pub fn painted_icon(file: &File, style: &FileStyle) -> String {
     let file_icon = icon(&file).to_string();
@@ -21,15 +42,15 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
 }
 
 fn icon(file: &File) -> char {
+    let extensions = Box::new(FileExtensions);
     if file.is_directory() { '\u{f115}' }
+    else if let Some(icon) = extensions.icon_file(file) { icon }
     else { 
-        // possible unnecessary clone
-        if let Some(ext) = file.ext.clone() {
+        if let Some(ext) = file.ext.as_ref() {
             match ext.as_str() {
                 "ai" => '\u{e7b4}',
                 "android" => '\u{e70e}',
                 "apple" => '\u{f179}',
-                "audio" => '\u{f001}',
                 "avro" => '\u{e60b}',
                 "c" => '\u{e61e}',
                 "clj" => '\u{e768}',
@@ -52,7 +73,6 @@ fn icon(file: &File) -> char {
                 "go" => '\u{e626}',
                 "hs" => '\u{e777}',
                 "html" => '\u{f13b}',
-                "image" => '\u{f1c5}',
                 "iml" => '\u{e7b5}',
                 "java" => '\u{e204}',
                 "js" => '\u{e74e}',
@@ -87,7 +107,6 @@ fn icon(file: &File) -> char {
                 "txt" => '\u{f15c}',
                 "video" => '\u{f03d}',
                 "vim" => '\u{e62b}',
-                "windows" => '\u{f17a}',
                 "xls" => '\u{f1c3}',
                 "xml" => '\u{e619}',
                 "yml" => '\u{f481}',

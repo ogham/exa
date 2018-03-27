@@ -8,6 +8,7 @@ use ansi_term::Style;
 
 use fs::File;
 use output::file_name::FileColours;
+use output::icons::FileIcon;
 
 
 #[derive(Debug, Default, PartialEq)]
@@ -112,6 +113,19 @@ impl FileColours for FileExtensions {
             f if self.is_temp(f)        => Fixed(244).normal(),
             f if self.is_compiled(f)    => Fixed(137).normal(),
             _                           => return None,
+        })
+    }
+}
+
+impl FileIcon for FileExtensions {
+    fn icon_file(&self, file: &File) -> Option<char> {
+        use output::icons::Icons;
+
+        Some(match file {
+            f if self.is_music(f) || self.is_lossless(f) => Icons::Audio.value(),
+            f if self.is_image(f) => Icons::Image.value(),
+            f if self.is_video(f) => Icons::Video.value(),
+            _ => return None,
         })
     }
 }
