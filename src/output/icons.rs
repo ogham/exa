@@ -1,3 +1,4 @@
+use ansi_term::Style;
 use fs::File;
 use output::file_name::FileStyle;
 
@@ -5,9 +6,18 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
     let file_icon = icon(&file).to_string();
     let painted = style.exts
             .colour_file(&file)
-            .map_or(file_icon.to_string(), |c| { c.paint(file_icon).to_string() });
+            .map_or(file_icon.to_string(), |c| { 
+                // Remove underline from icon
+                if c.is_underline {
+                    match c.foreground {
+                        Some(color) => Style::from(color).paint(file_icon).to_string(),
+                        None => Style::default().paint(file_icon).to_string(),
+                    }
+                } else {
+                    c.paint(file_icon).to_string() 
+                }
+            });
     format!("{} ", painted)
-
 }
 
 fn icon(file: &File) -> char {
