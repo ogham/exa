@@ -66,7 +66,7 @@ impl UiStyles {
                 conflicted:  Red.normal(),
             },
 
-            punctuation:  Fixed(244).normal(),
+            punctuation:  Black.bold(),
             date:         Blue.normal(),
             inode:        Purple.normal(),
             blocks:       Cyan.normal(),
@@ -114,17 +114,17 @@ impl Size {
             major:  Green.bold(),
             minor:  Green.normal(),
 
-            number_byte: Fixed(118).normal(),
-            number_kilo: Fixed(190).normal(),
-            number_mega: Fixed(226).normal(),
-            number_giga: Fixed(220).normal(),
-            number_huge: Fixed(214).normal(),
+            number_byte: Green.normal(),
+            number_kilo: Green.bold(),
+            number_mega: Yellow.normal(),
+            number_giga: Red.normal(),
+            number_huge: Purple.normal(),
 
             unit_byte: Green.normal(),
-            unit_kilo: Green.normal(),
-            unit_mega: Green.normal(),
-            unit_giga: Green.normal(),
-            unit_huge: Green.normal(),
+            unit_kilo: Green.bold(),
+            unit_mega: Yellow.normal(),
+            unit_giga: Red.normal(),
+            unit_huge: Purple.normal(),
         }
     }
 }
