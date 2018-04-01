@@ -64,7 +64,7 @@ use std::io::{Write, Error as IOError, Result as IOResult};
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
-use ansi_term::Style;
+use ansi_term::{ANSIGenericString, Style};
 
 use fs::{Dir, File};
 use fs::dir_action::RecurseOptions;
@@ -77,6 +77,7 @@ use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::FileStyle;
 use output::table::{Table, Options as TableOptions, Row as TableRow};
+use output::icons::painted_icon;
 use scoped_threadpool::Pool;
 
 
@@ -105,6 +106,9 @@ pub struct Options {
 
     /// Whether to show each file's extended attributes.
     pub xattr: bool,
+
+    /// Enables --icons mode
+    pub icons: bool,
 }
 
 
@@ -132,6 +136,7 @@ struct Egg<'a> {
     errors:    Vec<(IOError, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
+    icon:      Option<String>, 
 }
 
 impl<'a> AsRef<File<'a>> for Egg<'a> {
@@ -195,7 +200,7 @@ impl<'a> Render<'a> {
             let table = table.as_ref();
 
             for file in src {
-                let file_eggs = file_eggs.clone();
+                let file_eggs = Arc::clone(&file_eggs);
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
@@ -256,7 +261,11 @@ impl<'a> Render<'a> {
                         }
                     };
 
-                    let egg = Egg { table_row, xattrs, errors, dir, file };
+                    let icon = if self.opts.icons { 
+                        Some(painted_icon(&file, &self.style))
+                    } else { None };
+
+                    let egg = Egg { table_row, xattrs, errors, dir, file, icon };
                     file_eggs.lock().unwrap().push(egg);
                 });
             }
@@ -272,12 +281,20 @@ impl<'a> Render<'a> {
                 t.add_widths(row);
             }
 
+            let mut name_cell = TextCell::default();
+            if let Some(icon) = egg.icon {
+                name_cell.push(ANSIGenericString::from(icon), 2)
+            }
+            name_cell.append(self.style.for_file(&egg.file, self.colours)
+                                  .with_link_paths()
+                                  .paint()
+                                  .promote());
+
+
             let row = Row {
                 tree:   tree_params,
                 cells:  egg.table_row,
-                name:   self.style.for_file(&egg.file, self.colours)
-                                  .with_link_paths()
-                                  .paint().promote(),
+                name:   name_cell,
             };
 
             rows.push(row);
