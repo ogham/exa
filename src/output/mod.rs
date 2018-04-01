@@ -34,5 +34,5 @@ pub enum Mode {
     Grid(grid::Options),
     Details(details::Options),
     GridDetails(grid_details::Options),
-    Lines,
+    Lines(lines::Options),
 }

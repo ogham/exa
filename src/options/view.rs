@@ -1,4 +1,4 @@
-use output::{View, Mode, grid, details};
+use output::{View, Mode, grid, details, lines};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::time::TimeFormat;
@@ -52,7 +52,8 @@ impl Mode {
                         Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
-                        Ok(Mode::Lines)
+                        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
+                        Ok(Mode::Lines(lines))
                     }
                 }
                 else if matches.has(&flags::TREE)? {
@@ -91,7 +92,8 @@ impl Mode {
                     Ok(Mode::Details(details))
                 }
                 else {
-                    Ok(Mode::Lines)
+                    let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
+                    Ok(Mode::Lines(lines))
                 }
             }
         };
@@ -520,6 +522,7 @@ mod test {
     mod views {
         use super::*;
         use output::grid::Options as GridOptions;
+        use output::lines::Options as LineOptions;
 
         // Default
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
@@ -532,8 +535,9 @@ mod test {
         test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { across: _, console_width: _, icons: true})));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines));
-        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines));
+        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
+        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
+        test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
 
         // Details views
         test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
