@@ -53,7 +53,7 @@ impl FromIterator<PathBuf> for GitCache {
             else {
                 match GitRepo::discover(path) {
                     Ok(r) => {
-                        if let Some(mut r2) = git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir)) {
+                        if let Some(r2) = git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir)) {
                             debug!("Adding to existing repo (workdir matches with {:?})", r2.workdir);
                             r2.extra_paths.push(r.original_path);
                             continue;
@@ -268,7 +268,8 @@ fn reorient(path: &Path) -> PathBuf {
     match current_dir() {
         Err(_)  => Path::new(".").join(&path),
         Ok(dir) => dir.join(&path),
-    }
+    }.canonicalize().unwrap()   // errors can be ignored here because they only occur if
+                                // the path does not exist / a component is not a folder
 }
 
 /// The character to display if the file has been modified, but not staged.
