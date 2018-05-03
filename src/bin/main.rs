@@ -62,17 +62,15 @@ pub fn configure_logger() {
         None         => false,
     };
 
-    let mut logs = env_logger::LogBuilder::new();
+    let mut logs = env_logger::Builder::new();
     if present {
-        logs.filter(None, log::LogLevelFilter::Debug);
+        logs.filter(None, log::LevelFilter::Debug);
     }
     else {
-        logs.filter(None, log::LogLevelFilter::Off);
+        logs.filter(None, log::LevelFilter::Off);
     }
 
-    if let Err(e) = logs.init() {
-        writeln!(stderr(), "Failed to initialise logger: {}", e).unwrap();
-    }
+    logs.init()
 }
 
 
