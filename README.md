@@ -80,6 +80,18 @@ or:
 
 Cargo will build the `exa` binary and place it in `$HOME/.cargo` (this location can be overridden by setting the `--root` option).
 
+### Homebrew
+
+If you're using [homebrew](https://brew.sh/), you can use the `brew install` command:
+
+    brew install exa
+
+or:
+
+    brew install exa --without-git
+
+[Formulae](https://github.com/Homebrew/homebrew-core/blob/master/Formula/exa.rb)
+
 
 ## Testing with Vagrant
 
