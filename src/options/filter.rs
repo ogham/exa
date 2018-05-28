@@ -272,7 +272,7 @@ mod test {
     }
 
 
-    mod ignore_patternses {
+    mod ignore_patterns {
         use super::*;
         use std::iter::FromIterator;
         use glob;
