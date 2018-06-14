@@ -37,7 +37,7 @@ impl Mode {
             }
             else {
                 Ok(details::Options {
-                    table: Some(TableOptions::deduce(matches)?),
+                    table: Some(TableOptions::deduce(matches, vars)?),
                     header: matches.has(&flags::HEADER)?,
                     xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
                 })
@@ -201,9 +201,9 @@ impl RowThreshold {
 
 
 impl TableOptions {
-    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         let env = Environment::load_all();
-        let time_format = TimeFormat::deduce(matches)?;
+        let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
         let extra_columns = Columns::deduce(matches)?;
         Ok(TableOptions { env, time_format, size_format, extra_columns })
@@ -251,24 +251,30 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce(matches: &MatchedFlags) -> Result<TimeFormat, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<TimeFormat, Misfire> {
         pub use output::time::{DefaultFormat, ISOFormat};
 
         let word = match matches.get(&flags::TIME_STYLE)? {
-            Some(w) => w,
-            None    => return Ok(TimeFormat::DefaultFormat(DefaultFormat::new())),
+            Some(w) => w.to_os_string(),
+            None    => {
+                use options::vars;
+                match vars.get(vars::TIME_STYLE) {
+                    Some(ref t) if !t.is_empty() => t.clone(),
+                    _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
+                }
+            },
         };
 
-        if word == "default" {
+        if &word == "default" {
             Ok(TimeFormat::DefaultFormat(DefaultFormat::new()))
         }
-        else if word == "iso" {
+        else if &word == "iso" {
             Ok(TimeFormat::ISOFormat(ISOFormat::new()))
         }
-        else if word == "long-iso" {
+        else if &word == "long-iso" {
             Ok(TimeFormat::LongISO)
         }
-        else if word == "full-iso" {
+        else if &word == "full-iso" {
             Ok(TimeFormat::FullISO)
         }
         else {
@@ -456,23 +462,30 @@ mod test {
         // implement PartialEq.
 
         // Default behaviour
-        test!(empty:     TimeFormat <- [];                            Both => like Ok(TimeFormat::DefaultFormat(_)));
+        test!(empty:     TimeFormat <- [], None;                            Both => like Ok(TimeFormat::DefaultFormat(_)));
 
         // Individual settings
-        test!(default:   TimeFormat <- ["--time-style=default"];      Both => like Ok(TimeFormat::DefaultFormat(_)));
-        test!(iso:       TimeFormat <- ["--time-style", "iso"];       Both => like Ok(TimeFormat::ISOFormat(_)));
-        test!(long_iso:  TimeFormat <- ["--time-style=long-iso"];     Both => like Ok(TimeFormat::LongISO));
-        test!(full_iso:  TimeFormat <- ["--time-style", "full-iso"];  Both => like Ok(TimeFormat::FullISO));
+        test!(default:   TimeFormat <- ["--time-style=default"], None;      Both => like Ok(TimeFormat::DefaultFormat(_)));
+        test!(iso:       TimeFormat <- ["--time-style", "iso"], None;       Both => like Ok(TimeFormat::ISOFormat(_)));
+        test!(long_iso:  TimeFormat <- ["--time-style=long-iso"], None;     Both => like Ok(TimeFormat::LongISO));
+        test!(full_iso:  TimeFormat <- ["--time-style", "full-iso"], None;  Both => like Ok(TimeFormat::FullISO));
 
         // Overriding
-        test!(actually:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Last => like Ok(TimeFormat::ISOFormat(_)));
-        test!(actual_2:  TimeFormat <- ["--time-style=default",     "--time-style", "iso"];    Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
+        test!(actually:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Last => like Ok(TimeFormat::ISOFormat(_)));
+        test!(actual_2:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
-        test!(nevermind: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Last => like Ok(TimeFormat::FullISO));
-        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"];  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
+        test!(nevermind: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"], None;  Last => like Ok(TimeFormat::FullISO));
+        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"], None;  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         // Errors
-        test!(daily:     TimeFormat <- ["--time-style=24-hour"];      Both => err Misfire::BadArgument(&flags::TIME_STYLE, OsString::from("24-hour")));
+        test!(daily:     TimeFormat <- ["--time-style=24-hour"], None;  Both => err Misfire::BadArgument(&flags::TIME_STYLE, OsString::from("24-hour")));
+
+        // `TIME_STYLE` environment variable is defined.
+        // If the time-style argument is not given, `TIME_STYLE` is used.
+        test!(use_env:     TimeFormat <- [], Some("long-iso".into());  Both => like Ok(TimeFormat::LongISO));
+
+        // If the time-style argument is given, `TIME_STYLE` is overriding.
+        test!(override_env:     TimeFormat <- ["--time-style=full-iso"], Some("long-iso".into());  Both => like Ok(TimeFormat::FullISO));
     }
 
 
