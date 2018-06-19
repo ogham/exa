@@ -452,7 +452,7 @@ fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
         let (before, after) = input.as_bytes().split_at(index);
 
         // The after string contains the = that we need to remove.
-        if before.len() >= 1 && after.len() >= 2 {
+        if !before.is_empty() && after.len() >= 2 {
             return Some((OsStr::from_bytes(before),
                          OsStr::from_bytes(&after[1..])))
         }

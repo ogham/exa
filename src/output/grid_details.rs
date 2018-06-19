@@ -87,7 +87,7 @@ impl<'a> Render<'a> {
     /// *n* files into each column’s table, not all of them.
     pub fn details(&self) -> DetailsRender<'a> {
         DetailsRender {
-            dir: self.dir.clone(),
+            dir: self.dir,
             files: Vec::new(),
             colours: self.colours,
             style: self.style,
@@ -170,7 +170,7 @@ impl<'a> Render<'a> {
         None
     }
 
-    fn make_table<'t>(&'a self, options: &'a TableOptions, mut git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+    fn make_table(&'a self, options: &'a TableOptions, mut git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
         match (git, self.dir) {
             (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
             (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
@@ -226,7 +226,7 @@ impl<'a> Render<'a> {
                                        else { grid::Direction::TopToBottom };
 
         let mut grid = grid::Grid::new(grid::GridOptions {
-            direction:  direction,
+            direction,
             filling:    grid::Filling::Spaces(4),
         });
 

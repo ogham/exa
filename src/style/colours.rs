@@ -111,7 +111,7 @@ impl Colours {
     pub fn colourful(scale: bool) -> Colours {
         Colours {
             colourful: true,
-            scale: scale,
+            scale,
 
             filekinds: FileKinds {
                 normal:       Style::default(),

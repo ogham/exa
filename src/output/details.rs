@@ -184,7 +184,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
+    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
         use fs::feature::xattr;
 
@@ -294,7 +294,7 @@ impl<'a> Render<'a> {
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
-                        rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), false)));
+                        rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), false)));
                     }
 
                     for (error, path) in errors {
@@ -308,7 +308,7 @@ impl<'a> Render<'a> {
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
+                rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
             }
 
             let count = errors.len();
@@ -340,7 +340,7 @@ impl<'a> Render<'a> {
         Row { cells: None, name, tree }
     }
 
-    fn render_xattr(&self, xattr: Attribute, tree: TreeParams) -> Row {
+    fn render_xattr(&self, xattr: &Attribute, tree: TreeParams) -> Row {
         let name = TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
         Row { cells: None, name, tree }
     }
@@ -353,7 +353,7 @@ impl<'a> Render<'a> {
         TableIter {
             tree_trunk: TreeTrunk::default(),
             total_width: table.widths().total(),
-            table: table,
+            table,
             inner: rows.into_iter(),
             tree_style: self.colours.punctuation,
         }

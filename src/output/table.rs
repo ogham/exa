@@ -189,8 +189,8 @@ pub enum TimeType {
 impl TimeType {
 
     /// Returns the text to use for a column’s heading in the columns output.
-    pub fn header(&self) -> &'static str {
-        match *self {
+    pub fn header(self) -> &'static str {
+        match self {
             TimeType::Accessed  => "Date Accessed",
             TimeType::Modified  => "Date Modified",
             TimeType::Created   => "Date Created",
@@ -324,7 +324,7 @@ impl<'a, 'f> Table<'a> {
         f::PermissionsPlus {
             file_type: file.type_char(),
             permissions: file.permissions(),
-            xattrs: xattrs,
+            xattrs,
         }
     }
 
@@ -379,7 +379,7 @@ pub struct TableWidths(Vec<usize>);
 impl Deref for TableWidths {
     type Target = [usize];
 
-    fn deref<'a>(&'a self) -> &'a Self::Target {
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }

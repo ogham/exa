@@ -96,7 +96,7 @@ impl fmt::Display for HelpString {
     /// Format this help options into an actual string of help
     /// text to be displayed to the user.
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Usage:\n  exa [options] [files...]\n")?;
+        writeln!(f, "Usage:\n  exa [options] [files...]")?;
 
         if !self.only_long {
             write!(f, "{}", OPTIONS)?;
