@@ -30,6 +30,7 @@ pub static SORT:        Arg = Arg { short: Some(b's'), long: "sort",        take
 pub static IGNORE_GLOB: Arg = Arg { short: Some(b'I'), long: "ignore-glob", takes_value: TakesValue::Necessary(None) };
 pub static GIT_IGNORE:  Arg = Arg { short: None, long: "git-ignore",           takes_value: TakesValue::Forbidden };
 pub static DIRS_FIRST:  Arg = Arg { short: None, long: "group-directories-first",  takes_value: TakesValue::Forbidden };
+pub static ONLY_DIRS:   Arg = Arg { short: None, long: "only-dirs", takes_value: TakesValue::Forbidden };
 const SORTS: Values = &[ "name", "Name", "size", "extension",
                              "Extension", "modified", "accessed",
                              "created", "inode", "type", "none" ];
@@ -62,7 +63,7 @@ pub static ALL_ARGS: Args = Args(&[
     &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
 
     &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
-    &IGNORE_GLOB, &GIT_IGNORE,
+    &IGNORE_GLOB, &GIT_IGNORE, &ONLY_DIRS,
 
     &BINARY, &BYTES, &GROUP, &HEADER, &INODE, &LINKS, &MODIFIED, &BLOCKS,
     &TIME, &ACCESSED, &CREATED, &TIME_STYLE,
