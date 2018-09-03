@@ -41,7 +41,7 @@ pub struct FileFilter {
     /// ones, depending on the sort field.
     pub reverse: bool,
 
-    /// Whether to only show directories
+    /// Whether to only show directories.
     pub only_dirs: bool,
 
     /// Which invisible “dot” files to include when listing a directory.
