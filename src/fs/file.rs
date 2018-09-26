@@ -111,6 +111,22 @@ impl<'dir> File<'dir> {
         self.metadata.is_dir()
     }
 
+    /// Whether this file is a directory, or a symlink pointing to a directory.
+    pub fn points_to_directory(&self) -> bool {
+        if self.is_directory() {
+            return true;
+        }
+
+        if self.is_link() {
+            let target = self.link_target();
+            if let FileTarget::Ok(target) = target {
+                return target.points_to_directory();
+            }
+        }
+
+        return false;
+    }
+
     /// If this file is a directory on the filesystem, then clone its
     /// `PathBuf` for use in one of our own `Dir` values, and read a list of
     /// its contents.
