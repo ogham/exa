@@ -45,7 +45,7 @@ rm -vf "$exa_linux_binary"
 cargo build --release --manifest-path "$toml_file"
 cargo test --release --manifest-path "$toml_file" --lib -- --quiet
 /vagrant/xtests/run.sh --release
-cp /home/ubuntu/target/release/exa "$exa_linux_binary"
+cp /home/vagrant/target/release/exa "$exa_linux_binary"
 
 # Stripping the binary before distributing it removes a bunch of debugging
 # symbols, saving some space.

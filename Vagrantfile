@@ -21,7 +21,7 @@ Vagrant.configure(2) do |config|
     # Make sure we know the VM image’s default user name. The ‘cassowary’ user
     # (specified later) is used for most of the test *output*, but we still
     # need to know where the ‘target’ and ‘.cargo’ directories go.
-    developer = 'ubuntu'
+    developer = 'vagrant'
 
 
     # Install the dependencies needed for exa to build, as quietly as
@@ -92,15 +92,15 @@ Vagrant.configure(2) do |config|
     config.vm.provision :shell, privileged: false, inline: <<-EOF
       set -xe
 
-      if [ -d /home/ubuntu/git2-rs ]; then
-          cd /home/ubuntu/git2-rs
+      if [ -d /home/#{developer}/git2-rs ]; then
+          cd /home/#{developer}/git2-rs
           git pull https://github.com/ogham/git2-rs.git || echo "Failed to update git2-rs fork"
       else
-          git clone https://github.com/ogham/git2-rs.git /home/ubuntu/git2-rs
+          git clone https://github.com/ogham/git2-rs.git /home/#{developer}/git2-rs
       fi
 
-      mkdir -p /home/ubuntu/.cargo
-      echo 'paths = ["/home/ubuntu/git2-rs/libgit2-sys"]' > /home/ubuntu/.cargo/config
+      mkdir -p /home/#{developer}/.cargo
+      echo 'paths = ["/home/#{developer}/git2-rs/libgit2-sys"]' > /home/#{developer}/.cargo/config
     EOF
 
     # This fix is applied by changing the VM rather than changing the
@@ -119,7 +119,7 @@ Vagrant.configure(2) do |config|
       bash /vagrant/devtools/dev-help.sh > /etc/motd
 
       # Tell bash to execute a bunch of stuff when a session starts
-      echo "source /vagrant/devtools/dev-bash.sh" > /home/ubuntu/.bash_profile
+      echo "source /vagrant/devtools/dev-bash.sh" > /home/#{developer}/.bash_profile
 
       # Disable last login date in sshd
       sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
@@ -443,8 +443,9 @@ Vagrant.configure(2) do |config|
       echo "this file gets moved" > moves/hither
 
       git add edits moves
+      git config --global user.email "exa@exa.exa"
+      git config --global user.name "Exa Exa"
       git commit -m "Automated test commit"
-
 
       echo "modifications!" | tee edits/{staged,both}
       touch additions/{staged,edited}

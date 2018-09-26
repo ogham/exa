@@ -6,7 +6,7 @@
 echo -e "
 \033[1;33mThe exa development environment!\033[0m
 exa's source is available at \033[33m/vagrant\033[0m.
-Binaries get built into \033[33m/home/ubuntu/target\033[0m.
+Binaries get built into \033[33m/home/vagrant/target\033[0m.
 
 \033[4mCommands\033[0m
 \033[32;1mexa\033[0m to run the built version of exa
