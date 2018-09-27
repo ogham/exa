@@ -14,6 +14,7 @@ impl FileFilter {
         Ok(FileFilter {
             list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
             reverse:         matches.has(&flags::REVERSE)?,
+            only_dirs:       matches.has(&flags::ONLY_DIRS)?,
             sort_field:      SortField::deduce(matches)?,
             dot_filter:      DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
