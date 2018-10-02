@@ -37,7 +37,7 @@ impl FileExtensions {
 
     fn is_video(&self, file: &File) -> bool {
         file.extension_is_one_of( &[
-            "avi", "flv", "m2v", "mkv", "mov", "mp4", "mpeg",
+            "avi", "flv", "m2v", "m4v", "mkv", "mov", "mp4", "mpeg",
             "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts",
         ])
     }
