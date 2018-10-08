@@ -92,6 +92,11 @@ or:
 
 [Formulae](https://github.com/Homebrew/homebrew-core/blob/master/Formula/exa.rb)
 
+### Nix
+
+`exa` is also installable through [the derivation](https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/misc/exa/default.nix) using the [nix package manager](https://nixos.org/nix/) by running:
+
+    nix-env -i exa
 
 ## Testing with Vagrant
 
