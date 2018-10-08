@@ -49,11 +49,11 @@ impl<'var> Pair<'var> {
         let mut iter = self.value.split(";").peekable();
 
         while let Some(num) = iter.next() {
-            match num {
+            match num.trim_left_matches('0') {
 
                 // Bold and italic
-                "1" | "01" => style = style.bold(),
-                "4" | "04" => style = style.underline(),
+                "1" => style = style.bold(),
+                "4" => style = style.underline(),
 
                 // Foreground colours
                 "30" => style = style.fg(Black),
@@ -102,11 +102,15 @@ mod ansi_test {
 
     // Styles
     test!(bold:  "1"         => Style::default().bold());
+    test!(bold2: "01"        => Style::default().bold());
     test!(under: "4"         => Style::default().underline());
+    test!(unde2: "04"        => Style::default().underline());
     test!(both:  "1;4"       => Style::default().bold().underline());
+    test!(both2: "01;04"     => Style::default().bold().underline());
     test!(fg:    "31"        => Red.normal());
     test!(bg:    "43"        => Style::default().on(Yellow));
     test!(bfg:   "31;43"     => Red.on(Yellow));
+    test!(bfg2:  "0031;0043" => Red.on(Yellow));
     test!(all:   "43;31;1;4" => Red.on(Yellow).bold().underline());
     test!(again: "1;1;1;1;1" => Style::default().bold());
 
