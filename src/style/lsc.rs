@@ -4,6 +4,24 @@ use ansi_term::{Colour, Style};
 use ansi_term::Colour::*;
 
 
+// Parsing the LS_COLORS environment variable into a map of names to Style values.
+//
+// This is sitting around undocumented at the moment because it’s a feature
+// that should really be unnecessary! exa highlights its output by creating a
+// theme of one Style value per part of the interface that can be coloured,
+// then reading styles from that theme. The LS_COLORS variable, on the other
+// hand, can contain arbitrary characters that ls is supposed to add to the
+// output, without needing to know what they actually do. This puts exa in the
+// annoying position of having to parse the ANSI escape codes _back_ into
+// Style values before it’s able to use them. Doing this has a lot of
+// downsides: if a new terminal feature is added with its own code, exa won’t
+// be able to use this without explicit support for parsing the feature, while
+// ls would not even need to know it existed. And there are some edge cases in
+// ANSI codes, where terminals would accept codes exa is strict about it. It’s
+// just not worth doing, and there should really be a way to just use slices
+// of the LS_COLORS string without having to parse them.
+
+
 pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
@@ -37,6 +55,28 @@ where I: Iterator<Item=&'a str> {
                 }
             }
         }
+        Some(&"2") => {
+            let _2 = iter.next();
+            if let Some(hexes) = iter.next() {
+                // Some terminals support R:G:B instead of R;G;B
+                // but this clashes with splitting on ':' in each_pair above.
+                /*if hexes.contains(':') {
+                    let rgb = hexes.splitn(3, ':').collect::<Vec<_>>();
+                    if rgb.len() != 3 {
+                        return None;
+                    }
+                    else if let (Ok(r), Ok(g), Ok(b)) = (rgb[0].parse(), rgb[1].parse(), rgb[2].parse()) {
+                        return Some(RGB(r, g, b));
+                    }
+                }*/
+                
+                if let (Some(r), Some(g), Some(b)) = (hexes.parse().ok(),
+                                                           iter.next().and_then(|s| s.parse().ok()),
+                                                           iter.next().and_then(|s| s.parse().ok())) {
+                    return Some(RGB(r, g, b));
+                }
+            }
+        }
         _ => {},
     }
 
@@ -53,7 +93,14 @@ impl<'var> Pair<'var> {
 
                 // Bold and italic
                 "1" => style = style.bold(),
+                "2" => style = style.dimmed(),
+                "3" => style = style.italic(),
                 "4" => style = style.underline(),
+                "5" => style = style.blink(),
+                // 6 is supposedly a faster blink
+                "7" => style = style.reverse(),
+                "8" => style = style.hidden(),
+                "9" => style = style.strikethrough(),
 
                 // Foreground colours
                 "30" => style = style.fg(Black),
@@ -125,6 +172,11 @@ mod ansi_test {
     test!(hibg:  "48;5;1"    => Style::default().on(Fixed(1)));
     test!(hibo:  "48;5;1;1"  => Style::default().on(Fixed(1)).bold());
     test!(hiund: "4;48;5;1"  => Style::default().on(Fixed(1)).underline());
+
+    test!(rgb:   "38;2;255;100;0"     => Style::default().fg(RGB(255, 100, 0)));
+    test!(rgbi:  "38;2;255;100;0;3"   => Style::default().fg(RGB(255, 100, 0)).italic());
+    test!(rgbbg: "48;2;255;100;0"     => Style::default().on(RGB(255, 100, 0)));
+    test!(rgbbi: "48;2;255;100;0;3"   => Style::default().on(RGB(255, 100, 0)).italic());
 
     test!(fgbg:  "38;5;121;48;5;212"  => Fixed(121).on(Fixed(212)));
     test!(bgfg:  "48;5;121;38;5;212"  => Fixed(212).on(Fixed(121)));
