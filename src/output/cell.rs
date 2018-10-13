@@ -44,7 +44,7 @@ impl TextCell {
 
         TextCell {
             contents: vec![ style.paint(text) ].into(),
-            width:    width,
+            width,
         }
     }
 
@@ -56,7 +56,7 @@ impl TextCell {
 
         TextCell {
             contents: vec![ style.paint(text) ].into(),
-            width:    width,
+            width,
         }
     }
 

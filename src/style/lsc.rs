@@ -26,8 +26,8 @@ pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
     pub fn each_pair<C>(&mut self, mut callback: C) where C: FnMut(Pair<'var>) -> () {
-        for next in self.0.split(":") {
-            let bits = next.split("=")
+        for next in self.0.split(':') {
+            let bits = next.split('=')
                            .take(3)
                            .collect::<Vec<_>>();
 
@@ -48,7 +48,7 @@ fn parse_into_high_colour<'a, I>(iter: &mut Peekable<I>) -> Option<Colour>
 where I: Iterator<Item=&'a str> {
     match iter.peek() {
         Some(&"5") => {
-            let _5 = iter.next();
+            let _ = iter.next();
             if let Some(byte) = iter.next() {
                 if let Ok(num) = byte.parse() {
                     return Some(Fixed(num));
@@ -56,7 +56,7 @@ where I: Iterator<Item=&'a str> {
             }
         }
         Some(&"2") => {
-            let _2 = iter.next();
+            let _ = iter.next();
             if let Some(hexes) = iter.next() {
                 // Some terminals support R:G:B instead of R;G;B
                 // but this clashes with splitting on ':' in each_pair above.
@@ -79,14 +79,13 @@ where I: Iterator<Item=&'a str> {
         }
         _ => {},
     }
-
     None
 }
 
 impl<'var> Pair<'var> {
     pub fn to_style(&self) -> Style {
         let mut style = Style::default();
-        let mut iter = self.value.split(";").peekable();
+        let mut iter = self.value.split(';').peekable();
 
         while let Some(num) = iter.next() {
             match num.trim_left_matches('0') {

@@ -72,7 +72,7 @@ fn file_lines_to_patterns<'a, I>(iter: I) -> IgnorePatterns
 where I: Iterator<Item=&'a str>
 {
     let iter = iter.filter(|el| !el.is_empty());
-    let iter = iter.filter(|el| !el.starts_with("#"));
+    let iter = iter.filter(|el| !el.starts_with('#'));
 
     // TODO: Figure out if this should trim whitespace or not
 
