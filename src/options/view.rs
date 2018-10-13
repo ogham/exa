@@ -257,16 +257,16 @@ impl TimeFormat {
                 use options::vars;
                 match vars.get(vars::TIME_STYLE) {
                     Some(ref t) if !t.is_empty() => t.clone(),
-                    _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::default()))
+                    _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
                 }
             },
         };
 
         if &word == "default" {
-            Ok(TimeFormat::DefaultFormat(DefaultFormat::default()))
+            Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
         }
         else if &word == "iso" {
-            Ok(TimeFormat::ISOFormat(ISOFormat::default()))
+            Ok(TimeFormat::ISOFormat(ISOFormat::load()))
         }
         else if &word == "long-iso" {
             Ok(TimeFormat::LongISO)

@@ -88,8 +88,8 @@ pub struct DefaultFormat {
     pub date_and_year: DateFormat<'static>,
 }
 
-impl Default for DefaultFormat {
-    fn default() -> DefaultFormat {
+impl DefaultFormat {
+    pub fn load() -> DefaultFormat {
         use unicode_width::UnicodeWidthStr;
 
         let locale = locale::Time::load_user_locale()
@@ -201,8 +201,8 @@ pub struct ISOFormat {
     pub current_year: i64,
 }
 
-impl Default for ISOFormat {
-    fn default() -> ISOFormat {
+impl ISOFormat {
+    pub fn load() -> ISOFormat {
         let current_year = LocalDateTime::now().year();
         ISOFormat { current_year }
     }
