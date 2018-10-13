@@ -37,7 +37,7 @@ impl<'a> Render<'a> {
 
         grid.reserve(self.files.len());
 
-        for file in self.files.iter() {
+        for file in &self.files {
             let filename = self.style.for_file(file, self.colours).paint();
             let width = filename.width();
 
@@ -54,7 +54,7 @@ impl<'a> Render<'a> {
             // File names too long for a grid - drop down to just listing them!
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
-            for file in self.files.iter() {
+            for file in &self.files {
                 let name_cell = self.style.for_file(file, self.colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }

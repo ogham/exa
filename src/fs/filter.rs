@@ -234,10 +234,10 @@ impl SortField {
     /// into groups between letters and numbers, and then sorts those blocks
     /// together, so `file10` will sort after `file9`, instead of before it
     /// because of the `1`.
-    pub fn compare_files(&self, a: &File, b: &File) -> Ordering {
+    pub fn compare_files(self, a: &File, b: &File) -> Ordering {
         use self::SortCase::{ABCabc, AaBbCc};
 
-        match *self {
+        match self {
             SortField::Unsorted  => Ordering::Equal,
 
             SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
@@ -277,7 +277,7 @@ impl SortField {
     }
 
     fn strip_dot(n: &str) -> &str {
-        if n.starts_with(".") {
+        if n.starts_with('.') {
             &n[1..]
         } else {
             n

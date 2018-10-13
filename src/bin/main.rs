@@ -19,7 +19,7 @@ fn main() {
                     match e.kind() {
                         ErrorKind::BrokenPipe => exit(exits::SUCCESS),
                         _ => {
-                            writeln!(stderr(), "{}", e).unwrap();
+                            eprintln!("{}", e);
                             exit(exits::RUNTIME_ERROR);
                         },
                     };
@@ -39,7 +39,7 @@ fn main() {
         },
 
         Err(ref e) => {
-            writeln!(stdout(), "{}", e).unwrap();
+            println!("{}", e);
             exit(exits::SUCCESS);
         },
     };

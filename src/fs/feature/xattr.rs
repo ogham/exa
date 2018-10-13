@@ -203,7 +203,7 @@ mod lister {
 
     impl Lister {
         pub fn new(follow_symlinks: FollowSymlinks) -> Lister {
-            Lister { follow_symlinks: follow_symlinks }
+            Lister { follow_symlinks }
         }
 
         pub fn translate_attribute_name(&self, input: &[u8]) -> String {

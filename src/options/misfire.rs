@@ -117,19 +117,13 @@ impl Misfire {
     /// went wrong.
     pub fn suggestion(&self) -> Option<&'static str> {
         // ‘ls -lt’ and ‘ls -ltr’ are common combinations
-        if let Misfire::BadArgument(ref time, ref r) = *self {
-            if *time == &flags::TIME && r == "r" {
-                return Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"");
-            }
+        match *self {
+            Misfire::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" =>
+                Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\""),
+            Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') =>
+                Some("To sort newest files last, try \"--sort newest\", or just \"-snew\""),
+            _ => None
         }
-
-        if let Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, values: _ }) = *self {
-            if *flag == Flag::Short(b't') {
-                return Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"");
-            }
-        }
-
-        None
     }
 }
 

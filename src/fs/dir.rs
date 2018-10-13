@@ -52,7 +52,7 @@ impl Dir {
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
-            ignore:    ignore,
+            ignore,
         }
     }
 
@@ -103,7 +103,7 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
         loop {
             if let Some(path) = self.inner.next() {
                 let filename = File::filename(path);
-                if !self.dotfiles && filename.starts_with(".") { continue }
+                if !self.dotfiles && filename.starts_with('.') { continue }
 
                 if let Some(i) = self.ignore {
                     if i.is_ignored(path) { continue }
@@ -180,8 +180,8 @@ impl Default for DotFilter {
 impl DotFilter {
 
     /// Whether this filter should show dotfiles in a listing.
-    fn shows_dotfiles(&self) -> bool {
-        match *self {
+    fn shows_dotfiles(self) -> bool {
+        match self {
             DotFilter::JustFiles       => false,
             DotFilter::Dotfiles        => true,
             DotFilter::DotfilesAndDots => true,
@@ -189,8 +189,8 @@ impl DotFilter {
     }
 
     /// Whether this filter should add dot directories to a listing.
-    fn dots(&self) -> Dots {
-        match *self {
+    fn dots(self) -> Dots {
+        match self {
             DotFilter::JustFiles       => Dots::FilesNext,
             DotFilter::Dotfiles        => Dots::FilesNext,
             DotFilter::DotfilesAndDots => Dots::DotNext,

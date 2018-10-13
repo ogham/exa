@@ -41,7 +41,7 @@ impl f::Size {
         let width = DisplayWidth::from(number.len() + symbol.len());
 
         TextCell {
-            width:    width,
+            width,
             contents: vec![
                 colours.size(size).paint(number),
                 colours.unit().paint(symbol),
