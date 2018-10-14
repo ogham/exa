@@ -101,6 +101,7 @@ impl FileColours for FileExtensions {
         use ansi_term::Colour::*;
 
         Some(match file {
+            f if self.is_temp(f)        => Fixed(244).normal(),
             f if self.is_immediate(f)   => Yellow.bold().underline(),
             f if self.is_image(f)       => Fixed(133).normal(),
             f if self.is_video(f)       => Fixed(135).normal(),
@@ -109,7 +110,6 @@ impl FileColours for FileExtensions {
             f if self.is_crypto(f)      => Fixed(109).normal(),
             f if self.is_document(f)    => Fixed(105).normal(),
             f if self.is_compressed(f)  => Red.normal(),
-            f if self.is_temp(f)        => Fixed(244).normal(),
             f if self.is_compiled(f)    => Fixed(137).normal(),
             _                           => return None,
         })
