@@ -23,9 +23,11 @@ DISPLAY OPTIONS
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
   -d, --list-dirs            list directories like regular files
+  -L, --level DEPTH          limit the depth of recursion
   -r, --reverse              reverse the sort order
   -s, --sort SORT_FIELD      which field to sort by
   --group-directories-first  list directories before other files
+  -D, --only-dirs            list only directories
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
   --git-ignore               Ignore files mentioned in '.gitignore'
   Valid sort fields:         name, Name, extension, Extension, size, type,
@@ -41,7 +43,6 @@ LONG VIEW OPTIONS
   -h, --header       add a header row to each column
   -H, --links        list each file's number of hard links
   -i, --inode        list each file's inode number
-  -L, --level DEPTH  limit the depth of recursion
   -m, --modified     use the modified timestamp field
   -S, --blocks       show number of file system blocks
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)

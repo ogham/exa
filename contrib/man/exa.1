@@ -74,6 +74,11 @@ list directories like regular files
 .RS
 .RE
 .TP
+.B \-L, \-\-level=\f[I]DEPTH\f[]
+limit the depth of recursion
+.RS
+.RE
+.TP
 .B \-r, \-\-reverse
 reverse the sort order
 .RS
@@ -100,6 +105,11 @@ ignore files mentioned in '.gitignore'
 .TP
 .B \-\-group\-directories\-first
 list directories before other files
+.RS
+.RE
+.TP
+.B \-D, \-\-only\-dirs
+list only directories
 .RS
 .RE
 .SH LONG VIEW OPTIONS
@@ -134,11 +144,6 @@ list each file\[aq]s number of hard links
 .TP
 .B \-i, \-\-inode
 list each file\[aq]s inode number
-.RS
-.RE
-.TP
-.B \-L, \-\-level=\f[I]DEPTH\f[]
-limit the depth of recursion
 .RS
 .RE
 .TP
