@@ -45,7 +45,7 @@ pub type uid_t = u32;
 /// Its ordering is used when sorting by type.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum Type {
-    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special,
+    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special, Subvolume,
 }
 
 impl Type {

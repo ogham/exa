@@ -253,6 +253,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
     fn kind_style(&self) -> Option<Style> {
         Some(match self.file {
+            f if f.is_subvolume()        => self.colours.subvolume(),
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),
             f if f.is_link()             => self.colours.symlink(),

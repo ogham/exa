@@ -14,6 +14,7 @@ impl f::Type {
             f::Type::CharDevice  => colours.char_device().paint("c"),
             f::Type::Socket      => colours.socket().paint("s"),
             f::Type::Special     => colours.special().paint("?"),
+            f::Type::Subvolume   => colours.special().paint("^"),
         }
     }
 }
@@ -28,4 +29,5 @@ pub trait Colours {
     fn char_device(&self) -> Style;
     fn socket(&self) -> Style;
     fn special(&self) -> Style;
+    fn subvolume(&self) -> Style;
 }

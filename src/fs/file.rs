@@ -170,6 +170,15 @@ impl<'dir> File<'dir> {
         self.metadata.file_type().is_socket()
     }
 
+    // Whether this file is a btrfs subvolume
+    pub fn is_subvolume(&self) -> bool {
+        if self.is_directory() {
+            if self.metadata.ino() == 2 || self.metadata.ino() == 256 {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
@@ -327,6 +336,9 @@ impl<'dir> File<'dir> {
     pub fn type_char(&self) -> f::Type {
         if self.is_file() {
             f::Type::File
+        }
+        else if self.is_subvolume() {
+            f::Type::Subvolume
         }
         else if self.is_directory() {
             f::Type::Directory

@@ -42,6 +42,7 @@ pub struct FileKinds {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
+    pub subvolume: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -123,6 +124,7 @@ impl Colours {
                 socket:       Red.bold(),
                 special:      Yellow.normal(),
                 executable:   Green.bold(),
+                subvolume:    Blue.bold().underline(),
             },
 
             perms: Permissions {
@@ -240,6 +242,7 @@ impl Colours {
             "cd" => self.filekinds.char_device  = pair.to_style(),  // CHR
             "ln" => self.filekinds.symlink      = pair.to_style(),  // LINK
             "or" => self.broken_symlink         = pair.to_style(),  // ORPHAN
+            "sv" => self.filekinds.subvolume    = pair.to_style(),  // SUBVOL
              _   => return false,
              // Codes we don’t do anything with:
              // MULTIHARDLINK, DOOR, SETUID, SETGID, CAPABILITY,
@@ -317,6 +320,7 @@ impl render::FiletypeColours for Colours {
     fn char_device(&self)  -> Style { self.filekinds.char_device }
     fn socket(&self)       -> Style { self.filekinds.socket }
     fn special(&self)      -> Style { self.filekinds.special }
+    fn subvolume(&self)    -> Style { self.filekinds.subvolume }
 }
 
 impl render::GitColours for Colours {
