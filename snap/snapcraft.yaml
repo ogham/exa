@@ -1,0 +1,22 @@
+name: exa
+version: git
+summary: "A modern version of ‘ls’"
+description: |
+  exa is a replacement for ls written in Rust..
+
+grade: stable
+confinement: classic
+
+parts:
+  exa:
+    plugin: rust
+    source: ./
+    build-packages:
+      - libgit2-dev
+      - cmake
+    stage-packages:
+      - libhttp-parser2.1
+
+apps:
+  exa:
+    command: bin/exa
