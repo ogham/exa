@@ -13,6 +13,7 @@ readme = "README.md"
 categories = ["command-line-utilities"]
 keywords = ["ls", "files", "command-line"]
 license = "MIT"
+exclude = ["/devtools/*", "/Makefile", "/Vagrantfile", "/screenshots.png"]
 
 
 [[bin]]
