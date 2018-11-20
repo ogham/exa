@@ -167,7 +167,7 @@ pub struct DeviceIDs {
 
 
 /// One of a file’s timestamps (created, accessed, or modified).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Time {
     pub seconds: time_t,
     pub nanoseconds: time_t,
