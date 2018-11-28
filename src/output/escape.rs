@@ -1,11 +1,9 @@
 use ansi_term::{ANSIString, Style};
 
-
 pub fn escape<'a>(string: String, bits: &mut Vec<ANSIString<'a>>, good: Style, bad: Style) {
     if string.chars().all(|c| c >= 0x20 as char) {
         bits.push(good.paint(string));
-    }
-    else {
+    } else {
         for c in string.chars() {
             // The `escape_default` method on `char` is *almost* what we want here, but
             // it still escapes non-ASCII UTF-8 characters, which are still printable.

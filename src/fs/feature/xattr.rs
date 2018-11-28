@@ -1,11 +1,12 @@
 //! Extended attribute support for Darwin and Linux systems.
-#![allow(trivial_casts)]  // for ARM
+#![allow(trivial_casts)] // for ARM
 extern crate libc;
 
 use std::io;
 use std::path::Path;
 
-pub const ENABLED: bool = cfg!(feature="git") && cfg!(any(target_os="macos", target_os="linux"));
+pub const ENABLED: bool =
+    cfg!(feature = "git") && cfg!(any(target_os = "macos", target_os = "linux"));
 
 pub trait FileAttributes {
     fn attributes(&self) -> io::Result<Vec<Attribute>>;
@@ -39,7 +40,7 @@ impl FileAttributes for Path {
 #[derive(Copy, Clone)]
 pub enum FollowSymlinks {
     Yes,
-    No
+    No,
 }
 
 /// Extended attribute
@@ -53,9 +54,14 @@ pub struct Attribute {
 pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
     use std::ffi::CString;
 
-    let c_path = match path.to_str().and_then(|s| { CString::new(s).ok() }) {
+    let c_path = match path.to_str().and_then(|s| CString::new(s).ok()) {
         Some(cstring) => cstring,
-        None => return Err(io::Error::new(io::ErrorKind::Other, "Error: path somehow contained a NUL?")),
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error: path somehow contained a NUL?",
+            ))
+        }
     };
 
     let mut names = Vec::new();
@@ -63,8 +69,7 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
 
     if bufsize < 0 {
         return Err(io::Error::last_os_error());
-    }
-    else if bufsize > 0 {
+    } else if bufsize > 0 {
         let mut buf = vec![0u8; bufsize as usize];
         let err = lister.listxattr_second(&c_path, &mut buf, bufsize);
 
@@ -75,9 +80,10 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
         if err > 0 {
             // End indicies of the attribute names
             // the buffer contains 0-terminates c-strings
-            let idx = buf.iter().enumerate().filter_map(|(i, v)|
-                if *v == 0 { Some(i) } else { None }
-            );
+            let idx = buf
+                .iter()
+                .enumerate()
+                .filter_map(|(i, v)| if *v == 0 { Some(i) } else { None });
             let mut start = 0;
 
             for end in idx {
@@ -87,36 +93,39 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
                 if size > 0 {
                     names.push(Attribute {
                         name: lister.translate_attribute_name(&buf[start..end]),
-                        size: size as usize
+                        size: size as usize,
                     });
                 }
 
                 start = c_end;
             }
-
         }
-
     }
     Ok(names)
 }
 
 #[cfg(target_os = "macos")]
 mod lister {
-    use std::ffi::CString;
-    use libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
     use super::FollowSymlinks;
+    use libc::{c_char, c_int, c_void, size_t, ssize_t, uint32_t};
+    use std::ffi::CString;
     use std::ptr;
 
     extern "C" {
         fn listxattr(
-            path: *const c_char, namebuf: *mut c_char,
-            size: size_t, options: c_int
+            path: *const c_char,
+            namebuf: *mut c_char,
+            size: size_t,
+            options: c_int,
         ) -> ssize_t;
 
         fn getxattr(
-            path: *const c_char, name: *const c_char,
-            value: *mut c_void, size: size_t, position: uint32_t,
-            options: c_int
+            path: *const c_char,
+            name: *const c_char,
+            value: *mut c_void,
+            size: size_t,
+            position: uint32_t,
+            options: c_int,
         ) -> ssize_t;
     }
 
@@ -128,7 +137,7 @@ mod lister {
         pub fn new(do_follow: FollowSymlinks) -> Lister {
             let c_flags: c_int = match do_follow {
                 FollowSymlinks::Yes => 0x0001,
-                FollowSymlinks::No  => 0x0000,
+                FollowSymlinks::No => 0x0000,
             };
 
             Lister { c_flags }
@@ -137,23 +146,25 @@ mod lister {
         pub fn translate_attribute_name(&self, input: &[u8]) -> String {
             use std::str::from_utf8_unchecked;
 
-            unsafe {
-                from_utf8_unchecked(input).into()
-            }
+            unsafe { from_utf8_unchecked(input).into() }
         }
 
         pub fn listxattr_first(&self, c_path: &CString) -> ssize_t {
-            unsafe {
-                listxattr(c_path.as_ptr(), ptr::null_mut(), 0, self.c_flags)
-            }
+            unsafe { listxattr(c_path.as_ptr(), ptr::null_mut(), 0, self.c_flags) }
         }
 
-        pub fn listxattr_second(&self, c_path: &CString, buf: &mut Vec<u8>, bufsize: ssize_t) -> ssize_t {
+        pub fn listxattr_second(
+            &self,
+            c_path: &CString,
+            buf: &mut Vec<u8>,
+            bufsize: ssize_t,
+        ) -> ssize_t {
             unsafe {
                 listxattr(
                     c_path.as_ptr(),
                     buf.as_mut_ptr() as *mut c_char,
-                    bufsize as size_t, self.c_flags
+                    bufsize as size_t,
+                    self.c_flags,
                 )
             }
         }
@@ -163,7 +174,10 @@ mod lister {
                 getxattr(
                     c_path.as_ptr(),
                     buf.as_ptr() as *const c_char,
-                    ptr::null_mut(), 0, 0, self.c_flags
+                    ptr::null_mut(),
+                    0,
+                    0,
+                    self.c_flags,
                 )
             }
         }
@@ -172,28 +186,28 @@ mod lister {
 
 #[cfg(target_os = "linux")]
 mod lister {
-    use std::ffi::CString;
-    use libc::{size_t, ssize_t, c_char, c_void};
     use super::FollowSymlinks;
+    use libc::{c_char, c_void, size_t, ssize_t};
+    use std::ffi::CString;
     use std::ptr;
 
     extern "C" {
-        fn listxattr(
-            path: *const c_char, list: *mut c_char, size: size_t
-        ) -> ssize_t;
+        fn listxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
 
-        fn llistxattr(
-            path: *const c_char, list: *mut c_char, size: size_t
-        ) -> ssize_t;
+        fn llistxattr(path: *const c_char, list: *mut c_char, size: size_t) -> ssize_t;
 
         fn getxattr(
-            path: *const c_char, name: *const c_char,
-            value: *mut c_void, size: size_t
+            path: *const c_char,
+            name: *const c_char,
+            value: *mut c_void,
+            size: size_t,
         ) -> ssize_t;
 
         fn lgetxattr(
-            path: *const c_char, name: *const c_char,
-            value: *mut c_void, size: size_t
+            path: *const c_char,
+            name: *const c_char,
+            value: *mut c_void,
+            size: size_t,
         ) -> ssize_t;
     }
 
@@ -213,25 +227,28 @@ mod lister {
         pub fn listxattr_first(&self, c_path: &CString) -> ssize_t {
             let listxattr = match self.follow_symlinks {
                 FollowSymlinks::Yes => listxattr,
-                FollowSymlinks::No  => llistxattr,
+                FollowSymlinks::No => llistxattr,
             };
 
-            unsafe {
-                listxattr(c_path.as_ptr() as *const _, ptr::null_mut(), 0)
-            }
+            unsafe { listxattr(c_path.as_ptr() as *const _, ptr::null_mut(), 0) }
         }
 
-        pub fn listxattr_second(&self, c_path: &CString, buf: &mut Vec<u8>, bufsize: ssize_t) -> ssize_t {
+        pub fn listxattr_second(
+            &self,
+            c_path: &CString,
+            buf: &mut Vec<u8>,
+            bufsize: ssize_t,
+        ) -> ssize_t {
             let listxattr = match self.follow_symlinks {
                 FollowSymlinks::Yes => listxattr,
-                FollowSymlinks::No  => llistxattr,
+                FollowSymlinks::No => llistxattr,
             };
 
             unsafe {
                 listxattr(
                     c_path.as_ptr() as *const _,
                     buf.as_mut_ptr() as *mut c_char,
-                    bufsize as size_t
+                    bufsize as size_t,
                 )
             }
         }
@@ -239,14 +256,15 @@ mod lister {
         pub fn getxattr(&self, c_path: &CString, buf: &[u8]) -> ssize_t {
             let getxattr = match self.follow_symlinks {
                 FollowSymlinks::Yes => getxattr,
-                FollowSymlinks::No  => lgetxattr,
+                FollowSymlinks::No => lgetxattr,
             };
 
             unsafe {
                 getxattr(
                     c_path.as_ptr() as *const _,
                     buf.as_ptr() as *const c_char,
-                    ptr::null_mut(), 0
+                    ptr::null_mut(),
+                    0,
                 )
             }
         }

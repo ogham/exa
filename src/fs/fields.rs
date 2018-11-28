@@ -1,4 +1,3 @@
-
 //! Wrapper types for the values returned from `File`s.
 //!
 //! The methods of `File` that return information about the entry on the
@@ -34,7 +33,6 @@ pub type time_t = i64;
 /// The type of a file’s user ID.
 pub type uid_t = u32;
 
-
 /// The file’s base type, which gets displayed in the very first column of the
 /// details output.
 ///
@@ -45,47 +43,52 @@ pub type uid_t = u32;
 /// Its ordering is used when sorting by type.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum Type {
-    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special,
+    Directory,
+    File,
+    Link,
+    Pipe,
+    Socket,
+    CharDevice,
+    BlockDevice,
+    Special,
 }
 
 impl Type {
     pub fn is_regular_file(&self) -> bool {
         match *self {
-            Type::File  => true,
-            _           => false,
+            Type::File => true,
+            _ => false,
         }
     }
 }
 
-
 /// The file’s Unix permission bitfield, with one entry per bit.
 pub struct Permissions {
-    pub user_read:      bool,
-    pub user_write:     bool,
-    pub user_execute:   bool,
+    pub user_read: bool,
+    pub user_write: bool,
+    pub user_execute: bool,
 
-    pub group_read:     bool,
-    pub group_write:    bool,
-    pub group_execute:  bool,
+    pub group_read: bool,
+    pub group_write: bool,
+    pub group_execute: bool,
 
-    pub other_read:     bool,
-    pub other_write:    bool,
-    pub other_execute:  bool,
+    pub other_read: bool,
+    pub other_write: bool,
+    pub other_execute: bool,
 
-    pub sticky:         bool,
-    pub setgid:         bool,
-    pub setuid:         bool,
+    pub sticky: bool,
+    pub setgid: bool,
+    pub setuid: bool,
 }
 
 /// The three pieces of information that are displayed as a single column in
 /// the details view. These values are fused together to make the output a
 /// little more compressed.
 pub struct PermissionsPlus {
-    pub file_type:   Type,
+    pub file_type: Type,
     pub permissions: Permissions,
-    pub xattrs:      bool,
+    pub xattrs: bool,
 }
-
 
 /// A file’s number of hard links on the filesystem.
 ///
@@ -94,7 +97,6 @@ pub struct PermissionsPlus {
 /// regular file to have a link count greater than 1, so we highlight the
 /// block count specifically for this case.
 pub struct Links {
-
     /// The actual link count.
     pub count: nlink_t,
 
@@ -102,23 +104,19 @@ pub struct Links {
     pub multiple: bool,
 }
 
-
 /// A file’s inode. Every directory entry on a Unix filesystem has an inode,
 /// including directories and links, so this is applicable to everything exa
 /// can deal with.
 pub struct Inode(pub ino_t);
 
-
 /// The number of blocks that a file takes up on the filesystem, if any.
 pub enum Blocks {
-
     /// This file has the given number of blocks.
     Some(blkcnt_t),
 
     /// This file isn’t of a type that can take up blocks.
     None,
 }
-
 
 /// The ID of the user that owns a file. This will only ever be a number;
 /// looking up the username is done in the `display` module.
@@ -127,11 +125,9 @@ pub struct User(pub uid_t);
 /// The ID of the group that a file belongs to.
 pub struct Group(pub gid_t);
 
-
 /// A file’s size, in bytes. This is usually formatted by the `number_prefix`
 /// crate into something human-readable.
 pub enum Size {
-
     /// This file has a defined size.
     Some(u64),
 
@@ -165,7 +161,6 @@ pub struct DeviceIDs {
     pub minor: u8,
 }
 
-
 /// One of a file’s timestamps (created, accessed, or modified).
 #[derive(Copy, Clone)]
 pub struct Time {
@@ -173,12 +168,10 @@ pub struct Time {
     pub nanoseconds: time_t,
 }
 
-
 /// A file’s status in a Git repository. Whether a file is in a repository or
 /// not is handled by the Git module, rather than having a “null” variant in
 /// this enum.
 pub enum GitStatus {
-
     /// This file hasn’t changed since the last commit.
     NotModified,
 
@@ -203,15 +196,17 @@ pub enum GitStatus {
 /// it to the staging area, then make *more* changes, so we need to list each
 /// file’s status for both of these.
 pub struct Git {
-    pub staged:   GitStatus,
+    pub staged: GitStatus,
     pub unstaged: GitStatus,
 }
 
 use std::default::Default;
 impl Default for Git {
-
     /// Create a Git status for a file with nothing done to it.
     fn default() -> Git {
-        Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+        Git {
+            staged: GitStatus::NotModified,
+            unstaged: GitStatus::NotModified,
+        }
     }
 }

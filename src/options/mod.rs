@@ -68,16 +68,15 @@
 //! --grid --long` shouldn’t complain about `--long` being given twice when
 //! it’s clear what the user wants.
 
-
 use std::ffi::{OsStr, OsString};
 
 use fs::dir_action::DirAction;
 use fs::filter::FileFilter;
-use output::{View, Mode, details, grid_details};
+use output::{details, grid_details, Mode, View};
 
-mod style;
 mod dir_action;
 mod filter;
+mod style;
 mod view;
 
 mod help;
@@ -92,16 +91,14 @@ pub use self::misfire::Misfire;
 pub mod vars;
 pub use self::vars::Vars;
 
-mod parser;
 mod flags;
+mod parser;
 use self::parser::MatchedFlags;
-
 
 /// These **options** represent a parsed, error-checked versions of the
 /// user’s command-line options.
 #[derive(Debug)]
 pub struct Options {
-
     /// The action to perform when encountering a directory rather than a
     /// regular file.
     pub dir_action: DirAction,
@@ -114,26 +111,27 @@ pub struct Options {
 }
 
 impl Options {
-
     /// Parse the given iterator of command-line strings into an Options
     /// struct and a list of free filenames, using the environment variables
     /// for extra options.
     #[allow(unused_results)]
     pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
-    where I: IntoIterator<Item=&'args OsString>,
-          V: Vars {
+    where
+        I: IntoIterator<Item = &'args OsString>,
+        V: Vars,
+    {
         use options::parser::{Matches, Strictness};
         use options::vars;
 
         let strictness = match vars.get(vars::EXA_STRICT) {
-            None                         => Strictness::UseLastArguments,
-            Some(ref t) if t.is_empty()  => Strictness::UseLastArguments,
-            _                            => Strictness::ComplainAboutRedundantArguments,
+            None => Strictness::UseLastArguments,
+            Some(ref t) if t.is_empty() => Strictness::UseLastArguments,
+            _ => Strictness::ComplainAboutRedundantArguments,
         };
 
         let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, strictness) {
-            Ok(m)   => m,
-            Err(e)  => return Err(Misfire::InvalidOptions(e)),
+            Ok(m) => m,
+            Err(e) => return Err(Misfire::InvalidOptions(e)),
         };
 
         HelpString::deduce(&flags).map_err(Misfire::Help)?;
@@ -148,8 +146,18 @@ impl Options {
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
-            Mode::Details(details::Options { table: Some(ref table), .. }) |
-            Mode::GridDetails(grid_details::Options { details: details::Options { table: Some(ref table), .. }, .. }) => table.extra_columns.git,
+            Mode::Details(details::Options {
+                table: Some(ref table),
+                ..
+            })
+            | Mode::GridDetails(grid_details::Options {
+                details:
+                    details::Options {
+                        table: Some(ref table),
+                        ..
+                    },
+                ..
+            }) => table.extra_columns.git,
             _ => false,
         }
     }
@@ -161,15 +169,17 @@ impl Options {
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
 
-        Ok(Options { dir_action, view, filter })
+        Ok(Options {
+            dir_action,
+            view,
+            filter,
+        })
     }
 }
 
-
-
 #[cfg(test)]
 pub mod test {
-    use super::{Options, Misfire, flags};
+    use super::{flags, Misfire, Options};
     use options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
 
@@ -186,14 +196,23 @@ pub mod test {
     ///
     /// It returns a vector with one or two elements in.
     /// These elements can then be tested with assert_eq or what have you.
-    pub fn parse_for_test<T, F>(inputs: &[&str], args: &'static [&'static Arg], strictnesses: Strictnesses, get: F) -> Vec<T>
-    where F: Fn(&MatchedFlags) -> T
+    pub fn parse_for_test<T, F>(
+        inputs: &[&str],
+        args: &'static [&'static Arg],
+        strictnesses: Strictnesses,
+        get: F,
+    ) -> Vec<T>
+    where
+        F: Fn(&MatchedFlags) -> T,
     {
         use self::Strictnesses::*;
         use options::parser::{Args, Strictness};
         use std::ffi::OsString;
 
-        let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+        let bits = inputs
+            .into_iter()
+            .map(|&o| os(o))
+            .collect::<Vec<OsString>>();
         let mut result = Vec::new();
 
         if strictnesses == Last || strictnesses == Both {
@@ -202,7 +221,8 @@ pub mod test {
         }
 
         if strictnesses == Complain || strictnesses == Both {
-            let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
+            let results =
+                Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
             result.push(get(&results.unwrap().flags));
         }
 
@@ -219,29 +239,35 @@ pub mod test {
 
     #[test]
     fn files() {
-        let args = [ os("this file"), os("that file") ];
+        let args = [os("this file"), os("that file")];
         let outs = Options::parse(&args, &None).unwrap().1;
-        assert_eq!(outs, vec![ &os("this file"), &os("that file") ])
+        assert_eq!(outs, vec![&os("this file"), &os("that file")])
     }
 
     #[test]
     fn no_args() {
         let nothing: Vec<OsString> = Vec::new();
         let outs = Options::parse(&nothing, &None).unwrap().1;
-        assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
+        assert!(outs.is_empty()); // Listing the `.` directory is done in main.rs
     }
 
     #[test]
     fn long_across() {
-        let args = [ os("--long"), os("--across") ];
+        let args = [os("--long"), os("--across")];
         let opts = Options::parse(&args, &None);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
+        assert_eq!(
+            opts.unwrap_err(),
+            Misfire::Useless(&flags::ACROSS, true, &flags::LONG)
+        )
     }
 
     #[test]
     fn oneline_across() {
-        let args = [ os("--oneline"), os("--across") ];
+        let args = [os("--oneline"), os("--across")];
         let opts = Options::parse(&args, &None);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
+        assert_eq!(
+            opts.unwrap_err(),
+            Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE)
+        )
     }
 }

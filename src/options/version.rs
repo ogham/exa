@@ -7,13 +7,11 @@ use std::fmt;
 use options::flags;
 use options::parser::MatchedFlags;
 
-
 #[derive(PartialEq, Debug)]
 pub struct VersionString;
 // There were options here once, but there aren’t anymore!
 
 impl VersionString {
-
     /// Determines how to show the version, if at all, based on the user’s
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
@@ -22,19 +20,21 @@ impl VersionString {
     pub fn deduce(matches: &MatchedFlags) -> Result<(), VersionString> {
         if matches.count(&flags::VERSION) > 0 {
             Err(VersionString)
-        }
-        else {
-            Ok(())  // no version needs to be shown
+        } else {
+            Ok(()) // no version needs to be shown
         }
     }
 }
 
 impl fmt::Display for VersionString {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
+        write!(
+            f,
+            "{}",
+            include!(concat!(env!("OUT_DIR"), "/version_string.txt"))
+        )
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -49,7 +49,7 @@ mod test {
 
     #[test]
     fn help() {
-        let args = [ os("--version") ];
+        let args = [os("--version")];
         let opts = Options::parse(&args, &None);
         assert!(opts.is_err())
     }

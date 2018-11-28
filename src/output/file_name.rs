@@ -3,15 +3,13 @@ use std::path::Path;
 use ansi_term::{ANSIString, Style};
 
 use fs::{File, FileTarget};
-use output::escape;
 use output::cell::TextCellContents;
+use output::escape;
 use output::render::FiletypeColours;
-
 
 /// Basically a file name factory.
 #[derive(Debug)]
 pub struct FileStyle {
-
     /// Whether to append file class characters to file names.
     pub classify: Classify,
 
@@ -20,27 +18,32 @@ pub struct FileStyle {
 }
 
 impl FileStyle {
-
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
-    pub fn for_file<'a, 'dir, C: Colours>(&'a self, file: &'a File<'dir>, colours: &'a C) -> FileName<'a, 'dir, C> {
+    pub fn for_file<'a, 'dir, C: Colours>(
+        &'a self,
+        file: &'a File<'dir>,
+        colours: &'a C,
+    ) -> FileName<'a, 'dir, C> {
         FileName {
-            file, colours,
+            file,
+            colours,
             link_style: LinkStyle::JustFilenames,
-            classify:   self.classify,
-            exts:       &*self.exts,
-            target:     if file.is_link() { Some(file.link_target()) }
-                                     else { None }
+            classify: self.classify,
+            exts: &*self.exts,
+            target: if file.is_link() {
+                Some(file.link_target())
+            } else {
+                None
+            },
         }
     }
 }
-
 
 /// When displaying a file name, there needs to be some way to handle broken
 /// links, depending on how long the resulting Cell can be.
 #[derive(PartialEq, Debug, Copy, Clone)]
 enum LinkStyle {
-
     /// Just display the file names, but colour them differently if they’re
     /// a broken link or can’t be followed.
     JustFilenames,
@@ -51,11 +54,9 @@ enum LinkStyle {
     FullLinkPaths,
 }
 
-
 /// Whether to append file class characters to the file names.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Classify {
-
     /// Just display the file names, without any characters.
     JustFilenames,
 
@@ -70,12 +71,9 @@ impl Default for Classify {
     }
 }
 
-
-
 /// A **file name** holds all the information necessary to display the name
 /// of the given file. This is used in all of the views.
-pub struct FileName<'a,  'dir: 'a,  C: Colours+'a> {
-
+pub struct FileName<'a, 'dir: 'a, C: Colours + 'a> {
     /// A reference to the file that we’re getting the name of.
     file: &'a File<'dir>,
 
@@ -95,9 +93,7 @@ pub struct FileName<'a,  'dir: 'a,  C: Colours+'a> {
     exts: &'a FileColours,
 }
 
-
 impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
-
     /// Sets the flag on this file name to display link targets with an
     /// arrow followed by their path.
     pub fn with_link_paths(mut self) -> Self {
@@ -121,12 +117,12 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
 
         if !self.file.name.is_empty() {
-        	// The “missing file” colour seems like it should be used here,
-        	// but it’s not! In a grid view, where there's no space to display
-        	// link targets, the filename has to have a different style to
-        	// indicate this fact. But when showing targets, we can just
-        	// colour the path instead (see below), and leave the broken
-        	// link’s filename as the link colour.
+            // The “missing file” colour seems like it should be used here,
+            // but it’s not! In a grid view, where there's no space to display
+            // link targets, the filename has to have a different style to
+            // indicate this fact. But when showing targets, we can just
+            // colour the path instead (see below), and leave the broken
+            // link’s filename as the link colour.
             for bit in self.coloured_file_name() {
                 bits.push(bit);
             }
@@ -157,21 +153,25 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                             bits.push(bit);
                         }
                     }
-                },
+                }
 
                 FileTarget::Broken(ref broken_path) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_symlink().paint("->"));
                     bits.push(Style::default().paint(" "));
-                    escape(broken_path.display().to_string(), &mut bits, self.colours.broken_filename(), self.colours.broken_control_char());
-                },
+                    escape(
+                        broken_path.display().to_string(),
+                        &mut bits,
+                        self.colours.broken_filename(),
+                        self.colours.broken_control_char(),
+                    );
+                }
 
                 FileTarget::Err(_) => {
                     // Do nothing -- the error gets displayed on the next line
-                },
+                }
             }
-        }
-        else if let Classify::AddFileIndicators = self.classify {
+        } else if let Classify::AddFileIndicators = self.classify {
             if let Some(class) = self.classify_char() {
                 bits.push(Style::default().paint(class));
             }
@@ -180,7 +180,6 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         bits.into()
     }
 
-
     /// Adds the bits of the parent path to the given bits vector.
     /// The path gets its characters escaped based on the colours.
     fn add_parent_bits(&self, bits: &mut Vec<ANSIString>, parent: &Path) {
@@ -188,13 +187,16 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
         if coconut == 1 && parent.has_root() {
             bits.push(self.colours.symlink_path().paint("/"));
-        }
-        else if coconut >= 1 {
-            escape(parent.to_string_lossy().to_string(), bits, self.colours.symlink_path(), self.colours.control_char());
+        } else if coconut >= 1 {
+            escape(
+                parent.to_string_lossy().to_string(),
+                bits,
+                self.colours.symlink_path(),
+                self.colours.control_char(),
+            );
             bits.push(self.colours.symlink_path().paint("/"));
         }
     }
-
 
     /// The character to be displayed after a file when classifying is on, if
     /// the file’s type has one associated with it.
@@ -214,7 +216,6 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
     }
 
-
     /// Returns at least one ANSI-highlighted string representing this file’s
     /// name using the given set of colours.
     ///
@@ -228,10 +229,14 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     fn coloured_file_name<'unused>(&self) -> Vec<ANSIString<'unused>> {
         let file_style = self.style();
         let mut bits = Vec::new();
-        escape(self.file.name.clone(), &mut bits, file_style, self.colours.control_char());
+        escape(
+            self.file.name.clone(),
+            &mut bits,
+            file_style,
+            self.colours.control_char(),
+        );
         bits
     }
-
 
     /// Figures out which colour to paint the filename part of the output,
     /// depending on which “type” of file it appears to be -- either from the
@@ -253,23 +258,21 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
     fn kind_style(&self) -> Option<Style> {
         Some(match self.file {
-            f if f.is_directory()        => self.colours.directory(),
-            f if f.is_executable_file()  => self.colours.executable_file(),
-            f if f.is_link()             => self.colours.symlink(),
-            f if f.is_pipe()             => self.colours.pipe(),
-            f if f.is_block_device()     => self.colours.block_device(),
-            f if f.is_char_device()      => self.colours.char_device(),
-            f if f.is_socket()           => self.colours.socket(),
-            f if !f.is_file()            => self.colours.special(),
-            _                            => return None,
+            f if f.is_directory() => self.colours.directory(),
+            f if f.is_executable_file() => self.colours.executable_file(),
+            f if f.is_link() => self.colours.symlink(),
+            f if f.is_pipe() => self.colours.pipe(),
+            f if f.is_block_device() => self.colours.block_device(),
+            f if f.is_char_device() => self.colours.char_device(),
+            f if f.is_socket() => self.colours.socket(),
+            f if !f.is_file() => self.colours.special(),
+            _ => return None,
         })
     }
 }
 
-
 /// The set of colours that are needed to paint a file name.
 pub trait Colours: FiletypeColours {
-
     /// The style to paint the path of a symlink’s target, up to but not
     /// including the file’s name.
     fn symlink_path(&self) -> Style;
@@ -277,9 +280,9 @@ pub trait Colours: FiletypeColours {
     /// The style to paint the arrow between a link and its target.
     fn normal_arrow(&self) -> Style;
 
-	/// The style to paint the filenames of broken links in views that don’t
-	/// show link targets, and the style to paint the *arrow* between the link
-	/// and its target in views that *do* show link targets.
+    /// The style to paint the filenames of broken links in views that don’t
+    /// show link targets, and the style to paint the *arrow* between the link
+    /// and its target in views that *do* show link targets.
     fn broken_symlink(&self) -> Style;
 
     /// The style to paint the entire filename of a broken link.
@@ -296,19 +299,19 @@ pub trait Colours: FiletypeColours {
     fn executable_file(&self) -> Style;
 }
 
-
 // needs Debug because FileStyle derives it
 use std::fmt::Debug;
 use std::marker::Sync;
-pub trait FileColours: Debug+Sync {
+pub trait FileColours: Debug + Sync {
     fn colour_file(&self, file: &File) -> Option<Style>;
 }
-
 
 #[derive(PartialEq, Debug)]
 pub struct NoFileColours;
 impl FileColours for NoFileColours {
-    fn colour_file(&self, _file: &File) -> Option<Style> { None }
+    fn colour_file(&self, _file: &File) -> Option<Style> {
+        None
+    }
 }
 
 // When getting the colour of a file from a *pair* of colourisers, try the
@@ -316,8 +319,13 @@ impl FileColours for NoFileColours {
 // file type associations, while falling back to the default set if not set
 // explicitly.
 impl<A, B> FileColours for (A, B)
-where A: FileColours, B: FileColours {
+where
+    A: FileColours,
+    B: FileColours,
+{
     fn colour_file(&self, file: &File) -> Option<Style> {
-        self.0.colour_file(file).or_else(|| self.1.colour_file(file))
+        self.0
+            .colour_file(file)
+            .or_else(|| self.1.colour_file(file))
     }
 }

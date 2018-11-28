@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use fs::File;
 
-
 impl<'a> File<'a> {
-
     /// For this file, return a vector of alternate file paths that, if any of
     /// them exist, mean that *this* file should be coloured as “compiled”.
     ///
@@ -34,9 +32,8 @@ impl<'a> File<'a> {
 
                 _ => vec![],  // No source files if none of the above
             }
-        }
-        else {
-            vec![]  // No source files if there's no extension, either!
+        } else {
+            vec![] // No source files if there's no extension, either!
         }
     }
 }

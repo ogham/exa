@@ -8,9 +8,8 @@ use std::path::Path;
 use glob;
 use natord;
 
-use fs::File;
 use fs::DotFilter;
-
+use fs::File;
 
 /// The **file filter** processes a list of files before displaying them to
 /// the user, by removing files they don’t want to see, and putting the list
@@ -28,7 +27,6 @@ use fs::DotFilter;
 /// performing the comparison.
 #[derive(PartialEq, Debug, Clone)]
 pub struct FileFilter {
-
     /// Whether directories should be listed first, and other types of file
     /// second. Some users prefer it like this.
     pub list_dirs_first: bool,
@@ -91,7 +89,6 @@ pub struct FileFilter {
     pub git_ignore: GitIgnore,
 }
 
-
 impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
@@ -118,8 +115,9 @@ impl FileFilter {
 
     /// Sort the files in the given vector based on the sort field option.
     pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
-    where F: AsRef<File<'a>> {
-
+    where
+        F: AsRef<File<'a>>,
+    {
         files.sort_by(|a, b| self.sort_field.compare_files(a.as_ref(), b.as_ref()));
 
         if self.reverse {
@@ -134,11 +132,9 @@ impl FileFilter {
     }
 }
 
-
 /// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortField {
-
     /// Don’t apply any sorting. This is usually used as an optimisation in
     /// scripts, where the order doesn’t matter.
     Unsorted,
@@ -215,7 +211,6 @@ pub enum SortField {
 /// effects they have.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortCase {
-
     /// Sort files case-sensitively with uppercase first, with ‘A’ coming
     /// before ‘a’.
     ABCabc,
@@ -225,7 +220,6 @@ pub enum SortCase {
 }
 
 impl SortField {
-
     /// Compares two files to determine the order they should be listed in,
     /// depending on the search field.
     ///
@@ -238,41 +232,41 @@ impl SortField {
         use self::SortCase::{ABCabc, AaBbCc};
 
         match self {
-            SortField::Unsorted  => Ordering::Equal,
+            SortField::Unsorted => Ordering::Equal,
 
-            SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
-            SortField::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
+            SortField::Name(ABCabc) => natord::compare(&a.name, &b.name),
+            SortField::Name(AaBbCc) => natord::compare_ignore_case(&a.name, &b.name),
 
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
-            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
-            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
-            SortField::ModifiedAge   => b.metadata.mtime().cmp(&a.metadata.mtime()),  // flip b and a
+            SortField::Size => a.metadata.len().cmp(&b.metadata.len()),
+            SortField::FileInode => a.metadata.ino().cmp(&b.metadata.ino()),
+            SortField::ModifiedDate => a.metadata.mtime().cmp(&b.metadata.mtime()),
+            SortField::AccessedDate => a.metadata.atime().cmp(&b.metadata.atime()),
+            SortField::CreatedDate => a.metadata.ctime().cmp(&b.metadata.ctime()),
+            SortField::ModifiedAge => b.metadata.mtime().cmp(&a.metadata.mtime()), // flip b and a
 
-            SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order            => order,
+            SortField::FileType => match a.type_char().cmp(&b.type_char()) {
+                // todo: this recomputes
+                Ordering::Equal => natord::compare(&*a.name, &*b.name),
+                order => order,
             },
 
             SortField::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order            => order,
+                Ordering::Equal => natord::compare(&*a.name, &*b.name),
+                order => order,
             },
 
             SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
-                Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
-                order            => order,
+                Ordering::Equal => natord::compare_ignore_case(&*a.name, &*b.name),
+                order => order,
             },
 
-            SortField::NameMixHidden(ABCabc) => natord::compare(
-                SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
-            ),
+            SortField::NameMixHidden(ABCabc) => {
+                natord::compare(SortField::strip_dot(&a.name), SortField::strip_dot(&b.name))
+            }
             SortField::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
                 SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
-            )
+                SortField::strip_dot(&b.name),
+            ),
         }
     }
 
@@ -285,7 +279,6 @@ impl SortField {
     }
 }
 
-
 /// The **ignore patterns** are a list of globs that are tested against
 /// each filename, and if any of them match, that file isn’t displayed.
 /// This lets a user hide, say, text files by ignoring `*.txt`.
@@ -296,23 +289,26 @@ pub struct IgnorePatterns {
 
 impl FromIterator<glob::Pattern> for IgnorePatterns {
     fn from_iter<I: IntoIterator<Item = glob::Pattern>>(iter: I) -> Self {
-        IgnorePatterns { patterns: iter.into_iter().collect() }
+        IgnorePatterns {
+            patterns: iter.into_iter().collect(),
+        }
     }
 }
 
 impl IgnorePatterns {
-
     /// Create a new list from the input glob strings, turning the inputs that
     /// are valid glob patterns into an IgnorePatterns. The inputs that don’t
     /// parse correctly are returned separately.
-    pub fn parse_from_iter<'a, I: IntoIterator<Item = &'a str>>(iter: I) -> (Self, Vec<glob::PatternError>) {
+    pub fn parse_from_iter<'a, I: IntoIterator<Item = &'a str>>(
+        iter: I,
+    ) -> (Self, Vec<glob::PatternError>) {
         let iter = iter.into_iter();
 
         // Almost all glob patterns are valid, so it’s worth pre-allocating
         // the vector with enough space for all of them.
         let mut patterns = match iter.size_hint() {
-            (_, Some(count))  => Vec::with_capacity(count),
-             _                => Vec::new(),
+            (_, Some(count)) => Vec::with_capacity(count),
+            _ => Vec::new(),
         };
 
         // Similarly, assume there won’t be any errors.
@@ -321,7 +317,7 @@ impl IgnorePatterns {
         for input in iter {
             match glob::Pattern::new(input) {
                 Ok(pat) => patterns.push(pat),
-                Err(e)  => errors.push(e),
+                Err(e) => errors.push(e),
             }
         }
 
@@ -330,7 +326,9 @@ impl IgnorePatterns {
 
     /// Create a new empty set of patterns that matches nothing.
     pub fn empty() -> IgnorePatterns {
-        IgnorePatterns { patterns: Vec::new() }
+        IgnorePatterns {
+            patterns: Vec::new(),
+        }
     }
 
     /// Test whether the given file should be hidden from the results.
@@ -347,11 +345,9 @@ impl IgnorePatterns {
     // isn’t probably means it’s in the wrong place
 }
 
-
 /// Whether to ignore or display files that are mentioned in `.gitignore` files.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum GitIgnore {
-
     /// Ignore files that Git would ignore. This means doing a check for a
     /// `.gitignore` file, possibly recursively up the filesystem tree.
     CheckAndIgnore,
@@ -367,8 +363,6 @@ pub enum GitIgnore {
 // > .gitignore, .git/info/exclude and even your global gitignore globs,
 // > usually found in $XDG_CONFIG_HOME/git/ignore.
 
-
-
 #[cfg(test)]
 mod test_ignores {
     use super::*;
@@ -382,23 +376,23 @@ mod test_ignores {
 
     #[test]
     fn ignores_a_glob() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "*.mp3" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["*.mp3"]);
         assert!(fails.is_empty());
         assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(true,  pats.is_ignored("test.mp3"));
+        assert_eq!(true, pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_an_exact_filename() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["nothing"]);
         assert!(fails.is_empty());
-        assert_eq!(true,  pats.is_ignored("nothing"));
+        assert_eq!(true, pats.is_ignored("nothing"));
         assert_eq!(false, pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_both() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["nothing", "*.mp3"]);
         assert!(fails.is_empty());
         assert_eq!(true, pats.is_ignored("nothing"));
         assert_eq!(true, pats.is_ignored("test.mp3"));

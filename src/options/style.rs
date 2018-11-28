@@ -2,11 +2,10 @@ use ansi_term::Style;
 use glob;
 
 use fs::File;
-use options::{flags, Vars, Misfire};
 use options::parser::MatchedFlags;
-use output::file_name::{FileStyle, Classify};
+use options::{flags, Misfire, Vars};
+use output::file_name::{Classify, FileStyle};
 use style::Colours;
-
 
 /// Under what circumstances we should display coloured, rather than plain,
 /// output to the terminal.
@@ -17,7 +16,6 @@ use style::Colours;
 /// this check and only displays colours when they can be truly appreciated.
 #[derive(PartialEq, Debug)]
 enum TerminalColours {
-
     /// Display them even when output isn’t going to a terminal.
     Always,
 
@@ -34,39 +32,32 @@ impl Default for TerminalColours {
     }
 }
 
-
 impl TerminalColours {
-
     /// Determine which terminal colour conditions to use.
     fn deduce(matches: &MatchedFlags) -> Result<TerminalColours, Misfire> {
-
-        let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
-            Some(w) => w,
-            None    => return Ok(TerminalColours::default()),
-        };
+        let word =
+            match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
+                Some(w) => w,
+                None => return Ok(TerminalColours::default()),
+            };
 
         if word == "always" {
             Ok(TerminalColours::Always)
-        }
-        else if word == "auto" || word == "automatic" {
+        } else if word == "auto" || word == "automatic" {
             Ok(TerminalColours::Automatic)
-        }
-        else if word == "never" {
+        } else if word == "never" {
             Ok(TerminalColours::Never)
-        }
-        else {
+        } else {
             Err(Misfire::BadArgument(&flags::COLOR, word.into()))
         }
     }
 }
-
 
 /// **Styles**, which is already an overloaded term, is a pair of view option
 /// sets that happen to both be affected by `LS_COLORS` and `EXA_COLORS`.
 /// Because it’s better to only iterate through that once, the two are deduced
 /// together.
 pub struct Styles {
-
     /// The colours to paint user interface elements, like the date column,
     /// and file kinds, such as directories.
     pub colours: Colours,
@@ -77,10 +68,12 @@ pub struct Styles {
 }
 
 impl Styles {
-
-    #[allow(trivial_casts)]   // the "as Box<_>" stuff below warns about this for some reason
+    #[allow(trivial_casts)] // the "as Box<_>" stuff below warns about this for some reason
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
-    where TW: Fn() -> Option<usize>, V: Vars {
+    where
+        TW: Fn() -> Option<usize>,
+        V: Vars,
+    {
         use self::TerminalColours::*;
         use info::filetype::FileExtensions;
         use output::file_name::NoFileColours;
@@ -93,22 +86,26 @@ impl Styles {
         if tc == Never || (tc == Automatic && widther().is_none()) {
             return Ok(Styles {
                 colours: Colours::plain(),
-                style: FileStyle { classify, exts: Box::new(NoFileColours) },
+                style: FileStyle {
+                    classify,
+                    exts: Box::new(NoFileColours),
+                },
             });
         }
 
         // Parse the environment variables into colours and extension mappings
-        let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
+        let scale = matches
+            .has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
         let mut colours = Colours::colourful(scale.is_some());
 
         let (exts, use_default_filetypes) = parse_color_vars(vars, &mut colours);
 
         // Use between 0 and 2 file name highlighters
         let exts = match (exts.is_non_empty(), use_default_filetypes) {
-            (false, false)  => Box::new(NoFileColours)           as Box<_>,
-            (false,  true)  => Box::new(FileExtensions)          as Box<_>,
-            ( true, false)  => Box::new(exts)                    as Box<_>,
-            ( true,  true)  => Box::new((exts, FileExtensions))  as Box<_>,
+            (false, false) => Box::new(NoFileColours) as Box<_>,
+            (false, true) => Box::new(FileExtensions) as Box<_>,
+            (true, false) => Box::new(exts) as Box<_>,
+            (true, true) => Box::new((exts, FileExtensions)) as Box<_>,
         };
 
         let style = FileStyle { classify, exts };
@@ -134,7 +131,7 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
             if !colours.set_ls(&pair) {
                 match glob::Pattern::new(pair.key) {
                     Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Err(e) => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
                 }
             }
         });
@@ -154,7 +151,7 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
             if !colours.set_ls(&pair) && !colours.set_exa(&pair) {
                 match glob::Pattern::new(pair.key) {
                     Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Err(e) => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
                 }
             };
         });
@@ -163,10 +160,9 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
     (exts, use_default_filetypes)
 }
 
-
 #[derive(PartialEq, Debug, Default)]
 struct ExtensionMappings {
-    mappings: Vec<(glob::Pattern, Style)>
+    mappings: Vec<(glob::Pattern, Style)>,
 }
 
 // Loop through backwards so that colours specified later in the list override
@@ -179,7 +175,7 @@ impl FileColours for ExtensionMappings {
             .iter()
             .rev()
             .find(|t| t.0.matches(&file.name))
-            .map (|t| t.1)
+            .map(|t| t.1)
     }
 }
 
@@ -193,36 +189,37 @@ impl ExtensionMappings {
     }
 }
 
-
-
 impl Classify {
     fn deduce(matches: &MatchedFlags) -> Result<Classify, Misfire> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
-        Ok(if flagged { Classify::AddFileIndicators }
-                 else { Classify::JustFilenames })
+        Ok(if flagged {
+            Classify::AddFileIndicators
+        } else {
+            Classify::JustFilenames
+        })
     }
 }
-
-
 
 #[cfg(test)]
 mod terminal_test {
     use super::*;
-    use std::ffi::OsString;
     use options::flags;
-    use options::parser::{Flag, Arg};
+    use options::parser::{Arg, Flag};
+    use std::ffi::OsString;
 
     use options::test::parse_for_test;
     use options::test::Strictnesses::*;
 
-    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
+    static TEST_ARGS: &[&Arg] = &[&flags::COLOR, &flags::COLOUR];
 
     macro_rules! test {
         ($name:ident:  $inputs:expr;  $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    TerminalColours::deduce(mf)
+                }) {
                     assert_eq!(result, $result);
                 }
             }
@@ -231,13 +228,14 @@ mod terminal_test {
         ($name:ident:  $inputs:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    TerminalColours::deduce(mf)
+                }) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
         };
     }
-
 
     // Default
     test!(empty:         [];                     Both => Ok(TerminalColours::default()));
@@ -253,8 +251,8 @@ mod terminal_test {
     test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
     // Errors
-    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
-    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
+    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("upstream"))); // the error is for --color
+    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("lovers"))); // and so is this one!
 
     // Overriding
     test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
@@ -268,24 +266,29 @@ mod terminal_test {
     test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
 }
 
-
 #[cfg(test)]
 mod colour_test {
     use super::*;
     use options::flags;
-    use options::parser::{Flag, Arg};
+    use options::parser::{Arg, Flag};
 
     use options::test::parse_for_test;
     use options::test::Strictnesses::*;
 
-    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR,       &flags::COLOUR,
-                                   &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
+    static TEST_ARGS: &[&Arg] = &[
+        &flags::COLOR,
+        &flags::COLOUR,
+        &flags::COLOR_SCALE,
+        &flags::COLOUR_SCALE,
+    ];
 
     macro_rules! test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    Styles::deduce(mf, &None, &$widther).map(|s| s.colours)
+                }) {
                     assert_eq!(result, $result);
                 }
             }
@@ -294,7 +297,9 @@ mod colour_test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    Styles::deduce(mf, &None, &$widther).map(|s| s.colours)
+                }) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -303,11 +308,13 @@ mod colour_test {
         ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => like $pat:pat) => {
             #[test]
             fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    Styles::deduce(mf, &None, &$widther).map(|s| s.colours)
+                }) {
                     println!("Testing {:?}", result);
                     match result {
                         $pat => assert!(true),
-                        _    => assert!(false),
+                        _ => assert!(false),
                     }
                 }
             }
@@ -333,8 +340,6 @@ mod colour_test {
     test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
     test!(scale_8:  ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
 }
-
-
 
 #[cfg(test)]
 mod customs_test {
@@ -363,10 +368,10 @@ mod customs_test {
         ($name:ident:  ls $ls:expr, exa $exa:expr  =>  exts $mappings:expr) => {
             #[test]
             fn $name() {
-                let mappings: Vec<(glob::Pattern, Style)>
-                    = $mappings.into_iter()
-                               .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
-                               .collect();
+                let mappings: Vec<(glob::Pattern, Style)> = $mappings
+                    .into_iter()
+                    .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
+                    .collect();
 
                 let vars = MockVars { ls: $ls, exa: $exa };
 
@@ -382,10 +387,10 @@ mod customs_test {
                 let mut $expected = Colours::colourful(false);
                 $process_expected();
 
-                let mappings: Vec<(glob::Pattern, Style)>
-                    = $mappings.into_iter()
-                               .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
-                               .collect();
+                let mappings: Vec<(glob::Pattern, Style)> = $mappings
+                    .into_iter()
+                    .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
+                    .collect();
 
                 let vars = MockVars { ls: $ls, exa: $exa };
 
@@ -409,11 +414,9 @@ mod customs_test {
 
             if name == vars::LS_COLORS && !self.ls.is_empty() {
                 OsString::from(self.ls.clone()).into()
-            }
-            else if name == vars::EXA_COLORS && !self.exa.is_empty() {
+            } else if name == vars::EXA_COLORS && !self.exa.is_empty() {
                 OsString::from(self.exa.clone()).into()
-            }
-            else {
+            } else {
                 None
             }
         }

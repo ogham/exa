@@ -1,13 +1,13 @@
 use output::file_name::FileStyle;
 use style::Colours;
 
-pub use self::cell::{TextCell, TextCellContents, DisplayWidth};
+pub use self::cell::{DisplayWidth, TextCell, TextCellContents};
 pub use self::escape::escape;
 
 pub mod details;
 pub mod file_name;
-pub mod grid_details;
 pub mod grid;
+pub mod grid_details;
 pub mod lines;
 pub mod render;
 pub mod table;
@@ -17,7 +17,6 @@ mod cell;
 mod escape;
 mod tree;
 
-
 /// The **view** contains all information about how to format output.
 #[derive(Debug)]
 pub struct View {
@@ -25,7 +24,6 @@ pub struct View {
     pub colours: Colours,
     pub style: FileStyle,
 }
-
 
 /// The **mode** is the “type” of output.
 #[derive(Debug)]

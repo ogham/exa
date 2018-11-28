@@ -1,8 +1,7 @@
 use std::ops::FnMut;
 
-use ansi_term::{Colour, Style};
 use ansi_term::Colour::*;
-
+use ansi_term::{Colour, Style};
 
 // Parsing the LS_COLORS environment variable into a map of names to Style values.
 //
@@ -21,18 +20,21 @@ use ansi_term::Colour::*;
 // just not worth doing, and there should really be a way to just use slices
 // of the LS_COLORS string without having to parse them.
 
-
 pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
-    pub fn each_pair<C>(&mut self, mut callback: C) where C: FnMut(Pair<'var>) -> () {
+    pub fn each_pair<C>(&mut self, mut callback: C)
+    where
+        C: FnMut(Pair<'var>) -> (),
+    {
         for next in self.0.split(':') {
-            let bits = next.split('=')
-                           .take(3)
-                           .collect::<Vec<_>>();
+            let bits = next.split('=').take(3).collect::<Vec<_>>();
 
             if bits.len() == 2 && !bits[0].is_empty() && !bits[1].is_empty() {
-                callback(Pair { key: bits[0], value: bits[1] });
+                callback(Pair {
+                    key: bits[0],
+                    value: bits[1],
+                });
             }
         }
     }
@@ -45,7 +47,9 @@ pub struct Pair<'var> {
 
 use std::iter::Peekable;
 fn parse_into_high_colour<'a, I>(iter: &mut Peekable<I>) -> Option<Colour>
-where I: Iterator<Item=&'a str> {
+where
+    I: Iterator<Item = &'a str>,
+{
     match iter.peek() {
         Some(&"5") => {
             let _ = iter.next();
@@ -69,15 +73,17 @@ where I: Iterator<Item=&'a str> {
                         return Some(RGB(r, g, b));
                     }
                 }*/
-                
-                if let (Some(r), Some(g), Some(b)) = (hexes.parse().ok(),
-                                                           iter.next().and_then(|s| s.parse().ok()),
-                                                           iter.next().and_then(|s| s.parse().ok())) {
+
+                if let (Some(r), Some(g), Some(b)) = (
+                    hexes.parse().ok(),
+                    iter.next().and_then(|s| s.parse().ok()),
+                    iter.next().and_then(|s| s.parse().ok()),
+                ) {
                     return Some(RGB(r, g, b));
                 }
             }
         }
-        _ => {},
+        _ => {}
     }
     None
 }
@@ -89,7 +95,6 @@ impl<'var> Pair<'var> {
 
         while let Some(num) = iter.next() {
             match num.trim_left_matches('0') {
-
                 // Bold and italic
                 "1" => style = style.bold(),
                 "2" => style = style.dimmed(),
@@ -110,7 +115,11 @@ impl<'var> Pair<'var> {
                 "35" => style = style.fg(Purple),
                 "36" => style = style.fg(Cyan),
                 "37" => style = style.fg(White),
-                "38" => if let Some(c) = parse_into_high_colour(&mut iter) { style = style.fg(c) },
+                "38" => {
+                    if let Some(c) = parse_into_high_colour(&mut iter) {
+                        style = style.fg(c)
+                    }
+                }
 
                 // Background colours
                 "40" => style = style.on(Black),
@@ -121,16 +130,19 @@ impl<'var> Pair<'var> {
                 "45" => style = style.on(Purple),
                 "46" => style = style.on(Cyan),
                 "47" => style = style.on(White),
-                "48" => if let Some(c) = parse_into_high_colour(&mut iter) { style = style.on(c) },
+                "48" => {
+                    if let Some(c) = parse_into_high_colour(&mut iter) {
+                        style = style.on(c)
+                    }
+                }
 
-                 _    => {/* ignore the error and do nothing */},
+                _ => { /* ignore the error and do nothing */ }
             }
         }
 
         style
     }
 }
-
 
 #[cfg(test)]
 mod ansi_test {
@@ -141,7 +153,14 @@ mod ansi_test {
         ($name:ident: $input:expr => $result:expr) => {
             #[test]
             fn $name() {
-                assert_eq!(Pair { key: "", value: $input }.to_style(), $result);
+                assert_eq!(
+                    Pair {
+                        key: "",
+                        value: $input
+                    }
+                    .to_style(),
+                    $result
+                );
             }
         };
     }
@@ -182,8 +201,6 @@ mod ansi_test {
     test!(toohi: "48;5;999"           => Style::default());
 }
 
-
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -193,7 +210,7 @@ mod test {
             #[test]
             fn $name() {
                 let mut lscs = Vec::new();
-                LSColors($input).each_pair(|p| lscs.push( (p.key.clone(), p.to_style()) ));
+                LSColors($input).each_pair(|p| lscs.push((p.key.clone(), p.to_style())));
                 assert_eq!(lscs, $result.to_vec());
             }
         };

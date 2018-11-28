@@ -1,11 +1,10 @@
-use std::io::{Write, Result as IOResult};
+use std::io::{Result as IOResult, Write};
 
 use ansi_term::ANSIStrings;
 
 use fs::File;
 use output::file_name::{FileName, FileStyle};
 use style::Colours;
-
 
 /// The lines view literally just displays each file, line-by-line.
 pub struct Render<'a> {

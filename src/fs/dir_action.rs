@@ -21,7 +21,6 @@
 /// directories inline, with their contents immediately underneath.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum DirAction {
-
     /// This directory should be listed along with the regular files, instead
     /// of having its contents queried.
     AsFile,
@@ -37,30 +36,27 @@ pub enum DirAction {
 }
 
 impl DirAction {
-
     /// Gets the recurse options, if this dir action has any.
     pub fn recurse_options(&self) -> Option<RecurseOptions> {
         match *self {
             DirAction::Recurse(o) => Some(o),
-            _                     => None,
+            _ => None,
         }
     }
 
     /// Whether to treat directories as regular files or not.
     pub fn treat_dirs_as_files(&self) -> bool {
         match *self {
-            DirAction::AsFile      => true,
-            DirAction::Recurse(o)  => o.tree,
-            _                      => false,
+            DirAction::AsFile => true,
+            DirAction::Recurse(o) => o.tree,
+            _ => false,
         }
     }
 }
 
-
 /// The options that determine how to recurse into a directory.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct RecurseOptions {
-
     /// Whether recursion should be done as a tree or as multiple individual
     /// views of files.
     pub tree: bool,
@@ -71,12 +67,11 @@ pub struct RecurseOptions {
 }
 
 impl RecurseOptions {
-
     /// Returns whether a directory of the given depth would be too deep.
     pub fn is_too_deep(&self, depth: usize) -> bool {
         match self.max_depth {
-            None    => false,
-            Some(d) => d <= depth
+            None => false,
+            Some(d) => d <= depth,
         }
     }
 }

@@ -1,42 +1,41 @@
 use ansi_term::Style;
 
-use output::cell::TextCell;
 use fs::fields as f;
-
+use output::cell::TextCell;
 
 impl f::Blocks {
     pub fn render<C: Colours>(&self, colours: &C) -> TextCell {
         match *self {
-            f::Blocks::Some(ref blk)  => TextCell::paint(colours.block_count(), blk.to_string()),
-            f::Blocks::None           => TextCell::blank(colours.no_blocks()),
+            f::Blocks::Some(ref blk) => TextCell::paint(colours.block_count(), blk.to_string()),
+            f::Blocks::None => TextCell::blank(colours.no_blocks()),
         }
     }
 }
-
 
 pub trait Colours {
     fn block_count(&self) -> Style;
     fn no_blocks(&self) -> Style;
 }
 
-
 #[cfg(test)]
 pub mod test {
-    use ansi_term::Style;
     use ansi_term::Colour::*;
+    use ansi_term::Style;
 
     use super::Colours;
-    use output::cell::TextCell;
     use fs::fields as f;
-
+    use output::cell::TextCell;
 
     struct TestColours;
 
     impl Colours for TestColours {
-        fn block_count(&self) -> Style { Red.blink() }
-        fn no_blocks(&self)   -> Style { Green.italic() }
+        fn block_count(&self) -> Style {
+            Red.blink()
+        }
+        fn no_blocks(&self) -> Style {
+            Green.italic()
+        }
     }
-
 
     #[test]
     fn blocklessness() {
@@ -45,7 +44,6 @@ pub mod test {
 
         assert_eq!(expected, blox.render(&TestColours).into());
     }
-
 
     #[test]
     fn blockfulity() {

@@ -1,91 +1,80 @@
 //! Parsing the options for `FileFilter`.
 
+use fs::filter::{FileFilter, GitIgnore, IgnorePatterns, SortCase, SortField};
 use fs::DotFilter;
-use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
-use options::{flags, Misfire};
 use options::parser::MatchedFlags;
-
+use options::{flags, Misfire};
 
 impl FileFilter {
-
     /// Determines which of all the file filter options to use.
     pub fn deduce(matches: &MatchedFlags) -> Result<FileFilter, Misfire> {
         Ok(FileFilter {
             list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
-            reverse:         matches.has(&flags::REVERSE)?,
-            only_dirs:       matches.has(&flags::ONLY_DIRS)?,
-            sort_field:      SortField::deduce(matches)?,
-            dot_filter:      DotFilter::deduce(matches)?,
+            reverse: matches.has(&flags::REVERSE)?,
+            only_dirs: matches.has(&flags::ONLY_DIRS)?,
+            sort_field: SortField::deduce(matches)?,
+            dot_filter: DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
-            git_ignore:      GitIgnore::deduce(matches)?,
+            git_ignore: GitIgnore::deduce(matches)?,
         })
     }
 }
 
 impl SortField {
-
     /// Determines which sort field to use based on the `--sort` argument.
     /// This argument’s value can be one of several flags, listed above.
     /// Returns the default sort field if none is given, or `Err` if the
     /// value doesn’t correspond to a sort field we know about.
     fn deduce(matches: &MatchedFlags) -> Result<SortField, Misfire> {
         let word = match matches.get(&flags::SORT)? {
-            Some(w)  => w,
-            None     => return Ok(SortField::default()),
+            Some(w) => w,
+            None => return Ok(SortField::default()),
         };
 
         // The field is an OsStr, so can’t be matched.
         if word == "name" || word == "filename" {
             Ok(SortField::Name(SortCase::AaBbCc))
-        }
-        else if word == "Name" || word == "Filename" {
+        } else if word == "Name" || word == "Filename" {
             Ok(SortField::Name(SortCase::ABCabc))
-        }
-        else if word == ".name" || word == ".filename" {
+        } else if word == ".name" || word == ".filename" {
             Ok(SortField::NameMixHidden(SortCase::AaBbCc))
-        }
-        else if word == ".Name" || word == ".Filename" {
+        } else if word == ".Name" || word == ".Filename" {
             Ok(SortField::NameMixHidden(SortCase::ABCabc))
-        }
-        else if word == "size" || word == "filesize" {
+        } else if word == "size" || word == "filesize" {
             Ok(SortField::Size)
-        }
-        else if word == "ext" || word == "extension" {
+        } else if word == "ext" || word == "extension" {
             Ok(SortField::Extension(SortCase::AaBbCc))
-        }
-        else if word == "Ext" || word == "Extension" {
+        } else if word == "Ext" || word == "Extension" {
             Ok(SortField::Extension(SortCase::ABCabc))
-        }
-        else if word == "date" || word == "time" || word == "mod" || word == "modified" || word == "new" || word == "newest" {
+        } else if word == "date"
+            || word == "time"
+            || word == "mod"
+            || word == "modified"
+            || word == "new"
+            || word == "newest"
+        {
             // “new” sorts oldest at the top and newest at the bottom; “old”
             // sorts newest at the top and oldest at the bottom. I think this
             // is the right way round to do this: “size” puts the smallest at
             // the top and the largest at the bottom, doesn’t it?
             Ok(SortField::ModifiedDate)
-        }
-        else if word == "age" || word == "old" || word == "oldest" {
+        } else if word == "age" || word == "old" || word == "oldest" {
             // Similarly, “age” means that files with the least age (the
             // newest files) get sorted at the top, and files with the most
             // age (the oldest) at the bottom.
             Ok(SortField::ModifiedAge)
-        }
-        else if word == "acc" || word == "accessed" {
+        } else if word == "acc" || word == "accessed" {
             Ok(SortField::AccessedDate)
-        }
-        else if word == "cr" || word == "created" {
+        } else if word == "cr" || word == "created" {
             Ok(SortField::CreatedDate)
-        }
-        else if word == "inode" {
+        } else if word == "inode" {
             Ok(SortField::FileInode)
-        }
-        else if word == "type" {
+        } else if word == "type" {
             Ok(SortField::FileType)
-        }
-        else if word == "none" {
+        } else if word == "none" {
             Ok(SortField::Unsorted)
-        }
-        else {
+        } else {
             Err(Misfire::BadArgument(&flags::SORT, word.into()))
         }
     }
@@ -129,9 +118,7 @@ impl Default for SortField {
     }
 }
 
-
 impl DotFilter {
-
     /// Determines the dot filter based on how many `--all` options were
     /// given: one will show dotfiles, but two will show `.` and `..` too.
     ///
@@ -143,30 +130,23 @@ impl DotFilter {
 
         if count == 0 {
             Ok(DotFilter::JustFiles)
-        }
-        else if count == 1 {
+        } else if count == 1 {
             Ok(DotFilter::Dotfiles)
-        }
-        else if matches.count(&flags::TREE) > 0 {
+        } else if matches.count(&flags::TREE) > 0 {
             Err(Misfire::TreeAllAll)
-        }
-        else if count >= 3 && matches.is_strict() {
+        } else if count >= 3 && matches.is_strict() {
             Err(Misfire::Conflict(&flags::ALL, &flags::ALL))
-        }
-        else {
+        } else {
             Ok(DotFilter::DotfilesAndDots)
         }
     }
 }
 
-
 impl IgnorePatterns {
-
     /// Determines the set of glob patterns to use based on the
     /// `--ignore-patterns` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
     pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
-
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
         let inputs = match matches.get(&flags::IGNORE_GLOB)? {
@@ -176,33 +156,34 @@ impl IgnorePatterns {
 
         // Awkwardly, though, a glob pattern can be invalid, and we need to
         // deal with invalid patterns somehow.
-        let (patterns, mut errors) = IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
+        let (patterns, mut errors) =
+            IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
 
         // It can actually return more than one glob error,
         // but we only use one. (TODO)
         match errors.pop() {
             Some(e) => Err(e.into()),
-            None    => Ok(patterns),
+            None => Ok(patterns),
         }
     }
 }
 
-
 impl GitIgnore {
     pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
-        Ok(if matches.has(&flags::GIT_IGNORE)? { GitIgnore::CheckAndIgnore }
-                                          else { GitIgnore::Off })
+        Ok(if matches.has(&flags::GIT_IGNORE)? {
+            GitIgnore::CheckAndIgnore
+        } else {
+            GitIgnore::Off
+        })
     }
 }
-
-
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::ffi::OsString;
     use options::flags;
     use options::parser::Flag;
+    use std::ffi::OsString;
 
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
@@ -212,8 +193,16 @@ mod test {
                 use options::test::parse_for_test;
                 use options::test::Strictnesses::*;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB, &flags::GIT_IGNORE ];
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                static TEST_ARGS: &[&Arg] = &[
+                    &flags::SORT,
+                    &flags::ALL,
+                    &flags::TREE,
+                    &flags::IGNORE_GLOB,
+                    &flags::GIT_IGNORE,
+                ];
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| {
+                    $type::deduce(mf)
+                }) {
                     assert_eq!(result, $result);
                 }
             }
@@ -251,7 +240,6 @@ mod test {
         test!(overridden_4:  SortField <- ["--sort", "none",  "--sort=Extension"];  Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
     }
 
-
     mod dot_filters {
         use super::*;
 
@@ -272,11 +260,10 @@ mod test {
         test!(tree_aaa:   DotFilter <- ["-Taaa"];        Both => Err(Misfire::TreeAllAll));
     }
 
-
     mod ignore_patterns {
         use super::*;
-        use std::iter::FromIterator;
         use glob;
+        use std::iter::FromIterator;
 
         fn pat(string: &'static str) -> glob::Pattern {
             glob::Pattern::new(string).unwrap()
@@ -294,7 +281,6 @@ mod test {
         test!(overridden_3: IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
         test!(overridden_4: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
     }
-
 
     mod git_ignores {
         use super::*;

@@ -9,10 +9,9 @@
 ///
 /// - https://stackoverflow.com/q/43753491/3484614
 /// - https://crates.io/crates/vergen
-
 extern crate datetime;
-use std::io::Result as IOResult;
 use std::env;
+use std::io::Result as IOResult;
 
 fn git_hash() -> String {
     use std::process::Command;
@@ -20,8 +19,12 @@ fn git_hash() -> String {
     String::from_utf8_lossy(
         &Command::new("git")
             .args(&["rev-parse", "--short", "HEAD"])
-            .output().unwrap()
-            .stdout).trim().to_string()
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .trim()
+    .to_string()
 }
 
 fn main() {
@@ -51,8 +54,13 @@ fn write_statics() -> IOResult<()> {
     use std::path::PathBuf;
 
     let ver = match is_development_version() {
-        true   => format!("exa v{} ({} built on {})", cargo_version(), git_hash(), build_date()),
-        false  => format!("exa v{}", cargo_version()),
+        true => format!(
+            "exa v{} ({} built on {})",
+            cargo_version(),
+            git_hash(),
+            build_date()
+        ),
+        false => format!("exa v{}", cargo_version()),
     };
 
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());

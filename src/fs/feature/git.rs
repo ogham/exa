@@ -7,13 +7,11 @@ use git2;
 
 use fs::fields as f;
 
-
 /// A **Git cache** is assembled based on the user’s input arguments.
 ///
 /// This uses vectors to avoid the overhead of hashing: it’s not worth it when the
 /// expected number of Git repositories per exa invocation is 0 or 1...
 pub struct GitCache {
-
     /// A list of discovered Git repositories and their paths.
     repos: Vec<GitRepo>,
 
@@ -27,7 +25,8 @@ impl GitCache {
     }
 
     pub fn get(&self, index: &Path, prefix_lookup: bool) -> f::Git {
-        self.repos.iter()
+        self.repos
+            .iter()
             .find(|e| e.has_path(index))
             .map(|repo| repo.search(index, prefix_lookup))
             .unwrap_or_default()
@@ -36,7 +35,7 @@ impl GitCache {
 
 use std::iter::FromIterator;
 impl FromIterator<PathBuf> for GitCache {
-    fn from_iter<I: IntoIterator<Item=PathBuf>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = PathBuf>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let mut git = GitCache {
             repos: Vec::with_capacity(iter.size_hint().0),
@@ -46,22 +45,25 @@ impl FromIterator<PathBuf> for GitCache {
         for path in iter {
             if git.misses.contains(&path) {
                 debug!("Skipping {:?} because it already came back Gitless", path);
-            }
-            else if git.repos.iter().any(|e| e.has_path(&path)) {
+            } else if git.repos.iter().any(|e| e.has_path(&path)) {
                 debug!("Skipping {:?} because we already queried it", path);
-            }
-            else {
+            } else {
                 match GitRepo::discover(path) {
                     Ok(r) => {
-                        if let Some(mut r2) = git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir)) {
-                            debug!("Adding to existing repo (workdir matches with {:?})", r2.workdir);
+                        if let Some(mut r2) =
+                            git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir))
+                        {
+                            debug!(
+                                "Adding to existing repo (workdir matches with {:?})",
+                                r2.workdir
+                            );
                             r2.extra_paths.push(r.original_path);
                             continue;
                         }
 
                         debug!("Discovered new Git repo");
                         git.repos.push(r);
-                    },
+                    }
                     Err(miss) => git.misses.push(miss),
                 }
             }
@@ -71,12 +73,8 @@ impl FromIterator<PathBuf> for GitCache {
     }
 }
 
-
-
-
 /// A **Git repository** is one we’ve discovered somewhere on the filesystem.
 pub struct GitRepo {
-
     /// The queryable contents of the repository: either a `git2` repo, or the
     /// cached results from when we queried it last time.
     contents: Mutex<GitContents>,
@@ -97,7 +95,6 @@ pub struct GitRepo {
 
 /// A repository’s queried state.
 enum GitContents {
-
     /// All the interesting Git stuff goes through this.
     Before { repo: git2::Repository },
 
@@ -107,11 +104,10 @@ enum GitContents {
 
     /// The data we’ve extracted from the repository, but only after we’ve
     /// actually done so.
-    After { statuses: Git }
+    After { statuses: Git },
 }
 
 impl GitRepo {
-
     /// Searches through this repository for a path (to a file or directory,
     /// depending on the prefix-lookup flag) and returns its Git status.
     ///
@@ -147,7 +143,8 @@ impl GitRepo {
 
     /// Whether this repository cares about the given path at all.
     fn has_path(&self, path: &Path) -> bool {
-        path.starts_with(&self.original_path) || self.extra_paths.iter().any(|e| path.starts_with(e))
+        path.starts_with(&self.original_path)
+            || self.extra_paths.iter().any(|e| path.starts_with(e))
     }
 
     /// Searches for a Git repository at any point above the given path.
@@ -165,8 +162,13 @@ impl GitRepo {
         match repo.workdir().map(|wd| wd.to_path_buf()) {
             Some(workdir) => {
                 let contents = Mutex::new(GitContents::Before { repo });
-                Ok(GitRepo { contents, workdir, original_path: path, extra_paths: Vec::new() })
-            },
+                Ok(GitRepo {
+                    contents,
+                    workdir,
+                    original_path: path,
+                    extra_paths: Vec::new(),
+                })
+            }
             None => {
                 warn!("Repository has no workdir?");
                 Err(path)
@@ -175,7 +177,6 @@ impl GitRepo {
     }
 }
 
-
 impl GitContents {
     /// Assumes that the repository hasn’t been queried, and extracts it
     /// (consuming the value) if it has. This is needed because the entire
@@ -183,8 +184,7 @@ impl GitContents {
     fn inner_repo(self) -> git2::Repository {
         if let GitContents::Before { repo } = self {
             repo
-        }
-        else {
+        } else {
             unreachable!("Tried to extract a non-Repository")
         }
     }
@@ -205,7 +205,7 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
                 let elem = (path, e.status());
                 statuses.push(elem);
             }
-        },
+        }
         Err(e) => error!("Error looking up Git statuses: {:?}", e),
     }
 
@@ -220,28 +220,33 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
 // Even inserting another logging line immediately afterwards doesn't make it
 // look any faster.
 
-
 /// Container of Git statuses for all the files in this folder’s Git repository.
 struct Git {
     statuses: Vec<(PathBuf, git2::Status)>,
 }
 
 impl Git {
-
     /// Get either the file or directory status for the given path.
     /// “Prefix lookup” means that it should report an aggregate status of all
     /// paths starting with the given prefix (in other words, a directory).
     fn status(&self, index: &Path, prefix_lookup: bool) -> f::Git {
-        if prefix_lookup { self.dir_status(index) }
-                    else { self.file_status(index) }
+        if prefix_lookup {
+            self.dir_status(index)
+        } else {
+            self.file_status(index)
+        }
     }
 
     /// Get the status for the file at the given path.
     fn file_status(&self, file: &Path) -> f::Git {
         let path = reorient(file);
-        self.statuses.iter()
+        self.statuses
+            .iter()
             .find(|p| p.0.as_path() == path)
-            .map(|&(_, s)| f::Git { staged: index_status(s), unstaged: working_tree_status(s) })
+            .map(|&(_, s)| f::Git {
+                staged: index_status(s),
+                unstaged: working_tree_status(s),
+            })
             .unwrap_or_default()
     }
 
@@ -250,11 +255,16 @@ impl Git {
     /// directories, which don’t really have an ‘official’ status.
     fn dir_status(&self, dir: &Path) -> f::Git {
         let path = reorient(dir);
-        let s = self.statuses.iter()
-                             .filter(|p| p.0.starts_with(&path))
-                             .fold(git2::Status::empty(), |a, b| a | b.1);
+        let s = self
+            .statuses
+            .iter()
+            .filter(|p| p.0.starts_with(&path))
+            .fold(git2::Status::empty(), |a, b| a | b.1);
 
-        f::Git { staged: index_status(s), unstaged: working_tree_status(s) }
+        f::Git {
+            staged: index_status(s),
+            unstaged: working_tree_status(s),
+        }
     }
 }
 
@@ -266,7 +276,7 @@ fn reorient(path: &Path) -> PathBuf {
     use std::env::current_dir;
     // I’m not 100% on this func tbh
     match current_dir() {
-        Err(_)  => Path::new(".").join(&path),
+        Err(_) => Path::new(".").join(&path),
         Ok(dir) => dir.join(&path),
     }
 }
@@ -274,12 +284,12 @@ fn reorient(path: &Path) -> PathBuf {
 /// The character to display if the file has been modified, but not staged.
 fn working_tree_status(status: git2::Status) -> f::GitStatus {
     match status {
-        s if s.contains(git2::Status::WT_NEW)         => f::GitStatus::New,
-        s if s.contains(git2::Status::WT_MODIFIED)    => f::GitStatus::Modified,
-        s if s.contains(git2::Status::WT_DELETED)     => f::GitStatus::Deleted,
-        s if s.contains(git2::Status::WT_RENAMED)     => f::GitStatus::Renamed,
-        s if s.contains(git2::Status::WT_TYPECHANGE)  => f::GitStatus::TypeChange,
-        _                                             => f::GitStatus::NotModified,
+        s if s.contains(git2::Status::WT_NEW) => f::GitStatus::New,
+        s if s.contains(git2::Status::WT_MODIFIED) => f::GitStatus::Modified,
+        s if s.contains(git2::Status::WT_DELETED) => f::GitStatus::Deleted,
+        s if s.contains(git2::Status::WT_RENAMED) => f::GitStatus::Renamed,
+        s if s.contains(git2::Status::WT_TYPECHANGE) => f::GitStatus::TypeChange,
+        _ => f::GitStatus::NotModified,
     }
 }
 
@@ -287,11 +297,11 @@ fn working_tree_status(status: git2::Status) -> f::GitStatus {
 /// has been staged.
 fn index_status(status: git2::Status) -> f::GitStatus {
     match status {
-        s if s.contains(git2::Status::INDEX_NEW)         => f::GitStatus::New,
-        s if s.contains(git2::Status::INDEX_MODIFIED)    => f::GitStatus::Modified,
-        s if s.contains(git2::Status::INDEX_DELETED)     => f::GitStatus::Deleted,
-        s if s.contains(git2::Status::INDEX_RENAMED)     => f::GitStatus::Renamed,
-        s if s.contains(git2::Status::INDEX_TYPECHANGE)  => f::GitStatus::TypeChange,
-        _                                                => f::GitStatus::NotModified,
+        s if s.contains(git2::Status::INDEX_NEW) => f::GitStatus::New,
+        s if s.contains(git2::Status::INDEX_MODIFIED) => f::GitStatus::Modified,
+        s if s.contains(git2::Status::INDEX_DELETED) => f::GitStatus::Deleted,
+        s if s.contains(git2::Status::INDEX_RENAMED) => f::GitStatus::Renamed,
+        s if s.contains(git2::Status::INDEX_TYPECHANGE) => f::GitStatus::TypeChange,
+        _ => f::GitStatus::NotModified,
     }
 }

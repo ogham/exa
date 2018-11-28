@@ -1,8 +1,7 @@
 use ansi_term::Style;
 
-use output::cell::TextCell;
 use fs::fields as f;
-
+use output::cell::TextCell;
 
 impl f::Inode {
     pub fn render(&self, style: Style) -> TextCell {
@@ -10,14 +9,12 @@ impl f::Inode {
     }
 }
 
-
 #[cfg(test)]
 pub mod test {
-    use output::cell::TextCell;
     use fs::fields as f;
+    use output::cell::TextCell;
 
     use ansi_term::Colour::*;
-
 
     #[test]
     fn blocklessness() {

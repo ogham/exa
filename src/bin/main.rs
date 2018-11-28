@@ -1,11 +1,10 @@
 extern crate exa;
 use exa::Exa;
 
-use std::ffi::OsString;
 use std::env::{args_os, var_os};
-use std::io::{stdout, stderr, Write, ErrorKind};
+use std::ffi::OsString;
+use std::io::{stderr, stdout, ErrorKind, Write};
 use std::process::exit;
-
 
 fn main() {
     configure_logger();
@@ -21,11 +20,11 @@ fn main() {
                         _ => {
                             eprintln!("{}", e);
                             exit(exits::RUNTIME_ERROR);
-                        },
+                        }
                     };
                 }
             };
-        },
+        }
 
         Err(ref e) if e.is_error() => {
             let mut stderr = stderr();
@@ -36,15 +35,14 @@ fn main() {
             }
 
             exit(exits::OPTIONS_ERROR);
-        },
+        }
 
         Err(ref e) => {
             println!("{}", e);
             exit(exits::SUCCESS);
-        },
+        }
     };
 }
-
 
 /// Sets up a global logger if one is asked for.
 /// The ‘EXA_DEBUG’ environment variable controls whether log messages are
@@ -58,28 +56,26 @@ pub fn configure_logger() {
     extern crate log;
 
     let present = match var_os(exa::vars::EXA_DEBUG) {
-        Some(debug)  => debug.len() > 0,
-        None         => false,
+        Some(debug) => debug.len() > 0,
+        None => false,
     };
 
     let mut logs = env_logger::Builder::new();
     if present {
         logs.filter(None, log::LevelFilter::Debug);
-    }
-    else {
+    } else {
         logs.filter(None, log::LevelFilter::Off);
     }
 
     logs.init()
 }
 
-
 extern crate libc;
 #[allow(trivial_numeric_casts)]
 mod exits {
     use libc::{self, c_int};
 
-    pub const SUCCESS:       c_int = libc::EXIT_SUCCESS;
+    pub const SUCCESS: c_int = libc::EXIT_SUCCESS;
     pub const RUNTIME_ERROR: c_int = libc::EXIT_FAILURE;
     pub const OPTIONS_ERROR: c_int = 3 as c_int;
 }

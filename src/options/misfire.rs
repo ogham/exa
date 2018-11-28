@@ -4,15 +4,13 @@ use std::num::ParseIntError;
 
 use glob;
 
-use options::{flags, HelpString, VersionString};
 use options::parser::{Arg, Flag, ParseError};
-
+use options::{flags, HelpString, VersionString};
 
 /// A **misfire** is a thing that can happen instead of listing files -- a
 /// catch-all for anything outside the program’s normal execution.
 #[derive(PartialEq, Debug)]
 pub enum Misfire {
-
     /// The getopts crate didn’t like these Arguments.
     InvalidOptions(ParseError),
 
@@ -51,13 +49,12 @@ pub enum Misfire {
 }
 
 impl Misfire {
-
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
         match *self {
-            Misfire::Help(_)    => false,
+            Misfire::Help(_) => false,
             Misfire::Version(_) => false,
-            _                   => true,
+            _ => true,
         }
     }
 }
@@ -70,30 +67,46 @@ impl From<glob::PatternError> for Misfire {
 
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use options::parser::TakesValue;
         use self::Misfire::*;
+        use options::parser::TakesValue;
 
         match *self {
             BadArgument(ref arg, ref attempt) => {
                 if let TakesValue::Necessary(Some(values)) = arg.takes_value {
-                    write!(f, "Option {} has no {:?} setting ({})", arg, attempt, Choices(values))
-                }
-                else {
+                    write!(
+                        f,
+                        "Option {} has no {:?} setting ({})",
+                        arg,
+                        attempt,
+                        Choices(values)
+                    )
+                } else {
                     write!(f, "Option {} has no {:?} setting", arg, attempt)
                 }
-            },
-            InvalidOptions(ref e)            => write!(f, "{}", e),
-            Help(ref text)                   => write!(f, "{}", text),
-            Version(ref version)             => write!(f, "{}", version),
-            Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}", a, b),
-            Duplicate(ref a, ref b)          => if a == b { write!(f, "Flag {} was given twice", a) }
-                                                     else { write!(f, "Flag {} conflicts with flag {}", a, b) },
-            Useless(ref a, false, ref b)     => write!(f, "Option {} is useless without option {}", a, b),
-            Useless(ref a, true, ref b)      => write!(f, "Option {} is useless given option {}", a, b),
-            Useless2(ref a, ref b1, ref b2)  => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
-            TreeAllAll                       => write!(f, "Option --tree is useless given --all --all"),
-            FailedParse(ref e)               => write!(f, "Failed to parse number: {}", e),
-            FailedGlobPattern(ref e)         => write!(f, "Failed to parse glob pattern: {}", e),
+            }
+            InvalidOptions(ref e) => write!(f, "{}", e),
+            Help(ref text) => write!(f, "{}", text),
+            Version(ref version) => write!(f, "{}", version),
+            Conflict(ref a, ref b) => write!(f, "Option {} conflicts with option {}", a, b),
+            Duplicate(ref a, ref b) => {
+                if a == b {
+                    write!(f, "Flag {} was given twice", a)
+                } else {
+                    write!(f, "Flag {} conflicts with flag {}", a, b)
+                }
+            }
+            Useless(ref a, false, ref b) => {
+                write!(f, "Option {} is useless without option {}", a, b)
+            }
+            Useless(ref a, true, ref b) => write!(f, "Option {} is useless given option {}", a, b),
+            Useless2(ref a, ref b1, ref b2) => write!(
+                f,
+                "Option {} is useless without options {} or {}",
+                a, b1, b2
+            ),
+            TreeAllAll => write!(f, "Option --tree is useless given --all --all"),
+            FailedParse(ref e) => write!(f, "Failed to parse number: {}", e),
+            FailedGlobPattern(ref e) => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
 }
@@ -103,11 +116,21 @@ impl fmt::Display for ParseError {
         use self::ParseError::*;
 
         match *self {
-            NeedsValue { ref flag, values: None }     => write!(f, "Flag {} needs a value", flag),
-            NeedsValue { ref flag, values: Some(cs) } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
-            ForbiddenValue { ref flag }               => write!(f, "Flag {} cannot take a value", flag),
-            UnknownShortArgument { ref attempt }      => write!(f, "Unknown argument -{}", *attempt as char),
-            UnknownArgument { ref attempt }           => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
+            NeedsValue {
+                ref flag,
+                values: None,
+            } => write!(f, "Flag {} needs a value", flag),
+            NeedsValue {
+                ref flag,
+                values: Some(cs),
+            } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
+            ForbiddenValue { ref flag } => write!(f, "Flag {} cannot take a value", flag),
+            UnknownShortArgument { ref attempt } => {
+                write!(f, "Unknown argument -{}", *attempt as char)
+            }
+            UnknownArgument { ref attempt } => {
+                write!(f, "Unknown argument --{}", attempt.to_string_lossy())
+            }
         }
     }
 }
@@ -118,15 +141,18 @@ impl Misfire {
     pub fn suggestion(&self) -> Option<&'static str> {
         // ‘ls -lt’ and ‘ls -ltr’ are common combinations
         match *self {
-            Misfire::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" =>
-                Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\""),
-            Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') =>
-                Some("To sort newest files last, try \"--sort newest\", or just \"-snew\""),
-            _ => None
+            Misfire::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" => {
+                Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"")
+            }
+            Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, .. })
+                if *flag == Flag::Short(b't') =>
+            {
+                Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"")
+            }
+            _ => None,
         }
     }
 }
-
 
 /// A list of legal choices for an argument-taking option.
 #[derive(PartialEq, Debug)]

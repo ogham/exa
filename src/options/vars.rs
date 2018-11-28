@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 
-
 // General variables
 
 /// Environment variable used to colour files, both by their filesystem type
@@ -38,13 +37,10 @@ pub static EXA_DEBUG: &str = "EXA_DEBUG";
 /// number of rows of output.
 pub static EXA_GRID_ROWS: &str = "EXA_GRID_ROWS";
 
-
-
 /// Mockable wrapper for `std::env::var_os`.
 pub trait Vars {
     fn get(&self, name: &'static str) -> Option<OsString>;
 }
-
 
 // Test impl that just returns the value it has.
 #[cfg(test)]

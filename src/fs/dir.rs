@@ -1,11 +1,10 @@
-use std::io::{self, Result as IOResult};
 use std::fs;
+use std::io::{self, Result as IOResult};
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use fs::File;
 use fs::feature::ignore::IgnoreCache;
-
+use fs::File;
 
 /// A **Dir** provides a cached list of the file paths in a directory that's
 /// being listed.
@@ -14,7 +13,6 @@ use fs::feature::ignore::IgnoreCache;
 /// check the existence of surrounding files, then highlight themselves
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
-
     /// A vector of the files that have been read from this directory.
     contents: Vec<PathBuf>,
 
@@ -23,7 +21,6 @@ pub struct Dir {
 }
 
 impl Dir {
-
     /// Create a new Dir object filled with all the files in the directory
     /// pointed to by the given path. Fails if the directory can’t be read, or
     /// isn’t actually a directory, or if there’s an IO error that occurs at
@@ -36,22 +33,28 @@ impl Dir {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?
-                                             .map(|result| result.map(|entry| entry.path()))
-                                             .collect::<Result<_,_>>()?;
+            .map(|result| result.map(|entry| entry.path()))
+            .collect::<Result<_, _>>()?;
 
         Ok(Dir { contents, path })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
-        if let Some(i) = ignore { i.discover_underneath(&self.path); }
+    pub fn files<'dir, 'ig>(
+        &'dir self,
+        dots: DotFilter,
+        ignore: Option<&'ig IgnoreCache>,
+    ) -> Files<'dir, 'ig> {
+        if let Some(i) = ignore {
+            i.discover_underneath(&self.path);
+        }
 
         Files {
-            inner:     self.contents.iter(),
-            dir:       self,
-            dotfiles:  dots.shows_dotfiles(),
-            dots:      dots.dots(),
+            inner: self.contents.iter(),
+            dir: self,
+            dotfiles: dots.shows_dotfiles(),
+            dots: dots.dots(),
             ignore,
         }
     }
@@ -67,10 +70,8 @@ impl Dir {
     }
 }
 
-
 /// Iterator over reading the contents of a directory as `File` objects.
 pub struct Files<'dir, 'ig> {
-
     /// The internal iterator over the paths that have been read already.
     inner: SliceIter<'dir, PathBuf>,
 
@@ -103,17 +104,21 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
         loop {
             if let Some(path) = self.inner.next() {
                 let filename = File::filename(path);
-                if !self.dotfiles && filename.starts_with('.') { continue }
-
-                if let Some(i) = self.ignore {
-                    if i.is_ignored(path) { continue }
+                if !self.dotfiles && filename.starts_with('.') {
+                    continue;
                 }
 
-                return Some(File::new(path.clone(), self.dir, filename)
-                                 .map_err(|e| (path.clone(), e)))
-            }
-            else {
-                return None
+                if let Some(i) = self.ignore {
+                    if i.is_ignored(path) {
+                        continue;
+                    }
+                }
+
+                return Some(
+                    File::new(path.clone(), self.dir, filename).map_err(|e| (path.clone(), e)),
+                );
+            } else {
+                return None;
             }
         }
     }
@@ -122,7 +127,6 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
 /// The dot directories that need to be listed before actual files, if any.
 /// If these aren’t being printed, then `FilesNext` is used to skip them.
 enum Dots {
-
     /// List the `.` directory next.
     DotNext,
 
@@ -133,34 +137,33 @@ enum Dots {
     FilesNext,
 }
 
-
 impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Dots::DotNext = self.dots {
             self.dots = Dots::DotDotNext;
-            Some(File::new(self.dir.path.to_path_buf(), self.dir, String::from("."))
-                      .map_err(|e| (Path::new(".").to_path_buf(), e)))
-        }
-        else if let Dots::DotDotNext = self.dots {
+            Some(
+                File::new(self.dir.path.to_path_buf(), self.dir, String::from("."))
+                    .map_err(|e| (Path::new(".").to_path_buf(), e)),
+            )
+        } else if let Dots::DotDotNext = self.dots {
             self.dots = Dots::FilesNext;
-            Some(File::new(self.parent(), self.dir, String::from(".."))
-                      .map_err(|e| (self.parent(), e)))
-        }
-        else {
+            Some(
+                File::new(self.parent(), self.dir, String::from(".."))
+                    .map_err(|e| (self.parent(), e)),
+            )
+        } else {
             self.next_visible_file()
         }
     }
 }
-
 
 /// Usually files in Unix use a leading dot to be hidden or visible, but two
 /// entries in particular are "extra-hidden": `.` and `..`, which only become
 /// visible after an extra `-a` option.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum DotFilter {
-
     /// Shows files, dotfiles, and `.` and `..`.
     DotfilesAndDots,
 
@@ -178,12 +181,11 @@ impl Default for DotFilter {
 }
 
 impl DotFilter {
-
     /// Whether this filter should show dotfiles in a listing.
     fn shows_dotfiles(self) -> bool {
         match self {
-            DotFilter::JustFiles       => false,
-            DotFilter::Dotfiles        => true,
+            DotFilter::JustFiles => false,
+            DotFilter::Dotfiles => true,
             DotFilter::DotfilesAndDots => true,
         }
     }
@@ -191,8 +193,8 @@ impl DotFilter {
     /// Whether this filter should add dot directories to a listing.
     fn dots(self) -> Dots {
         match self {
-            DotFilter::JustFiles       => Dots::FilesNext,
-            DotFilter::Dotfiles        => Dots::FilesNext,
+            DotFilter::JustFiles => Dots::FilesNext,
+            DotFilter::Dotfiles => Dots::FilesNext,
             DotFilter::DotfilesAndDots => Dots::DotNext,
         }
     }
