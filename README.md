@@ -58,7 +58,7 @@ These options are available when running with --long (`-l`):
 - **-u**, **--accessed**: use the accessed timestamp field
 - **-U**, **--created**: use the created timestamp field
 - **-@**, **--extended**: list each file's extended attributes and sizes
-- **--git**: list each file's Git status, if tracked
+- **--git**: list each file's Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
