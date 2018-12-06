@@ -2,6 +2,12 @@
 
 [exa](https://the.exa.website/) is a replacement for `ls` written in Rust.
 
+## Rationale
+
+**exa**  is a modern replacement for the command-line program ls that ships with Unix and Linux operating systems, with more features and better defaults. It uses colours to distinguish file types and metadata. It knows about symlinks, extended attributes, and Git. And it’s **small**, **fast**, and just one **single binary**.
+
+By deliberately making some decisions differently, exa attempts to be a more featureful, more user-friendly version of ls.
+
 ## Screenshots
 
 ![Screenshots of exa](screenshots.png)
