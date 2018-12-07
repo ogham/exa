@@ -2,10 +2,10 @@ use std::path::Path;
 
 use ansi_term::{ANSIString, Style};
 
-use fs::{File, FileTarget};
-use output::escape;
-use output::cell::TextCellContents;
-use output::render::FiletypeColours;
+use crate::fs::{File, FileTarget};
+use crate::output::escape;
+use crate::output::cell::TextCellContents;
+use crate::output::render::FiletypeColours;
 
 
 /// Basically a file name factory.

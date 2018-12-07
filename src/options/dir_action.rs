@@ -1,9 +1,9 @@
 //! Parsing the options for `DirAction`.
 
-use options::parser::MatchedFlags;
-use options::{flags, Misfire};
+use crate::options::parser::MatchedFlags;
+use crate::options::{flags, Misfire};
 
-use fs::dir_action::{DirAction, RecurseOptions};
+use crate::fs::dir_action::{DirAction, RecurseOptions};
 
 
 impl DirAction {
@@ -71,16 +71,16 @@ impl RecurseOptions {
 #[cfg(test)]
 mod test {
     use super::*;
-    use options::flags;
-    use options::parser::Flag;
+    use crate::options::flags;
+    use crate::options::parser::Flag;
 
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::Arg;
-                use options::test::parse_for_test;
-                use options::test::Strictnesses::*;
+                use crate::options::parser::Arg;
+                use crate::options::test::parse_for_test;
+                use crate::options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[&flags::RECURSE, &flags::LIST_DIRS, &flags::TREE, &flags::LEVEL ];
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {

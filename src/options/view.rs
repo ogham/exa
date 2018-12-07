@@ -1,20 +1,21 @@
-use output::{View, Mode, grid, details, lines};
-use output::grid_details::{self, RowThreshold};
-use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
-use output::time::TimeFormat;
+use lazy_static::lazy_static;
 
-use options::{flags, Misfire, Vars};
-use options::parser::MatchedFlags;
+use crate::options::{flags, Misfire, Vars};
+use crate::options::parser::MatchedFlags;
+use crate::output::{View, Mode, grid, details, lines};
+use crate::output::grid_details::{self, RowThreshold};
+use crate::output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
+use crate::output::time::TimeFormat;
 
-use fs::PlatformMetadata;
-use fs::feature::xattr;
+use crate::fs::PlatformMetadata;
+use crate::fs::feature::xattr;
 
 
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
-        use options::style::Styles;
+        use crate::options::style::Styles;
 
         let mode = Mode::deduce(matches, vars)?;
         let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
@@ -27,7 +28,7 @@ impl Mode {
 
     /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
-        use options::misfire::Misfire::*;
+        use crate::options::misfire::Misfire::*;
 
         let long = || {
             if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
@@ -159,7 +160,7 @@ impl TerminalWidth {
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
     fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
-        use options::vars;
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
@@ -190,7 +191,7 @@ impl RowThreshold {
     /// Determine whether to use a row threshold based on the given
     /// environment variables.
     fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
-        use options::vars;
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
@@ -257,12 +258,12 @@ impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
     fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<TimeFormat, Misfire> {
-        pub use output::time::{DefaultFormat, ISOFormat};
+        pub use crate::output::time::{DefaultFormat, ISOFormat};
 
         let word = match matches.get(&flags::TIME_STYLE)? {
             Some(w) => w.to_os_string(),
             None    => {
-                use options::vars;
+                use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
                     Some(ref t) if !t.is_empty() => t.clone(),
                     _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
@@ -379,11 +380,11 @@ lazy_static! {
 mod test {
     use super::*;
     use std::ffi::OsString;
-    use options::flags;
-    use options::parser::{Flag, Arg};
+    use crate::options::flags;
+    use crate::options::parser::{Flag, Arg};
 
-    use options::test::parse_for_test;
-    use options::test::Strictnesses::*;
+    use crate::options::test::parse_for_test;
+    use crate::options::test::Strictnesses::*;
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
@@ -569,8 +570,10 @@ mod test {
 
     mod views {
         use super::*;
-        use output::grid::Options as GridOptions;
-        use output::lines::Options as LineOptions;
+
+        use crate::output::grid::Options as GridOptions;
+        use crate::output::lines::Options as LineOptions;
+
 
         // Default
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));

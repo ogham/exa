@@ -2,11 +2,11 @@ use std::io::{Write, Result as IOResult};
 
 use ansi_term::{ANSIStrings, ANSIGenericString};
 
-use fs::File;
-use output::file_name::{FileName, FileStyle};
-use style::Colours;
-use output::icons::painted_icon;
-use output::cell::TextCell;
+use crate::fs::File;
+use crate::output::file_name::{FileName, FileStyle};
+use crate::style::Colours;
+use crate::output::icons::painted_icon;
+use crate::output::cell::TextCell;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Options {

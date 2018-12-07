@@ -66,18 +66,19 @@ use std::vec::IntoIter as VecIntoIter;
 
 use ansi_term::{ANSIGenericString, Style};
 
-use fs::{Dir, File};
-use fs::dir_action::RecurseOptions;
-use fs::filter::FileFilter;
-use fs::feature::ignore::IgnoreCache;
-use fs::feature::git::GitCache;
-use fs::feature::xattr::{Attribute, FileAttributes};
-use style::Colours;
-use output::cell::TextCell;
-use output::tree::{TreeTrunk, TreeParams, TreeDepth};
-use output::file_name::FileStyle;
-use output::table::{Table, Options as TableOptions, Row as TableRow};
-use output::icons::painted_icon;
+use crate::fs::{Dir, File};
+use crate::fs::dir_action::RecurseOptions;
+use crate::fs::filter::FileFilter;
+use crate::fs::feature::ignore::IgnoreCache;
+use crate::fs::feature::git::GitCache;
+use crate::fs::feature::xattr::{Attribute, FileAttributes};
+use crate::style::Colours;
+use crate::output::cell::TextCell;
+use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
+use crate::output::file_name::FileStyle;
+use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
+use crate::output::icons::painted_icon;
+
 use scoped_threadpool::Pool;
 
 
@@ -190,7 +191,8 @@ impl<'a> Render<'a> {
     /// parallelisable, and uses a pool of threads.
     fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
-        use fs::feature::xattr;
+        use log::error;
+        use crate::fs::feature::xattr;
 
         let mut file_eggs = Vec::new();
 
@@ -343,7 +345,7 @@ impl<'a> Render<'a> {
     }
 
     fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
-        use output::file_name::Colours;
+        use crate::output::file_name::Colours;
 
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
