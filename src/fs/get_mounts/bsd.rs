@@ -45,7 +45,8 @@ pub fn get_mount_points() -> Result<Vec<(PathBuf,String)>> {
         .map(|m| unsafe {(
             let bytes = CStr::from_ptr(&m.f_mntonname[0]).to_bytes();
             PathBuf::from(OsStr::from_bytes(bytes).to_owned()),
-            let fstype = CStr::from_ptr(&m.f_fstypename[0]).to_str().unwrap().to_owned()
+            let fstype = CStr::from_ptr(&m.f_fstypename[0]).to_str().unwrap().to_owned(),
+            let fsname = CStr::from_ptr(&m.f_mntfromname[0]).to_str().unwrap().to_owned()
         }))
         .collect();
 

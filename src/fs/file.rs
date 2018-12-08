@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use fs::dir::Dir;
 use fs::fields as f;
-
+use MOUNT_POINTS;
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -172,12 +172,61 @@ impl<'dir> File<'dir> {
 
     // Whether this file is a btrfs subvolume
     pub fn is_subvolume(&self) -> bool {
+        if self.is_directory() && (self.metadata.ino() == 2 || self.metadata.ino() == 256) {
+            // inode numbers look like the file is a subvolume, unwind its
+            // path to see whether it's on a btrfs volume
+            let mut ancestors: Vec<PathBuf> = Vec::new();
+            for ancestor in self.path.ancestors() {
+                ancestors.push(ancestor.to_path_buf());
+            }
+            ancestors.reverse();
+
+            let mut is_on_btrfs = false;
+            // Start at / and work downwards
+            for ancestor in ancestors {
+                for mount_point in MOUNT_POINTS.iter() {
+                    let mount_path = &mount_point.0;
+                    let fs_type = &mount_point.1;
+                    if ancestor.eq(mount_path) {
+                        if "btrfs".eq(fs_type) {
+                            is_on_btrfs = true;
+                        } else {
+                            is_on_btrfs = false;
+                        }
+                    }
+                }
+            }
+            return is_on_btrfs;
+        }
+        return false;
+    }
+
+    // Whether this file is a mount point
+    pub fn is_mount_point(&self) -> bool {
         if self.is_directory() {
-            if self.metadata.ino() == 2 || self.metadata.ino() == 256 {
-                return true;
+            for mount_point in MOUNT_POINTS.iter() {
+                let mount_path = &mount_point.0;
+                if self.path.eq(mount_path) {
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    // The filesystem device and type for a mount point
+    pub fn mount_point_info(&self) -> (Option<PathBuf>, Option<String>, Option<String>) {
+        if self.is_mount_point() {
+            for mount_point in MOUNT_POINTS.iter() {
+                let mount_path = &mount_point.0;
+                let fs_type = &mount_point.1;
+                let fs_name = &mount_point.2;
+                if self.path.eq(mount_path) {
+                    return (Some(mount_path.to_path_buf()), Some(fs_type.to_string()), Some(fs_name.to_string()));
+                }
+            }
+        }
+        return (None, None, None);
     }
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to

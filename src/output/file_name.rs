@@ -176,6 +176,17 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                 bits.push(Style::default().paint(class));
             }
         }
+        else if self.file.is_mount_point() {
+            let mount_point_info = self.file.mount_point_info();
+            bits.push(Style::default().paint(" "));
+            bits.push(self.colours.normal_arrow().paint("->"));
+            bits.push(Style::default().paint(" "));
+
+            bits.push(Style::default().paint(mount_point_info.2.unwrap()));
+            bits.push(Style::default().paint(" ("));
+            bits.push(Style::default().paint(mount_point_info.1.unwrap()));
+            bits.push(Style::default().paint(")"));
+        }
 
         bits.into()
     }
@@ -253,6 +264,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
     fn kind_style(&self) -> Option<Style> {
         Some(match self.file {
+            f if f.is_mount_point()      => self.colours.mount_point(),
             f if f.is_subvolume()        => self.colours.subvolume(),
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),

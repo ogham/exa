@@ -44,6 +44,13 @@ mod options;
 mod output;
 mod style;
 
+lazy_static! {
+    // A global cache of mount points to enable lookups for each directory
+    static ref MOUNT_POINTS: Vec<(PathBuf, String, String)> = {
+        let mount_points = get_mount_points().unwrap();
+        mount_points        
+    };
+}
 
 /// The main program wrapper.
 pub struct Exa<'args, 'w, W: Write + 'w> {
@@ -124,13 +131,6 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
         let mut exit_status = 0;
-
-        //Get a vector of all mount points to use later
-        let mount_points = get_mount_points();
-//	for test in mount_points.unwrap() {
-//            println!("entry: {} {}", test.0.to_str().unwrap(), test.1);
-//      }
-
 
         for file_path in &self.args {
             match File::new(PathBuf::from(file_path), None, None) {

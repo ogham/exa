@@ -34,8 +34,8 @@ extern "C" {
     fn endmntent(fp: *mut FILE) -> c_int;
 }
 
-pub fn get_mount_points() -> Result<Vec<(PathBuf,String)>> {
-    let mut mount_points: Vec<(PathBuf,String)> = Vec::new();
+pub fn get_mount_points() -> Result<Vec<(PathBuf,String, String)>> {
+    let mut mount_points: Vec<(PathBuf,String, String)> = Vec::new();
 
     // The Linux API is somewhat baroque: rather than exposing the kernel's view of the world
     // you are expected to provide it with a mounts file which traditionally might have been
@@ -66,10 +66,10 @@ pub fn get_mount_points() -> Result<Vec<(PathBuf,String)>> {
         let bytes = unsafe { CStr::from_ptr((*mount_entry).mnt_dir).to_bytes() };
         let mount_point = PathBuf::from(OsStr::from_bytes(bytes).to_owned());
         let str = unsafe { CStr::from_ptr((*mount_entry).mnt_type).to_str().unwrap() };
-        let fstype = str.to_owned();
-//        let bytes = unsafe { CStr::from_ptr((*mount_entry).mnt_type).to_bytes() };
-//        let fstype = String::from(OsStr::from_bytes(bytes).to_owned());
-        mount_points.push((mount_point, fstype));
+        let fs_type = str.to_owned();
+        let str = unsafe { CStr::from_ptr((*mount_entry).mnt_fsname).to_str().unwrap() };
+        let fs_name = str.to_owned();
+        mount_points.push((mount_point, fs_type, fs_name));
     }
 
     let rc = unsafe { endmntent(mount_file_handle) };

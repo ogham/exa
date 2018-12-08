@@ -30,4 +30,5 @@ pub trait Colours {
     fn socket(&self) -> Style;
     fn special(&self) -> Style;
     fn subvolume(&self) -> Style;
+    fn mount_point(&self) -> Style;
 }
