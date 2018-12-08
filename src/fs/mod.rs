@@ -8,3 +8,4 @@ pub mod feature;
 pub mod fields;
 pub mod filter;
 pub mod dir_action;
+pub mod get_mounts;
