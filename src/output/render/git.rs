@@ -26,6 +26,7 @@ impl f::GitStatus {
             f::GitStatus::Deleted      => colours.deleted().paint("D"),
             f::GitStatus::Renamed      => colours.renamed().paint("R"),
             f::GitStatus::TypeChange   => colours.type_change().paint("T"),
+            f::GitStatus::Ignored      => colours.ignored().paint("I"),
         }
     }
 }
@@ -38,6 +39,7 @@ pub trait Colours {
     fn deleted(&self) -> Style;
     fn renamed(&self) -> Style;
     fn type_change(&self) -> Style;
+    fn ignored(&self) -> Style;
 }
 
 
@@ -60,6 +62,7 @@ pub mod test {
         fn deleted(&self)      -> Style { Fixed(93).normal() }
         fn renamed(&self)      -> Style { Fixed(94).normal() }
         fn type_change(&self)  -> Style { Fixed(95).normal() }
+        fn ignored(&self)      -> Style { Fixed(96).normal() }
     }
 
 

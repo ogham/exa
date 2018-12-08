@@ -13,6 +13,7 @@ readme = "README.md"
 categories = ["command-line-utilities"]
 keywords = ["ls", "files", "command-line"]
 license = "MIT"
+exclude = ["/devtools/*", "/Makefile", "/Vagrantfile", "/screenshots.png"]
 
 
 [[bin]]
@@ -41,7 +42,7 @@ scoped_threadpool = "0.1.*"
 term_grid = "0.1.6"
 term_size = "0.3.0"
 unicode-width = "0.1.4"
-users = "0.7"
+users = "0.8"
 zoneinfo_compiled = "0.4.7"
 
 [build-dependencies]

@@ -102,6 +102,7 @@ pub struct Git {
     pub deleted: Style,
     pub renamed: Style,
     pub typechange: Style,
+    pub ignored: Style,
 }
 
 impl Colours {
@@ -179,6 +180,7 @@ impl Colours {
                 deleted:     Red.normal(),
                 renamed:     Yellow.normal(),
                 typechange:  Purple.normal(),
+                ignored:     Style::default().dimmed(),
             },
 
             punctuation:  Fixed(244).normal(),
@@ -330,6 +332,7 @@ impl render::GitColours for Colours {
     fn deleted(&self)       -> Style { self.git.deleted }
     fn renamed(&self)       -> Style { self.git.renamed }
     fn type_change(&self)   -> Style { self.git.typechange }
+    fn ignored(&self)       -> Style { self.git.ignored }
 }
 
 impl render::GroupColours for Colours {
@@ -404,4 +407,3 @@ impl FileNameColours for Colours {
     fn symlink_path(&self)        -> Style { self.symlink_path }
     fn executable_file(&self)     -> Style { self.filekinds.executable }
 }
-
