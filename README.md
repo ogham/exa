@@ -2,6 +2,12 @@
 
 [exa](https://the.exa.website/) is a replacement for `ls` written in Rust.
 
+## Rationale
+
+**exa**  is a modern replacement for the command-line program ls that ships with Unix and Linux operating systems, with more features and better defaults. It uses colours to distinguish file types and metadata. It knows about symlinks, extended attributes, and Git. And it’s **small**, **fast**, and just one **single binary**.
+
+By deliberately making some decisions differently, exa attempts to be a more featureful, more user-friendly version of ls.
+
 ## Screenshots
 
 ![Screenshots of exa](screenshots.png)
@@ -52,7 +58,7 @@ These options are available when running with --long (`-l`):
 - **-u**, **--accessed**: use the accessed timestamp field
 - **-U**, **--created**: use the created timestamp field
 - **-@**, **--extended**: list each file's extended attributes and sizes
-- **--git**: list each file's Git status, if tracked
+- **--git**: list each file's Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
