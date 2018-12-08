@@ -8,7 +8,7 @@ pub mod git {
     use std::iter::FromIterator;
     use std::path::{Path, PathBuf};
 
-    use fs::fields as f;
+    use crate::fs::fields as f;
 
 
     pub struct GitCache;
