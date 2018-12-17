@@ -224,7 +224,7 @@ mod test {
         test!(empty:         SortField <- [];                  Both => Ok(SortField::default()));
 
         // Sort field arguments
-        test!(one_arg:       SortField <- ["--sort=cr"];       Both => Ok(SortField::CreatedDate));
+        test!(one_arg:       SortField <- ["--sort=mod"];       Both => Ok(SortField::ModifiedDate));
         test!(one_long:      SortField <- ["--sort=size"];     Both => Ok(SortField::Size));
         test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
         test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
