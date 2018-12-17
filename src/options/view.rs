@@ -6,6 +6,7 @@ use output::time::TimeFormat;
 use options::{flags, Misfire, Vars};
 use options::parser::MatchedFlags;
 
+use fs::PlatformMetadata;
 use fs::feature::xattr;
 
 
@@ -300,41 +301,54 @@ impl TimeTypes {
         let accessed = matches.has(&flags::ACCESSED)?;
         let created  = matches.has(&flags::CREATED)?;
 
-        if let Some(word) = possible_word {
+        let time_types = if let Some(word) = possible_word {
             if modified {
-                Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME))
+                return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
             }
             else if changed {
-                Err(Misfire::Useless(&flags::CHANGED, true, &flags::TIME))
+                return Err(Misfire::Useless(&flags::CHANGED, true, &flags::TIME));
             }
             else if accessed {
-                Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME))
+                return Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME));
             }
             else if created {
-                Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME))
+                return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
             }
             else if word == "mod" || word == "modified" {
-                Ok(TimeTypes { modified: true,  changed: false, accessed: false, created: false })
+                TimeTypes { modified: true,  changed: false, accessed: false, created: false }
             }
             else if word == "ch" || word == "changed" {
-                Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false })
+                TimeTypes { modified: false, changed: true,  accessed: false, created: false }
             }
             else if word == "acc" || word == "accessed" {
-                Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false })
+                TimeTypes { modified: false, changed: false, accessed: true,  created: false }
             }
             else if word == "cr" || word == "created" {
-                Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  })
+                TimeTypes { modified: false, changed: false, accessed: false, created: true  }
             }
             else {
-                Err(Misfire::BadArgument(&flags::TIME, word.into()))
+                return Err(Misfire::BadArgument(&flags::TIME, word.into()));
             }
         }
         else if modified || changed || accessed || created {
-            Ok(TimeTypes { modified, changed, accessed, created })
+            TimeTypes { modified, changed, accessed, created }
         }
         else {
-            Ok(TimeTypes::default())
+            TimeTypes::default()
+        };
+
+        let mut fields = vec![];
+        if time_types.modified { fields.push(PlatformMetadata::ModifiedTime); }
+        if time_types.changed  { fields.push(PlatformMetadata::ChangedTime); }
+        if time_types.accessed { fields.push(PlatformMetadata::AccessedTime); }
+        if time_types.created  { fields.push(PlatformMetadata::CreatedTime); }
+
+        for field in fields {
+            if let Err(misfire) = field.check_supported() {
+                return Err(misfire);
+            }
         }
+        Ok(time_types)
     }
 }
 
