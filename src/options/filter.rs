@@ -70,6 +70,9 @@ impl SortField {
             // age (the oldest) at the bottom.
             Ok(SortField::ModifiedAge)
         }
+        else if word == "ch" || word == "changed" {
+            Ok(SortField::ChangedDate)
+        }
         else if word == "acc" || word == "accessed" {
             Ok(SortField::AccessedDate)
         }

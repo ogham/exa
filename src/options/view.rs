@@ -296,34 +296,41 @@ impl TimeTypes {
     fn deduce(matches: &MatchedFlags) -> Result<TimeTypes, Misfire> {
         let possible_word = matches.get(&flags::TIME)?;
         let modified = matches.has(&flags::MODIFIED)?;
-        let created  = matches.has(&flags::CREATED)?;
+        let changed  = matches.has(&flags::CHANGED)?;
         let accessed = matches.has(&flags::ACCESSED)?;
+        let created  = matches.has(&flags::CREATED)?;
 
         if let Some(word) = possible_word {
             if modified {
                 Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME))
             }
-            else if created {
-                Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME))
+            else if changed {
+                Err(Misfire::Useless(&flags::CHANGED, true, &flags::TIME))
             }
             else if accessed {
                 Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME))
             }
+            else if created {
+                Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME))
+            }
             else if word == "mod" || word == "modified" {
-                Ok(TimeTypes { accessed: false, modified: true,  created: false })
+                Ok(TimeTypes { modified: true,  changed: false, accessed: false, created: false })
+            }
+            else if word == "ch" || word == "changed" {
+                Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false })
             }
             else if word == "acc" || word == "accessed" {
-                Ok(TimeTypes { accessed: true,  modified: false, created: false })
+                Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false })
             }
             else if word == "cr" || word == "created" {
-                Ok(TimeTypes { accessed: false, modified: false, created: true  })
+                Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  })
             }
             else {
                 Err(Misfire::BadArgument(&flags::TIME, word.into()))
             }
         }
-        else if modified || created || accessed {
-            Ok(TimeTypes { accessed, modified, created })
+        else if modified || changed || accessed || created {
+            Ok(TimeTypes { modified, changed, accessed, created })
         }
         else {
             Ok(TimeTypes::default())

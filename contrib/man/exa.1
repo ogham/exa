@@ -1,5 +1,5 @@
 .hy
-.TH "exa" "1" "2017\-07\-07" "exa 0.7.0" ""
+.TH "exa" "1" "2018\-12\-17" "exa 0.9.0" ""
 .SH NAME
 .PP
 exa \- a modern replacement for ls
@@ -86,7 +86,7 @@ reverse the sort order
 .TP
 .B \-s, \-\-sort=\f[I]SORT_FIELD\f[]
 which field to sort by.
-Valid fields are name, Name, extension, Extension, size, modified, accessed, created, inode, type, and none.
+Valid fields are name, Name, extension, Extension, size, modified, changed, accessed, created, inode, type, and none.
 The modified field has the aliases date, time, and newest, and its reverse order has the aliases age and oldest.
 Fields starting with a capital letter will sort uppercase before lowercase: 'A' then 'B' then 'a' then 'b'.
 Fields starting with a lowercase letter will mix them: 'A' then 'a' then 'B' then 'b'.
@@ -158,7 +158,7 @@ list each file\[aq]s number of file system blocks
 .RE
 .TP
 .B \-t, \-\-time=\f[I]WORD\f[]
-which timestamp field to list (modified, accessed, created)
+which timestamp field to list (modified, changed, accessed, created)
 .RS
 .RE
 .TP

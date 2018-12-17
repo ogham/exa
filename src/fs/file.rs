@@ -301,6 +301,11 @@ impl<'dir> File<'dir> {
         self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
+    /// This file’s last changed timestamp.
+    pub fn changed_time(&self) -> Duration {
+        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
+    }
+
     /// This file’s last accessed timestamp.
     pub fn accessed_time(&self) -> Duration {
         self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
