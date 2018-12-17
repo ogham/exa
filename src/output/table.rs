@@ -12,6 +12,7 @@ use users::UsersCache;
 
 use style::Colours;
 use output::cell::TextCell;
+use output::render::TimeRender;
 use output::time::TimeFormat;
 use fs::{File, fields as f};
 use fs::feature::git::GitCache;

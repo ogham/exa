@@ -5,6 +5,7 @@ use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
+use std::time::{UNIX_EPOCH, Duration};
 
 use fs::dir::Dir;
 use fs::fields as f;
@@ -296,27 +297,18 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
-    pub fn modified_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.mtime(),
-            nanoseconds: self.metadata.mtime_nsec()
-        }
-    }
-
-    /// This file’s created timestamp.
-    pub fn created_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.ctime(),
-            nanoseconds: self.metadata.ctime_nsec()
-        }
+    pub fn modified_time(&self) -> Duration {
+        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
     /// This file’s last accessed timestamp.
-    pub fn accessed_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.atime(),
-            nanoseconds: self.metadata.atime_nsec()
-        }
+    pub fn accessed_time(&self) -> Duration {
+        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    }
+
+    /// This file’s created timestamp.
+    pub fn created_time(&self) -> Duration {
+        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
     /// This file’s ‘type’.
