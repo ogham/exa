@@ -1,0 +1,333 @@
+.Dd December 23, 2018
+.Dt EXA-COLORS 5
+.Os
+.Sh NAME
+.Nm exa-colors
+.Nd configuration 
+.Sh SYNOPSIS
+.Sm off
+.Ev LS_COLORS = Qo di = Ar 01 ; 34 : No *.mp4 = Ar 01 ; 35 : No ... Qc
+.Pp
+.Ev EXA_COLORS = Qo tx = Ar 01 ; 32 : No gm = Ar 01 ; 31 : No ... Qc
+.Sm on
+.Sh DESCRIPTION
+.Ev LS_COLORS
+is the traditional way of customising the colours used by
+.Xr ls 1 .
+You can use
+.Xr dircolors 1
+to generate a script that sets
+.Ev LS_COLORS
+from a
+.Xr dir_colors 5
+file. It has the following structure:
+.Pp
+.Sm off
+.Dl Sy key No = Ar color Op : Sy key No = Ar color : No " " ...
+.Sm on
+.Pp
+.Sy key
+can be either be a two letter code or a file
+.Xr glob 7 .
+Anything that is not a valid code will be treated as a glob, including keys
+that happen to be two letters long.
+.Pp
+.Ar color
+is a sequence of valid SGR codes (specified in ECMA-48) separated by semicolons
+.Pq Sq \&; .
+It can be in the following common formats:
+.Bl -tag -width Ds
+.It 4-bit colors
+ECMA-48 specifies 8 colors for foreground and background text:
+.Bl -column -offset indent "color" "9"
+.It black Ta 0
+.It red Ta 1
+.It green Ta 2
+.It yellow Ta 3
+.It blue Ta 4
+.It magenta Ta 5
+.It cyan Ta 6
+.It white Ta 7
+.El
+.Pp
+Foreground color codes start at 30 and background codes start at 40
+.Po
+e.g. green foreground is
+.Sq Ar 32 ,
+white background is
+.Sq Ar 47
+.Pc .
+This can be combined with the increased intensity/boldface code
+.Sq Ar 1
+to display brighter text, thus allowing for a 16 color pallette.
+.It
+.El
+.Pp
+.Ev LS_COLORS
+can use these ten codes:
+.Bl -bullet
+.It
+.Ql di ,
+directories
+.It
+.Ql ex ,
+executable files
+.It
+.Ql fi ,
+regular files
+.It
+.Ql pi ,
+named pipes
+.It
+.Ql so ,
+sockets
+.It
+.Ql bd ,
+block devices
+.It
+.Ql cd ,
+character devices
+.It
+.Ql ln ,
+symlinks
+.It
+.Ql or ,
+symlinks with no target
+.El
+.Pp
+.Ev EXA_COLORS
+can use many more:
+.Bl -bullet
+.It
+.Ql ur ,
+the user-read permission bit.
+.It
+.Ql uw ,
+the user-write permission bit.
+.It
+.Ql ux ,
+the user-execute permission bit for regular files.
+.It
+.Ql ue ,
+the user-execute for other file kinds.
+.It
+.Ql gr ,
+the group-read permission bit.
+.It 
+.Ql gw ,
+the group-write permission bit.
+.It
+.Ql gx ,
+the group-execute permission bit.
+.It
+.Ql tr ,
+the others-read permission bit.
+.It
+.Ql tw ,
+the others-write permission bit.
+.It
+.Ql tx ,
+the others-execute permission bit.
+.It
+.Ql su ,
+setuid, setgid, and sticky permission bits for files.
+.It
+.Ql sf ,
+setuid, setgid, and sticky for other file kinds.
+.It
+.Ql xa ,
+the extended attribute indicator.
+.It
+.Ql sn ,
+the numbers of a file's size.
+.It
+.Ql sb ,
+the units of a file's size.
+.It
+.Ql df ,
+a device's major ID.
+.It
+.Ql ds ,
+a device's minor ID.
+.It
+.Ql uu ,
+a user that's you.
+.It
+.Ql un ,
+a user that's someone else.
+.It
+.Ql gu ,
+a group that you belong to.
+.It
+.Ql gn ,
+a group you aren't a member of.
+.It
+.Ql lc ,
+a number of hard links.
+.It
+.Ql lm ,
+a number of hard links for a regular file with at least two.
+.It
+.Ql ga ,
+a new flag in Git.
+.It
+.Ql gm ,
+a modified flag in Git.
+.It
+.Ql gd ,
+a deleted flag in Git.
+.It
+.Ql gv ,
+a renamed flag in Git.
+.It
+.Ql gt ,
+a modified metadata flag in Git.
+.It
+.Ql xx ,
+.Qq punctuation
+including many background UI elements.
+.It
+.Ql da ,
+a file's date.
+.It
+.Ql in ,
+a file's inode number.
+.It
+.Ql bl ,
+a file's number of blocks.
+.It
+.Ql hd ,
+the header row of a table.
+.It
+.Ql lp ,
+the path of a symlink.
+.It
+.Ql cc ,
+an escaped character in a filename.
+.It
+.Ql b0 ,
+the overlay style for broken symlink paths.
+.El
+.Pp
+Values in
+.Ev EXA_COLORS
+override those given in
+.Ev LS_COLORS ,
+so you don't need to rewrite an existing
+.Ev LS_COLORS
+variable with proprietary extensions.
+.Pp
+Unlike some versions of
+.Xr ls 1 ,
+the given ANSI values must be valid colour codes:
+.Nm
+won't just print out whichever characters are given. Accepted codes are
+.Bl -bullet
+.It
+.Ql 1 ,
+for bold
+.It
+.Ql 4 ,
+for underline
+.It
+.Ql 31 ,
+for red text
+.It
+.Ql 32 ,
+for green text
+.It
+.Ql 33 ,
+for yellow text
+.It
+.Ql 34 ,
+for blue text
+.It
+.Ql 35 ,
+for purple text
+.It
+.Ql 36 ,
+for cyan text
+.It
+.Ql 37 ,
+for white text
+.It
+.Ql 38;5; Ns Ar nnn ,
+for colored text where
+.Ar nnn
+is a colour from 0 to 255.
+.El
+.Pp
+Many terminals will treat bolded text as a different colour, or at least
+provide the option to.
+.Pp
+.Nm
+provides its own builtin set of file extension mappings that cover a large
+range of common file extensions, including documents, archives, media, and
+temporary files. Any mappings in the environment variables will override
+this default set: running
+.Nm
+with
+.Ev LS_COLORS Ns = Ns Qq *.zip Ns = Ns Ar 32
+will turn zip files green but leave the colours of other compressed files
+alone.
+.Pp
+You can also disable this builtin set entirely by including a reset entry
+at the beginning of
+.Ev EXA_COLORS :
+.Dl Ev EXA_COLORS Ns = Ns Qq reset Ns : Ns *.txt Ns = Ns Ar 31
+will highlight only text files,
+.Dl Ev EXA_COLORS Ns = Ns Qq reset
+will highlight nothing.
+.Ss BUILTIN EXTENSIONS
+.Bl -bullet
+.It
+"Immediate" files are the files you should look at when downloading and
+building a project for the first time: READMEs, Makefiles, Cargo.toml,
+and others.
+They[aq]re highlighted in yellow and underlined.
+.It
+Images (png, jpeg, gif) are purple.
+.It
+Videos (mp4, ogv, m2ts) are a slightly purpler purple.
+.It
+Music (mp3, m4a, ogg) is a deeper purple.
+.It
+Lossless music (flac, alac, wav) is deeper than  purple.
+In general, most media files are some shade of purple.
+.It
+Cryptographic files (asc, enc, p12) are a faint blue.
+.It
+Documents (pdf, doc, dvi) are a less faint blue.
+.It
+Compressed files (zip, tgz, Z) are red.
+.It
+Temporary files (tmp, swp, ~) are grey.
+.It
+Compiled files (class, o, pyc) are faint orange.
+A file is also counted as compiled if it uses a common extension and is
+in the same directory as one of its source files: [aq]styles.css[aq]
+will count as compiled when next to [aq]styles.less[aq] or
+[aq]styles.sass[aq], and [aq]scripts.js[aq] when next to
+[aq]scripts.ts[aq] or [aq]scripts.coffee[aq].
+.El
+.Sh EXAMPLES
+.Bl -bullet
+.It
+Disable the "current user" highlighting: 
+.It
+Turn the date column green: 
+.It
+Highlight Vagrantfiles: 
+.It
+Override the existing zip colour: 
+.It
+Markdown files a shade of green, log files a shade of grey:
+.El
+.Sh SEE ALSO
+.Rs
+.%I Ecma
+.%D 1991
+.%R ECMA-48
+.%T Control Functions for Coded Character Sets
+.%P 61
+.Re
