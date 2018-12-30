@@ -1,4 +1,4 @@
-.Dd December 23, 2018
+.Dd December 31, 2018
 .Dt EXA 1
 .Os
 .Sh NAME
@@ -12,11 +12,9 @@
 .Nm
 is a modern replacement for
 .Xr ls 1 .
-It colors information by default to distinguish between filetypes,
-such as whether you are the owner or in the owning group. It also has
-features not present in the original
-.Xr ls ,
-such as viewing the
+It colors information by default to distinguish between filetypes, such as
+whether you are the owner or in the owning group.
+It also has features not present in the original ls, such as viewing the
 .Xr git-status 1
 for a directory or recursing into directories with a tree view.
 .Sh DISPLAY OPTIONS
@@ -55,7 +53,7 @@ include entries that are hidden or begin with a dot
 .Pq Sq \&. .
 Use this twice to also include the
 .Sq \&.
-and 
+and
 .Sq ..
 directories.
 .It Fl d , Fl Fl listdirs
@@ -68,46 +66,51 @@ reverse the sort order.
 which field to sort entries by.
 .Ar SORT_FIELD
 can be:
-.Bl -bullet
+.Bl -tag -width Ds
+.It Ar name , Name
+sort by alphabetical order.
+.It Ar extension , Extension
+sort by file extension in alphabetical order.
+Entries without file extensions precede those that do.
+.It Ar size
+sort by file size ascending.
+.It Ar modified , date , time , newest
+sort by modification date ascending.
+.It Ar age , oldest
+sort by modification date decending.
+.It Ar accessed
+sort by access date ascending.
+.It Ar created
+sort by creation date ascending.
+.It Ar inode
+sort by inode number ascending.
+.It Ar type
+sort by filetype.
+The order is as follows:
+.Bl -enum
 .It
-.Ar name , Name
-\(em sort entries in alphabetical order.
+Directories.
 .It
-.Ar extension , Extension
-\(em sort entries by their file extension in alphabetical order. Entries
-without file extensions precede those that do.
+Files.
 .It
-.Ar size
-\(em sort entries by their file size.
+Links.
 .It
-.Ar modified
-\(em sort entries by modification date ascending.
+Pipes.
 .It
-.Ar accessed
-\(em sort entries by access date ascending.
+Sockets.
 .It
-.Ar created
+Char devices.
 .It
-.Ar inode
-\(em sort entries by inode modification.
+Block devices.
 .It
-.Ar type
-.It
-.Ar none
+Special files.
 .El
-The
-.Ar modified
-field has the aliases
-.Ar date , time
-and 
-.Ar newest ,
-and its reverse order has the aliases
-.Ar age
-and
-.Ar oldest .
+.It Ar none
+.El
+.Pp
 Fields starting with a capital letter will sort uppercase before lowercase:
 .Sq A
-then 
+then
 .Sq B
 then
 .Sq a
@@ -147,7 +150,7 @@ list file sizes in bytes, without any prefixes.
 list each file's group.
 .It Fl h , Fl Fl header
 add a header row to each column.
-.It Fl H , Fl Fl links.
+.It Fl H , Fl Fl links
 list each file's number of hard links.
 .It Fl i , Fl Fl inode
 list each file's inode number.
@@ -183,7 +186,7 @@ or
 use the accessed timestamp field.
 .It Fl U , Fl Fl created
 use the created timestamp field.
-.It Fl \&@, extended
+.It Fl \&@ , extended
 list each file's extended attributes and sizes
 .It Fl Fl git
 list each file's
@@ -195,13 +198,14 @@ if tracked.
 recognizes the following environment variables:
 .Bl -tag -width Ds
 .It Ev COLUMNS
-Overrides the width of the terminal, in characters. For example:
+Overrides the width of the terminal, in characters.
+For example:
 .Dl Ev COLUMNS Ns = Ns Ar 80
-will show a grid view with a maximum width of 80 characters. This option
-won't do anything when
+will show a grid view with a maximum width of 80 characters.
+This option won't do anything when
 .Nm exa Ns 's
 output doesnt wrap, such as when using the
-.Fl Fl Fl long
+.Fl Fl long
 or
 .Fl l
 option.
@@ -210,8 +214,8 @@ Enables
 .Em strict mode ,
 which will make
 .Nm
-error when two options are incompatible. Options can override each other
-going right-to-left so that
+error when two options are incompatible.
+Options can override each other going right-to-left so that
 .Nm
 can be aliased:
 .Pp
@@ -222,7 +226,8 @@ then running
 will run
 .Dl Nm Fl Fl sort Ns = Ns Ar ext Fl Fl sort Ns = Ns Ar size ,
 with the sort field specified by the user overriding the sort field specified
-by the alias. In
+by the alias.
+In
 .Em strict mode ,
 the two options will not cooperate, and exa will error.
 .Pp
@@ -233,13 +238,15 @@ Limits the grid-details view set by
 .Fl Fl grid
 and
 .Fl Fl long ,
-so that it is only activated when at least the given number of rows of
-output would be generated. With widescreen displays, it is possible for
-the grid to look very wide and sparse, on just one or two lines with none
-of the columns lining up. By specifying a minimum number of rows, you can
-only use the view if it's going to be worth using.
+so that it is only activated when at least the given number of rows of output
+would be generated.
+With widescreen displays, it is possible for the grid to look very wide and
+sparse, on just one or two lines with none of the columns lining up.
+By specifying a minimum number of rows, you can only use the view if it's
+going to be worth using.
 .It Ev LS_COLORS , EXA_COLORS
-Colorize entries according to specific patterns. See
+Colorize entries according to specific patterns.
+See
 .Xr exa-colors 5
 for more info.
 .El
@@ -254,10 +261,11 @@ Display a tree of entries, three levels deep:
 .Dl $ Nm Fl Fl long Fl Fl tree Fl Fl level Ns = Ns Ar 3
 .Sh SEE ALSO
 .Xr ls 1 ,
-.Xr tree 1 .
-.Sh AUTHOR
+.Xr tree 1
+.Sh AUTHORS
 .Nm
-is written and maintained by
+is maintained by
 .An Benjamin So ogham Sc Sago
-with contributions from many others. You can view the full list at:
-.Lk https://github.com/ogham/exa/graphs/contributors
+with contributions from many others.
+You can view the full list at
+.Aq Lk https://github.com/ogham/exa/graphs/contributors

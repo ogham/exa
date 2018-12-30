@@ -1,9 +1,12 @@
+'\" e
 .Dd December 23, 2018
 .Dt EXA-COLORS 5
 .Os
 .Sh NAME
 .Nm exa-colors
-.Nd configuration 
+.Nd configure colors for
+.Nm exa
+entries
 .Sh SYNOPSIS
 .Sm off
 .Ev LS_COLORS = Qo di = Ar 01 ; 34 : No *.mp4 = Ar 01 ; 35 : No ... Qc
@@ -11,6 +14,11 @@
 .Ev EXA_COLORS = Qo tx = Ar 01 ; 32 : No gm = Ar 01 ; 31 : No ... Qc
 .Sm on
 .Sh DESCRIPTION
+By default
+.Nm exa
+will color entries to distinguish between filetypes.
+These colors are defined
+.Sh SYNTAX
 .Ev LS_COLORS
 is the traditional way of customising the colours used by
 .Xr ls 1 .
@@ -20,7 +28,8 @@ to generate a script that sets
 .Ev LS_COLORS
 from a
 .Xr dir_colors 5
-file. It has the following structure:
+file.
+It has the following structure:
 .Pp
 .Sm off
 .Dl Sy key No = Ar color Op : Sy key No = Ar color : No " " ...
@@ -32,239 +41,145 @@ can be either be a two letter code or a file
 Anything that is not a valid code will be treated as a glob, including keys
 that happen to be two letters long.
 .Pp
-.Ar color
-is a sequence of valid SGR codes (specified in ECMA-48) separated by semicolons
-.Pq Sq \&; .
-It can be in the following common formats:
-.Bl -tag -width Ds
-.It 4-bit colors
-ECMA-48 specifies 8 colors for foreground and background text:
-.Bl -column -offset indent "color" "9"
-.It black Ta 0
-.It red Ta 1
-.It green Ta 2
-.It yellow Ta 3
-.It blue Ta 4
-.It magenta Ta 5
-.It cyan Ta 6
-.It white Ta 7
-.El
-.Pp
-Foreground color codes start at 30 and background codes start at 40
-.Po
-e.g. green foreground is
-.Sq Ar 32 ,
-white background is
-.Sq Ar 47
-.Pc .
-This can be combined with the increased intensity/boldface code
-.Sq Ar 1
-to display brighter text, thus allowing for a 16 color pallette.
-.It
-.El
-.Pp
 .Ev LS_COLORS
 can use these ten codes:
-.Bl -bullet
-.It
-.Ql di ,
-directories
-.It
-.Ql ex ,
-executable files
-.It
-.Ql fi ,
-regular files
-.It
-.Ql pi ,
-named pipes
-.It
-.Ql so ,
-sockets
-.It
-.Ql bd ,
-block devices
-.It
-.Ql cd ,
-character devices
-.It
-.Ql ln ,
-symlinks
-.It
-.Ql or ,
-symlinks with no target
+.Bl -column -offset indent "xx" "description of the code"
+.It Sy bd Ta block devices.
+.It Sy cd Ta character devices.
+.It Sy di Ta directories.
+.It Sy ex Ta executable files.
+.It Sy fi Ta regular files.
+.It Sy ln Ta symlinks.
+.It Sy or Ta symlinks with no target.
+.It Sy pi Ta named pipes.
+.It Sy so Ta sockets.
 .El
 .Pp
 .Ev EXA_COLORS
 can use many more:
-.Bl -bullet
-.It
-.Ql ur ,
-the user-read permission bit.
-.It
-.Ql uw ,
-the user-write permission bit.
-.It
-.Ql ux ,
-the user-execute permission bit for regular files.
-.It
-.Ql ue ,
-the user-execute for other file kinds.
-.It
-.Ql gr ,
-the group-read permission bit.
-.It 
-.Ql gw ,
-the group-write permission bit.
-.It
-.Ql gx ,
-the group-execute permission bit.
-.It
-.Ql tr ,
-the others-read permission bit.
-.It
-.Ql tw ,
-the others-write permission bit.
-.It
-.Ql tx ,
-the others-execute permission bit.
-.It
-.Ql su ,
-setuid, setgid, and sticky permission bits for files.
-.It
-.Ql sf ,
-setuid, setgid, and sticky for other file kinds.
-.It
-.Ql xa ,
-the extended attribute indicator.
-.It
-.Ql sn ,
-the numbers of a file's size.
-.It
-.Ql sb ,
-the units of a file's size.
-.It
-.Ql df ,
-a device's major ID.
-.It
-.Ql ds ,
-a device's minor ID.
-.It
-.Ql uu ,
-a user that's you.
-.It
-.Ql un ,
-a user that's someone else.
-.It
-.Ql gu ,
-a group that you belong to.
-.It
-.Ql gn ,
-a group you aren't a member of.
-.It
-.Ql lc ,
-a number of hard links.
-.It
-.Ql lm ,
-a number of hard links for a regular file with at least two.
-.It
-.Ql ga ,
-a new flag in Git.
-.It
-.Ql gm ,
-a modified flag in Git.
-.It
-.Ql gd ,
-a deleted flag in Git.
-.It
-.Ql gv ,
-a renamed flag in Git.
-.It
-.Ql gt ,
-a modified metadata flag in Git.
-.It
-.Ql xx ,
-.Qq punctuation
-including many background UI elements.
-.It
-.Ql da ,
-a file's date.
-.It
-.Ql in ,
-a file's inode number.
-.It
-.Ql bl ,
-a file's number of blocks.
-.It
-.Ql hd ,
-the header row of a table.
-.It
-.Ql lp ,
-the path of a symlink.
-.It
-.Ql cc ,
-an escaped character in a filename.
-.It
-.Ql b0 ,
-the overlay style for broken symlink paths.
+.Bl -column -offset indent "xx" "a very long description of the code"
+.It Sy b0 Ta the overlay style for broken symlink paths.
+.It Sy bl Ta a file's number of blocks.
+.It Sy cc Ta an escaped character in a filename.
+.It Sy da Ta a file's date.
+.It Sy df Ta a device's major ID.
+.It Sy ds Ta a device's minor ID.
+.It Sy ga Ta a new flag in Git.
+.It Sy gd Ta a deleted flag in Git.
+.It Sy gm Ta a modified flag in Git.
+.It Sy gn Ta a group you aren't a member of.
+.It Sy gr Ta the group-read permission bit.
+.It Sy gt Ta a modified metadata flag in Git.
+.It Sy gu Ta a group that you belong to.
+.It Sy gv Ta a renamed flag in Git.
+.It Sy gw Ta the group-write permission bit.
+.It Sy gx Ta the group-execute permission bit.
+.It Sy hd Ta the header row of a table.
+.It Sy in Ta a file's inode number.
+.It Sy lc Ta a number of hard links.
+.It Sy lm Ta a number of hard links for a regular file with at least two.
+.It Sy lp Ta the path of a symlink.
+.It Sy sb Ta the units of a file's size.
+.It Sy sf Ta setuid, setgid, and sticky for other file kinds.
+.It Sy sn Ta the numbers of a file's size.
+.It Sy su Ta setuid, setgid, and sticky permission bits for files.
+.It Sy tr Ta the others-read permission bit.
+.It Sy tw Ta the others-write permission bit.
+.It Sy tx Ta the others-execute permission bit.
+.It Sy ue Ta the user-execute for other file kinds.
+.It Sy un Ta a user that's someone else.
+.It Sy ur Ta the user-read permission bit.
+.It Sy uu Ta a user that's you.
+.It Sy uw Ta the user-write permission bit.
+.It Sy ux Ta the user-execute permission bit for regular files.
+.It Sy xa Ta the extended attribute indicator.
+.It Sy xx Ta Qo punctuation Qc , including many background UI elements.
 .El
 .Pp
 Values in
 .Ev EXA_COLORS
 override those given in
 .Ev LS_COLORS ,
-so you don't need to rewrite an existing
+so you don't need to redefine an existing
 .Ev LS_COLORS
 variable with proprietary extensions.
 .Pp
-Unlike some versions of
-.Xr ls 1 ,
-the given ANSI values must be valid colour codes:
-.Nm
-won't just print out whichever characters are given. Accepted codes are
-.Bl -bullet
-.It
-.Ql 1 ,
-for bold
-.It
-.Ql 4 ,
-for underline
-.It
-.Ql 31 ,
-for red text
-.It
-.Ql 32 ,
-for green text
-.It
-.Ql 33 ,
-for yellow text
-.It
-.Ql 34 ,
-for blue text
-.It
-.Ql 35 ,
-for purple text
-.It
-.Ql 36 ,
-for cyan text
-.It
-.Ql 37 ,
-for white text
-.It
-.Ql 38;5; Ns Ar nnn ,
-for colored text where
-.Ar nnn
-is a colour from 0 to 255.
+.Ar color
+is a sequence of valid SGR codes (specified in ECMA-48) separated by semicolons
+.Pq Sq \&; .
+.Nm exa
+recognizes the following codes:
+.Bl -column -offset indent "00" "short code description"
+.It Ar 1 Ta bold text or increased intensity colors.
+.It Ar 2 Ta decreased intensity colors.
+.It Ar 3 Ta italicized text.
+.It Ar 4 Ta underlined text.
+.It Ar 5 Ta slowly blinking text.
+.It Ar 7 Ta negative colors.
+.It Ar 8 Ta concealed text.
+.It Ar 9 Ta crossed-out text.
+.It Ar 30 Ta black color text.
+.It Ar 31 Ta red color text.
+.It Ar 32 Ta green color text.
+.It Ar 33 Ta yellow color text.
+.It Ar 34 Ta blue color text.
+.It Ar 35 Ta magenta color text.
+.It Ar 36 Ta cyan color text.
+.It Ar 37 Ta white color text.
+.It Ar 38 Ta 8/24 bit color text.
+.It Ar 40 Ta black color background.
+.It Ar 41 Ta red color background.
+.It Ar 42 Ta green color background.
+.It Ar 43 Ta yellow color background.
+.It Ar 44 Ta blue color background.
+.It Ar 45 Ta magenta color background.
+.It Ar 46 Ta cyan color background.
+.It Ar 47 Ta white color background.
+.It Ar 48 Ta 8/24 bit color background.
 .El
 .Pp
 Many terminals will treat bolded text as a different colour, or at least
 provide the option to.
+The 8 and 24 bit color modes for codes
+.Ar 38
+and
+.Ar 48
+are extensions to ECMA-48 that are defined in ISO/IEC 6429.
+The 8 bit mode is formatted using the sequence:
+.Sm off
+.Dl Ar 38 ; 5 ; n
+.Sm on
+where
+.Ar n
+is an number from 0-255.
+Numbers in this mode are seperated into four groups:
+.Bl -tag -width Ds
+.It 0-7
+normal intensity colors.
+These are the same as the SGR codes from 30-37 and 40-47.
+.It 8-15
+increased intensity colors.
+These are the same as combining the SGR codes from 30-37/40-47 with code 1.
+.It 16-231
+216 color lookup.
+Colors are defined using
+.EQ
+16 + 36 times r + 6 times g + b
+.EN
+with
+.EQ
+0 <= r, g, b <= 5.
+.EN
+.It 232-255
+24 grayscale color range, starts with black and steps up to white.
+.El
 .Pp
-.Nm
+.Nm exa
 provides its own builtin set of file extension mappings that cover a large
 range of common file extensions, including documents, archives, media, and
-temporary files. Any mappings in the environment variables will override
-this default set: running
+temporary files.
+Any mappings in the environment variables will override this default set:
+running
 .Nm
 with
 .Ev LS_COLORS Ns = Ns Qq *.zip Ns = Ns Ar 32
@@ -274,7 +189,7 @@ alone.
 You can also disable this builtin set entirely by including a reset entry
 at the beginning of
 .Ev EXA_COLORS :
-.Dl Ev EXA_COLORS Ns = Ns Qq reset Ns : Ns *.txt Ns = Ns Ar 31
+.Dl Ev EXA_COLORS Ns = Ns Qq reset : Ns *.txt Ns = Ns Ar 31
 will highlight only text files,
 .Dl Ev EXA_COLORS Ns = Ns Qq reset
 will highlight nothing.
@@ -313,13 +228,13 @@ will count as compiled when next to [aq]styles.less[aq] or
 .Sh EXAMPLES
 .Bl -bullet
 .It
-Disable the "current user" highlighting: 
+Disable the "current user" highlighting:
 .It
-Turn the date column green: 
+Turn the date column green:
 .It
-Highlight Vagrantfiles: 
+Highlight Vagrantfiles:
 .It
-Override the existing zip colour: 
+Override the existing zip colour:
 .It
 Markdown files a shade of green, log files a shade of grey:
 .El
