@@ -51,6 +51,7 @@ datetime = "0.4.7"
 [features]
 default = [ "git" ]
 git = [ "git2" ]
+vendored-openssl = ["git2/vendored-openssl"]
 
 [profile.release]
 opt-level = 3
@@ -59,6 +60,6 @@ lto = true
 panic = "abort"
 
 [dependencies.git2]
-version = "0.7"
+version = "0.8"
 optional = true
 default-features = false
