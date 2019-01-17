@@ -29,7 +29,7 @@ path = "src/exa.rs"
 [dependencies]
 ansi_term = "0.11"
 datetime = "0.4.7"
-env_logger = "0.5"
+env_logger = "0.6"
 glob = "0.2"
 lazy_static = "1"
 libc = "0.2.9"
