@@ -69,6 +69,12 @@ impl FileExtensions {
         ])
     }
 
+    fn is_json(&self, file: &File) -> bool {
+        file.extension_is_one_of( &[
+            "json",
+        ])
+    }
+
     fn is_compressed(&self, file: &File) -> bool {
         file.extension_is_one_of( &[
             "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
@@ -109,6 +115,7 @@ impl FileColours for FileExtensions {
             f if self.is_lossless(f)    => Fixed(93).normal(),
             f if self.is_crypto(f)      => Fixed(109).normal(),
             f if self.is_document(f)    => Fixed(105).normal(),
+            f if self.is_json(f)    => Fixed(202).normal(),
             f if self.is_compressed(f)  => Red.normal(),
             f if self.is_compiled(f)    => Fixed(137).normal(),
             _                           => return None,

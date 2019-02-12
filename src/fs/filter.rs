@@ -378,6 +378,7 @@ mod test_ignores {
         let pats = IgnorePatterns::empty();
         assert_eq!(false, pats.is_ignored("nothing"));
         assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert_eq!(false, pats.is_ignored("test.json"));
     }
 
     #[test]
@@ -394,13 +395,15 @@ mod test_ignores {
         assert!(fails.is_empty());
         assert_eq!(true,  pats.is_ignored("nothing"));
         assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert_eq!(false, pats.is_ignored("test.json"));
     }
 
     #[test]
     fn ignores_both() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3", "*.json" ]);
         assert!(fails.is_empty());
         assert_eq!(true, pats.is_ignored("nothing"));
         assert_eq!(true, pats.is_ignored("test.mp3"));
+        assert_eq!(true, pats.is_ignored("test.json"));
     }
 }

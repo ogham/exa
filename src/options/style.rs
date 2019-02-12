@@ -498,9 +498,11 @@ mod customs_test {
     // Just like all other keys:
     test!(ls_txt:  ls "*.txt=31",          exa ""  =>  exts [ ("*.txt",      Red.normal())             ]);
     test!(ls_mp3:  ls "*.mp3=38;5;135",    exa ""  =>  exts [ ("*.mp3",      Fixed(135).normal())      ]);
+    test!(ls_json:  ls "*.json=38;5;202",    exa ""  =>  exts [ ("*.json",      Fixed(202).normal())      ]);
     test!(ls_mak:  ls "Makefile=1;32;4",   exa ""  =>  exts [ ("Makefile",   Green.bold().underline()) ]);
     test!(exa_txt: ls "", exa "*.zip=31"           =>  exts [ ("*.zip",      Red.normal())             ]);
     test!(exa_mp3: ls "", exa "lev.*=38;5;153"     =>  exts [ ("lev.*",      Fixed(153).normal())      ]);
+    test!(exa_json: ls "", exa "lev.*=38;5;202"     =>  exts [ ("lev.*",      Fixed(202).normal())      ]);
     test!(exa_mak: ls "", exa "Cargo.toml=4;32;1"  =>  exts [ ("Cargo.toml", Green.bold().underline()) ]);
 
     // Testing whether a glob from EXA_COLORS overrides a glob from LS_COLORS
