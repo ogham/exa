@@ -1,4 +1,4 @@
-.Dd December 31, 2018
+.Dd February 10, 2019
 .Dt EXA 1
 .Os
 .Sh NAME
@@ -6,86 +6,131 @@
 .Nd list directory contents
 .Sh SYNOPSIS
 .Nm
-.Op Ar OPTIONS
+.Op Fl \&1abBdDFgGhHilmrRSTuUX
+.Op Fl -color-scale
+.Op Fl -git
+.Op Fl -git-ignore
+.Op Fl -group-directories-first
+.Op Fl I Ar globs
+.Op Fl L Ar depth
+.Op Fl s Ar sort_field
+.Op Fl t Ar field
+.Op Fl -color Ns = Ns Ar when
+.Op Fl -time-style Ns = Ns Ar style
 .Op Ar
 .Sh DESCRIPTION
 .Nm
 is a modern replacement for
 .Xr ls 1 .
-It colors information by default to distinguish between filetypes, such as
-whether you are the owner or in the owning group.
-It also has features not present in the original ls, such as viewing the
+It colors information by default to distinguish between filetypes,
+such as whether you are the owner or in the owning group.
+It also has features not present in the original ls,
+such as viewing the
 .Xr git-status 1
 for a directory or recursing into directories with a tree view.
-.Sh DISPLAY OPTIONS
+.Ss Display Options
 .Bl -tag -width Ds
-.It Fl 1 , Fl Fl oneline
-display one entry per line.
-.It Fl G , Fl Fl grid
-display entries as a grid
+.It Fl 1 , Fl -oneline
+Display one entry per line.
+.It Fl F , Fl -classify
+Display type indicator by file names.
+.It Fl G , Fl -grid
+Display entries as a grid
 .Pq default .
-.It Fl l , Fl Fl long
-display extended file metadata as a table.
-.It Fl x , Fl Fl across
-sort the grid across, rather than downwards.
-.It Fl R , Fl Fl recurse
-recurse into directories.
-.It Fl T , Fl Fl tree
-recurse into directories as a tree.
-.It Fl F , Fl Fl classify
-display type indicator by file names.
-.It Fl Fl color Ns = Ns Ar WHEN , Fl Fl colour Ns = Ns Ar WHEN
-colorize output;
-.Ar WHEN
+.It Fl l , Fl -long
+Display extended file metadata as a table.
+.It Fl R , Fl -recurse
+Recursively list subdirectories encountered.
+.It Fl T , Fl -tree
+Recursively list subdirectories as a tree.
+.It Fl x , Fl -across
+Sort the grid across, rather than downwards.
+.It Fl -color Ns = Ns Ar when , Fl -colour Ns = Ns Ar when
+Colorize output;
+.Ar when
 can be
 .Sq Ar always ,
-.Sq Ar automatic
+.Sq Ar auto
 .Pq default
 or
 .Sq Ar never .
-.It Fl Fl color-scale , Fl Fl colour-scale
-highlight levels of file sizes distinctly.
+.It Fl -color-scale , Fl -colour-scale
+Highlight levels of file sizes distinctly.
 .El
-.Sh FILTERING AND SORTING OPTIONS
+.Ss Filtering and Sorting Options
 .Bl -tag -width Ds
-.It Fl a , Fl Fl all
-include entries that are hidden or begin with a dot
+.It Fl a , Fl -all
+Include entries that are hidden or begin with a dot
 .Pq Sq \&. .
 Use this twice to also include the
 .Sq \&.
 and
 .Sq ..
 directories.
-.It Fl d , Fl Fl listdirs
-list directories like regular files.
-.It Fl L , Fl Fl level Ns = Ns Ar DEPTH
-limit the depth of recursion.
-.It Fl r , Fl Fl reverse
-reverse the sort order.
-.It Fl s , Fl Fl sort Ns = Ns Ar SORT_FIELD
-which field to sort entries by.
-.Ar SORT_FIELD
+.It Fl d , Fl -list-dirs
+List directories like regular files instead of listing their contents.
+.It Fl D , Fl -only-dirs
+List only directories.
+.It Fl I Ar globs , Fl -ignore-glob Ns = Ns Ar globs
+Pipe
+.Pq Sq |
+separated
+.Xr glob 7
+patterns of files to ignore.
+.It Fl L Ar depth , Fl -level Ns = Ns Ar depth
+Limit the depth of recursion.
+.It Fl r , Fl -reverse
+Reverse the sort order.
+.It Fl s Ar sort_field , Fl -sort Ns = Ns Ar sort_field
+Which field to sort entries by.
+.Ar sort_field
 can be:
 .Bl -tag -width Ds
-.It Ar name , Name
-sort by alphabetical order.
-.It Ar extension , Extension
-sort by file extension in alphabetical order.
+.It Ar name , Name , \&.name , \&.Name
+Sort by alphabetical order.
+.Pp
+.Ar name
+and
+.Ar Name
+are strictly alphabetical,
+i.e, entries that begin with a dot will always precede those that don't.
+The fields
+.Ar \&.name
+and
+.Ar \&.Name
+are equivalent to
+.Ar name
+and
+.Ar Name ,
+except that they ignore this starting dot when sorting alphabetically.
+.Pp
+.Ar name
+is the default sort field for
+.Nm .
+.It Ar extension , ext , Extension , Ext
+Sort by file extension in alphabetical order.
 Entries without file extensions precede those that do.
-.It Ar size
-sort by file size ascending.
-.It Ar modified , date , time , newest
-sort by modification date ascending.
-.It Ar age , oldest
-sort by modification date decending.
-.It Ar accessed
-sort by access date ascending.
-.It Ar created
-sort by creation date ascending.
+.Ar ext
+and
+.Ar Ext
+are equivalent to
+.Ar extension
+and
+.Ar Extension .
+.It Ar size , filesize
+Sort by file size ascending.
+.It Ar date , time , mod , modified , new , newest
+Sort by modification date ascending.
+.It Ar age , old , oldest
+Sort by modification date decending.
+.It Ar ac , accessed
+Sort by access date ascending.
+.It Ar cr , created
+Sort by creation date ascending.
 .It Ar inode
-sort by inode number ascending.
+Sort by inode number ascending.
 .It Ar type
-sort by filetype.
+Sort by filetype.
 The order is as follows:
 .Bl -enum
 .It
@@ -99,166 +144,186 @@ Pipes.
 .It
 Sockets.
 .It
-Char devices.
+Character devices.
 .It
 Block devices.
 .It
 Special files.
 .El
 .It Ar none
+Do not sort entries.
 .El
 .Pp
-Fields starting with a capital letter will sort uppercase before lowercase:
-.Sq A
+.Ar sort_field Ap s
+starting with a capital letter will sort uppercase before lowercase
+.Po Sq A
 then
 .Sq B
 then
 .Sq a
 then
-.Sq b .
-Fields starting with a lowercase letter will mix them:
+.Sq b
+.Pc
+whilst those starting with a lowercase letter will mix them
+.Po
 .Sq A
 then
 .Sq a
 then
 .Sq B
 then
-.Sq b .
-.It Fl I , Fl Fl ignore-glob Ns = Ns Ar GLOB Ns Op | Ns Ar GLOB ...
-pipe
-.Pq Sq |
-seperated
-.Xr glob 7
-patterns of files to ignore.
-.It Fl Fl git-ignore
-ignore files mentioned in
+.Sq b
+.Pc .
+.It Fl -git-ignore
+Ignore files mentioned in
 .Xr gitignore 5 .
-.It Fl Fl group-directories-first
-list directories before other files.
-.It Fl D , Fl Fl only-dirs
-list only directories.
+.It Fl -group-directories-first
+List directories before other files.
 .El
-.Sh LONG VIEW OPTIONS
+.Ss Long View Options
 These options are available when running with
-.Fl l , Fl Fl long :
+.Fl l , Fl -long :
 .Bl -tag -width Ds
-.It Fl b , Fl Fl binary
-list file sizes with binary prefixes.
-.It Fl B , Fl Fl bytes
-list file sizes in bytes, without any prefixes.
-.It Fl g , Fl Fl group
-list each file's group.
-.It Fl h , Fl Fl header
-add a header row to each column.
-.It Fl H , Fl Fl links
-list each file's number of hard links.
-.It Fl i , Fl Fl inode
-list each file's inode number.
-.It Fl m , Fl Fl modified
-use the modified timestamp field.
-.It Fl S , Fl Fl blocks
-list each file's number of file system blocks.
-.It Fl t , Fl Fl time Ns = Ns Ar WORD
-which timestamp field to list;
-.Ar WORD
+.It Fl \&@ , Fl -extended
+List each file's extended attributes and sizes.
+.It Fl b , Fl -binary
+List file sizes with binary prefixes.
+.It Fl B , Fl -bytes
+List file sizes in bytes, without any prefixes.
+.It Fl g , Fl -group
+List each file's group.
+.It Fl h , Fl -header
+Add a header row to each column.
+.It Fl H , Fl -links
+List each file's number of hard links.
+.It Fl i , Fl -inode
+List each file's inode number.
+.It Fl m , Fl -modified
+Use the modified timestamp field.
+.It Fl S , Fl -blocks
+List each file's number of file system blocks.
+.It Fl t Ar field , Fl -time Ns = Ns Ar field
+Which timestamp field to list;
+.Ar field
 can be
 .Sq Ar modified ,
 .Sq Ar accessed
 or
 .Sq Ar created .
-.It Fl Fl time-style Ns = Ns Ar STYLE
-how to format timestamps;
-.Ar STYLE
-can be
-.Ar default
-.Pq Sq %d %b %H:%M ,
-.Ar iso
-.Po
-.So %m-%d %H:%M Sc for entries modified within the current year,
-.So %Y-%m-%d Sc for older entries
-.Pc ,
-.Ar long-iso
-.Pq Sq %Y-%m-%d %H:%M
-or
-.Ar full-iso
-.Pq Sq %Y-%m-%d %H:%M:%S.%N %z .
-.It Fl u , Fl Fl accessed
-use the accessed timestamp field.
-.It Fl U , Fl Fl created
-use the created timestamp field.
-.It Fl \&@ , extended
-list each file's extended attributes and sizes
-.It Fl Fl git
-list each file's
+.It Fl u , Fl -accessed
+Use the accessed timestamp field.
+.It Fl U , Fl -created
+Use the created timestamp field.
+.It Fl -git
+List each file's
 .Xr git-status 1 ,
 if tracked.
+.It Fl -time-style Ns = Ns Ar style
+How to format timestamps;
+.Ar style
+can be:
+.Bl -tag -width Ds
+.It Ar default
+.Dq dd mmm hh:mm
+.It Ar iso
+.Dq mm-dd HH:MM
+for entries modified within the current year,
+.Dq ccyy-mm-dd
+for older entries
+.It Ar long-iso
+.Dq ccyy-mm-dd HH:MM
+.It Ar full-iso
+.Dq ccyy-mm-dd HH:MM:SS.nnnnnnnnn +/-hhmm .
+.El
 .El
 .Sh ENVIRONMENT
 .Nm
 recognizes the following environment variables:
 .Bl -tag -width Ds
 .It Ev COLUMNS
-Overrides the width of the terminal, in characters.
-For example:
-.Dl Ev COLUMNS Ns = Ns Ar 80
-will show a grid view with a maximum width of 80 characters.
+Sets the maximum character width for
+.Nm Ap s
+output,
+e.g, a value of 80 will show a grid view with a maximum width of
+80 characters.
 This option won't do anything when
 .Nm exa Ns 's
-output doesnt wrap, such as when using the
-.Fl Fl long
-or
+output doesn't wrap, such as when using the
 .Fl l
 option.
-.It Ev EXA_SRICT
+.It Ev EXA_STRICT
 Enables
 .Em strict mode ,
 which will make
 .Nm
 error when two options are incompatible.
-Options can override each other going right-to-left so that
+By default, options can override each other going right-to-left so that
 .Nm
-can be aliased:
+can be aliased.
+For example, setting:
 .Pp
-setting
-.Dl Nm alias Nm Ns = Ns Ql Nm Fl Fl sort Ns = Ns Ar ext Ns
-then running
-.Dl $ Nm Fl Fl sort Ns = Ns Ar size
+.Dl alias exa='exa -s ext'
+.Pp
+then running:
+.Pp
+.Dl $ exa -s size
+.Pp
 will run
-.Dl Nm Fl Fl sort Ns = Ns Ar ext Fl Fl sort Ns = Ns Ar size ,
-with the sort field specified by the user overriding the sort field specified
-by the alias.
+.Pp
+.Dl exa -s ext -s size
+.Pp
+with the sort field specified by the user overriding the sort field
+specified by the alias.
+.Pp
 In
 .Em strict mode ,
 the two options will not cooperate, and exa will error.
-.Pp
-This option is intended for use with automated scripts and situations where
-you want to use the right command.
+This option is intended for use with automated scripts and situations
+where you want to use the right command.
 .It Ev EXA_GRID_ROWS
 Limits the grid-details view set by
-.Fl Fl grid
+.Fl G
 and
-.Fl Fl long ,
-so that it is only activated when at least the given number of rows of output
-would be generated.
-With widescreen displays, it is possible for the grid to look very wide and
-sparse, on just one or two lines with none of the columns lining up.
-By specifying a minimum number of rows, you can only use the view if it's
-going to be worth using.
+.Fl l ,
+so that it is only activated when at least the given number of rows of
+output would be generated.
+With widescreen displays, it is possible for the grid to look very wide
+and sparse, on just one or two lines with none of the columns lining up.
+By specifying a minimum number of rows,
+you can only use the view if it's going to be worth using.
 .It Ev LS_COLORS , EXA_COLORS
 Colorize entries according to specific patterns.
 See
 .Xr exa-colors 5
 for more info.
 .El
+.Sh EXIT STATUS
+The
+.Nm
+utility exits with one of the following values:
+.Bl -tag -width Ds -compact
+.It Li 0
+No fatal errors occurred.
+.It Li 1
+At least one internal error occurred.
+.It Li 2
+At least one given file does not exist.
+.It Li 3
+.Nm
+was invoked with an unknown argument,
+or an argument was overridden with
+.Em strict mode
+enabled.
+.El
 .Sh EXAMPLES
-List the contents of the current working directory, with entries sorted by
-largest size decending:
+List the contents of the current working directory, with entries sorted
+by largest size decending:
 .Pp
-.Dl $ Nm Fl Fl reverse Fl Fl sort Ns = Ns Ar size
+.Dl $ exa -rs size
 .Pp
 Display a tree of entries, three levels deep:
 .Pp
-.Dl $ Nm Fl Fl long Fl Fl tree Fl Fl level Ns = Ns Ar 3
+.Dl $ exa -lT -L 3
 .Sh SEE ALSO
 .Xr ls 1 ,
 .Xr tree 1
@@ -268,4 +333,4 @@ is maintained by
 .An Benjamin So ogham Sc Sago
 with contributions from many others.
 You can view the full list at
-.Aq Lk https://github.com/ogham/exa/graphs/contributors
+.Lk https://github.com/ogham/exa/graphs/contributors
