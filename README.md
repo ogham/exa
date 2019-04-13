@@ -87,12 +87,14 @@ or:
 
 Cargo will build the `exa` binary and place it in `$HOME/.cargo` (this location can be overridden by setting the `--root` option).
 
+See below for more ubuntu18 tipps
+
 ### Homebrew
 
 If you're using [homebrew](https://brew.sh/), you can use the `brew install` command:
 
     brew install exa
-
+    
 or:
 
     brew install exa --without-git
@@ -129,8 +131,24 @@ The first command downloads the virtual machine image, and then runs our provisi
     vm$ cargo build
     vm$ ./xtests/run
     All the tests passed!
-
-
+   
 ### Running without Vagrant
 
 Of course, the drawback of having a standard development environment is that you stop noticing bugs that occur outside of it. For this reason, Vagrant isn’t a *necessary* development step — it’s there if you’d like to use it, but exa still gets used and tested on other platforms. It can still be built and compiled on any target triple that it supports, VM or no VM, with `cargo build` and `cargo test`.
+
+### Ubuntu dependencies
+For installing on ubunutu18 try this:
+
+    apt install cmake
+    apt install libssl1.0-dev
+    apt install pkg-config
+    
+    git clone https://github.com/sfackler/rust-openssl.git
+    cd rust-openssl/
+    cargo build
+    
+    git clone https://github.com/rust-lang/git2-rs
+    cd git2-rs
+    cargo build
+     
+    cargo install exa
