@@ -105,6 +105,12 @@ impl<'dir> File<'dir> {
         self.metadata.is_dir()
     }
 
+    /// Whether this file is a 'bundle'. That is, a directory with a file 
+    /// extension.
+    pub fn is_bundle(&self) -> bool {
+        self.is_directory() && File::ext(&self.path).is_some()
+    }
+ 
     /// Whether this file is a directory, or a symlink pointing to a directory.
     pub fn points_to_directory(&self) -> bool {
         if self.is_directory() {

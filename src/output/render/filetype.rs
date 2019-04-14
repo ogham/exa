@@ -21,6 +21,7 @@ impl f::Type {
 
 pub trait Colours {
     fn normal(&self) -> Style;
+    fn bundle(&self) -> Style;
     fn directory(&self) -> Style;
     fn pipe(&self) -> Style;
     fn symlink(&self) -> Style;

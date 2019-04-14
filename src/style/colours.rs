@@ -34,6 +34,7 @@ pub struct Colours {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FileKinds {
     pub normal: Style,
+    pub bundle: Style,
     pub directory: Style,
     pub symlink: Style,
     pub pipe: Style,
@@ -116,6 +117,7 @@ impl Colours {
 
             filekinds: FileKinds {
                 normal:       Style::default(),
+                bundle:       Cyan.bold(),
                 directory:    Blue.bold(),
                 symlink:      Cyan.normal(),
                 pipe:         Yellow.normal(),
@@ -312,6 +314,7 @@ impl render::BlocksColours for Colours {
 
 impl render::FiletypeColours for Colours {
     fn normal(&self)       -> Style { self.filekinds.normal }
+    fn bundle(&self)       -> Style { self.filekinds.bundle }
     fn directory(&self)    -> Style { self.filekinds.directory }
     fn pipe(&self)         -> Style { self.filekinds.pipe }
     fn symlink(&self)      -> Style { self.filekinds.symlink }
