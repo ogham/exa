@@ -42,7 +42,7 @@ scoped_threadpool = "0.1.*"
 term_grid = "0.1.6"
 term_size = "0.3.0"
 unicode-width = "0.1.4"
-users = "0.8"
+users = "0.9"
 zoneinfo_compiled = "0.4.7"
 
 [build-dependencies]
