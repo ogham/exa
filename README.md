@@ -142,6 +142,7 @@ For installing on ubunutu18 try this:
     apt install cmake
     apt install libssl1.0-dev
     apt install pkg-config
+    apt install cargo
     
     git clone https://github.com/sfackler/rust-openssl.git
     cd rust-openssl/
