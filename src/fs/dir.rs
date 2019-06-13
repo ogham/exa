@@ -1,7 +1,8 @@
 use std::io::{self, Result as IOResult};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::slice::Iter as SliceIter;
+
+use scoped_threadpool::Pool;
 
 use fs::File;
 use fs::feature::ignore::IgnoreCache;
@@ -47,8 +48,27 @@ impl Dir {
     pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
         if let Some(i) = ignore { i.discover_underneath(&self.path); }
 
+        // File::new calls std::fs::File::metadata, which on linux calls lstat. On some
+        // filesystems this can be very slow, but there's no async filesystem API
+        // so all we can do to hide the latency is use system threads.
+        let rx = {
+            let (tx, rx) = std::sync::mpsc::channel();
+            Pool::new(num_cpus::get().min(self.contents.len()).max(1) as u32).scoped(|scoped| {
+                for arg in self.contents.iter().cloned() {
+                    let tx = tx.clone();
+                    scoped.execute(move || {
+                        let start = std::time::Instant::now();
+                        let f = File::new(PathBuf::from(arg.clone()), None, None);
+                        eprintln!("{}", start.elapsed().as_nanos());
+                        tx.send((arg, f)).unwrap();
+                    });
+                }
+            });
+            rx
+        };
+
         Files {
-            inner:     self.contents.iter(),
+            inner:     rx.into_iter(),
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
@@ -72,7 +92,7 @@ impl Dir {
 pub struct Files<'dir, 'ig> {
 
     /// The internal iterator over the paths that have been read already.
-    inner: SliceIter<'dir, PathBuf>,
+    inner: std::sync::mpsc::IntoIter<(PathBuf, Result<File<'static>, io::Error>)>,
 
     /// The directory that begat those paths.
     dir: &'dir Dir,
@@ -101,16 +121,21 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
     /// varies depending on the dotfile visibility flag)
     fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
         loop {
-            if let Some(path) = self.inner.next() {
-                let filename = File::filename(path);
+            if let Some((path, meta)) = self.inner.next() {
+                let filename = File::filename(&path);
                 if !self.dotfiles && filename.starts_with('.') { continue }
 
                 if let Some(i) = self.ignore {
-                    if i.is_ignored(path) { continue }
+                    if i.is_ignored(&path) { continue }
                 }
 
-                return Some(File::new(path.clone(), self.dir, filename)
-                                 .map_err(|e| (path.clone(), e)))
+                return Some(meta.map(|mut m| {
+                    m.parent_dir = Some(self.dir);
+                    m.name = filename;
+                    m
+                }).map_err(|e| {
+                    (path.clone(), e)
+                }))
             }
             else {
                 return None
