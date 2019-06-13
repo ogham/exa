@@ -53,13 +53,15 @@ impl Dir {
         // so all we can do to hide the latency is use system threads.
         let rx = {
             let (tx, rx) = std::sync::mpsc::channel();
-            Pool::new(num_cpus::get().min(self.contents.len()).max(1) as u32).scoped(|scoped| {
+            let n_threads = std::env::var("EXA_IO_THREADS")
+                .ok()
+                .and_then(|v| v.parse::<usize>().ok())
+                .unwrap_or_else(|| num_cpus::get().min(self.contents.len()).max(1));
+            Pool::new(n_threads as u32).scoped(|scoped| {
                 for arg in self.contents.iter().cloned() {
                     let tx = tx.clone();
                     scoped.execute(move || {
-                        let start = std::time::Instant::now();
                         let f = File::new(PathBuf::from(arg.clone()), None, None);
-                        eprintln!("{}", start.elapsed().as_nanos());
                         tx.send((arg, f)).unwrap();
                     });
                 }
