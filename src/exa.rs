@@ -28,6 +28,7 @@ use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
+use scoped_threadpool::Pool;
 
 use fs::{Dir, File};
 use fs::feature::ignore::IgnoreCache;
@@ -124,8 +125,25 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let mut dirs = Vec::new();
         let mut exit_status = 0;
 
-        for file_path in &self.args {
-            match File::new(PathBuf::from(file_path), None, None) {
+        // File::new calls std::fs::File::metadata, which on linux calls lstat. On some
+        // filesystems this can be very slow, but there's no async filesystem API
+        // so all we can do to hide the latency is use system threads.
+        let rx = {
+            let (tx, rx) = std::sync::mpsc::channel();
+            Pool::new(num_cpus::get().min(self.args.len()) as u32).scoped(|scoped| {
+                for arg in self.args.iter().cloned() {
+                    let tx = tx.clone();
+                    scoped.execute(move || {
+                        let f = File::new(PathBuf::from(arg), None, None);
+                        tx.send((arg, f)).unwrap();
+                    });
+                }
+            });
+            rx
+        };
+
+        for (file_path, file) in rx {
+            match file {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{:?}: {}", file_path, e)?;
