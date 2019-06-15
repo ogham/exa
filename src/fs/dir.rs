@@ -1,6 +1,7 @@
 use std::io::{self, Result as IOResult};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use scoped_threadpool::Pool;
 
@@ -51,26 +52,34 @@ impl Dir {
         // File::new calls std::fs::File::metadata, which on linux calls lstat. On some
         // filesystems this can be very slow, but there's no async filesystem API
         // so all we can do to hide the latency is use system threads.
-        let rx = {
-            let (tx, rx) = std::sync::mpsc::channel();
-            let n_threads = std::env::var("EXA_IO_THREADS")
-                .ok()
-                .and_then(|v| v.parse::<usize>().ok())
-                .unwrap_or_else(|| num_cpus::get().min(self.contents.len()).max(1));
-            Pool::new(n_threads as u32).scoped(|scoped| {
-                for arg in self.contents.iter().cloned() {
-                    let tx = tx.clone();
-                    scoped.execute(move || {
-                        let f = File::new(PathBuf::from(arg.clone()), None, None);
-                        tx.send((arg, f)).unwrap();
-                    });
-                }
-            });
-            rx
-        };
+        let n_threads = std::env::var("EXA_IO_THREADS")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or_else(|| num_cpus::get() as u32)
+            .max(1); // scoped_threadpool panics if the pool has 0 threads
+        let mut pool = Pool::new(n_threads);
+
+        let mut metadata = vec![None; self.contents.len()];
+        let chunksize = (self.contents.len() / pool.thread_count() as usize).max(1);
+        pool.scoped(|scoped| {
+            for (path_chunk, meta_chunk) in self.contents.chunks(chunksize).zip(metadata.chunks_mut(chunksize)) {
+                scoped.execute(move || {
+                    for (path, e) in path_chunk.iter().zip(meta_chunk.iter_mut()) {
+                        let meta = fs::symlink_metadata(path).map_err(Arc::new);
+                        let link_target = if meta.as_ref().map(|m| m.file_type().is_symlink()).unwrap_or(false) {
+                            Some(fs::metadata(path).map_err(Arc::new))
+                        } else {
+                            None
+                        };
+                        *e = Some((meta, link_target));
+                    }
+                });
+            }
+        });
+        let metadata = metadata.into_iter().map(|m| m.unwrap()).collect::<Vec<_>>();
 
         Files {
-            inner:     rx.into_iter(),
+            inner:     self.contents.iter().zip(metadata),
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
@@ -94,7 +103,8 @@ impl Dir {
 pub struct Files<'dir, 'ig> {
 
     /// The internal iterator over the paths that have been read already.
-    inner: std::sync::mpsc::IntoIter<(PathBuf, Result<File<'static>, io::Error>)>,
+    inner: std::iter::Zip<std::slice::Iter<'dir, PathBuf>, std::vec::IntoIter<
+        (Result<fs::Metadata, Arc<io::Error>>, Option<Result<fs::Metadata, Arc<io::Error>>>)>>,
 
     /// The directory that begat those paths.
     dir: &'dir Dir,
@@ -123,7 +133,7 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
     /// varies depending on the dotfile visibility flag)
     fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
         loop {
-            if let Some((path, meta)) = self.inner.next() {
+            if let Some((path, (metadata, target_metadata))) = self.inner.next() {
                 let filename = File::filename(&path);
                 if !self.dotfiles && filename.starts_with('.') { continue }
 
@@ -131,12 +141,19 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
                     if i.is_ignored(&path) { continue }
                 }
 
-                return Some(meta.map(|mut m| {
-                    m.parent_dir = Some(self.dir);
-                    m.name = filename;
-                    m
-                }).map_err(|e| {
-                    (path.clone(), e)
+                let target_metadata = target_metadata.map(|m| m.map_err(|e| Arc::try_unwrap(e).unwrap()));
+
+                return Some(metadata.map(|meta|
+                    File {
+                        name: filename,
+                        ext: File::ext(path),
+                        path: path.to_path_buf(),
+                        metadata: meta,
+                        parent_dir: Some(self.dir),
+                        target_metadata,
+                    }
+                ).map_err(|e| {
+                    (path.clone(), Arc::try_unwrap(e).unwrap())
                 }))
             }
             else {

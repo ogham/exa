@@ -55,6 +55,8 @@ pub struct File<'dir> {
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up compiled files).
     pub parent_dir: Option<&'dir Dir>,
+
+    pub target_metadata: Option<IOResult<fs::Metadata>>,
 }
 
 impl<'dir> File<'dir> {
@@ -68,8 +70,9 @@ impl<'dir> File<'dir> {
 
         debug!("Statting file {:?}", &path);
         let metadata   = fs::symlink_metadata(&path)?;
+        let target_metadata   = if metadata.file_type().is_symlink() {Some(fs::metadata(&path))} else { None };
 
-        Ok(File { path, parent_dir, metadata, ext, name })
+        Ok(File { path, parent_dir, metadata, ext, name, target_metadata})
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -94,7 +97,7 @@ impl<'dir> File<'dir> {
     /// ASCII lowercasing is used because these extensions are only compared
     /// against a pre-compiled list of extensions which are known to only exist
     /// within ASCII, so it’s alright.
-    fn ext(path: &Path) -> Option<String> {
+    pub fn ext(path: &Path) -> Option<String> {
         let name = path.file_name().map(|f| f.to_string_lossy().to_string())?;
 
         name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
@@ -200,7 +203,6 @@ impl<'dir> File<'dir> {
     /// existed. If this file cannot be read at all, returns the error that
     /// we got when we tried to read it.
     pub fn link_target(&self) -> FileTarget<'dir> {
-
         // We need to be careful to treat the path actually pointed to by
         // this file — which could be absolute or relative — to the path
         // we actually look up and turn into a `File` — which needs to be
@@ -215,16 +217,17 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        match fs::metadata(&absolute_path) {
-            Ok(metadata) => {
+        match self.target_metadata {
+            Some(Ok(ref metadata)) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name }))
+                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata: metadata.clone(), name, target_metadata: None}))
             }
-            Err(e) => {
+            Some(Err(ref e)) => {
                 error!("Error following link {:?}: {:#?}", &path, e);
                 FileTarget::Broken(path)
             }
+            None => unreachable!("Called link_target on a regular file")
         }
     }
 
