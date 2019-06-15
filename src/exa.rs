@@ -28,6 +28,7 @@ use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
+use scoped_threadpool::Pool;
 
 use fs::{Dir, File};
 use fs::feature::ignore::IgnoreCache;
@@ -151,13 +152,20 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let no_files = files.is_empty();
         let is_only_dir = dirs.len() == 1 && no_files;
 
+        let n_threads = std::env::var("EXA_IO_THREADS")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or_else(|| num_cpus::get() as u32)
+            .max(1); // scoped_threadpool panics if the pool has 0 threads
+        let mut pool = Pool::new(n_threads);
+
         self.options.filter.filter_argument_files(&mut files);
         self.print_files(None, files)?;
 
-        self.print_dirs(dirs, no_files, is_only_dir, exit_status)
+        self.print_dirs(dirs, no_files, is_only_dir, exit_status, &mut pool)
     }
 
-    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32) -> IOResult<i32> {
+    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32, pool: &mut Pool) -> IOResult<i32> {
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and
@@ -176,7 +184,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref()) {
+            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref(), pool) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
@@ -199,7 +207,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     }
 
                     self.print_files(Some(&dir), children)?;
-                    match self.print_dirs(child_dirs, false, false, exit_status) {
+                    match self.print_dirs(child_dirs, false, false, exit_status, pool) {
                         Ok(_) => (),
                         Err(e) => return Err(e),
                     }

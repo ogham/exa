@@ -46,19 +46,12 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
+    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>, pool: &mut Pool) -> Files<'dir, 'ig> {
         if let Some(i) = ignore { i.discover_underneath(&self.path); }
 
         // File::new calls std::fs::File::metadata, which on linux calls lstat. On some
         // filesystems this can be very slow, but there's no async filesystem API
         // so all we can do to hide the latency is use system threads.
-        let n_threads = std::env::var("EXA_IO_THREADS")
-            .ok()
-            .and_then(|v| v.parse::<u32>().ok())
-            .unwrap_or_else(|| num_cpus::get() as u32)
-            .max(1); // scoped_threadpool panics if the pool has 0 threads
-        let mut pool = Pool::new(n_threads);
-
         let mut metadata = vec![None; self.contents.len()];
         let chunksize = (self.contents.len() / pool.thread_count() as usize).max(1);
         pool.scoped(|scoped| {
