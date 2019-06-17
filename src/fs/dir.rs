@@ -46,29 +46,42 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>, pool: &mut Pool) -> Files<'dir, 'ig> {
+    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>, pool: Option<&mut Pool>) -> Files<'dir, 'ig> {
         if let Some(i) = ignore { i.discover_underneath(&self.path); }
 
         // File::new calls std::fs::File::metadata, which on linux calls lstat. On some
         // filesystems this can be very slow, but there's no async filesystem API
         // so all we can do to hide the latency is use system threads.
         let mut metadata = vec![None; self.contents.len()];
-        let chunksize = (self.contents.len() / pool.thread_count() as usize).max(1);
-        pool.scoped(|scoped| {
-            for (path_chunk, meta_chunk) in self.contents.chunks(chunksize).zip(metadata.chunks_mut(chunksize)) {
-                scoped.execute(move || {
-                    for (path, e) in path_chunk.iter().zip(meta_chunk.iter_mut()) {
-                        let meta = fs::symlink_metadata(path).map_err(Arc::new);
-                        let link_target = if meta.as_ref().map(|m| m.file_type().is_symlink()).unwrap_or(false) {
-                            Some(fs::metadata(path).map_err(Arc::new))
-                        } else {
-                            None
-                        };
-                        *e = Some((meta, link_target));
-                    }
-                });
+        if let Some(pool) = pool {
+            let chunksize = (self.contents.len() / pool.thread_count() as usize).max(1);
+            pool.scoped(|scoped| {
+                for (path_chunk, meta_chunk) in self.contents.chunks(chunksize).zip(metadata.chunks_mut(chunksize)) {
+                    scoped.execute(move || {
+                        for (path, e) in path_chunk.iter().zip(meta_chunk.iter_mut()) {
+                            let meta = fs::symlink_metadata(path).map_err(Arc::new);
+                            let link_target = if meta.as_ref().map(|m| m.file_type().is_symlink()).unwrap_or(false) {
+                                Some(fs::metadata(path).map_err(Arc::new))
+                            } else {
+                                None
+                            };
+                            *e = Some((meta, link_target));
+                        }
+                    });
+                }
+            });
+        } else {
+            for (path, e) in self.contents.iter().zip(metadata.iter_mut()) {
+                let meta = fs::symlink_metadata(path).map_err(Arc::new);
+                let link_target = if meta.as_ref().map(|m| m.file_type().is_symlink()).unwrap_or(false) {
+                    Some(fs::metadata(path).map_err(Arc::new))
+                } else {
+                    None
+                };
+                *e = Some((meta, link_target));
             }
-        });
+
+        }
         let metadata = metadata.into_iter().map(|m| m.unwrap()).collect::<Vec<_>>();
 
         Files {

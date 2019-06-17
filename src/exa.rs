@@ -184,7 +184,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref(), pool) {
+            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref(), Some(pool)) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
