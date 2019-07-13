@@ -45,8 +45,15 @@ Vagrant.configure(2) do |config|
     # This is done as vagrant, not root, because it’s vagrant
     # who actually uses it. Sent to /dev/null because the progress
     # bar produces a ton of output.
-    config.vm.provision :shell, privileged: false, inline:
-      %[hash rustc &>/dev/null || curl -sSf https://static.rust-lang.org/rustup.sh | sh &> /dev/null]
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+
+      if hash rustc &>/dev/null; then
+        echo "Rust is already installed"
+      else
+        set -xe
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      fi
+    EOF
 
 
     # Use a different ‘target’ directory on the VM than on the host.
@@ -120,6 +127,7 @@ Vagrant.configure(2) do |config|
 
       # Tell bash to execute a bunch of stuff when a session starts
       echo "source /vagrant/devtools/dev-bash.sh" > /home/#{developer}/.bash_profile
+      chown #{developer} /home/#{developer}/.bash_profile
 
       # Disable last login date in sshd
       sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
