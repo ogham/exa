@@ -143,7 +143,6 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 impl<'a> Render<'a> {
     pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, ignore: Option<&'a IgnoreCache>, w: &mut W) -> IOResult<()> {
-        use num_cpus;
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 

@@ -53,7 +53,7 @@ impl FromIterator<PathBuf> for GitCache {
             else {
                 match GitRepo::discover(path) {
                     Ok(r) => {
-                        if let Some(mut r2) = git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir)) {
+                        if let Some(r2) = git.repos.iter_mut().find(|e| e.has_workdir(&r.workdir)) {
                             debug!("Adding to existing repo (workdir matches with {:?})", r2.workdir);
                             r2.extra_paths.push(r.original_path);
                             continue;
