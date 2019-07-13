@@ -115,7 +115,7 @@ The initial attempt to solve the problem was just to create a directory of “aw
 
 An alternative solution is to fake *everything*: create a virtual machine with a known state and run the tests on *that*. This is what Vagrant does. Although it takes a while to download and set up, it gives everyone the same development environment to test for any obvious regressions.
 
-[Vagrant]: https://www.vagrantup.com/docs/why-vagrant/
+[Vagrant]: https://www.vagrantup.com/
 [testing]: https://eev.ee/blog/2016/08/22/testing-for-people-who-hate-testing/#troublesome-cases
 
 First, initialise the VM:
