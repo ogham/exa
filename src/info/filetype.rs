@@ -30,7 +30,7 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr",
+            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf",
             "cbz", "xpm", "ico", "cr2", "orf", "nef",
         ])
     }
