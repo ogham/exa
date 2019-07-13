@@ -140,12 +140,12 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Dots::DotNext = self.dots {
             self.dots = Dots::DotDotNext;
-            Some(File::new(self.dir.path.to_path_buf(), self.dir, String::from("."))
+            Some(File::new_aa_current(self.dir)
                       .map_err(|e| (Path::new(".").to_path_buf(), e)))
         }
         else if let Dots::DotDotNext = self.dots {
             self.dots = Dots::FilesNext;
-            Some(File::new(self.parent(), self.dir, String::from(".."))
+            Some(File::new_aa_parent(self.parent(), self.dir)
                       .map_err(|e| (self.parent(), e)))
         }
         else {

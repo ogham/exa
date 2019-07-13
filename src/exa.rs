@@ -191,7 +191,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                 if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
 
                     let mut child_dirs = Vec::new();
-                    for child_dir in children.iter().filter(|f| f.is_directory()) {
+                    for child_dir in children.iter().filter(|f| f.is_directory() && !f.is_all_all) {
                         match child_dir.to_dir() {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,

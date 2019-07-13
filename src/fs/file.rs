@@ -55,6 +55,13 @@ pub struct File<'dir> {
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up compiled files).
     pub parent_dir: Option<&'dir Dir>,
+
+    /// Whether this is one of the two `--all all` directories, `.` and `..`.
+    ///
+    /// Unlike all other entries, these are not returned as part of the
+    /// directory's children, and are in fact added specifically by exa; this
+    /// means that they should be skipped when recursing.
+    pub is_all_all: bool,
 }
 
 impl<'dir> File<'dir> {
@@ -68,8 +75,30 @@ impl<'dir> File<'dir> {
 
         debug!("Statting file {:?}", &path);
         let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = false;
 
-        Ok(File { path, parent_dir, metadata, ext, name })
+        Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
+    }
+
+    pub fn new_aa_current(parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let path       = parent_dir.path.to_path_buf();
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: ".".to_string(), is_all_all })
+    }
+
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: "..".to_string(), is_all_all })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -219,7 +248,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name }))
+                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name, is_all_all: false }))
             }
             Err(e) => {
                 error!("Error following link {:?}: {:#?}", &path, e);
