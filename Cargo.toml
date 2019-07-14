@@ -43,7 +43,7 @@ term_grid = "0.1.7"
 term_size = "0.3.1"
 unicode-width = "0.1.5"
 users = "0.9.1"
-zoneinfo_compiled = "0.4.7"
+zoneinfo_compiled = "0.4.8"
 
 [dependencies.git2]
 version = "0.8.0"
