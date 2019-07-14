@@ -75,6 +75,8 @@ Once you have it set up, a simple `make install` will compile exa and install it
 exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features.
 If you’re unable to compile libgit2, you can opt out of Git support by running `cargo build --release --no-default-features`.
 
+If you intend to compile for musl you will need to use the flag vendored-openssl if you want to get the Git feature working: `cargo build --release --target=x86_64-unknown-linux-musl --features vendored-openssl,git`
+
 ### Cargo Install
 
 If you’re using a recent version of Cargo (0.5.0 or higher), you can use the `cargo install` command:
