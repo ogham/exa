@@ -56,6 +56,7 @@ datetime = "0.4.7"
 [features]
 default = [ "git" ]
 git = [ "git2" ]
+vendored-openssl = ["git2/vendored-openssl"]
 
 [profile.release]
 opt-level = 3
