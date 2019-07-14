@@ -46,7 +46,6 @@ Vagrant.configure(2) do |config|
     # who actually uses it. Sent to /dev/null because the progress
     # bar produces a ton of output.
     config.vm.provision :shell, privileged: false, inline: <<-EOF
-
       if hash rustc &>/dev/null; then
         echo "Rust is already installed"
       else
@@ -91,24 +90,6 @@ Vagrant.configure(2) do |config|
       chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
     EOF
 
-
-    # Download my patched version of git2-rs.
-    # This is basically a hack and we should get rid of it as soon as
-    # a better solution comes along.
-    # See https://github.com/ogham/exa/issues/194
-    config.vm.provision :shell, privileged: false, inline: <<-EOF
-      set -xe
-
-      if [ -d /home/#{developer}/git2-rs ]; then
-          cd /home/#{developer}/git2-rs
-          git pull https://github.com/ogham/git2-rs.git || echo "Failed to update git2-rs fork"
-      else
-          git clone https://github.com/ogham/git2-rs.git /home/#{developer}/git2-rs
-      fi
-
-      mkdir -p /home/#{developer}/.cargo
-      echo 'paths = ["/home/#{developer}/git2-rs/libgit2-sys"]' > /home/#{developer}/.cargo/config
-    EOF
 
     # This fix is applied by changing the VM rather than changing the
     # Cargo.toml file so it works for everyone because it’s such a niche
