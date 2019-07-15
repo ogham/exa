@@ -1,13 +1,15 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::fs;
+use std::fs::{self, metadata};
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
+use std::time::{UNIX_EPOCH, Duration};
 
 use fs::dir::Dir;
 use fs::fields as f;
+use options::Misfire;
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -325,27 +327,23 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
-    pub fn modified_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.mtime(),
-            nanoseconds: self.metadata.mtime_nsec()
-        }
+    pub fn modified_time(&self) -> Duration {
+        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
-    /// This file’s created timestamp.
-    pub fn created_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.ctime(),
-            nanoseconds: self.metadata.ctime_nsec()
-        }
+    /// This file’s last changed timestamp.
+    pub fn changed_time(&self) -> Duration {
+        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
     }
 
     /// This file’s last accessed timestamp.
-    pub fn accessed_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.atime(),
-            nanoseconds: self.metadata.atime_nsec()
-        }
+    pub fn accessed_time(&self) -> Duration {
+        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    }
+
+    /// This file’s created timestamp.
+    pub fn created_time(&self) -> Duration {
+        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
     /// This file’s ‘type’.
@@ -457,6 +455,41 @@ impl<'dir> FileTarget<'dir> {
         match *self {
             FileTarget::Ok(_)                           => false,
             FileTarget::Broken(_) | FileTarget::Err(_)  => true,
+        }
+    }
+}
+
+
+pub enum PlatformMetadata {
+    ModifiedTime,
+    ChangedTime,
+    AccessedTime,
+    CreatedTime,
+}
+
+impl PlatformMetadata {
+    pub fn check_supported(&self) -> Result<(), Misfire> {
+        use std::env::temp_dir;
+        let result = match self {
+            // Call the functions that return a Result to see if it works
+            PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
+            PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
+            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
+            // We use the Unix API so we know it’s not available elsewhere
+            PlatformMetadata::ChangedTime => {
+                if cfg!(target_family = "unix") {
+                    return Ok(())
+                } else {
+                    return Err(Misfire::Unsupported(
+                        // for consistency, this error message similar to the one Rust
+                        // use when created time is not available
+                        "status modified time is not available on this platform currently".to_string()));
+                }
+            },
+        };
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Misfire::Unsupported(err.to_string()))
         }
     }
 }

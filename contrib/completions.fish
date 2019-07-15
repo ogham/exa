@@ -25,6 +25,7 @@ complete -c exa -s 'r' -l 'reverse'   -d "Reverse the sort order"
 complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
     accessed\t'Sort by file accessed time'
     age\t'Sort by file modified time (newest first)'
+    changed\t'Sort by changed time'
     created\t'Sort by file modified time'
     date\t'Sort by file modified time'
     ext\t'Sort by file extension'
@@ -54,13 +55,15 @@ complete -c exa -s 'g' -l 'group'    -d "List each file's group"
 complete -c exa -s 'h' -l 'header'   -d "Add a header row to each column"
 complete -c exa -s 'h' -l 'links'    -d "List each file's number of hard links"
 complete -c exa -s 'g' -l 'group'    -d "List each file's inode number"
-complete -c exa -s 'm' -l 'modified' -d "Use the modified timestamp field"
 complete -c exa -s 'S' -l 'blocks'   -d "List each file's number of filesystem blocks"
 complete -c exa -s 't' -l 'time'  -x -d "Which timestamp field to list" -a "
+    modified\t'Display modified time'
+    changed\t'Display changed time'
     accessed\t'Display accessed time'
     created\t'Display created time'
-    modified\t'Display modified time'
 "
+complete -c exa -s 'm' -l 'modified'      -d "Use the modified timestamp field"
+complete -c exa        -l 'changed'       -d "Use the changed timestamp field"
 complete -c exa -s 'u' -l 'accessed'      -d "Use the accessed timestamp field"
 complete -c exa -s 'U' -l 'created'       -d "Use the created timestamp field"
 complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "

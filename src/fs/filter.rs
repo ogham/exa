@@ -173,13 +173,16 @@ pub enum SortField {
     /// http://unix.stackexchange.com/a/8842
     AccessedDate,
 
-    /// The time the file was changed or created (the “ctime”).
+    /// The time the file was changed (the “ctime”).
     ///
-    /// Contrary to the name, this field is used to mark the time when a
-    /// file’s metadata changed -- its permissions, owners, or link count.
+    /// This field is used to mark the time when a file’s metadata
+    /// changed -- its permissions, owners, or link count.
     ///
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
+    ChangedDate,
+
+    /// The time the file was created (the "btime" or "birthtime").
     CreatedDate,
 
     /// The type of the file: directories, links, pipes, regular, files, etc.
@@ -247,6 +250,7 @@ impl SortField {
             SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
             SortField::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
             SortField::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
+            SortField::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
             SortField::CreatedDate   => a.created_time().cmp(&b.created_time()),
             SortField::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
 
