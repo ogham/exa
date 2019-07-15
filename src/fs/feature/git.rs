@@ -268,7 +268,8 @@ fn reorient(path: &Path) -> PathBuf {
     match current_dir() {
         Err(_)  => Path::new(".").join(&path),
         Ok(dir) => dir.join(&path),
-    }
+    }.canonicalize().unwrap()   // errors can be ignored here because they only occur if
+                                // the path does not exist / a component is not a folder
 }
 
 /// The character to display if the file has been modified, but not staged.
