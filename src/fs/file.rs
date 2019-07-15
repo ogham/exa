@@ -67,7 +67,7 @@ pub struct File<'dir> {
 }
 
 impl<'dir> File<'dir> {
-    pub fn new<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -149,7 +149,7 @@ impl<'dir> File<'dir> {
             }
         }
 
-        return false;
+        false
     }
 
     /// If this file is a directory on the filesystem, then clone its

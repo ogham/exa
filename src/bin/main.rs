@@ -11,7 +11,7 @@ fn main() {
     configure_logger();
 
     let args: Vec<OsString> = args_os().skip(1).collect();
-    match Exa::new(args.iter(), &mut stdout()) {
+    match Exa::from_args(args.iter(), &mut stdout()) {
         Ok(mut exa) => {
             match exa.run() {
                 Ok(exit_status) => exit(exit_status),

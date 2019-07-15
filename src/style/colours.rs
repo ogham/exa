@@ -323,6 +323,7 @@ impl render::FiletypeColours for Colours {
 
 impl render::GitColours for Colours {
     fn not_modified(&self)  -> Style { self.punctuation }
+    #[allow(clippy::new_ret_no_self)]
     fn new(&self)           -> Style { self.git.new }
     fn modified(&self)      -> Style { self.git.modified }
     fn deleted(&self)       -> Style { self.git.deleted }
