@@ -40,6 +40,7 @@ pub static BINARY:     Arg = Arg { short: Some(b'b'), long: "binary",     takes_
 pub static BYTES:      Arg = Arg { short: Some(b'B'), long: "bytes",      takes_value: TakesValue::Forbidden };
 pub static GROUP:      Arg = Arg { short: Some(b'g'), long: "group",      takes_value: TakesValue::Forbidden };
 pub static HEADER:     Arg = Arg { short: Some(b'h'), long: "header",     takes_value: TakesValue::Forbidden };
+pub static ICONS:      Arg = Arg { short: None,       long: "icons",      takes_value: TakesValue::Forbidden };
 pub static INODE:      Arg = Arg { short: Some(b'i'), long: "inode",      takes_value: TakesValue::Forbidden };
 pub static LINKS:      Arg = Arg { short: Some(b'H'), long: "links",      takes_value: TakesValue::Forbidden };
 pub static MODIFIED:   Arg = Arg { short: Some(b'm'), long: "modified",   takes_value: TakesValue::Forbidden };
@@ -66,7 +67,7 @@ pub static ALL_ARGS: Args = Args(&[
     &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
     &IGNORE_GLOB, &GIT_IGNORE, &ONLY_DIRS,
 
-    &BINARY, &BYTES, &GROUP, &HEADER, &INODE, &LINKS, &MODIFIED, &CHANGED,
+    &BINARY, &BYTES, &GROUP, &HEADER, &ICONS, &INODE, &LINKS, &MODIFIED, &CHANGED,
     &BLOCKS, &TIME, &ACCESSED, &CREATED, &TIME_STYLE,
 
     &GIT, &EXTENDED,

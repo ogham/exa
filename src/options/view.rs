@@ -1,4 +1,4 @@
-use output::{View, Mode, grid, details};
+use output::{View, Mode, grid, details, lines};
 use output::grid_details::{self, RowThreshold};
 use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use output::time::TimeFormat;
@@ -41,6 +41,7 @@ impl Mode {
                     table: Some(TableOptions::deduce(matches, vars)?),
                     header: matches.has(&flags::HEADER)?,
                     xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+                    icons: matches.has(&flags::ICONS)?,
                 })
             }
         };
@@ -52,7 +53,8 @@ impl Mode {
                         Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
-                        Ok(Mode::Lines)
+                        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
+                        Ok(Mode::Lines(lines))
                     }
                 }
                 else if matches.has(&flags::TREE)? {
@@ -60,6 +62,7 @@ impl Mode {
                         table: None,
                         header: false,
                         xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+                        icons: matches.has(&flags::ICONS)?,
                     };
 
                     Ok(Mode::Details(details))
@@ -68,11 +71,13 @@ impl Mode {
                     let grid = grid::Options {
                         across: matches.has(&flags::ACROSS)?,
                         console_width: width,
+                        icons: matches.has(&flags::ICONS)?,
                     };
 
                     Ok(Mode::Grid(grid))
                 }
             }
+
             // If the terminal width couldn’t be matched for some reason, such
             // as the program’s stdout being connected to a file, then
             // fallback to the lines view.
@@ -81,12 +86,14 @@ impl Mode {
                     table: None,
                     header: false,
                     xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+                    icons: matches.has(&flags::ICONS)?,
                 };
 
                 Ok(Mode::Details(details))
             }
             else {
-                Ok(Mode::Lines)
+                let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
+                Ok(Mode::Lines(lines))
             }
         };
 
@@ -380,7 +387,7 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
-                                   &flags::CREATED, &flags::ACCESSED,
+                                   &flags::CREATED, &flags::ACCESSED, &flags::ICONS,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
                                    &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
@@ -563,19 +570,22 @@ mod test {
     mod views {
         use super::*;
         use output::grid::Options as GridOptions;
+        use output::lines::Options as LineOptions;
 
         // Default
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
         // Grid views
-        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
-        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _ })));
-        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
-        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _ })));
+        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
+        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
+        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
+        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
+        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { across: _, console_width: _, icons: true})));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines));
-        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines));
+        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
+        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
+        test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
 
         // Details views
         test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
