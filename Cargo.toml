@@ -1,7 +1,7 @@
 [package]
 name = "exa"
-version = "0.9.0-pre"
-authors = [ "ogham@bsago.me" ]
+version = "0.9.0"
+authors = [ "Benjamin Sago <ogham@bsago.me>" ]
 build = "build.rs"
 
 description = "A modern replacement for ls"
