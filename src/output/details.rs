@@ -333,8 +333,8 @@ impl<'a> Render<'a> {
             None       => format!("<{}>", error),
         };
 
-		// TODO: broken_symlink() doesn’t quite seem like the right name for
-		// the style that’s being used here. Maybe split it in two?
+        // TODO: broken_symlink() doesn’t quite seem like the right name for
+        // the style that’s being used here. Maybe split it in two?
         let name = TextCell::paint(self.colours.broken_symlink(), error_message);
         Row { cells: None, name, tree }
     }

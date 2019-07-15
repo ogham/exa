@@ -100,7 +100,7 @@ fn ignore_cache(options: &Options) -> Option<IgnoreCache> {
 }
 
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
-    pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
+    pub fn from_args<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
         Options::parse(args, &LiveVars).map(move |(options, mut args)| {
             debug!("Dir action from arguments: {:#?}", options.dir_action);
@@ -125,7 +125,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let mut exit_status = 0;
 
         for file_path in &self.args {
-            match File::new(PathBuf::from(file_path), None, None) {
+            match File::from_args(PathBuf::from(file_path), None, None) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{:?}: {}", file_path, e)?;

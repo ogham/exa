@@ -69,7 +69,7 @@ where I: Iterator<Item=&'a str> {
                         return Some(RGB(r, g, b));
                     }
                 }*/
-                
+
                 if let (Some(r), Some(g), Some(b)) = (hexes.parse().ok(),
                                                            iter.next().and_then(|s| s.parse().ok()),
                                                            iter.next().and_then(|s| s.parse().ok())) {

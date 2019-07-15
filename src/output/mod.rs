@@ -29,6 +29,7 @@ pub struct View {
 
 /// The **mode** is the “type” of output.
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum Mode {
     Grid(grid::Options),
     Details(details::Options),
