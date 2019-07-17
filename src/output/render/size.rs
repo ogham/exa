@@ -31,7 +31,7 @@ impl f::Size {
             Prefixed(p, n) => (p, n)
         };
 
-        let symbol = prefix.symbol();
+        let symbol = prefix.symbol().trim_end_matches('i');
         let number = if n < 10f64 { numerics.format_float(n, 1) }
                              else { numerics.format_int(n as isize) };
 
@@ -130,10 +130,10 @@ pub mod test {
     fn file_binary() {
         let directory = f::Size::Some(1_048_576);
         let expected = TextCell {
-            width: DisplayWidth::from(5),
+            width: DisplayWidth::from(4),
             contents: vec![
                 Fixed(66).paint("1.0"),
-                Fixed(77).bold().paint("Mi"),
+                Fixed(77).bold().paint("M"),
             ].into(),
         };
 
