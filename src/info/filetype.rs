@@ -23,7 +23,7 @@ impl FileExtensions {
         file.name.to_lowercase().starts_with("readme") || file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "Rakefile", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "WORKSPACE", "build.xml"
+            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml"
         ])
     }
 
