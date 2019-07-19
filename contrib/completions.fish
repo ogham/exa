@@ -1,3 +1,4 @@
+#!/bin/sh
 # Meta-stuff
 complete -c exa -s 'v' -l 'version' -d "Show version of exa"
 complete -c exa -s '?' -l 'help'    -d "Show list of command-line options"
@@ -14,6 +15,7 @@ complete -c exa        -l 'color'        -d "When to use terminal colours"
 complete -c exa        -l 'colour'       -d "When to use terminal colours"
 complete -c exa        -l 'color-scale'  -d "Highlight levels of file sizes distinctly"
 complete -c exa        -l 'colour-scale' -d "Highlight levels of file sizes distinctly"
+complete -c exa        -l 'icons'        -d "Display icons"
 
 # Filtering and sorting options
 complete -c exa -l 'group-directories-first' -d "Sort directories before other files"
