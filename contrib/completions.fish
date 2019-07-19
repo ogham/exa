@@ -20,7 +20,7 @@ complete -c exa        -l 'icons'        -d "Display icons"
 # Filtering and sorting options
 complete -c exa -l 'group-directories-first' -d "Sort directories before other files"
 complete -c exa -l 'git-ignore'           -d "Ignore files mentioned in '.gitignore'"
-complete -c exa -s 'a' -l 'all'       -d "Show and 'dot' files"
+complete -c exa -s 'a' -l 'all'       -d "Show hidden and 'dot' files"
 complete -c exa -s 'd' -l 'list-dirs' -d "List directories like regular files"
 complete -c exa -s 'L' -l 'level'     -d "Limit the depth of recursion" -a "1 2 3 4 5 6 7 8 9"
 complete -c exa -s 'r' -l 'reverse'   -d "Reverse the sort order"
