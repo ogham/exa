@@ -69,7 +69,7 @@ These options are available when running with --long (`-l`):
 
 ## Installation
 
-exa is written in [Rust](http://www.rust-lang.org). You will need rustc version 1.17.0 or higher. The recommended way to install Rust is from the official download page.
+exa is written in [Rust](http://www.rust-lang.org). You will need rustc version 1.35.0 or higher. The recommended way to install Rust is from the official download page.
 Once you have it set up, a simple `make install` will compile exa and install it into `/usr/local/bin`.
 
 exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features.
