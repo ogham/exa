@@ -101,6 +101,12 @@ or:
 
 [Formulae](https://github.com/Homebrew/homebrew-core/blob/master/Formula/exa.rb)
 
+### Fedora
+
+You can install the `exa` package from the official Fedora repositories by running:
+
+    dnf install exa
+
 ### Nix
 
 `exa` is also installable through [the derivation](https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/misc/exa/default.nix) using the [nix package manager](https://nixos.org/nix/) by running:
