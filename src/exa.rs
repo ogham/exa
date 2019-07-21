@@ -100,7 +100,7 @@ fn ignore_cache(options: &Options) -> Option<IgnoreCache> {
 }
 
 impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
-    pub fn new<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
+    pub fn from_args<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
     where I: Iterator<Item=&'args OsString> {
         Options::parse(args, &LiveVars).map(move |(options, mut args)| {
             debug!("Dir action from arguments: {:#?}", options.dir_action);
@@ -125,7 +125,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
         let mut exit_status = 0;
 
         for file_path in &self.args {
-            match File::new(PathBuf::from(file_path), None, None) {
+            match File::from_args(PathBuf::from(file_path), None, None) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(stderr(), "{:?}: {}", file_path, e)?;
@@ -191,7 +191,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                 if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
 
                     let mut child_dirs = Vec::new();
-                    for child_dir in children.iter().filter(|f| f.is_directory()) {
+                    for child_dir in children.iter().filter(|f| f.is_directory() && !f.is_all_all) {
                         match child_dir.to_dir() {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
@@ -221,8 +221,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             let View { ref mode, ref colours, ref style } = self.options.view;
 
             match *mode {
-                Mode::Lines => {
-                    let r = lines::Render { files, colours, style };
+                Mode::Lines(ref opts) => {
+                    let r = lines::Render { files, colours, style, opts };
                     r.render(self.writer)
                 }
 

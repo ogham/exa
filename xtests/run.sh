@@ -175,7 +175,7 @@ COLUMNS=80 $exa $testcases/links     2>&1 | diff -q - $results/links          ||
 
 # There’ve been bugs where the target file wasn’t printed properly when the
 # symlink file was specified on the command-line directly.
-$exa $testcases/links/* -1 | diff -q - $results/links_1_files || exit 1
+$exa $testcases/links/* -1d | diff -q - $results/links_1_files || exit 1
 
 
 # Colours and terminals

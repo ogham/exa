@@ -19,6 +19,9 @@ pub enum Misfire {
     /// The user supplied an illegal choice to an Argument.
     BadArgument(&'static Arg, OsString),
 
+    /// The user supplied a set of options
+    Unsupported(String),
+
     /// The user asked for help. This isn’t strictly an error, which is why
     /// this enum isn’t named Error!
     Help(HelpString),
@@ -83,6 +86,7 @@ impl fmt::Display for Misfire {
                 }
             },
             InvalidOptions(ref e)            => write!(f, "{}", e),
+            Unsupported(ref e)               => write!(f, "{}", e),
             Help(ref text)                   => write!(f, "{}", text),
             Version(ref version)             => write!(f, "{}", version),
             Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}", a, b),

@@ -62,8 +62,8 @@ These options are available when running with --long (`-l`):
 - **--time-style**: how to format timestamps
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
-- Valid sort fields are **accessed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter sort uppercase before lowercase. The modified field has the aliases **date**, **time**, and **newest**, while its reverse has the aliases **age** and **oldest**.
-- Valid time fields are **modified**, **accessed**, and **created**.
+- Valid sort fields are **accessed**, **changed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter sort uppercase before lowercase. The modified field has the aliases **date**, **time**, and **newest**, while its reverse has the aliases **age** and **oldest**.
+- Valid time fields are **modified**, **changed**, **accessed**, and **created**.
 - Valid time styles are **default**, **iso**, **long-iso**, and **full-iso**.
 
 
@@ -74,6 +74,8 @@ Once you have it set up, a simple `make install` will compile exa and install it
 
 exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features.
 If you’re unable to compile libgit2, you can opt out of Git support by running `cargo build --release --no-default-features`.
+
+If you intend to compile for musl you will need to use the flag vendored-openssl if you want to get the Git feature working: `cargo build --release --target=x86_64-unknown-linux-musl --features vendored-openssl,git`
 
 ### Cargo Install
 
@@ -115,7 +117,7 @@ The initial attempt to solve the problem was just to create a directory of “aw
 
 An alternative solution is to fake *everything*: create a virtual machine with a known state and run the tests on *that*. This is what Vagrant does. Although it takes a while to download and set up, it gives everyone the same development environment to test for any obvious regressions.
 
-[Vagrant]: https://www.vagrantup.com/docs/why-vagrant/
+[Vagrant]: https://www.vagrantup.com/
 [testing]: https://eev.ee/blog/2016/08/22/testing-for-people-who-hate-testing/#troublesome-cases
 
 First, initialise the VM:
