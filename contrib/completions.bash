@@ -14,12 +14,12 @@ _exa()
             ;;
 
         -s|--sort)
-            COMPREPLY=( $( compgen -W 'name filename Name Filename size filesize extension Extension date time modified accessed created type inode oldest newest age none --' -- "$cur" ) )
+            COMPREPLY=( $( compgen -W 'name filename Name Filename size filesize extension Extension date time modified changed accessed created type inode oldest newest age none --' -- "$cur" ) )
             return
             ;;
 
         -t|--time)
-            COMPREPLY=( $( compgen -W 'accessed modified created --' -- $cur ) )
+            COMPREPLY=( $( compgen -W 'modified changed accessed created --' -- $cur ) )
             return
             ;;
 

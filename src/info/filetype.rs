@@ -8,6 +8,7 @@ use ansi_term::Style;
 
 use fs::File;
 use output::file_name::FileColours;
+use output::icons::FileIcon;
 
 
 #[derive(Debug, Default, PartialEq)]
@@ -22,7 +23,7 @@ impl FileExtensions {
         file.name.to_lowercase().starts_with("readme") || file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "Rakefile", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "WORKSPACE", "build.xml"
+            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml"
         ])
     }
 
@@ -30,7 +31,7 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr",
+            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf",
             "cbz", "xpm", "ico", "cr2", "orf", "nef",
         ])
     }
@@ -112,6 +113,19 @@ impl FileColours for FileExtensions {
             f if self.is_compressed(f)  => Red.normal(),
             f if self.is_compiled(f)    => Fixed(137).normal(),
             _                           => return None,
+        })
+    }
+}
+
+impl FileIcon for FileExtensions {
+    fn icon_file(&self, file: &File) -> Option<char> {
+        use output::icons::Icons;
+
+        Some(match file {
+            f if self.is_music(f) || self.is_lossless(f) => Icons::Audio.value(),
+            f if self.is_image(f) => Icons::Image.value(),
+            f if self.is_video(f) => Icons::Video.value(),
+            _ => return None,
         })
     }
 }

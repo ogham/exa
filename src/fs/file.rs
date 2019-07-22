@@ -1,13 +1,16 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::fs;
+use std::fs::{self, metadata};
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
+use std::time::{UNIX_EPOCH, Duration};
 
 use fs::dir::Dir;
 use fs::fields as f;
+use options::Misfire;
+
 use MOUNT_POINTS;
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -55,10 +58,17 @@ pub struct File<'dir> {
     /// contain a reference to it, which is used in certain operations (such
     /// as looking up compiled files).
     pub parent_dir: Option<&'dir Dir>,
+
+    /// Whether this is one of the two `--all all` directories, `.` and `..`.
+    ///
+    /// Unlike all other entries, these are not returned as part of the
+    /// directory's children, and are in fact added specifically by exa; this
+    /// means that they should be skipped when recursing.
+    pub is_all_all: bool,
 }
 
 impl<'dir> File<'dir> {
-    pub fn new<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -68,8 +78,30 @@ impl<'dir> File<'dir> {
 
         debug!("Statting file {:?}", &path);
         let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = false;
 
-        Ok(File { path, parent_dir, metadata, ext, name })
+        Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
+    }
+
+    pub fn new_aa_current(parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let path       = parent_dir.path.to_path_buf();
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: ".".to_string(), is_all_all })
+    }
+
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: "..".to_string(), is_all_all })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -118,7 +150,7 @@ impl<'dir> File<'dir> {
             }
         }
 
-        return false;
+        false
     }
 
     /// If this file is a directory on the filesystem, then clone its
@@ -277,7 +309,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name }))
+                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name, is_all_all: false }))
             }
             Err(e) => {
                 error!("Error following link {:?}: {:#?}", &path, e);
@@ -354,27 +386,23 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
-    pub fn modified_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.mtime(),
-            nanoseconds: self.metadata.mtime_nsec()
-        }
+    pub fn modified_time(&self) -> Duration {
+        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
-    /// This file’s created timestamp.
-    pub fn created_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.ctime(),
-            nanoseconds: self.metadata.ctime_nsec()
-        }
+    /// This file’s last changed timestamp.
+    pub fn changed_time(&self) -> Duration {
+        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
     }
 
     /// This file’s last accessed timestamp.
-    pub fn accessed_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.atime(),
-            nanoseconds: self.metadata.atime_nsec()
-        }
+    pub fn accessed_time(&self) -> Duration {
+        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    }
+
+    /// This file’s created timestamp.
+    pub fn created_time(&self) -> Duration {
+        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
     /// This file’s ‘type’.
@@ -489,6 +517,41 @@ impl<'dir> FileTarget<'dir> {
         match *self {
             FileTarget::Ok(_)                           => false,
             FileTarget::Broken(_) | FileTarget::Err(_)  => true,
+        }
+    }
+}
+
+
+pub enum PlatformMetadata {
+    ModifiedTime,
+    ChangedTime,
+    AccessedTime,
+    CreatedTime,
+}
+
+impl PlatformMetadata {
+    pub fn check_supported(&self) -> Result<(), Misfire> {
+        use std::env::temp_dir;
+        let result = match self {
+            // Call the functions that return a Result to see if it works
+            PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
+            PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
+            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
+            // We use the Unix API so we know it’s not available elsewhere
+            PlatformMetadata::ChangedTime => {
+                if cfg!(target_family = "unix") {
+                    return Ok(())
+                } else {
+                    return Err(Misfire::Unsupported(
+                        // for consistency, this error message similar to the one Rust
+                        // use when created time is not available
+                        "status modified time is not available on this platform currently".to_string()));
+                }
+            },
+        };
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Misfire::Unsupported(err.to_string()))
         }
     }
 }

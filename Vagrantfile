@@ -45,8 +45,14 @@ Vagrant.configure(2) do |config|
     # This is done as vagrant, not root, because it’s vagrant
     # who actually uses it. Sent to /dev/null because the progress
     # bar produces a ton of output.
-    config.vm.provision :shell, privileged: false, inline:
-      %[hash rustc &>/dev/null || curl -sSf https://static.rust-lang.org/rustup.sh | sh &> /dev/null]
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+      if hash rustc &>/dev/null; then
+        echo "Rust is already installed"
+      else
+        set -xe
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      fi
+    EOF
 
 
     # Use a different ‘target’ directory on the VM than on the host.
@@ -85,24 +91,6 @@ Vagrant.configure(2) do |config|
     EOF
 
 
-    # Download my patched version of git2-rs.
-    # This is basically a hack and we should get rid of it as soon as
-    # a better solution comes along.
-    # See https://github.com/ogham/exa/issues/194
-    config.vm.provision :shell, privileged: false, inline: <<-EOF
-      set -xe
-
-      if [ -d /home/#{developer}/git2-rs ]; then
-          cd /home/#{developer}/git2-rs
-          git pull https://github.com/ogham/git2-rs.git || echo "Failed to update git2-rs fork"
-      else
-          git clone https://github.com/ogham/git2-rs.git /home/#{developer}/git2-rs
-      fi
-
-      mkdir -p /home/#{developer}/.cargo
-      echo 'paths = ["/home/#{developer}/git2-rs/libgit2-sys"]' > /home/#{developer}/.cargo/config
-    EOF
-
     # This fix is applied by changing the VM rather than changing the
     # Cargo.toml file so it works for everyone because it’s such a niche
     # build issue, it’s not worth specifying a non-crates.io dependency
@@ -120,6 +108,7 @@ Vagrant.configure(2) do |config|
 
       # Tell bash to execute a bunch of stuff when a session starts
       echo "source /vagrant/devtools/dev-bash.sh" > /home/#{developer}/.bash_profile
+      chown #{developer} /home/#{developer}/.bash_profile
 
       # Disable last login date in sshd
       sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
