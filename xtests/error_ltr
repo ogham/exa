@@ -1,2 +1,2 @@
-Option --time (-t) has no "r" setting (choices: modified, accessed, created)
+Option --time (-t) has no "r" setting (choices: modified, changed, accessed, created)
 To sort oldest files last, try "--sort oldest", or just "-sold"

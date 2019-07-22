@@ -1,11 +1,11 @@
 //! Timestamp formatting.
 
+use std::time::Duration;
+
 use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 use locale;
 use std::cmp;
-
-use fs::fields::Time;
 
 
 /// Every timestamp in exa needs to be rendered by a **time format**.
@@ -51,7 +51,7 @@ pub enum TimeFormat {
 // timestamps are separate types.
 
 impl TimeFormat {
-    pub fn format_local(&self, time: Time) -> String {
+    pub fn format_local(&self, time: Duration) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
             TimeFormat::ISOFormat(ref iso)     => iso.format_local(time),
@@ -60,7 +60,7 @@ impl TimeFormat {
         }
     }
 
-    pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+    pub fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
             TimeFormat::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
@@ -128,8 +128,8 @@ impl DefaultFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
+    fn format_local(&self, time: Duration) -> String {
+        let date = LocalDateTime::at(time.as_secs() as i64);
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
@@ -140,8 +140,8 @@ impl DefaultFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+    fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
@@ -154,16 +154,16 @@ impl DefaultFormat {
 
 
 #[allow(trivial_numeric_casts)]
-fn long_local(time: Time) -> String {
-    let date = LocalDateTime::at(time.seconds as i64);
+fn long_local(time: Duration) -> String {
+    let date = LocalDateTime::at(time.as_secs() as i64);
     format!("{:04}-{:02}-{:02} {:02}:{:02}",
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute())
 }
 
 #[allow(trivial_numeric_casts)]
-fn long_zoned(time: Time, zone: &TimeZone) -> String {
-    let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+fn long_zoned(time: Duration, zone: &TimeZone) -> String {
+    let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
     format!("{:04}-{:02}-{:02} {:02}:{:02}",
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute())
@@ -171,23 +171,23 @@ fn long_zoned(time: Time, zone: &TimeZone) -> String {
 
 
 #[allow(trivial_numeric_casts)]
-fn full_local(time: Time) -> String {
-    let date = LocalDateTime::at(time.seconds as i64);
+fn full_local(time: Duration) -> String {
+    let date = LocalDateTime::at(time.as_secs() as i64);
     format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
             date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), time.nanoseconds)
+            date.hour(), date.minute(), date.second(), time.subsec_nanos())
 }
 
 #[allow(trivial_numeric_casts)]
-fn full_zoned(time: Time, zone: &TimeZone) -> String {
+fn full_zoned(time: Duration, zone: &TimeZone) -> String {
     use datetime::Offset;
 
-    let local = LocalDateTime::at(time.seconds as i64);
+    let local = LocalDateTime::at(time.as_secs() as i64);
     let date = zone.to_zoned(local);
     let offset = Offset::of_seconds(zone.offset(local) as i32).expect("Offset out of range");
     format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
             date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), time.nanoseconds,
+            date.hour(), date.minute(), date.second(), time.subsec_nanos(),
             offset.hours(), offset.minutes().abs())
 }
 
@@ -214,8 +214,8 @@ impl ISOFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
+    fn format_local(&self, time: Duration) -> String {
+        let date = LocalDateTime::at(time.as_secs() as i64);
 
         if self.is_recent(date) {
             format!("{:02}-{:02} {:02}:{:02}",
@@ -229,8 +229,8 @@ impl ISOFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+    fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
 
         if self.is_recent(date) {
             format!("{:02}-{:02} {:02}:{:02}",

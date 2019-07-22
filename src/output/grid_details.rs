@@ -2,7 +2,7 @@
 
 use std::io::{Write, Result as IOResult};
 
-use ansi_term::ANSIStrings;
+use ansi_term::{ANSIGenericString, ANSIStrings};
 use term_grid as grid;
 
 use fs::{Dir, File};
@@ -17,7 +17,7 @@ use output::grid::Options as GridOptions;
 use output::file_name::FileStyle;
 use output::table::{Table, Row as TableRow, Options as TableOptions};
 use output::tree::{TreeParams, TreeDepth};
-
+use output::icons::painted_icon;
 
 #[derive(Debug)]
 pub struct Options {
@@ -135,7 +135,17 @@ impl<'a> Render<'a> {
                        .collect::<Vec<TableRow>>();
 
         let file_names = self.files.iter()
-                             .map(|file| self.style.for_file(file, self.colours).paint().promote())
+                             .map(|file| {
+                                 if self.details.icons {
+                                    let mut icon_cell = TextCell::default();
+                                    icon_cell.push(ANSIGenericString::from(painted_icon(&file, &self.style)), 2);
+                                    let file_cell = self.style.for_file(file, self.colours).paint().promote();
+                                    icon_cell.append(file_cell);
+                                    icon_cell
+                                 } else {
+                                     self.style.for_file(file, self.colours).paint().promote()
+                                 }
+                             })
                              .collect::<Vec<TextCell>>();
 
         let mut last_working_table = self.make_grid(1, options, git, &file_names, rows.clone(), &drender);

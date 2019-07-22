@@ -123,7 +123,6 @@ impl Options {
     where I: IntoIterator<Item=&'args OsString>,
           V: Vars {
         use options::parser::{Matches, Strictness};
-        use options::vars;
 
         let strictness = match vars.get(vars::EXA_STRICT) {
             None                         => Strictness::UseLastArguments,
@@ -191,7 +190,6 @@ pub mod test {
     {
         use self::Strictnesses::*;
         use options::parser::{Args, Strictness};
-        use std::ffi::OsString;
 
         let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
         let mut result = Vec::new();

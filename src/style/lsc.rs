@@ -69,7 +69,7 @@ where I: Iterator<Item=&'a str> {
                         return Some(RGB(r, g, b));
                     }
                 }*/
-                
+
                 if let (Some(r), Some(g), Some(b)) = (hexes.parse().ok(),
                                                            iter.next().and_then(|s| s.parse().ok()),
                                                            iter.next().and_then(|s| s.parse().ok())) {
@@ -88,7 +88,7 @@ impl<'var> Pair<'var> {
         let mut iter = self.value.split(';').peekable();
 
         while let Some(num) = iter.next() {
-            match num.trim_left_matches('0') {
+            match num.trim_start_matches('0') {
 
                 // Bold and italic
                 "1" => style = style.bold(),

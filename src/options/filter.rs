@@ -1,6 +1,6 @@
 //! Parsing the options for `FileFilter`.
 
-use fs::DotFilter;
+use fs::{DotFilter, PlatformMetadata};
 use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
 use options::{flags, Misfire};
@@ -35,61 +35,58 @@ impl SortField {
             None     => return Ok(SortField::default()),
         };
 
-        // The field is an OsStr, so can’t be matched.
-        if word == "name" || word == "filename" {
-            Ok(SortField::Name(SortCase::AaBbCc))
-        }
-        else if word == "Name" || word == "Filename" {
-            Ok(SortField::Name(SortCase::ABCabc))
-        }
-        else if word == ".name" || word == ".filename" {
-            Ok(SortField::NameMixHidden(SortCase::AaBbCc))
-        }
-        else if word == ".Name" || word == ".Filename" {
-            Ok(SortField::NameMixHidden(SortCase::ABCabc))
-        }
-        else if word == "size" || word == "filesize" {
-            Ok(SortField::Size)
-        }
-        else if word == "ext" || word == "extension" {
-            Ok(SortField::Extension(SortCase::AaBbCc))
-        }
-        else if word == "Ext" || word == "Extension" {
-            Ok(SortField::Extension(SortCase::ABCabc))
-        }
-        else if word == "date" || word == "time" || word == "mod" || word == "modified" || word == "new" || word == "newest" {
+        // Get String because we can’t match an OsStr
+        let word = match word.to_str() {
+            Some(ref w) => *w,
+            None => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+        };
+
+        let field = match word {
+            "name" | "filename" => SortField::Name(SortCase::AaBbCc),
+            "Name" | "Filename" => SortField::Name(SortCase::ABCabc),
+            ".name" | ".filename" => SortField::NameMixHidden(SortCase::AaBbCc),
+            ".Name" | ".Filename" => SortField::NameMixHidden(SortCase::ABCabc),
+            "size" | "filesize" => SortField::Size,
+            "ext" | "extension" => SortField::Extension(SortCase::AaBbCc),
+            "Ext" | "Extension" => SortField::Extension(SortCase::ABCabc),
             // “new” sorts oldest at the top and newest at the bottom; “old”
             // sorts newest at the top and oldest at the bottom. I think this
             // is the right way round to do this: “size” puts the smallest at
             // the top and the largest at the bottom, doesn’t it?
-            Ok(SortField::ModifiedDate)
-        }
-        else if word == "age" || word == "old" || word == "oldest" {
+            "date" | "time" | "mod" | "modified" | "new" | "newest" => SortField::ModifiedDate,
             // Similarly, “age” means that files with the least age (the
             // newest files) get sorted at the top, and files with the most
             // age (the oldest) at the bottom.
-            Ok(SortField::ModifiedAge)
+            "age" | "old" | "oldest" => SortField::ModifiedAge,
+            "ch" | "changed" => SortField::ChangedDate,
+            "acc" | "accessed" => SortField::AccessedDate,
+            "cr" | "created" => SortField::CreatedDate,
+            "inode" => SortField::FileInode,
+            "type" => SortField::FileType,
+            "none" => SortField::Unsorted,
+            _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+        };
+
+        match SortField::to_platform_metadata(field) {
+            Some(m) => match m.check_supported() {
+                Ok(_) => Ok(field),
+                Err(misfire) => Err(misfire),
+            },
+            None => Ok(field),
         }
-        else if word == "acc" || word == "accessed" {
-            Ok(SortField::AccessedDate)
-        }
-        else if word == "cr" || word == "created" {
-            Ok(SortField::CreatedDate)
-        }
-        else if word == "inode" {
-            Ok(SortField::FileInode)
-        }
-        else if word == "type" {
-            Ok(SortField::FileType)
-        }
-        else if word == "none" {
-            Ok(SortField::Unsorted)
-        }
-        else {
-            Err(Misfire::BadArgument(&flags::SORT, word.into()))
+    }
+
+    fn to_platform_metadata(field: Self) -> Option<PlatformMetadata> {
+        match field {
+            SortField::ModifiedDate => Some(PlatformMetadata::ModifiedTime),
+            SortField::ChangedDate  => Some(PlatformMetadata::ChangedTime),
+            SortField::AccessedDate => Some(PlatformMetadata::AccessedTime),
+            SortField::CreatedDate  => Some(PlatformMetadata::CreatedTime),
+            _ => None
         }
     }
 }
+
 
 // I’ve gone back and forth between whether to sort case-sensitively or
 // insensitively by default. The default string sort in most programming
@@ -227,7 +224,7 @@ mod test {
         test!(empty:         SortField <- [];                  Both => Ok(SortField::default()));
 
         // Sort field arguments
-        test!(one_arg:       SortField <- ["--sort=cr"];       Both => Ok(SortField::CreatedDate));
+        test!(one_arg:       SortField <- ["--sort=mod"];       Both => Ok(SortField::ModifiedDate));
         test!(one_long:      SortField <- ["--sort=size"];     Both => Ok(SortField::Size));
         test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
         test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
