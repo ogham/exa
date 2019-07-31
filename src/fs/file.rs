@@ -5,7 +5,7 @@ use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
-use std::time::{UNIX_EPOCH, Duration};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 use fs::dir::Dir;
 use fs::fields as f;
@@ -327,8 +327,13 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
+    /// If the file's time is invalid, assume it was modified today
     pub fn modified_time(&self) -> Duration {
-        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        if self.metadata.modified().unwrap() < UNIX_EPOCH {
+            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+        } else {
+            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        }
     }
 
     /// This file’s last changed timestamp.
@@ -337,13 +342,23 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last accessed timestamp.
+    /// If the file's time is invalid, assume it was accessed today
     pub fn accessed_time(&self) -> Duration {
-        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        if self.metadata.modified().unwrap() < UNIX_EPOCH{
+            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+        } else {
+            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        }
     }
 
     /// This file’s created timestamp.
+    /// If the file's time is invalid, assume it was created today
     pub fn created_time(&self) -> Duration {
-        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        if self.metadata.modified().unwrap() < UNIX_EPOCH {
+            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+        } else {
+            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        }
     }
 
     /// This file’s ‘type’.
