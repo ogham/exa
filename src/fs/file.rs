@@ -332,7 +332,7 @@ impl<'dir> File<'dir> {
         if self.metadata.modified().unwrap() < UNIX_EPOCH {
             return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
         } else {
-            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+            return self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
         }
     }
 
@@ -344,17 +344,17 @@ impl<'dir> File<'dir> {
     /// This file’s last accessed timestamp.
     /// If the file's time is invalid, assume it was accessed today
     pub fn accessed_time(&self) -> Duration {
-        if self.metadata.modified().unwrap() < UNIX_EPOCH{
+        if self.metadata.accessed().unwrap() < UNIX_EPOCH{
             return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
         } else {
-            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+            return self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
         }
     }
 
     /// This file’s created timestamp.
     /// If the file's time is invalid, assume it was created today
     pub fn created_time(&self) -> Duration {
-        if self.metadata.modified().unwrap() < UNIX_EPOCH {
+        if self.metadata.created().unwrap() < UNIX_EPOCH {
             return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
         } else {
             return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
