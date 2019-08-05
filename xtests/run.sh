@@ -153,8 +153,8 @@ $exa $testcases/dates -l       --time-style=iso      2>&1 | diff -q - $results/d
 # Locales
 # These two are used in particular because they have 5-long and 4-long
 # month names respectively
-env LANG=fr_FR.UTF-8  $exa $testcases/dates -l | diff -q - $results/dates_fr  || exit 1
-env LANG=ja_JP.UTF-8  $exa $testcases/dates -l | diff -q - $results/dates_jp  || exit 1
+env LC_ALL=fr_FR.UTF-8 LANG=fr_FR.UTF-8 $exa $testcases/dates -l | diff -q - $results/dates_fr  || exit 1
+env LC_ALL=ja_JP.UTF-8 LANG=ja_JP.UTF-8 $exa $testcases/dates -l | diff -q - $results/dates_jp  || exit 1
 
 
 # Paths and directories
