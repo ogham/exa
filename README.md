@@ -60,6 +60,10 @@ These options are available when running with --long (`-l`):
 - **-@**, **--extended**: list each file's extended attributes and sizes
 - **--git**: list each file's Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
+- **--no-permissions**: suppress the permissions field
+- **--no-filesize**: suppress the filesize field
+- **--no-user**: suppress the user field
+- **--no-time**: suppress the time field
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
 - Valid sort fields are **accessed**, **changed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter sort uppercase before lowercase. The modified field has the aliases **date**, **time**, and **newest**, while its reverse has the aliases **age** and **oldest**.
