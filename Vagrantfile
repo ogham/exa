@@ -484,6 +484,21 @@ Vagrant.configure(2) do |config|
       sudo chown #{user}:#{user} -R "#{test_dir}/git2"
     EOF
 
+    # A third Git repository
+    # Regression test for https://github.com/ogham/exa/issues/526
+    config.vm.provision :shell, privileged: false, inline: <<-EOF
+      set -xe
+      mkdir -p "#{test_dir}/git3"
+      cd       "#{test_dir}/git3"
+      git init
+
+      # Create a symbolic link pointing to a non-existing file
+      ln -s aaa/aaa/a b
+
+      find "#{test_dir}/git3" -exec touch {} -t #{some_date} \\;
+      sudo chown #{user}:#{user} -R "#{test_dir}/git3"
+    EOF
+
     # Hidden and dot file testcases.
     # We need to set the permissions of `.` and `..` because they actually
     # get displayed in the output here, so this has to come last.
