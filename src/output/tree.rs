@@ -62,9 +62,9 @@ impl TreePart {
     pub fn ascii_art(&self) -> &'static str {
         match *self {
             TreePart::Edge    => "├──",
-            TreePart::Line    => "│  ",
+            TreePart::Line    => "│   ",
             TreePart::Corner  => "└──",
-            TreePart::Blank   => "   ",
+            TreePart::Blank   => "    ",
         }
     }
 }
@@ -129,9 +129,9 @@ impl TreeTrunk {
         //     with [0..]        with [1..]
         //     ==========        ==========
         //      ├── folder        folder
-        //      │  └── file       └── file
+        //      │   └── file      └── file
         //      └── folder        folder
-        //         └── file       └──file
+        //          └── file      └──file
         //
         &self.stack[1..]
     }
