@@ -12,8 +12,8 @@ use fs::dir::Dir;
 use fs::fields as f;
 use options::Misfire;
 
-extern crate statx_sys;
-use self::statx_sys::{statx, STATX_BTIME};
+extern crate libc;
+use libc::{statx, STATX_BTIME};
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
