@@ -13,7 +13,7 @@ use fs::fields as f;
 use options::Misfire;
 
 extern crate libc;
-use libc::{statx, STATX_BTIME};
+use libc::{syscall, SYS_statx, statx, STATX_BTIME};
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -518,7 +518,7 @@ fn statx_creation_time(path: &PathBuf) -> Option<statx> {
         .unwrap()
         .as_os_str()
         .as_bytes()).unwrap();
-    let result = unsafe { statx(0, path_name.as_ptr(), 0, STATX_BTIME, &mut statx_data) };
+    let result = unsafe { syscall(SYS_statx, 0, path_name.as_ptr(), 0, STATX_BTIME, &mut statx_data) };
     if result == 0 {
         Some(statx_data)
     } else {
