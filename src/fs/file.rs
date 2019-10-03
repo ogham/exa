@@ -349,7 +349,11 @@ impl<'dir> File<'dir> {
     pub fn created_time(&self) -> Duration {
         if cfg!(target_os = "linux") {
             let statx_data = statx_creation_time(&self.path).unwrap();
-            Duration::new(statx_data.stx_btime.tv_sec as u64, statx_data.stx_btime.tv_nsec)
+            if statx_data.stx_btime.tv_sec < 0 {
+                Duration::from_secs(0)
+            } else {
+                Duration::new(statx_data.stx_btime.tv_sec as u64, statx_data.stx_btime.tv_nsec)
+            }
         } else {
             self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
         }
