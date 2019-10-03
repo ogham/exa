@@ -3,6 +3,7 @@
 use std::fs::{self, metadata};
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 use std::time::{UNIX_EPOCH, Duration};
@@ -10,6 +11,9 @@ use std::time::{UNIX_EPOCH, Duration};
 use fs::dir::Dir;
 use fs::fields as f;
 use options::Misfire;
+
+extern crate statx_sys;
+use self::statx_sys::{statx, STATX_BTIME};
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -343,7 +347,12 @@ impl<'dir> File<'dir> {
 
     /// This file’s created timestamp.
     pub fn created_time(&self) -> Duration {
-        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        if cfg!(target_os = "linux") {
+            let statx_data = statx_creation_time(&self.path).unwrap();
+            Duration::new(statx_data.stx_btime.tv_sec as u64, statx_data.stx_btime.tv_nsec)
+        } else {
+            self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        }
     }
 
     /// This file’s ‘type’.
@@ -474,11 +483,19 @@ impl PlatformMetadata {
             // Call the functions that return a Result to see if it works
             PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
             PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
-            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
+            PlatformMetadata::CreatedTime if cfg!(target_os = "linux") => {
+                if statx_creation_time(&temp_dir()).is_some() {
+                    return Ok(());
+                }
+                return Err(Misfire::Unsupported(
+                    "creation time is not available on this platform currently \
+                        (needs Linux >= 4.11)".to_string()));
+            },
+            PlatformMetadata::CreatedTime => metadata(temp_dir()).unwrap().created(),
             // We use the Unix API so we know it’s not available elsewhere
             PlatformMetadata::ChangedTime => {
                 if cfg!(target_family = "unix") {
-                    return Ok(())
+                    return Ok(());
                 } else {
                     return Err(Misfire::Unsupported(
                         // for consistency, this error message similar to the one Rust
@@ -491,6 +508,21 @@ impl PlatformMetadata {
             Ok(_) => Ok(()),
             Err(err) => Err(Misfire::Unsupported(err.to_string()))
         }
+    }
+}
+
+fn statx_creation_time(path: &PathBuf) -> Option<statx> {
+    let mut statx_data: statx = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+    let path_name = std::ffi::CString::new(path
+        .canonicalize()
+        .unwrap()
+        .as_os_str()
+        .as_bytes()).unwrap();
+    let result = unsafe { statx(0, path_name.as_ptr(), 0, STATX_BTIME, &mut statx_data) };
+    if result == 0 {
+        Some(statx_data)
+    } else {
+        None
     }
 }
 

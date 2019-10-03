@@ -39,6 +39,7 @@ natord = "1.0.9"
 num_cpus = "1.10.0"
 number_prefix = "0.3.0"
 scoped_threadpool = "0.1.9"
+statx-sys = { git = "https://github.com/ariasuni/statx-sys", branch = "fix-typo" }
 term_grid = "0.1.7"
 term_size = "0.3.1"
 unicode-width = "0.1.5"

@@ -544,8 +544,6 @@ mod test {
         // Created
         #[cfg(not(target_os = "linux"))]
         test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(target_os = "linux")]
-        test!(cr:        TimeTypes <- ["--created"];           Both => err Misfire::Unsupported("creation time is not available on this platform currently".to_string()));
         #[cfg(not(target_os = "linux"))]
         test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
         #[cfg(not(target_os = "linux"))]
