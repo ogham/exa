@@ -80,7 +80,7 @@ impl Mode {
 
             // If the terminal width couldn’t be matched for some reason, such
             // as the program’s stdout being connected to a file, then
-            // fallback to the lines view.
+            // fallback to the lines or details view.
             else if matches.has(&flags::TREE)? {
                 let details = details::Options {
                     table: None,
@@ -91,7 +91,10 @@ impl Mode {
 
                 Ok(Mode::Details(details))
             }
-            else {
+            else if matches.has(&flags::LONG)? {
+                let details = long()?;
+                Ok(Mode::Details(details))
+            } else {
                 let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
                 Ok(Mode::Lines(lines))
             }
