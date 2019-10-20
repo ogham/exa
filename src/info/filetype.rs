@@ -22,7 +22,7 @@ impl FileExtensions {
     fn is_immediate(&self, file: &File) -> bool {
         file.name.to_lowercase().starts_with("readme") || file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
-            "build.gradle", "Rakefile", "Gruntfile.js",
+            "build.gradle", "Rakefile", "Gruntfile.js", "CHANGELOG.md",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml"
         ])
     }
