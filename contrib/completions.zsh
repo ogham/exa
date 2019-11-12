@@ -26,12 +26,14 @@ __exa() {
         --git-ignore"[Ignore files mentioned in '.gitignore']" \
         {-a,--all}"[Show hidden and 'dot' files]" \
         {-d,--list-dirs}"[List directories like regular files]" \
+	{-D,--only-dirs}"[List only directories]" \
         {-L,--level}"+[Limit the depth of recursion]" \
         {-r,--reverse}"[Reverse the sort order]" \
         {-s,--sort}="[Which field to sort by]:(sort field):(accessed age changed created date extension Extension filename Filename inode modified oldest name Name newest none size time type)" \
         {-I,--ignore-glob}"[Ignore files that match these glob patterns]" \
         {-b,--binary}"[List file sizes with binary prefixes]" \
         {-B,--bytes}"[List file sizes in bytes, without any prefixes]" \
+	--changed"[Use the changed timestamp field]"
         {-g,--group}"[List each file's group]" \
         {-h,--header}"[Add a header row to each column]" \
         {-H,--links}"[List each file's number of hard links]" \

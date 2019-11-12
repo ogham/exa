@@ -49,6 +49,7 @@ LONG VIEW OPTIONS
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
   -U, --created      use the created timestamp field
+  --changed          use the changed timestamp field
   --time-style       how to format timestamps (default, iso, long-iso, full-iso)"##;
 
 static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked or ignored"##;
