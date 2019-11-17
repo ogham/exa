@@ -323,15 +323,15 @@ mod colour_test {
     test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
     test!(width_8:  [],                        || None;      Both => Ok(Colours::plain()));
 
-    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_4:  ["--color=always",                                  ], || None;   Last => like Ok(Colours { scale: false, .. }));
+    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_4:  ["--color=always",                                  ], || None;   Last => Ok(Colours::colourful(false)));
 
     test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
-    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
+    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => Ok(Colours::colourful(true)));
+    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => Ok(Colours::colourful(true)));
+    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => Ok(Colours::colourful(false)));
 }
 
 
@@ -461,8 +461,33 @@ mod customs_test {
     test!(exa_sf:  ls "", exa "sf=38;5;111"  =>  colours c -> { c.perms.special_other       = Fixed(111).normal(); });
     test!(exa_xa:  ls "", exa "xa=38;5;112"  =>  colours c -> { c.perms.attribute           = Fixed(112).normal(); });
 
-    test!(exa_sn:  ls "", exa "sn=38;5;113"  =>  colours c -> { c.size.numbers              = Fixed(113).normal(); });
-    test!(exa_sb:  ls "", exa "sb=38;5;114"  =>  colours c -> { c.size.unit                 = Fixed(114).normal(); });
+    test!(exa_sn:  ls "", exa "sn=38;5;113" => colours c -> {
+        c.size.number_byte = Fixed(113).normal();
+        c.size.number_kilo = Fixed(113).normal();
+        c.size.number_mega = Fixed(113).normal();
+        c.size.number_giga = Fixed(113).normal();
+        c.size.number_huge = Fixed(113).normal();
+    });
+    test!(exa_sb:  ls "", exa "sb=38;5;114" => colours c -> {
+        c.size.unit_byte = Fixed(114).normal();
+        c.size.unit_kilo = Fixed(114).normal();
+        c.size.unit_mega = Fixed(114).normal();
+        c.size.unit_giga = Fixed(114).normal();
+        c.size.unit_huge = Fixed(114).normal();
+    });
+
+    test!(exa_nb:  ls "", exa "nb=38;5;115"  =>  colours c -> { c.size.number_byte          = Fixed(115).normal(); });
+    test!(exa_nk:  ls "", exa "nk=38;5;116"  =>  colours c -> { c.size.number_kilo          = Fixed(116).normal(); });
+    test!(exa_nm:  ls "", exa "nm=38;5;117"  =>  colours c -> { c.size.number_mega          = Fixed(117).normal(); });
+    test!(exa_ng:  ls "", exa "ng=38;5;118"  =>  colours c -> { c.size.number_giga          = Fixed(118).normal(); });
+    test!(exa_nh:  ls "", exa "nh=38;5;119"  =>  colours c -> { c.size.number_huge          = Fixed(119).normal(); });
+
+    test!(exa_ub:  ls "", exa "ub=38;5;115"  =>  colours c -> { c.size.unit_byte            = Fixed(115).normal(); });
+    test!(exa_uk:  ls "", exa "uk=38;5;116"  =>  colours c -> { c.size.unit_kilo            = Fixed(116).normal(); });
+    test!(exa_um:  ls "", exa "um=38;5;117"  =>  colours c -> { c.size.unit_mega            = Fixed(117).normal(); });
+    test!(exa_ug:  ls "", exa "ug=38;5;118"  =>  colours c -> { c.size.unit_giga            = Fixed(118).normal(); });
+    test!(exa_uh:  ls "", exa "uh=38;5;119"  =>  colours c -> { c.size.unit_huge            = Fixed(119).normal(); });
+
     test!(exa_df:  ls "", exa "df=38;5;115"  =>  colours c -> { c.size.major                = Fixed(115).normal(); });
     test!(exa_ds:  ls "", exa "ds=38;5;116"  =>  colours c -> { c.size.minor                = Fixed(116).normal(); });
 

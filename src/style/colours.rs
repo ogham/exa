@@ -10,7 +10,6 @@ use style::lsc::Pair;
 #[derive(Debug, Default, PartialEq)]
 pub struct Colours {
     pub colourful: bool,
-    pub scale: bool,
 
     pub filekinds:  FileKinds,
     pub perms:      Permissions,
@@ -67,17 +66,20 @@ pub struct Permissions {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Size {
-    pub numbers: Style,
-    pub unit: Style,
-
     pub major: Style,
     pub minor: Style,
 
-    pub scale_byte: Style,
-    pub scale_kilo: Style,
-    pub scale_mega: Style,
-    pub scale_giga: Style,
-    pub scale_huge: Style,
+    pub number_byte: Style,
+    pub number_kilo: Style,
+    pub number_mega: Style,
+    pub number_giga: Style,
+    pub number_huge: Style,
+
+    pub unit_byte: Style,
+    pub unit_kilo: Style,
+    pub unit_mega: Style,
+    pub unit_giga: Style,
+    pub unit_huge: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -112,7 +114,6 @@ impl Colours {
     pub fn colourful(scale: bool) -> Colours {
         Colours {
             colourful: true,
-            scale,
 
             filekinds: FileKinds {
                 normal:       Style::default(),
@@ -146,19 +147,7 @@ impl Colours {
                 attribute:           Style::default(),
             },
 
-            size: Size {
-                numbers:  Green.bold(),
-                unit:     Green.normal(),
-
-                major:  Green.bold(),
-                minor:  Green.normal(),
-
-                scale_byte: Fixed(118).normal(),
-                scale_kilo: Fixed(190).normal(),
-                scale_mega: Fixed(226).normal(),
-                scale_giga: Fixed(220).normal(),
-                scale_huge: Fixed(214).normal(),
-            },
+            size: Size::colourful(scale),
 
             users: Users {
                 user_you:           Yellow.bold(),
@@ -192,6 +181,55 @@ impl Colours {
             broken_symlink:       Red.normal(),
             broken_path_overlay:  Style::default().underline(),
         }
+    }
+}
+
+impl Size {
+    pub fn colourful(scale: bool) -> Self {
+        if scale {
+            Self::colourful_scale()
+        } else {
+            Self::colourful_plain()
+        }
+    }
+
+    fn colourful_plain() -> Self {
+        Self {
+            major:  Green.bold(),
+            minor:  Green.normal(),
+
+            number_byte: Green.bold(),
+            number_kilo: Green.bold(),
+            number_mega: Green.bold(),
+            number_giga: Green.bold(),
+            number_huge: Green.bold(),
+
+            unit_byte: Green.normal(),
+            unit_kilo: Green.normal(),
+            unit_mega: Green.normal(),
+            unit_giga: Green.normal(),
+            unit_huge: Green.normal(),
+        }
+    }
+
+    fn colourful_scale() -> Self {
+        Self {
+            major:  Green.bold(),
+            minor:  Green.normal(),
+
+            number_byte: Fixed(118).normal(),
+            number_kilo: Fixed(190).normal(),
+            number_mega: Fixed(226).normal(),
+            number_giga: Fixed(220).normal(),
+            number_huge: Fixed(214).normal(),
+
+            unit_byte: Green.normal(),
+            unit_kilo: Green.normal(),
+            unit_mega: Green.normal(),
+            unit_giga: Green.normal(),
+            unit_huge: Green.normal(),
+        }
+
     }
 }
 
@@ -270,8 +308,18 @@ impl Colours {
             "sf" => self.perms.special_other      = pair.to_style(),
             "xa" => self.perms.attribute          = pair.to_style(),
 
-            "sn" => self.size.numbers             = pair.to_style(),
-            "sb" => self.size.unit                = pair.to_style(),
+            "sn" => self.set_number_style(pair.to_style()),
+            "sb" => self.set_unit_style(pair.to_style()),
+            "nb" => self.size.number_byte         = pair.to_style(),
+            "nk" => self.size.number_kilo         = pair.to_style(),
+            "nm" => self.size.number_mega         = pair.to_style(),
+            "ng" => self.size.number_giga         = pair.to_style(),
+            "nh" => self.size.number_huge         = pair.to_style(),
+            "ub" => self.size.unit_byte           = pair.to_style(),
+            "uk" => self.size.unit_kilo           = pair.to_style(),
+            "um" => self.size.unit_mega           = pair.to_style(),
+            "ug" => self.size.unit_giga           = pair.to_style(),
+            "uh" => self.size.unit_huge           = pair.to_style(),
             "df" => self.size.major               = pair.to_style(),
             "ds" => self.size.minor               = pair.to_style(),
 
@@ -301,6 +349,22 @@ impl Colours {
              _   => return false,
         }
         true
+    }
+
+    pub fn set_number_style(&mut self, style: Style) {
+        self.size.number_byte = style;
+        self.size.number_kilo = style;
+        self.size.number_mega = style;
+        self.size.number_giga = style;
+        self.size.number_huge = style;
+    }
+
+    pub fn set_unit_style(&mut self, style: Style) {
+        self.size.unit_byte = style;
+        self.size.unit_kilo = style;
+        self.size.unit_mega = style;
+        self.size.unit_giga = style;
+        self.size.unit_huge = style;
     }
 }
 
@@ -360,30 +424,28 @@ impl render::PermissionsColours for Colours {
 }
 
 impl render::SizeColours for Colours {
-    fn size(&self, size: u64)  -> Style {
-        if self.scale {
-            if size < 1024 {
-                self.size.scale_byte
-            }
-            else if size < 1024 * 1024 {
-                self.size.scale_kilo
-            }
-            else if size < 1024 * 1024 * 1024 {
-                self.size.scale_mega
-            }
-            else if size < 1024 * 1024 * 1024 * 1024 {
-                self.size.scale_giga
-            }
-            else {
-                self.size.scale_huge
-            }
-        }
-        else {
-            self.size.numbers
+    fn size(&self, prefix: Option<number_prefix::Prefix>) -> Style {
+        use number_prefix::Prefix::*;
+        match prefix {
+            None                    => self.size.number_byte,
+            Some(Kilo) | Some(Kibi) => self.size.number_kilo,
+            Some(Mega) | Some(Mibi) => self.size.number_mega,
+            Some(Giga) | Some(Gibi) => self.size.number_giga,
+            Some(_)                 => self.size.number_huge,
         }
     }
 
-    fn unit(&self)    -> Style { self.size.unit }
+    fn unit(&self, prefix: Option<number_prefix::Prefix>) -> Style {
+        use number_prefix::Prefix::*;
+        match prefix {
+            None                    => self.size.unit_byte,
+            Some(Kilo) | Some(Kibi) => self.size.unit_kilo,
+            Some(Mega) | Some(Mibi) => self.size.unit_mega,
+            Some(Giga) | Some(Gibi) => self.size.unit_giga,
+            Some(_)                 => self.size.unit_huge,
+        }
+    }
+
     fn no_size(&self) -> Style { self.punctuation }
     fn major(&self)   -> Style { self.size.major }
     fn comma(&self)   -> Style { self.punctuation }
