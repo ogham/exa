@@ -46,7 +46,7 @@ users = "0.9.1"
 zoneinfo_compiled = "0.4.8"
 
 [dependencies.git2]
-version = "0.9.1"
+version = "0.10.2"
 optional = true
 default-features = false
 
