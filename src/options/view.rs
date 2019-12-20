@@ -6,7 +6,6 @@ use output::time::TimeFormat;
 use options::{flags, Misfire, Vars};
 use options::parser::MatchedFlags;
 
-use fs::PlatformMetadata;
 use fs::feature::xattr;
 
 
@@ -344,17 +343,6 @@ impl TimeTypes {
             TimeTypes::default()
         };
 
-        let mut fields = vec![];
-        if time_types.modified { fields.push(PlatformMetadata::ModifiedTime); }
-        if time_types.changed  { fields.push(PlatformMetadata::ChangedTime); }
-        if time_types.accessed { fields.push(PlatformMetadata::AccessedTime); }
-        if time_types.created  { fields.push(PlatformMetadata::CreatedTime); }
-
-        for field in fields {
-            if let Err(misfire) = field.check_supported() {
-                return Err(misfire);
-            }
-        }
         Ok(time_types)
     }
 }
@@ -542,15 +530,9 @@ mod test {
         test!(time_a:    TimeTypes <- ["-t", "acc"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false }));
 
         // Created
-        #[cfg(not(target_os = "linux"))]
         test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(target_os = "linux")]
-        test!(cr:        TimeTypes <- ["--created"];           Both => err Misfire::Unsupported("creation time is not available on this platform currently".to_string()));
-        #[cfg(not(target_os = "linux"))]
         test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(time_cr:   TimeTypes <- ["--time=created"];      Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(t_cr:      TimeTypes <- ["-tcr"];                Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
 
         // Multiples

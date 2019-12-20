@@ -129,6 +129,9 @@ impl DefaultFormat {
 
     #[allow(trivial_numeric_casts)]
     fn format_local(&self, time: Duration) -> String {
+        if time.as_nanos() == 0 {
+            return "-".to_string();
+        }
         let date = LocalDateTime::at(time.as_secs() as i64);
 
         if self.is_recent(date) {
@@ -141,6 +144,10 @@ impl DefaultFormat {
 
     #[allow(trivial_numeric_casts)]
     fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
+        if time.as_nanos() == 0 {
+            return "-".to_string();
+        }
+
         let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
 
         if self.is_recent(date) {
