@@ -49,7 +49,11 @@ LONG VIEW OPTIONS
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
   -U, --created      use the created timestamp field
-  --time-style       how to format timestamps (default, iso, long-iso, full-iso)"##;
+  --time-style       how to format timestamps (default, iso, long-iso, full-iso)
+  --no-permissions   suppress the permissions field
+  --no-filesize      suppress the filesize field
+  --no-user          suppress the user field
+  --no-time          suppress the time field"##;
 
 static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked or ignored"##;
 static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
