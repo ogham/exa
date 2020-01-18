@@ -8,8 +8,8 @@ use std::path::Path;
 use glob;
 use natord;
 
-use fs::File;
-use fs::DotFilter;
+use crate::fs::File;
+use crate::fs::DotFilter;
 
 
 /// The **file filter** processes a list of files before displaying them to

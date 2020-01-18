@@ -31,7 +31,7 @@
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 
-use options::Misfire;
+use crate::options::Misfire;
 
 
 /// A **short argument** is a single ASCII character.
