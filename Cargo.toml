@@ -63,3 +63,18 @@ opt-level = 3
 debug = false
 lto = true
 panic = "abort"
+
+
+[package.metadata.deb]
+license-file = [ "LICENCE" ]
+depends = "$auto"
+extended-description = """
+exa is a replacement for ls written in Rust.
+"""
+section = "utils"
+priority = "optional"
+assets = [
+    [ "target/release/exa", "/usr/bin/exa", "0755" ],
+    [ "contrib/man/exa.1", "/usr/share/man/man1/exa.1", "0644" ],
+    [ "contrib/completions.bash", "/etc/bash_completion.d/exa", "0644" ],
+]
