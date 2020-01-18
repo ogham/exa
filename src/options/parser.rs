@@ -101,6 +101,9 @@ pub enum TakesValue {
 
     /// This flag will throw an error if there’s a value after it.
     Forbidden,
+
+    /// This flag may be followed by a value to override its defaults
+    Optional(Option<Values>),
 }
 
 
@@ -180,8 +183,8 @@ impl Args {
                     let arg = self.lookup_long(before)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Necessary(_)  => result_flags.push((flag, Some(after))),
-                        Forbidden     => return Err(ParseError::ForbiddenValue { flag })
+                        Necessary(_)|Optional(_)  => result_flags.push((flag, Some(after))),
+                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
 
@@ -198,6 +201,14 @@ impl Args {
                             }
                             else {
                                 return Err(ParseError::NeedsValue { flag, values })
+                            }
+                        },
+                        Optional(_) => {
+                            if let Some(next_arg) = inputs.next() {
+                                result_flags.push((flag, Some(next_arg)));
+                            }
+                            else {
+                                result_flags.push((flag, None));
                             }
                         }
                     }
@@ -229,7 +240,7 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden          => result_flags.push((flag, None)),
+                            Forbidden|Optional(_)  => result_flags.push((flag, None)),
                             Necessary(values)  => return Err(ParseError::NeedsValue { flag, values })
                         }
                     }
@@ -238,8 +249,8 @@ impl Args {
                     let arg = self.lookup_short(*arg_with_value)?;
                     let flag = Flag::Short(arg.short.unwrap());
                     match arg.takes_value {
-                        Necessary(_)  => result_flags.push((flag, Some(after))),
-                        Forbidden     => return Err(ParseError::ForbiddenValue { flag })
+                        Necessary(_)|Optional(_)  => result_flags.push((flag, Some(after))),
+                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
                     }
                 }
 
@@ -261,7 +272,7 @@ impl Args {
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
                             Forbidden         => result_flags.push((flag, None)),
-                            Necessary(values) => {
+                            Necessary(values)|Optional(values) => {
                                 if index < bytes.len() - 1 {
                                     let remnants = &bytes[index+1 ..];
                                     result_flags.push((flag, Some(OsStr::from_bytes(remnants))));
@@ -271,8 +282,17 @@ impl Args {
                                     result_flags.push((flag, Some(next_arg)));
                                 }
                                 else {
-                                    return Err(ParseError::NeedsValue { flag, values })
+                                    match arg.takes_value {
+                                        Forbidden => assert!(false),
+                                        Necessary(_) => {
+                                            return Err(ParseError::NeedsValue { flag, values });
+                                        },
+                                        Optional(_) => {
+                                            result_flags.push((flag, None));
+                                        }
+                                    }
                                 }
+
                             }
                         }
                     }
