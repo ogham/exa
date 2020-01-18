@@ -1,4 +1,3 @@
-#!/bin/sh
 # Meta-stuff
 complete -c exa -s 'v' -l 'version' -d "Show version of exa"
 complete -c exa -s '?' -l 'help'    -d "Show list of command-line options"

@@ -2,11 +2,11 @@ use std::io::{Write, Result as IOResult};
 
 use term_grid as tg;
 
-use fs::File;
-use style::Colours;
-use output::file_name::FileStyle;
-use output::icons::painted_icon;
-use output::cell::DisplayWidth;
+use crate::fs::File;
+use crate::style::Colours;
+use crate::output::file_name::FileStyle;
+use crate::output::icons::painted_icon;
+use crate::output::cell::DisplayWidth;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]

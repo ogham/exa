@@ -1,7 +1,7 @@
 use ansi_term::{ANSIString, Style};
 
-use output::cell::{TextCell, DisplayWidth};
-use fs::fields as f;
+use crate::output::cell::{TextCell, DisplayWidth};
+use crate::fs::fields as f;
 
 
 impl f::Git {
@@ -46,8 +46,8 @@ pub trait Colours {
 #[cfg(test)]
 pub mod test {
     use super::Colours;
-    use output::cell::{TextCell, DisplayWidth};
-    use fs::fields as f;
+    use crate::output::cell::{TextCell, DisplayWidth};
+    use crate::fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;

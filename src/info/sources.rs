@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use fs::File;
+use crate::fs::File;
 
 
 impl<'a> File<'a> {

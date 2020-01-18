@@ -7,9 +7,11 @@ use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 use std::time::{UNIX_EPOCH, Duration};
 
-use fs::dir::Dir;
-use fs::fields as f;
-use options::Misfire;
+use log::{debug, error};
+
+use crate::fs::dir::Dir;
+use crate::fs::fields as f;
+use crate::options::Misfire;
 
 use MOUNT_POINTS;
 
