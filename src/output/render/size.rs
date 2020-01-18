@@ -1,32 +1,33 @@
+use ansi_term::Style;
+use locale::Numeric as NumericLocale;
+
 use fs::fields as f;
 use output::cell::{TextCell, DisplayWidth};
-use output::colours::Colours;
 use output::table::SizeFormat;
-use locale;
+
 
 
 impl f::Size {
-    pub fn render(&self, colours: &Colours, size_format: SizeFormat, numerics: &locale::Numeric) -> TextCell {
-        use number_prefix::{binary_prefix, decimal_prefix};
-        use number_prefix::{Prefixed, Standalone, PrefixNames};
+    pub fn render<C: Colours>(&self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
+        use number_prefix::{Prefixed, Standalone, NumberPrefix, PrefixNames};
 
         let size = match *self {
             f::Size::Some(s)             => s,
-            f::Size::None                => return TextCell::blank(colours.punctuation),
+            f::Size::None                => return TextCell::blank(colours.no_size()),
             f::Size::DeviceIDs(ref ids)  => return ids.render(colours),
         };
 
         let result = match size_format {
-            SizeFormat::DecimalBytes  => decimal_prefix(size as f64),
-            SizeFormat::BinaryBytes   => binary_prefix(size as f64),
+            SizeFormat::DecimalBytes  => NumberPrefix::decimal(size as f64),
+            SizeFormat::BinaryBytes   => NumberPrefix::binary(size as f64),
             SizeFormat::JustBytes     => {
                 let string = numerics.format_int(size);
-                return TextCell::paint(colours.file_size(size), string);
+                return TextCell::paint(colours.size(size), string);
             },
         };
 
         let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(colours.file_size(b as u64), b.to_string()),
+            Standalone(b)  => return TextCell::paint(colours.size(b as u64), b.to_string()),
             Prefixed(p, n) => (p, n)
         };
 
@@ -39,116 +40,123 @@ impl f::Size {
         let width = DisplayWidth::from(number.len() + symbol.len());
 
         TextCell {
-            width:    width,
+            width,
             contents: vec![
-                colours.file_size(size).paint(number),
-                colours.size.unit.paint(symbol),
+                colours.size(size).paint(number),
+                colours.unit().paint(symbol),
             ].into(),
         }
     }
 }
 
+
 impl f::DeviceIDs {
-    fn render(&self, colours: &Colours) -> TextCell {
+    fn render<C: Colours>(&self, colours: &C) -> TextCell {
         let major = self.major.to_string();
         let minor = self.minor.to_string();
 
         TextCell {
             width: DisplayWidth::from(major.len() + 1 + minor.len()),
             contents: vec![
-                colours.size.major.paint(major),
-                colours.punctuation.paint(","),
-                colours.size.minor.paint(minor),
+                colours.major().paint(major),
+                colours.comma().paint(","),
+                colours.minor().paint(minor),
             ].into(),
         }
     }
 }
 
 
+pub trait Colours {
+    fn size(&self, size: u64) -> Style;
+    fn unit(&self) -> Style;
+    fn no_size(&self) -> Style;
+
+    fn major(&self) -> Style;
+    fn comma(&self) -> Style;
+    fn minor(&self) -> Style;
+}
+
+
 #[cfg(test)]
 pub mod test {
-    use output::colours::Colours;
+    use super::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use output::table::SizeFormat;
     use fs::fields as f;
 
-    use locale;
+    use locale::Numeric as NumericLocale;
     use ansi_term::Colour::*;
+    use ansi_term::Style;
+
+
+    struct TestColours;
+
+    impl Colours for TestColours {
+        fn size(&self, _size: u64) -> Style { Fixed(66).normal() }
+        fn unit(&self)             -> Style { Fixed(77).bold() }
+        fn no_size(&self)          -> Style { Black.italic() }
+
+        fn major(&self) -> Style { Blue.on(Red) }
+        fn comma(&self) -> Style { Green.italic() }
+        fn minor(&self) -> Style { Cyan.on(Yellow) }
+    }
 
 
     #[test]
     fn directory() {
-        let mut colours = Colours::default();
-        colours.punctuation = Green.italic();
-
         let directory = f::Size::None;
-        let expected = TextCell::blank(Green.italic());
-        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        let expected = TextCell::blank(Black.italic());
+        assert_eq!(expected, directory.render(&TestColours, SizeFormat::JustBytes, &NumericLocale::english()))
     }
 
 
     #[test]
     fn file_decimal() {
-        let mut colours = Colours::default();
-        colours.size.numbers = Blue.on(Red);
-        colours.size.unit    = Yellow.bold();
-
         let directory = f::Size::Some(2_100_000);
         let expected = TextCell {
             width: DisplayWidth::from(4),
             contents: vec![
-                Blue.on(Red).paint("2.1"),
-                Yellow.bold().paint("M"),
+                Fixed(66).paint("2.1"),
+                Fixed(77).bold().paint("M"),
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&colours, SizeFormat::DecimalBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&TestColours, SizeFormat::DecimalBytes, &NumericLocale::english()))
     }
 
 
     #[test]
     fn file_binary() {
-        let mut colours = Colours::default();
-        colours.size.numbers = Blue.on(Red);
-        colours.size.unit    = Yellow.bold();
-
         let directory = f::Size::Some(1_048_576);
         let expected = TextCell {
             width: DisplayWidth::from(5),
             contents: vec![
-                Blue.on(Red).paint("1.0"),
-                Yellow.bold().paint("Mi"),
+                Fixed(66).paint("1.0"),
+                Fixed(77).bold().paint("Mi"),
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&colours, SizeFormat::BinaryBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&TestColours, SizeFormat::BinaryBytes, &NumericLocale::english()))
     }
 
 
     #[test]
     fn file_bytes() {
-        let mut colours = Colours::default();
-    	colours.size.numbers = Blue.on(Red);
-
         let directory = f::Size::Some(1048576);
         let expected = TextCell {
             width: DisplayWidth::from(9),
             contents: vec![
-                Blue.on(Red).paint("1,048,576"),
+                Fixed(66).paint("1,048,576"),
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&TestColours, SizeFormat::JustBytes, &NumericLocale::english()))
     }
 
 
     #[test]
     fn device_ids() {
-        let mut colours = Colours::default();
-        colours.size.major = Blue.on(Red);
-        colours.punctuation = Green.italic();
-        colours.size.minor = Cyan.on(Yellow);
-
         let directory = f::Size::DeviceIDs(f::DeviceIDs { major: 10, minor: 80 });
         let expected = TextCell {
             width: DisplayWidth::from(5),
@@ -159,6 +167,6 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, directory.render(&colours, SizeFormat::JustBytes, &locale::Numeric::english()))
+        assert_eq!(expected, directory.render(&TestColours, SizeFormat::JustBytes, &NumericLocale::english()))
     }
 }

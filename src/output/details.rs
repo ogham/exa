@@ -64,14 +64,21 @@ use std::io::{Write, Error as IOError, Result as IOResult};
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
+use ansi_term::{ANSIGenericString, Style};
+
 use fs::{Dir, File};
+use fs::dir_action::RecurseOptions;
+use fs::filter::FileFilter;
+use fs::feature::ignore::IgnoreCache;
+use fs::feature::git::GitCache;
 use fs::feature::xattr::{Attribute, FileAttributes};
-use options::{FileFilter, RecurseOptions};
-use output::colours::Colours;
+use style::Colours;
 use output::cell::TextCell;
 use output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use output::file_name::FileStyle;
 use output::table::{Table, Options as TableOptions, Row as TableRow};
+use output::icons::painted_icon;
+use scoped_threadpool::Pool;
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -99,6 +106,9 @@ pub struct Options {
 
     /// Whether to show each file's extended attributes.
     pub xattr: bool,
+
+    /// Enables --icons mode
+    pub icons: bool,
 }
 
 
@@ -126,6 +136,7 @@ struct Egg<'a> {
     errors:    Vec<(IOError, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
+    icon:      Option<String>, 
 }
 
 impl<'a> AsRef<File<'a>> for Egg<'a> {
@@ -136,11 +147,18 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, ignore: Option<&'a IgnoreCache>, w: &mut W) -> IOResult<()> {
+        let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            let mut table = Table::new(&table, self.dir, &self.colours);
+            match (git, self.dir) {
+                (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
+                (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+                (None,    _)        => {/* Keep Git how it is */},
+            }
+
+            let mut table = Table::new(&table, git, &self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -148,17 +166,17 @@ impl<'a> Render<'a> {
                 rows.push(self.render_header(header));
             }
 
-            // This is weird, but I can't find a way around it:
+            // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut table, &mut rows, &self.files, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, ignore, TreeDepth::root());
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut None, &mut rows, &self.files, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, ignore, TreeDepth::root());
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -170,13 +188,10 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir>(&self, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &Vec<File<'dir>>, depth: TreeDepth) {
-        use num_cpus;
-        use scoped_threadpool::Pool;
+    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
         use fs::feature::xattr;
 
-        let mut pool = Pool::new(num_cpus::get() as u32);
         let mut file_eggs = Vec::new();
 
         pool.scoped(|scoped| {
@@ -184,17 +199,48 @@ impl<'a> Render<'a> {
             let table = table.as_ref();
 
             for file in src {
-                let file_eggs = file_eggs.clone();
+                let file_eggs = Arc::clone(&file_eggs);
 
                 scoped.execute(move || {
                     let mut errors = Vec::new();
                     let mut xattrs = Vec::new();
 
+                    // There are three “levels” of extended attribute support:
+                    //
+                    // 1. If we’re compiling without that feature, then
+                    //    exa pretends all files have no attributes.
+                    // 2. If the feature is enabled and the --extended flag
+                    //    has been specified, then display an @ in the
+                    //    permissions column for files with attributes, the
+                    //    names of all attributes and their lengths, and any
+                    //    errors encountered when getting them.
+                    // 3. If the --extended flag *hasn’t* been specified, then
+                    //    display the @, but don’t display anything else.
+                    //
+                    // For a while, exa took a stricter approach to (3):
+                    // if an error occurred while checking a file’s xattrs to
+                    // see if it should display the @, exa would display that
+                    // error even though the attributes weren’t actually being
+                    // shown! This was confusing, as users were being shown
+                    // errors for something they didn’t explicitly ask for,
+                    // and just cluttered up the output. So now errors aren’t
+                    // printed unless the user passes --extended to signify
+                    // that they want to see them.
+
                     if xattr::ENABLED {
                         match file.path.attributes() {
-                            Ok(xs) => xattrs.extend(xs),
-                            Err(e) => errors.push((e, None)),
-                        };
+                            Ok(xs) => {
+                                xattrs.extend(xs);
+                            }
+                            Err(e) => {
+                                if self.opts.xattr {
+                                    errors.push((e, None));
+                                }
+                                else {
+                                    error!("Error looking up xattr for {:?}: {:#?}", file.path, e);
+                                }
+                            }
+                        }
                     }
 
                     let table_row = table.as_ref().map(|t| t.row_for_file(&file, !xattrs.is_empty()));
@@ -207,14 +253,18 @@ impl<'a> Render<'a> {
 
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
-                            match file.to_dir(false) {
+                            match file.to_dir() {
                                 Ok(d)  => { dir = Some(d); },
                                 Err(e) => { errors.push((e, None)) },
                             }
                         }
                     };
 
-                    let egg = Egg { table_row, xattrs, errors, dir, file };
+                    let icon = if self.opts.icons { 
+                        Some(painted_icon(&file, &self.style))
+                    } else { None };
+
+                    let egg = Egg { table_row, xattrs, errors, dir, file, icon };
                     file_eggs.lock().unwrap().push(egg);
                 });
             }
@@ -230,18 +280,26 @@ impl<'a> Render<'a> {
                 t.add_widths(row);
             }
 
+            let mut name_cell = TextCell::default();
+            if let Some(icon) = egg.icon {
+                name_cell.push(ANSIGenericString::from(icon), 2)
+            }
+            name_cell.append(self.style.for_file(&egg.file, self.colours)
+                                  .with_link_paths()
+                                  .paint()
+                                  .promote());
+
+
             let row = Row {
                 tree:   tree_params,
                 cells:  egg.table_row,
-                name:   self.style.for_file(&egg.file, self.colours)
-                                  .with_link_paths()
-                                  .paint().promote(),
+                name:   name_cell,
             };
 
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter) {
+                for file_to_add in dir.files(self.filter.dot_filter, ignore) {
                     match file_to_add {
                         Ok(f)          => files.push(f),
                         Err((path, e)) => errors.push((e, Some(path)))
@@ -252,21 +310,21 @@ impl<'a> Render<'a> {
 
                 if !files.is_empty() {
                     for xattr in egg.xattrs {
-                        rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), false)));
+                        rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), false)));
                     }
 
                     for (error, path) in errors {
                         rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(table, rows, &files, depth.deeper());
+                    self.add_files_to_table(pool, table, rows, &files, ignore, depth.deeper());
                     continue;
                 }
             }
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                rows.push(self.render_xattr(xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
+                rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
             }
 
             let count = errors.len();
@@ -285,16 +343,20 @@ impl<'a> Render<'a> {
     }
 
     fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
+        use output::file_name::Colours;
+
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),
             None       => format!("<{}>", error),
         };
 
-        let name = TextCell::paint(self.colours.broken_arrow, error_message);
+        // TODO: broken_symlink() doesn’t quite seem like the right name for
+        // the style that’s being used here. Maybe split it in two?
+        let name = TextCell::paint(self.colours.broken_symlink(), error_message);
         Row { cells: None, name, tree }
     }
 
-    fn render_xattr(&self, xattr: Attribute, tree: TreeParams) -> Row {
+    fn render_xattr(&self, xattr: &Attribute, tree: TreeParams) -> Row {
         let name = TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
         Row { cells: None, name, tree }
     }
@@ -307,17 +369,17 @@ impl<'a> Render<'a> {
         TableIter {
             tree_trunk: TreeTrunk::default(),
             total_width: table.widths().total(),
-            table: table,
+            table,
             inner: rows.into_iter(),
-            colours: self.colours,
+            tree_style: self.colours.punctuation,
         }
     }
 
-    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter<'a> {
+    pub fn iterate(&'a self, rows: Vec<Row>) -> Iter {
         Iter {
             tree_trunk: TreeTrunk::default(),
             inner: rows.into_iter(),
-            colours: self.colours,
+            tree_style: self.colours.punctuation,
         }
     }
 }
@@ -343,11 +405,12 @@ pub struct Row {
 
 
 pub struct TableIter<'a> {
-    table: Table<'a>,
-    tree_trunk: TreeTrunk,
-    total_width: usize,
-    colours: &'a Colours,
     inner: VecIntoIter<Row>,
+    table: Table<'a>,
+
+    total_width: usize,
+    tree_style:  Style,
+    tree_trunk:  TreeTrunk,
 }
 
 impl<'a> Iterator for TableIter<'a> {
@@ -366,7 +429,7 @@ impl<'a> Iterator for TableIter<'a> {
                 };
 
             for tree_part in self.tree_trunk.new_row(row.tree) {
-                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+                cell.push(self.tree_style.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra
@@ -382,13 +445,13 @@ impl<'a> Iterator for TableIter<'a> {
 }
 
 
-pub struct Iter<'a> {
+pub struct Iter {
     tree_trunk: TreeTrunk,
-    colours: &'a Colours,
+    tree_style: Style,
     inner: VecIntoIter<Row>,
 }
 
-impl<'a> Iterator for Iter<'a> {
+impl Iterator for Iter {
     type Item = TextCell;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -396,7 +459,7 @@ impl<'a> Iterator for Iter<'a> {
             let mut cell = TextCell::default();
 
             for tree_part in self.tree_trunk.new_row(row.tree) {
-                cell.push(self.colours.punctuation.paint(tree_part.ascii_art()), 4);
+                cell.push(self.tree_style.paint(tree_part.ascii_art()), 4);
             }
 
             // If any tree characters have been printed, then add an extra

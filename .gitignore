@@ -1,4 +1,21 @@
+# Rust stuff
 target
 
+# Vagrant stuff
 .vagrant
 ubuntu-xenial-16.04-cloudimg-console.log
+
+# Compiled artifacts
+# (see devtools/*-package-for-*.sh)
+/exa-linux-x86_64
+/exa-linux-x86_64-*.zip
+/exa-macos-x86_64
+/exa-macos-x86_64-*.zip
+/MD5SUMS
+/SHA1SUMS
+
+# Snap stuff
+parts
+prime
+stage
+*.snap

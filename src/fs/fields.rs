@@ -1,3 +1,4 @@
+
 //! Wrapper types for the values returned from `File`s.
 //!
 //! The methods of `File` that return information about the entry on the
@@ -166,7 +167,7 @@ pub struct DeviceIDs {
 
 
 /// One of a file’s timestamps (created, accessed, or modified).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Time {
     pub seconds: time_t,
     pub nanoseconds: time_t,
@@ -196,6 +197,9 @@ pub enum GitStatus {
 
     /// A file that’s had its type (such as the file permissions) changed.
     TypeChange,
+
+    /// A file that’s ignored (that matches a line in .gitignore)
+    Ignored,
 }
 
 /// A file’s complete Git status. It’s possible to make changes to a file, add
@@ -206,10 +210,11 @@ pub struct Git {
     pub unstaged: GitStatus,
 }
 
-impl Git {
+use std::default::Default;
+impl Default for Git {
 
     /// Create a Git status for a file with nothing done to it.
-    pub fn empty() -> Git {
+    fn default() -> Git {
         Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
     }
 }

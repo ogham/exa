@@ -1,0 +1,3 @@
+[31manother: [[35m\n[31m][0m [33m->[0m [36m/testcases/file-names/new-line-dir: [[35m\n[36m]/[0manother: [[35m\n[0m]
+[31mbroken[0m [32m->[0m [1;32m/testcases/file-names/new-line-dir: [[35m\n[32m]/broken[0m
+[31msubfile[0m [33m->[0m [36m/testcases/file-names/new-line-dir: [[35m\n[36m]/[0msubfile

@@ -1,26 +1,31 @@
-// Extended attribute support
 pub mod xattr;
+pub mod ignore;
 
-// Git support
-
-#[cfg(feature="git")] mod git;
-#[cfg(feature="git")] pub use self::git::Git;
-
-#[cfg(not(feature="git"))] pub struct Git;
-#[cfg(not(feature="git"))] use std::path::Path;
-#[cfg(not(feature="git"))] use fs::fields;
+#[cfg(feature="git")] pub mod git;
 
 #[cfg(not(feature="git"))]
-impl Git {
-    pub fn scan(_: &Path) -> Result<Git, ()> {
-        Err(())
+pub mod git {
+    use std::iter::FromIterator;
+    use std::path::{Path, PathBuf};
+
+    use fs::fields as f;
+
+
+    pub struct GitCache;
+
+    impl FromIterator<PathBuf> for GitCache {
+        fn from_iter<I: IntoIterator<Item=PathBuf>>(_iter: I) -> Self {
+            GitCache
+        }
     }
 
-    pub fn status(&self, _: &Path) -> fields::Git {
-        panic!("Tried to access a Git repo without Git support!");
-    }
+    impl GitCache {
+        pub fn has_anything_for(&self, _index: &Path) -> bool {
+            false
+        }
 
-    pub fn dir_status(&self, path: &Path) -> fields::Git {
-        self.status(path)
+        pub fn get(&self, _index: &Path, _prefix_lookup: bool) -> f::Git {
+            panic!("Tried to query a Git cache, but Git support is disabled")
+        }
     }
 }

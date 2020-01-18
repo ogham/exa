@@ -3,7 +3,6 @@
 
 extern crate ansi_term;
 extern crate datetime;
-extern crate getopts;
 extern crate glob;
 extern crate libc;
 extern crate locale;
@@ -15,33 +14,38 @@ extern crate term_grid;
 extern crate unicode_width;
 extern crate users;
 extern crate zoneinfo_compiled;
+extern crate term_size;
 
 #[cfg(feature="git")] extern crate git2;
 
-#[macro_use]
-extern crate lazy_static;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate log;
 
 
-use std::ffi::OsStr;
+use std::env::var_os;
+use std::ffi::{OsStr, OsString};
 use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
 
 use fs::{Dir, File};
-use options::{Options, View, Mode};
+use fs::feature::ignore::IgnoreCache;
+use fs::feature::git::GitCache;
+use options::{Options, Vars};
+pub use options::vars;
 pub use options::Misfire;
-use output::{escape, lines, grid, grid_details, details};
+use output::{escape, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
 mod info;
 mod options;
 mod output;
-mod term;
+mod style;
 
 
 /// The main program wrapper.
-pub struct Exa<'w, W: Write + 'w> {
+pub struct Exa<'args, 'w, W: Write + 'w> {
 
     /// List of command-line options, having been successfully parsed.
     pub options: Options,
@@ -53,14 +57,65 @@ pub struct Exa<'w, W: Write + 'w> {
 
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
-    pub args: Vec<String>,
+    pub args: Vec<&'args OsStr>,
+
+    /// A global Git cache, if the option was passed in.
+    /// This has to last the lifetime of the program, because the user might
+    /// want to list several directories in the same repository.
+    pub git: Option<GitCache>,
+
+    /// A cache of git-ignored files.
+    /// This lasts the lifetime of the program too, for the same reason.
+    pub ignore: Option<IgnoreCache>,
 }
 
-impl<'w, W: Write + 'w> Exa<'w, W> {
-    pub fn new<C>(args: C, writer: &'w mut W) -> Result<Exa<'w, W>, Misfire>
-    where C: IntoIterator, C::Item: AsRef<OsStr> {
-        Options::getopts(args).map(move |(options, args)| {
-            Exa { options, writer, args }
+/// The “real” environment variables type.
+/// Instead of just calling `var_os` from within the options module,
+/// the method of looking up environment variables has to be passed in.
+struct LiveVars;
+impl Vars for LiveVars {
+    fn get(&self, name: &'static str) -> Option<OsString> {
+        var_os(name)
+    }
+}
+
+/// Create a Git cache populated with the arguments that are going to be
+/// listed before they’re actually listed, if the options demand it.
+fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
+    if options.should_scan_for_git() {
+        Some(args.iter().map(PathBuf::from).collect())
+    }
+    else {
+        None
+    }
+}
+
+fn ignore_cache(options: &Options) -> Option<IgnoreCache> {
+    use fs::filter::GitIgnore;
+
+    match options.filter.git_ignore {
+        GitIgnore::CheckAndIgnore => Some(IgnoreCache::new()),
+        GitIgnore::Off            => None,
+    }
+}
+
+impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
+    pub fn from_args<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
+    where I: Iterator<Item=&'args OsString> {
+        Options::parse(args, &LiveVars).map(move |(options, mut args)| {
+            debug!("Dir action from arguments: {:#?}", options.dir_action);
+            debug!("Filter from arguments: {:#?}", options.filter);
+            debug!("View from arguments: {:#?}", options.view.mode);
+
+            // List the current directory by default, like ls.
+            // This has to be done here, otherwise git_options won’t see it.
+            if args.is_empty() {
+                args = vec![ OsStr::new(".") ];
+            }
+
+            let git = git_options(&options, &args);
+            let ignore = ignore_cache(&options);
+            Exa { options, writer, args, git, ignore }
         })
     }
 
@@ -69,22 +124,17 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
         let mut dirs = Vec::new();
         let mut exit_status = 0;
 
-        // List the current directory by default, like ls.
-        if self.args.is_empty() {
-            self.args.push(".".to_owned());
-        }
-
-        for file_name in &self.args {
-            match File::new(PathBuf::from(file_name), None, None) {
+        for file_path in &self.args {
+            match File::from_args(PathBuf::from(file_path), None, None) {
                 Err(e) => {
                     exit_status = 2;
-                    writeln!(stderr(), "{}: {}", file_name, e)?;
+                    writeln!(stderr(), "{:?}: {}", file_path, e)?;
                 },
                 Ok(f) => {
-                    if f.is_directory() && !self.options.dir_action.treat_dirs_as_files() {
-                        match f.to_dir(self.options.should_scan_for_git()) {
+                    if f.points_to_directory() && !self.options.dir_action.treat_dirs_as_files() {
+                        match f.to_dir() {
                             Ok(d) => dirs.push(d),
-                            Err(e) => writeln!(stderr(), "{}: {}", file_name, e)?,
+                            Err(e) => writeln!(stderr(), "{:?}: {}", file_path, e)?,
                         }
                     }
                     else {
@@ -116,7 +166,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                 first = false;
             }
             else {
-                write!(self.writer, "\n")?;
+                writeln!(self.writer)?;
             }
 
             if !is_only_dir {
@@ -126,7 +176,7 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files(self.options.filter.dot_filter) {
+            for file in dir.files(self.options.filter.dot_filter, self.ignore.as_ref()) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
@@ -141,8 +191,8 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
                 if !recurse_opts.tree && !recurse_opts.is_too_deep(depth) {
 
                     let mut child_dirs = Vec::new();
-                    for child_dir in children.iter().filter(|f| f.is_directory()) {
-                        match child_dir.to_dir(false) {
+                    for child_dir in children.iter().filter(|f| f.is_directory() && !f.is_all_all) {
+                        match child_dir.to_dir() {
                             Ok(d)  => child_dirs.push(d),
                             Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }
@@ -171,10 +221,33 @@ impl<'w, W: Write + 'w> Exa<'w, W> {
             let View { ref mode, ref colours, ref style } = self.options.view;
 
             match *mode {
-                Mode::Lines                  => lines::Render { files, colours, style }.render(self.writer),
-                Mode::Grid(ref opts)         => grid::Render { files, colours, style, opts }.render(self.writer),
-                Mode::Details(ref opts)      => details::Render { dir, files, colours, style, opts, filter: &self.options.filter, recurse: self.options.dir_action.recurse_options() }.render(self.writer),
-                Mode::GridDetails(ref grid, ref details) => grid_details::Render { dir, files, colours, style, grid, details, filter: &self.options.filter }.render(self.writer),
+                Mode::Lines(ref opts) => {
+                    let r = lines::Render { files, colours, style, opts };
+                    r.render(self.writer)
+                }
+
+                Mode::Grid(ref opts) => {
+                    let r = grid::Render { files, colours, style, opts };
+                    r.render(self.writer)
+                }
+
+                Mode::Details(ref opts) => {
+                    let filter = &self.options.filter;
+                    let recurse = self.options.dir_action.recurse_options();
+
+                    let r = details::Render { dir, files, colours, style, opts, filter, recurse };
+                    r.render(self.git.as_ref(), self.ignore.as_ref(), self.writer)
+                }
+
+                Mode::GridDetails(ref opts) => {
+                    let grid = &opts.grid;
+                    let filter = &self.options.filter;
+                    let details = &opts.details;
+                    let row_threshold = opts.row_threshold;
+
+                    let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold };
+                    r.render(self.git.as_ref(), self.writer)
+                }
             }
         }
         else {

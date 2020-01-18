@@ -7,17 +7,12 @@
 [38;5;244m├──[0m escape: [[31m\u{1b}[0m]
 [38;5;244m├──[0m form-feed: [[31m\u{c}[0m]
 [38;5;244m├──[0m invalid-utf8-1: [�]
-[38;5;244m│  └──[0m [31m<Error: path somehow contained a NUL?>[0m
 [38;5;244m├──[0m invalid-utf8-2: [�(]
-[38;5;244m│  └──[0m [31m<Error: path somehow contained a NUL?>[0m
 [38;5;244m├──[0m invalid-utf8-3: [�(]
-[38;5;244m│  └──[0m [31m<Error: path somehow contained a NUL?>[0m
 [38;5;244m├──[0m invalid-utf8-4: [�(�(]
-[38;5;244m│  └──[0m [31m<Error: path somehow contained a NUL?>[0m
 [38;5;244m├──[0m [1;34mlinks[0m
 [38;5;244m│  ├──[0m [36manother: [[31m\n[36m][0m [38;5;244m->[0m [36m/testcases/file-names/new-line-dir: [[31m\n[36m]/[0manother: [[31m\n[0m]
 [38;5;244m│  ├──[0m [36mbroken[0m [31m->[0m [4;31m/testcases/file-names/new-line-dir: [\n]/broken[0m
-[38;5;244m│  │  └──[0m [31m<No such file or directory (os error 2)>[0m
 [38;5;244m│  └──[0m [36msubfile[0m [38;5;244m->[0m [36m/testcases/file-names/new-line-dir: [[31m\n[36m]/[0msubfile
 [38;5;244m├──[0m [1;34mnew-line-dir: [[0m[31m\n[1;34m][0m
 [38;5;244m│  ├──[0m another: [[31m\n[0m]

@@ -18,12 +18,16 @@ DISPLAY OPTIONS
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
   -d, --list-dirs            list directories like regular files
+  -L, --level DEPTH          limit the depth of recursion
   -r, --reverse              reverse the sort order
-  -s, --sort SORT_FIELD      which field to sort by:
+  -s, --sort SORT_FIELD      which field to sort by
   --group-directories-first  list directories before other files
+  -D, --only-dirs            list only directories
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
+  --git-ignore               Ignore files mentioned in '.gitignore'
   Valid sort fields:         name, Name, extension, Extension, size, type,
-                             modified, accessed, created, inode, none
+                             modified, accessed, created, inode, and none.
+                             date, time, old, and new all refer to modified.
 
 LONG VIEW OPTIONS
   -b, --binary       list file sizes with binary prefixes
@@ -32,12 +36,11 @@ LONG VIEW OPTIONS
   -h, --header       add a header row to each column
   -H, --links        list each file's number of hard links
   -i, --inode        list each file's inode number
-  -L, --level DEPTH  limit the depth of recursion
   -m, --modified     use the modified timestamp field
   -S, --blocks       show number of file system blocks
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
   -U, --created      use the created timestamp field
   --time-style       how to format timestamps (default, iso, long-iso, full-iso)
-  --git              list each file's Git status, if tracked
+  --git              list each file's Git status, if tracked or ignored
   -@, --extended     list each file's extended attributes and sizes

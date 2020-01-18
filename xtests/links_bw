@@ -1,0 +1,4 @@
+/testcases/file-names/links
+├── another: [\n] -> /testcases/file-names/new-line-dir: [\n]/another: [\n]
+├── broken -> /testcases/file-names/new-line-dir: [\n]/broken
+└── subfile -> /testcases/file-names/new-line-dir: [\n]/subfile

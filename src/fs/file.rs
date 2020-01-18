@@ -1,13 +1,15 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::fs;
+use std::fs::{self, metadata};
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
+use std::time::{UNIX_EPOCH, Duration};
 
 use fs::dir::Dir;
 use fs::fields as f;
+use options::Misfire;
 
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
@@ -19,7 +21,7 @@ use fs::fields as f;
 /// start and hold on to all the information.
 pub struct File<'dir> {
 
-    /// The filename portion of this file's path, including the extension.
+    /// The filename portion of this file’s path, including the extension.
     ///
     /// This is used to compare against certain filenames (such as checking if
     /// it’s “Makefile” or something) and to highlight only the filename in
@@ -33,67 +35,98 @@ pub struct File<'dir> {
 
     /// The path that begat this file.
     ///
-    /// Even though the file's name is extracted, the path needs to be kept
-    /// around, as certain operations involve looking up the file's absolute
-    /// location (such as the Git status, or searching for compiled files).
+    /// Even though the file’s name is extracted, the path needs to be kept
+    /// around, as certain operations involve looking up the file’s absolute
+    /// location (such as searching for compiled files) or using its original
+    /// path (following a symlink).
     pub path: PathBuf,
 
-    /// A cached `metadata` call for this file.
+    /// A cached `metadata` (`stat`) call for this file.
     ///
     /// This too is queried multiple times, and is *not* cached by the OS, as
-    /// it could easily change between invocations - but exa is so short-lived
+    /// it could easily change between invocations — but exa is so short-lived
     /// it's better to just cache it.
     pub metadata: fs::Metadata,
 
-    /// A reference to the directory that contains this file, if present.
+    /// A reference to the directory that contains this file, if any.
     ///
     /// Filenames that get passed in on the command-line directly will have no
-    /// parent directory reference - although they technically have one on the
-    /// filesystem, we'll never need to look at it, so it'll be `None`.
+    /// parent directory reference — although they technically have one on the
+    /// filesystem, we’ll never need to look at it, so it’ll be `None`.
     /// However, *directories* that get passed in will produce files that
     /// contain a reference to it, which is used in certain operations (such
-    /// as looking up a file's Git status).
+    /// as looking up compiled files).
     pub parent_dir: Option<&'dir Dir>,
+
+    /// Whether this is one of the two `--all all` directories, `.` and `..`.
+    ///
+    /// Unlike all other entries, these are not returned as part of the
+    /// directory's children, and are in fact added specifically by exa; this
+    /// means that they should be skipped when recursing.
+    pub is_all_all: bool,
 }
 
 impl<'dir> File<'dir> {
-    pub fn new<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
         let parent_dir = parent_dir.into();
-        let metadata   = fs::symlink_metadata(&path)?;
         let name       = filename.into().unwrap_or_else(|| File::filename(&path));
         let ext        = File::ext(&path);
 
-        Ok(File { path, parent_dir, metadata, ext, name })
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = false;
+
+        Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
+    }
+
+    pub fn new_aa_current(parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let path       = parent_dir.path.to_path_buf();
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: ".".to_string(), is_all_all })
+    }
+
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+        let ext        = File::ext(&path);
+
+        debug!("Statting file {:?}", &path);
+        let metadata   = fs::symlink_metadata(&path)?;
+        let is_all_all = true;
+
+        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: "..".to_string(), is_all_all })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
     /// such as `/` or `..`, which have no `file_name` component. So instead, just
     /// use the last component as the name.
     pub fn filename(path: &Path) -> String {
-        match path.components().next_back() {
-            Some(back) => back.as_os_str().to_string_lossy().to_string(),
-            None       => path.display().to_string(),  // use the path as fallback
+        if let Some(back) = path.components().next_back() {
+            back.as_os_str().to_string_lossy().to_string()
+        }
+        else {
+            // use the path as fallback
+            error!("Path {:?} has no last component", path);
+            path.display().to_string()
         }
     }
 
     /// Extract an extension from a file path, if one is present, in lowercase.
     ///
     /// The extension is the series of characters after the last dot. This
-    /// deliberately counts dotfiles, so the ".git" folder has the extension "git".
+    /// deliberately counts dotfiles, so the “.git” folder has the extension “git”.
     ///
     /// ASCII lowercasing is used because these extensions are only compared
     /// against a pre-compiled list of extensions which are known to only exist
-    /// within ASCII, so it's alright.
+    /// within ASCII, so it’s alright.
     fn ext(path: &Path) -> Option<String> {
-        use std::ascii::AsciiExt;
-
-        let name = match path.file_name() {
-            Some(f) => f.to_string_lossy().to_string(),
-            None => return None,
-        };
+        let name = path.file_name().map(|f| f.to_string_lossy().to_string())?;
 
         name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
     }
@@ -103,25 +136,41 @@ impl<'dir> File<'dir> {
         self.metadata.is_dir()
     }
 
-    /// If this file is a directory on the filesystem, then clone its
-    /// `PathBuf` for use in one of our own `Dir` objects, and read a list of
-    /// its contents.
-    ///
-    /// Returns an IO error upon failure, but this shouldn't be used to check
-    /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self, scan_for_git: bool) -> IOResult<Dir> {
-        Dir::read_dir(self.path.clone(), scan_for_git)
+    /// Whether this file is a directory, or a symlink pointing to a directory.
+    pub fn points_to_directory(&self) -> bool {
+        if self.is_directory() {
+            return true;
+        }
+
+        if self.is_link() {
+            let target = self.link_target();
+            if let FileTarget::Ok(target) = target {
+                return target.points_to_directory();
+            }
+        }
+
+        false
     }
 
-    /// Whether this file is a regular file on the filesystem - that is, not a
+    /// If this file is a directory on the filesystem, then clone its
+    /// `PathBuf` for use in one of our own `Dir` values, and read a list of
+    /// its contents.
+    ///
+    /// Returns an IO error upon failure, but this shouldn’t be used to check
+    /// if a `File` is a directory or not! For that, just use `is_directory()`.
+    pub fn to_dir(&self) -> IOResult<Dir> {
+        Dir::read_dir(self.path.clone())
+    }
+
+    /// Whether this file is a regular file on the filesystem — that is, not a
     /// directory, a link, or anything else treated specially.
     pub fn is_file(&self) -> bool {
         self.metadata.is_file()
     }
 
     /// Whether this file is both a regular file *and* executable for the
-    /// current user. Executable files have different semantics than
-    /// executable directories, and so should be highlighted differently.
+    /// current user. An executable file has a different purpose from an
+    /// executable directory, so they should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
         let bit = modes::USER_EXECUTE;
         self.is_file() && (self.metadata.permissions().mode() & bit) == bit
@@ -153,7 +202,7 @@ impl<'dir> File<'dir> {
     }
 
 
-    /// Re-prefixes the path pointed to by this file, if it's a symlink, to
+    /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
     /// directory exa is being run from.
     fn reorient_target_path(&self, path: &Path) -> PathBuf {
@@ -184,9 +233,10 @@ impl<'dir> File<'dir> {
     pub fn link_target(&self) -> FileTarget<'dir> {
 
         // We need to be careful to treat the path actually pointed to by
-        // this file -- which could be absolute or relative -- to the path
-        // we actually look up and turn into a `File` -- which needs to be
+        // this file — which could be absolute or relative — to the path
+        // we actually look up and turn into a `File` — which needs to be
         // absolute to be accessible from any directory.
+        debug!("Reading link {:?}", &self.path);
         let path = match fs::read_link(&self.path) {
             Ok(p)   => p,
             Err(e)  => return FileTarget::Err(e),
@@ -196,28 +246,31 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        if let Ok(metadata) = fs::metadata(&absolute_path) {
-            let ext  = File::ext(&path);
-            let name = File::filename(&path);
-            FileTarget::Ok(File { parent_dir: None, path, ext, metadata, name })
-        }
-        else {
-            FileTarget::Broken(path)
+        match fs::metadata(&absolute_path) {
+            Ok(metadata) => {
+                let ext  = File::ext(&path);
+                let name = File::filename(&path);
+                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name, is_all_all: false }))
+            }
+            Err(e) => {
+                error!("Error following link {:?}: {:#?}", &path, e);
+                FileTarget::Broken(path)
+            }
         }
     }
 
-    /// This file's number of hard links.
+    /// This file’s number of hard links.
     ///
     /// It also reports whether this is both a regular file, and a file with
     /// multiple links. This is important, because a file with multiple links
-    /// is uncommon, while you can come across directories and other types
+    /// is uncommon, while you come across directories and other types
     /// with multiple links much more often. Thus, it should get highlighted
     /// more attentively.
     pub fn links(&self) -> f::Links {
         let count = self.metadata.nlink();
 
         f::Links {
-            count: count,
+            count,
             multiple: self.is_file() && count > 1,
         }
     }
@@ -274,27 +327,23 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
-    pub fn modified_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.mtime(),
-            nanoseconds: self.metadata.mtime_nsec()
-        }
+    pub fn modified_time(&self) -> Duration {
+        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
-    /// This file’s created timestamp.
-    pub fn created_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.ctime(),
-            nanoseconds: self.metadata.ctime_nsec()
-        }
+    /// This file’s last changed timestamp.
+    pub fn changed_time(&self) -> Duration {
+        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
     }
 
     /// This file’s last accessed timestamp.
-    pub fn accessed_time(&self) -> f::Time {
-        f::Time {
-            seconds:     self.metadata.atime(),
-            nanoseconds: self.metadata.atime_nsec()
-        }
+    pub fn accessed_time(&self) -> Duration {
+        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    }
+
+    /// This file’s created timestamp.
+    pub fn created_time(&self) -> Duration {
+        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
     }
 
     /// This file’s ‘type’.
@@ -368,28 +417,6 @@ impl<'dir> File<'dir> {
     pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
         choices.contains(&&self.name[..])
     }
-
-    /// This file's Git status as two flags: one for staged changes, and the
-    /// other for unstaged changes.
-    ///
-    /// This requires looking at the `git` field of this file's parent
-    /// directory, so will not work if this file has just been passed in on
-    /// the command line.
-    pub fn git_status(&self) -> f::Git {
-        use std::env::current_dir;
-
-        match self.parent_dir {
-            None    => f::Git { staged: f::GitStatus::NotModified, unstaged: f::GitStatus::NotModified },
-            Some(d) => {
-                let cwd = match current_dir() {
-                    Err(_)  => Path::new(".").join(&self.path),
-                    Ok(dir) => dir.join(&self.path),
-                };
-
-                d.git_status(&cwd, self.is_directory())
-            },
-        }
-    }
 }
 
 
@@ -404,7 +431,7 @@ impl<'a> AsRef<File<'a>> for File<'a> {
 pub enum FileTarget<'dir> {
 
     /// The symlink pointed at a file that exists.
-    Ok(File<'dir>),
+    Ok(Box<File<'dir>>),
 
     /// The symlink pointed at a file that does not exist. Holds the path
     /// where the file would be, if it existed.
@@ -428,6 +455,41 @@ impl<'dir> FileTarget<'dir> {
         match *self {
             FileTarget::Ok(_)                           => false,
             FileTarget::Broken(_) | FileTarget::Err(_)  => true,
+        }
+    }
+}
+
+
+pub enum PlatformMetadata {
+    ModifiedTime,
+    ChangedTime,
+    AccessedTime,
+    CreatedTime,
+}
+
+impl PlatformMetadata {
+    pub fn check_supported(&self) -> Result<(), Misfire> {
+        use std::env::temp_dir;
+        let result = match self {
+            // Call the functions that return a Result to see if it works
+            PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
+            PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
+            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
+            // We use the Unix API so we know it’s not available elsewhere
+            PlatformMetadata::ChangedTime => {
+                if cfg!(target_family = "unix") {
+                    return Ok(())
+                } else {
+                    return Err(Misfire::Unsupported(
+                        // for consistency, this error message similar to the one Rust
+                        // use when created time is not available
+                        "status modified time is not available on this platform currently".to_string()));
+                }
+            },
+        };
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Misfire::Unsupported(err.to_string()))
         }
     }
 }

@@ -1,305 +1,302 @@
-use std::cmp::Ordering;
-use std::os::unix::fs::MetadataExt;
+//! Parsing the options for `FileFilter`.
 
-use getopts;
-use glob;
-use natord;
+use fs::{DotFilter, PlatformMetadata};
+use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
-use fs::File;
-use fs::DotFilter;
-use options::misfire::Misfire;
+use options::{flags, Misfire};
+use options::parser::MatchedFlags;
 
-
-/// The **file filter** processes a vector of files before outputting them,
-/// filtering and sorting the files depending on the user’s command-line
-/// flags.
-#[derive(Default, PartialEq, Debug, Clone)]
-pub struct FileFilter {
-
-    /// Whether directories should be listed first, and other types of file
-    /// second. Some users prefer it like this.
-    pub list_dirs_first: bool,
-
-    /// The metadata field to sort by.
-    pub sort_field: SortField,
-
-    /// Whether to reverse the sorting order. This would sort the largest
-    /// files first, or files starting with Z, or the most-recently-changed
-    /// ones, depending on the sort field.
-    pub reverse: bool,
-
-    /// Which invisible “dot” files to include when listing a directory.
-    ///
-    /// Files starting with a single “.” are used to determine “system” or
-    /// “configuration” files that should not be displayed in a regular
-    /// directory listing, and the directory entries “.” and “..” are
-    /// considered extra-special.
-    ///
-    /// This came about more or less by a complete historical accident,
-    /// when the original `ls` tried to hide `.` and `..`:
-    /// https://plus.google.com/+RobPikeTheHuman/posts/R58WgWwN9jp
-    ///
-    ///   When one typed ls, however, these files appeared, so either Ken or
-    ///   Dennis added a simple test to the program. It was in assembler then,
-    ///   but the code in question was equivalent to something like this:
-    ///      if (name[0] == '.') continue;
-    ///   This statement was a little shorter than what it should have been,
-    ///   which is:
-    ///      if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue;
-    ///   but hey, it was easy.
-    ///
-    ///   Two things resulted.
-    ///
-    ///   First, a bad precedent was set. A lot of other lazy programmers
-    ///   introduced bugs by making the same simplification. Actual files
-    ///   beginning with periods are often skipped when they should be counted.
-    ///
-    ///   Second, and much worse, the idea of a "hidden" or "dot" file was
-    ///   created. As a consequence, more lazy programmers started dropping
-    ///   files into everyone's home directory. I don't have all that much
-    ///   stuff installed on the machine I'm using to type this, but my home
-    ///   directory has about a hundred dot files and I don't even know what
-    ///   most of them are or whether they're still needed. Every file name
-    ///   evaluation that goes through my home directory is slowed down by
-    ///   this accumulated sludge.
-    pub dot_filter: DotFilter,
-
-    /// Glob patterns to ignore. Any file name that matches *any* of these
-    /// patterns won't be displayed in the list.
-    ignore_patterns: IgnorePatterns,
-}
 
 impl FileFilter {
 
-    /// Determines the set of file filter options to use, based on the user’s
-    /// command-line arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<FileFilter, Misfire> {
+    /// Determines which of all the file filter options to use.
+    pub fn deduce(matches: &MatchedFlags) -> Result<FileFilter, Misfire> {
         Ok(FileFilter {
-            list_dirs_first: matches.opt_present("group-directories-first"),
-            reverse:         matches.opt_present("reverse"),
+            list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
+            reverse:         matches.has(&flags::REVERSE)?,
+            only_dirs:       matches.has(&flags::ONLY_DIRS)?,
             sort_field:      SortField::deduce(matches)?,
             dot_filter:      DotFilter::deduce(matches)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
+            git_ignore:      GitIgnore::deduce(matches)?,
         })
-    }
-
-    /// Remove every file in the given vector that does *not* pass the
-    /// filter predicate for files found inside a directory.
-    pub fn filter_child_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(f));
-    }
-
-    /// Remove every file in the given vector that does *not* pass the
-    /// filter predicate for file names specified on the command-line.
-    ///
-    /// The rules are different for these types of files than the other
-    /// type because the ignore rules can be used with globbing. For
-    /// example, running "exa -I='*.tmp' .vimrc" shouldn't filter out the
-    /// dotfile, because it's been directly specified. But running
-    /// "exa -I='*.ogg' music/*" should filter out the ogg files obtained
-    /// from the glob, even though the globbing is done by the shell!
-    pub fn filter_argument_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(f));
-    }
-
-    /// Sort the files in the given vector based on the sort field option.
-    pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
-    where F: AsRef<File<'a>> {
-
-        files.sort_by(|a, b| self.compare_files(a.as_ref(), b.as_ref()));
-
-        if self.reverse {
-            files.reverse();
-        }
-
-        if self.list_dirs_first {
-            // This relies on the fact that `sort_by` is stable.
-            files.sort_by(|a, b| b.as_ref().is_directory().cmp(&a.as_ref().is_directory()));
-        }
-    }
-
-    /// Compares two files to determine the order they should be listed in,
-    /// depending on the search field.
-    pub fn compare_files(&self, a: &File, b: &File) -> Ordering {
-        use self::SortCase::{Sensitive, Insensitive};
-
-        match self.sort_field {
-            SortField::Unsorted  => Ordering::Equal,
-
-            SortField::Name(Sensitive)    => natord::compare(&a.name, &b.name),
-            SortField::Name(Insensitive)  => natord::compare_ignore_case(&a.name, &b.name),
-
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.metadata.mtime().cmp(&b.metadata.mtime()),
-            SortField::AccessedDate  => a.metadata.atime().cmp(&b.metadata.atime()),
-            SortField::CreatedDate   => a.metadata.ctime().cmp(&b.metadata.ctime()),
-
-            SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order            => order,
-            },
-
-            SortField::Extension(Sensitive) => match a.ext.cmp(&b.ext) {
-                Ordering::Equal  => natord::compare(&*a.name, &*b.name),
-                order            => order,
-            },
-
-            SortField::Extension(Insensitive) => match a.ext.cmp(&b.ext) {
-                Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
-                order            => order,
-            },
-        }
-    }
-}
-
-
-/// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SortField {
-
-    /// Don't apply any sorting. This is usually used as an optimisation in
-    /// scripts, where the order doesn't matter.
-    Unsorted,
-
-    /// The file name. This is the default sorting.
-    Name(SortCase),
-
-    /// The file's extension, with extensionless files being listed first.
-    Extension(SortCase),
-
-    /// The file's size.
-    Size,
-
-    /// The file's inode. This is sometimes analogous to the order in which
-    /// the files were created on the hard drive.
-    FileInode,
-
-    /// The time at which this file was modified (the `mtime`).
-    ///
-    /// As this is stored as a Unix timestamp, rather than a local time
-    /// instance, the time zone does not matter and will only be used to
-    /// display the timestamps, not compare them.
-    ModifiedDate,
-
-    /// The time at this file was accessed (the `atime`).
-    ///
-    /// Oddly enough, this field rarely holds the *actual* accessed time.
-    /// Recording a read time means writing to the file each time it’s read
-    /// slows the whole operation down, so many systems will only update the
-    /// timestamp in certain circumstances. This has become common enough that
-    /// it’s now expected behaviour for the `atime` field.
-    /// http://unix.stackexchange.com/a/8842
-    AccessedDate,
-
-    /// The time at which this file was changed or created (the `ctime`).
-    ///
-    /// Contrary to the name, this field is used to mark the time when a
-    /// file's metadata changed -- its permissions, owners, or link count.
-    ///
-    /// In original Unix, this was, however, meant as creation time.
-    /// https://www.bell-labs.com/usr/dmr/www/cacm.html
-    CreatedDate,
-
-    /// The type of the file: directories, links, pipes, regular, files, etc.
-    ///
-    /// Files are ordered according to the `PartialOrd` implementation of
-    /// `fs::fields::Type`, so changing that will change this.
-    FileType,
-}
-
-/// Whether a field should be sorted case-sensitively or case-insensitively.
-///
-/// This determines which of the `natord` functions to use.
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub enum SortCase {
-
-    /// Sort files case-sensitively with uppercase first, with ‘A’ coming
-    /// before ‘a’.
-    Sensitive,
-
-    /// Sort files case-insensitively, with ‘A’ being equal to ‘a’.
-    Insensitive,
-}
-
-impl Default for SortField {
-    fn default() -> SortField {
-        SortField::Name(SortCase::Sensitive)
     }
 }
 
 impl SortField {
 
-    /// Determine the sort field to use, based on the presence of a “sort”
-    /// argument. This will return `Err` if the option is there, but does not
-    /// correspond to a valid field.
-    fn deduce(matches: &getopts::Matches) -> Result<SortField, Misfire> {
+    /// Determines which sort field to use based on the `--sort` argument.
+    /// This argument’s value can be one of several flags, listed above.
+    /// Returns the default sort field if none is given, or `Err` if the
+    /// value doesn’t correspond to a sort field we know about.
+    fn deduce(matches: &MatchedFlags) -> Result<SortField, Misfire> {
+        let word = match matches.get(&flags::SORT)? {
+            Some(w)  => w,
+            None     => return Ok(SortField::default()),
+        };
 
-        const SORTS: &[&str] = &[ "name", "Name", "size", "extension",
-                                  "Extension", "modified", "accessed",
-                                  "created", "inode", "type", "none" ];
+        // Get String because we can’t match an OsStr
+        let word = match word.to_str() {
+            Some(ref w) => *w,
+            None => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+        };
 
-        if let Some(word) = matches.opt_str("sort") {
-            match &*word {
-                "name" | "filename"   => Ok(SortField::Name(SortCase::Sensitive)),
-                "Name" | "Filename"   => Ok(SortField::Name(SortCase::Insensitive)),
-                "size" | "filesize"   => Ok(SortField::Size),
-                "ext"  | "extension"  => Ok(SortField::Extension(SortCase::Sensitive)),
-                "Ext"  | "Extension"  => Ok(SortField::Extension(SortCase::Insensitive)),
-                "mod"  | "modified"   => Ok(SortField::ModifiedDate),
-                "acc"  | "accessed"   => Ok(SortField::AccessedDate),
-                "cr"   | "created"    => Ok(SortField::CreatedDate),
-                "inode"               => Ok(SortField::FileInode),
-                "type"                => Ok(SortField::FileType),
-                "none"                => Ok(SortField::Unsorted),
-                field                 => Err(Misfire::bad_argument("sort", field, SORTS))
-            }
+        let field = match word {
+            "name" | "filename" => SortField::Name(SortCase::AaBbCc),
+            "Name" | "Filename" => SortField::Name(SortCase::ABCabc),
+            ".name" | ".filename" => SortField::NameMixHidden(SortCase::AaBbCc),
+            ".Name" | ".Filename" => SortField::NameMixHidden(SortCase::ABCabc),
+            "size" | "filesize" => SortField::Size,
+            "ext" | "extension" => SortField::Extension(SortCase::AaBbCc),
+            "Ext" | "Extension" => SortField::Extension(SortCase::ABCabc),
+            // “new” sorts oldest at the top and newest at the bottom; “old”
+            // sorts newest at the top and oldest at the bottom. I think this
+            // is the right way round to do this: “size” puts the smallest at
+            // the top and the largest at the bottom, doesn’t it?
+            "date" | "time" | "mod" | "modified" | "new" | "newest" => SortField::ModifiedDate,
+            // Similarly, “age” means that files with the least age (the
+            // newest files) get sorted at the top, and files with the most
+            // age (the oldest) at the bottom.
+            "age" | "old" | "oldest" => SortField::ModifiedAge,
+            "ch" | "changed" => SortField::ChangedDate,
+            "acc" | "accessed" => SortField::AccessedDate,
+            "cr" | "created" => SortField::CreatedDate,
+            "inode" => SortField::FileInode,
+            "type" => SortField::FileType,
+            "none" => SortField::Unsorted,
+            _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+        };
+
+        match SortField::to_platform_metadata(field) {
+            Some(m) => match m.check_supported() {
+                Ok(_) => Ok(field),
+                Err(misfire) => Err(misfire),
+            },
+            None => Ok(field),
         }
-        else {
-            Ok(SortField::default())
+    }
+
+    fn to_platform_metadata(field: Self) -> Option<PlatformMetadata> {
+        match field {
+            SortField::ModifiedDate => Some(PlatformMetadata::ModifiedTime),
+            SortField::ChangedDate  => Some(PlatformMetadata::ChangedTime),
+            SortField::AccessedDate => Some(PlatformMetadata::AccessedTime),
+            SortField::CreatedDate  => Some(PlatformMetadata::CreatedTime),
+            _ => None
         }
+    }
+}
+
+
+// I’ve gone back and forth between whether to sort case-sensitively or
+// insensitively by default. The default string sort in most programming
+// languages takes each character’s ASCII value into account, sorting
+// “Documents” before “apps”, but there’s usually an option to ignore
+// characters’ case, putting “apps” before “Documents”.
+//
+// The argument for following case is that it’s easy to forget whether an item
+// begins with an uppercase or lowercase letter and end up having to scan both
+// the uppercase and lowercase sub-lists to find the item you want. If you
+// happen to pick the sublist it’s not in, it looks like it’s missing, which
+// is worse than if you just take longer to find it.
+// (https://ux.stackexchange.com/a/79266)
+//
+// The argument for ignoring case is that it makes exa sort files differently
+// from shells. A user would expect a directory’s files to be in the same
+// order if they used “exa ~/directory” or “exa ~/directory/*”, but exa sorts
+// them in the first case, and the shell in the second case, so they wouldn’t
+// be exactly the same if exa does something non-conventional.
+//
+// However, exa already sorts files differently: it uses natural sorting from
+// the natord crate, sorting the string “2” before “10” because the number’s
+// smaller, because that’s usually what the user expects to happen. Users will
+// name their files with numbers expecting them to be treated like numbers,
+// rather than lists of numeric characters.
+//
+// In the same way, users will name their files with letters expecting the
+// order of the letters to matter, rather than each letter’s character’s ASCII
+// value. So exa breaks from tradition and ignores case while sorting:
+// “apps” first, then “Documents”.
+//
+// You can get the old behaviour back by sorting with `--sort=Name`.
+
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::Name(SortCase::AaBbCc)
     }
 }
 
 
 impl DotFilter {
-    pub fn deduce(matches: &getopts::Matches) -> Result<DotFilter, Misfire> {
-        let dots = match matches.opt_count("all") {
-            0 => return Ok(DotFilter::JustFiles),
-            1 => DotFilter::Dotfiles,
-            _ => DotFilter::DotfilesAndDots,
-        };
 
-        if matches.opt_present("tree") {
-            Err(Misfire::Useless("all --all", true, "tree"))
+    /// Determines the dot filter based on how many `--all` options were
+    /// given: one will show dotfiles, but two will show `.` and `..` too.
+    ///
+    /// It also checks for the `--tree` option in strict mode, because of a
+    /// special case where `--tree --all --all` won’t work: listing the
+    /// parent directory in tree mode would loop onto itself!
+    pub fn deduce(matches: &MatchedFlags) -> Result<DotFilter, Misfire> {
+        let count = matches.count(&flags::ALL);
+
+        if count == 0 {
+            Ok(DotFilter::JustFiles)
+        }
+        else if count == 1 {
+            Ok(DotFilter::Dotfiles)
+        }
+        else if matches.count(&flags::TREE) > 0 {
+            Err(Misfire::TreeAllAll)
+        }
+        else if count >= 3 && matches.is_strict() {
+            Err(Misfire::Conflict(&flags::ALL, &flags::ALL))
         }
         else {
-            Ok(dots)
+            Ok(DotFilter::DotfilesAndDots)
         }
     }
 }
 
 
-#[derive(PartialEq, Default, Debug, Clone)]
-struct IgnorePatterns {
-    patterns: Vec<glob::Pattern>,
-}
-
 impl IgnorePatterns {
-    /// Determines the set of file filter options to use, based on the user’s
-    /// command-line arguments.
-    pub fn deduce(matches: &getopts::Matches) -> Result<IgnorePatterns, Misfire> {
-        let patterns = match matches.opt_str("ignore-glob") {
-            None => Ok(Vec::new()),
-            Some(is) => is.split('|').map(|a| glob::Pattern::new(a)).collect(),
+
+    /// Determines the set of glob patterns to use based on the
+    /// `--ignore-patterns` argument’s value. This is a list of strings
+    /// separated by pipe (`|`) characters, given in any order.
+    pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
+
+        // If there are no inputs, we return a set of patterns that doesn’t
+        // match anything, rather than, say, `None`.
+        let inputs = match matches.get(&flags::IGNORE_GLOB)? {
+            None => return Ok(IgnorePatterns::empty()),
+            Some(is) => is,
         };
 
-        Ok(IgnorePatterns {
-            patterns: patterns?,
-        })
+        // Awkwardly, though, a glob pattern can be invalid, and we need to
+        // deal with invalid patterns somehow.
+        let (patterns, mut errors) = IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
+
+        // It can actually return more than one glob error,
+        // but we only use one. (TODO)
+        match errors.pop() {
+            Some(e) => Err(e.into()),
+            None    => Ok(patterns),
+        }
+    }
+}
+
+
+impl GitIgnore {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+        Ok(if matches.has(&flags::GIT_IGNORE)? { GitIgnore::CheckAndIgnore }
+                                          else { GitIgnore::Off })
+    }
+}
+
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::ffi::OsString;
+    use options::flags;
+    use options::parser::Flag;
+
+    macro_rules! test {
+        ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                use options::parser::Arg;
+                use options::test::parse_for_test;
+                use options::test::Strictnesses::*;
+
+                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB, &flags::GIT_IGNORE ];
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    assert_eq!(result, $result);
+                }
+            }
+        };
     }
 
-    fn is_ignored(&self, file: &File) -> bool {
-        self.patterns.iter().any(|p| p.matches(&file.name))
+    mod sort_fields {
+        use super::*;
+
+        // Default behaviour
+        test!(empty:         SortField <- [];                  Both => Ok(SortField::default()));
+
+        // Sort field arguments
+        test!(one_arg:       SortField <- ["--sort=mod"];       Both => Ok(SortField::ModifiedDate));
+        test!(one_long:      SortField <- ["--sort=size"];     Both => Ok(SortField::Size));
+        test!(one_short:     SortField <- ["-saccessed"];      Both => Ok(SortField::AccessedDate));
+        test!(lowercase:     SortField <- ["--sort", "name"];  Both => Ok(SortField::Name(SortCase::AaBbCc)));
+        test!(uppercase:     SortField <- ["--sort", "Name"];  Both => Ok(SortField::Name(SortCase::ABCabc)));
+        test!(old:           SortField <- ["--sort", "new"];   Both => Ok(SortField::ModifiedDate));
+        test!(oldest:        SortField <- ["--sort=newest"];   Both => Ok(SortField::ModifiedDate));
+        test!(new:           SortField <- ["--sort", "old"];   Both => Ok(SortField::ModifiedAge));
+        test!(newest:        SortField <- ["--sort=oldest"];   Both => Ok(SortField::ModifiedAge));
+        test!(age:           SortField <- ["-sage"];           Both => Ok(SortField::ModifiedAge));
+
+        test!(mix_hidden_lowercase:     SortField <- ["--sort", ".name"];  Both => Ok(SortField::NameMixHidden(SortCase::AaBbCc)));
+        test!(mix_hidden_uppercase:     SortField <- ["--sort", ".Name"];  Both => Ok(SortField::NameMixHidden(SortCase::ABCabc)));
+
+        // Errors
+        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
+
+        // Overriding
+        test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));
+        test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"];  Last => Ok(SortField::Extension(SortCase::ABCabc)));
+        test!(overridden_3:  SortField <- ["--sort=cr",       "--sort", "mod"];     Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
+        test!(overridden_4:  SortField <- ["--sort", "none",  "--sort=Extension"];  Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
+    }
+
+
+    mod dot_filters {
+        use super::*;
+
+        // Default behaviour
+        test!(empty:      DotFilter <- [];               Both => Ok(DotFilter::JustFiles));
+
+        // --all
+        test!(all:        DotFilter <- ["--all"];        Both => Ok(DotFilter::Dotfiles));
+        test!(all_all:    DotFilter <- ["--all", "-a"];  Both => Ok(DotFilter::DotfilesAndDots));
+        test!(all_all_2:  DotFilter <- ["-aa"];          Both => Ok(DotFilter::DotfilesAndDots));
+
+        test!(all_all_3:  DotFilter <- ["-aaa"];         Last => Ok(DotFilter::DotfilesAndDots));
+        test!(all_all_4:  DotFilter <- ["-aaa"];         Complain => Err(Misfire::Conflict(&flags::ALL, &flags::ALL)));
+
+        // --all and --tree
+        test!(tree_a:     DotFilter <- ["-Ta"];          Both => Ok(DotFilter::Dotfiles));
+        test!(tree_aa:    DotFilter <- ["-Taa"];         Both => Err(Misfire::TreeAllAll));
+        test!(tree_aaa:   DotFilter <- ["-Taaa"];        Both => Err(Misfire::TreeAllAll));
+    }
+
+
+    mod ignore_patterns {
+        use super::*;
+        use std::iter::FromIterator;
+        use glob;
+
+        fn pat(string: &'static str) -> glob::Pattern {
+            glob::Pattern::new(string).unwrap()
+        }
+
+        // Various numbers of globs
+        test!(none:   IgnorePatterns <- [];                             Both => Ok(IgnorePatterns::empty()));
+        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"];     Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg") ])));
+        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"];  Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg"), pat("*.MP3") ])));
+        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"];                  Both => Ok(IgnorePatterns::from_iter(vec![ pat("*"), pat("?"), pat("."), pat("*") ])));
+
+        // Overriding
+        test!(overridden:   IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.mp3") ])));
+        test!(overridden_2: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.MP3") ])));
+        test!(overridden_3: IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
+        test!(overridden_4: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
+    }
+
+
+    mod git_ignores {
+        use super::*;
+
+        test!(off:  GitIgnore <- [];                Both => Ok(GitIgnore::Off));
+        test!(on:   GitIgnore <- ["--git-ignore"];  Both => Ok(GitIgnore::CheckAndIgnore));
     }
 }

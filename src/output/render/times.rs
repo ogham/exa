@@ -1,24 +1,28 @@
 use datetime::TimeZone;
+use ansi_term::Style;
 
-use fs::fields as f;
 use output::cell::TextCell;
-use output::colours::Colours;
 use output::time::TimeFormat;
 
 
-impl f::Time {
-    pub fn render(self, colours: &Colours,
-                         tz: &Option<TimeZone>,
-                         style: &TimeFormat) -> TextCell {
+pub trait Render {
+    fn render(self, style: Style,
+                        tz: &Option<TimeZone>,
+                        format: &TimeFormat) -> TextCell;
+}
+
+impl Render for std::time::Duration {
+    fn render(self, style: Style,
+                        tz: &Option<TimeZone>,
+                        format: &TimeFormat) -> TextCell {
 
         if let Some(ref tz) = *tz {
-            let datestamp = style.format_zoned(self, tz);
-            TextCell::paint(colours.date, datestamp)
+            let datestamp = format.format_zoned(self, tz);
+            TextCell::paint(style, datestamp)
         }
         else {
-            let datestamp = style.format_local(self);
-            TextCell::paint(colours.date, datestamp)
+            let datestamp = format.format_local(self);
+            TextCell::paint(style, datestamp)
         }
     }
 }
-

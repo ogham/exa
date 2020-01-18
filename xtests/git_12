@@ -1,0 +1,9 @@
+/testcases/git:
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [32mNN[0m [1;34madditions[0m
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [34mMM[0m [1;34medits[0m
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [32mN[38;5;244m-[0m [1;34mmoves[0m
+
+/testcases/git2:
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [38;5;244m-[32mN[0m [1;34mdeeply[0m
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [38;5;244m-[32mN[0m [1;34mignoreds[0m
+[1;34md[33mr[31mw[32mx[0m[33mr[31mw[32mx[33mr[38;5;244m-[32mx[0m [38;5;244m-[0m cassowary [34m 1 Jan 12:34[0m [38;5;244m-[0m[2mI[0m [1;34mtarget[0m

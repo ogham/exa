@@ -1,19 +1,57 @@
+//! Timestamp formatting.
+
+use std::time::Duration;
+
 use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 use locale;
+use std::cmp;
 
-use fs::fields::Time;
 
-
+/// Every timestamp in exa needs to be rendered by a **time format**.
+/// Formatting times is tricky, because how a timestamp is rendered can
+/// depend on one or more of the following:
+///
+/// - The user’s locale, for printing the month name as “Feb”, or as “fév”,
+///   or as “2月”;
+/// - The current year, because certain formats will be less precise when
+///   dealing with dates far in the past;
+/// - The formatting style that the user asked for on the command-line.
+///
+/// Because not all formatting styles need the same data, they all have their
+/// own enum variants. It’s not worth looking the locale up if the formatter
+/// prints month names as numbers.
+///
+/// Currently exa does not support *custom* styles, where the user enters a
+/// format string in an environment variable or something. Just these four.
+#[derive(Debug)]
 pub enum TimeFormat {
+
+    /// The **default format** uses the user’s locale to print month names,
+    /// and specifies the timestamp down to the minute for recent times, and
+    /// day for older times.
     DefaultFormat(DefaultFormat),
+
+    /// Use the **ISO format**, which specifies the timestamp down to the
+    /// minute for recent times, and day for older times. It uses a number
+    /// for the month so it doesn’t need a locale.
     ISOFormat(ISOFormat),
+
+    /// Use the **long ISO format**, which specifies the timestamp down to the
+    /// minute using only numbers, without needing the locale or year.
     LongISO,
+
+    /// Use the **full ISO format**, which specifies the timestamp down to the
+    /// millisecond and includes its offset down to the minute. This too uses
+    /// only numbers so doesn’t require any special consideration.
     FullISO,
 }
 
+// There are two different formatting functions because local and zoned
+// timestamps are separate types.
+
 impl TimeFormat {
-    pub fn format_local(&self, time: Time) -> String {
+    pub fn format_local(&self, time: Duration) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
             TimeFormat::ISOFormat(ref iso)     => iso.format_local(time),
@@ -22,7 +60,7 @@ impl TimeFormat {
         }
     }
 
-    pub fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
+    pub fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
         match *self {
             TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
             TimeFormat::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
@@ -51,7 +89,7 @@ pub struct DefaultFormat {
 }
 
 impl DefaultFormat {
-    pub fn new() -> DefaultFormat {
+    pub fn load() -> DefaultFormat {
         use unicode_width::UnicodeWidthStr;
 
         let locale = locale::Time::load_user_locale()
@@ -60,30 +98,38 @@ impl DefaultFormat {
         let current_year = LocalDateTime::now().year();
 
         // Some locales use a three-character wide month name (Jan to Dec);
-        // others vary between three and four (1月 to 12月). We assume that
-        // December is the month with the maximum width, and use the width of
-        // that to determine how to pad the other months.
-        let december_width = UnicodeWidthStr::width(&*locale.short_month_name(11));
-        let date_and_time = match december_width {
-            4  => DateFormat::parse("{2>:D} {4>:M} {2>:h}:{02>:m}").unwrap(),
+        // others vary between three to four (1月 to 12月, juil.). We check each month width
+        // to detect the longest and set the output format accordingly.
+        let mut maximum_month_width = 0;
+        for i in 0..11 {
+            let current_month_width = UnicodeWidthStr::width(&*locale.short_month_name(i));
+            maximum_month_width = cmp::max(maximum_month_width, current_month_width);
+        }
+
+        let date_and_time = match maximum_month_width {
+            4  => DateFormat::parse("{2>:D} {4<:M} {2>:h}:{02>:m}").unwrap(),
+            5  => DateFormat::parse("{2>:D} {5<:M} {2>:h}:{02>:m}").unwrap(),
             _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
         };
 
-        let date_and_year = match december_width {
-            4 => DateFormat::parse("{2>:D} {4>:M} {5>:Y}").unwrap(),
+        let date_and_year = match maximum_month_width {
+            4 => DateFormat::parse("{2>:D} {4<:M} {5>:Y}").unwrap(),
+            5 => DateFormat::parse("{2>:D} {5<:M} {5>:Y}").unwrap(),
             _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
         };
 
         DefaultFormat { current_year, locale, date_and_time, date_and_year }
     }
+}
 
+impl DefaultFormat {
     fn is_recent(&self, date: LocalDateTime) -> bool {
         date.year() == self.current_year
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
+    fn format_local(&self, time: Duration) -> String {
+        let date = LocalDateTime::at(time.as_secs() as i64);
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
@@ -94,8 +140,8 @@ impl DefaultFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+    fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
 
         if self.is_recent(date) {
             self.date_and_time.format(&date, &self.locale)
@@ -108,16 +154,16 @@ impl DefaultFormat {
 
 
 #[allow(trivial_numeric_casts)]
-fn long_local(time: Time) -> String {
-    let date = LocalDateTime::at(time.seconds as i64);
+fn long_local(time: Duration) -> String {
+    let date = LocalDateTime::at(time.as_secs() as i64);
     format!("{:04}-{:02}-{:02} {:02}:{:02}",
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute())
 }
 
 #[allow(trivial_numeric_casts)]
-fn long_zoned(time: Time, zone: &TimeZone) -> String {
-    let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+fn long_zoned(time: Duration, zone: &TimeZone) -> String {
+    let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
     format!("{:04}-{:02}-{:02} {:02}:{:02}",
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute())
@@ -125,23 +171,23 @@ fn long_zoned(time: Time, zone: &TimeZone) -> String {
 
 
 #[allow(trivial_numeric_casts)]
-fn full_local(time: Time) -> String {
-    let date = LocalDateTime::at(time.seconds as i64);
+fn full_local(time: Duration) -> String {
+    let date = LocalDateTime::at(time.as_secs() as i64);
     format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
             date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), time.nanoseconds)
+            date.hour(), date.minute(), date.second(), time.subsec_nanos())
 }
 
 #[allow(trivial_numeric_casts)]
-fn full_zoned(time: Time, zone: &TimeZone) -> String {
+fn full_zoned(time: Duration, zone: &TimeZone) -> String {
     use datetime::Offset;
 
-    let local = LocalDateTime::at(time.seconds as i64);
+    let local = LocalDateTime::at(time.as_secs() as i64);
     let date = zone.to_zoned(local);
     let offset = Offset::of_seconds(zone.offset(local) as i32).expect("Offset out of range");
     format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
             date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), time.nanoseconds,
+            date.hour(), date.minute(), date.second(), time.subsec_nanos(),
             offset.hours(), offset.minutes().abs())
 }
 
@@ -156,42 +202,44 @@ pub struct ISOFormat {
 }
 
 impl ISOFormat {
-    pub fn new() -> Self {
+    pub fn load() -> ISOFormat {
         let current_year = LocalDateTime::now().year();
         ISOFormat { current_year }
     }
+}
 
+impl ISOFormat {
     fn is_recent(&self, date: LocalDateTime) -> bool {
         date.year() == self.current_year
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: Time) -> String {
-        let date = LocalDateTime::at(time.seconds as i64);
+    fn format_local(&self, time: Duration) -> String {
+        let date = LocalDateTime::at(time.as_secs() as i64);
 
         if self.is_recent(date) {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
-        else {
             format!("{:02}-{:02} {:02}:{:02}",
                     date.month() as usize, date.day(),
                     date.hour(), date.minute())
+        }
+        else {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
         }
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: Time, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(time.seconds as i64));
+    fn format_zoned(&self, time: Duration, zone: &TimeZone) -> String {
+        let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
 
         if self.is_recent(date) {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
-        else {
             format!("{:02}-{:02} {:02}:{:02}",
                     date.month() as usize, date.day(),
                     date.hour(), date.minute())
+        }
+        else {
+            format!("{:04}-{:02}-{:02}",
+                    date.year(), date.month() as usize, date.day())
         }
     }
 }

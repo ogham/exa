@@ -1,7 +1,6 @@
-use ansi_term::ANSIString;
+use ansi_term::{ANSIString, Style};
 
 use output::cell::{TextCell, DisplayWidth};
-use output::colours::Colours;
 use fs::fields as f;
 
 
@@ -17,34 +16,58 @@ impl f::Git {
     }
 }
 
+
 impl f::GitStatus {
     fn render(&self, colours: &Colours) -> ANSIString<'static> {
         match *self {
-            f::GitStatus::NotModified  => colours.punctuation.paint("-"),
-            f::GitStatus::New          => colours.git.new.paint("N"),
-            f::GitStatus::Modified     => colours.git.modified.paint("M"),
-            f::GitStatus::Deleted      => colours.git.deleted.paint("D"),
-            f::GitStatus::Renamed      => colours.git.renamed.paint("R"),
-            f::GitStatus::TypeChange   => colours.git.typechange.paint("T"),
+            f::GitStatus::NotModified  => colours.not_modified().paint("-"),
+            f::GitStatus::New          => colours.new().paint("N"),
+            f::GitStatus::Modified     => colours.modified().paint("M"),
+            f::GitStatus::Deleted      => colours.deleted().paint("D"),
+            f::GitStatus::Renamed      => colours.renamed().paint("R"),
+            f::GitStatus::TypeChange   => colours.type_change().paint("T"),
+            f::GitStatus::Ignored      => colours.ignored().paint("I"),
         }
     }
 }
 
 
+pub trait Colours {
+    fn not_modified(&self) -> Style;
+    fn new(&self) -> Style;
+    fn modified(&self) -> Style;
+    fn deleted(&self) -> Style;
+    fn renamed(&self) -> Style;
+    fn type_change(&self) -> Style;
+    fn ignored(&self) -> Style;
+}
+
+
 #[cfg(test)]
 pub mod test {
-    use output::colours::Colours;
+    use super::Colours;
     use output::cell::{TextCell, DisplayWidth};
     use fs::fields as f;
 
     use ansi_term::Colour::*;
+    use ansi_term::Style;
+
+
+    struct TestColours;
+
+    impl Colours for TestColours {
+        fn not_modified(&self) -> Style { Fixed(90).normal() }
+        fn new(&self)          -> Style { Fixed(91).normal() }
+        fn modified(&self)     -> Style { Fixed(92).normal() }
+        fn deleted(&self)      -> Style { Fixed(93).normal() }
+        fn renamed(&self)      -> Style { Fixed(94).normal() }
+        fn type_change(&self)  -> Style { Fixed(95).normal() }
+        fn ignored(&self)      -> Style { Fixed(96).normal() }
+    }
 
 
     #[test]
     fn git_blank() {
-        let mut colours = Colours::default();
-        colours.punctuation = Fixed(44).normal();
-
         let stati = f::Git {
             staged:   f::GitStatus::NotModified,
             unstaged: f::GitStatus::NotModified,
@@ -53,21 +76,17 @@ pub mod test {
         let expected = TextCell {
             width: DisplayWidth::from(2),
             contents: vec![
-                Fixed(44).paint("-"),
-                Fixed(44).paint("-"),
+                Fixed(90).paint("-"),
+                Fixed(90).paint("-"),
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&colours).into())
+        assert_eq!(expected, stati.render(&TestColours).into())
     }
 
 
     #[test]
     fn git_new_changed() {
-        let mut colours = Colours::default();
-        colours.git.new = Red.normal();
-        colours.git.modified = Purple.normal();
-
         let stati = f::Git {
             staged:   f::GitStatus::New,
             unstaged: f::GitStatus::Modified,
@@ -76,11 +95,11 @@ pub mod test {
         let expected = TextCell {
             width: DisplayWidth::from(2),
             contents: vec![
-                Red.paint("N"),
-                Purple.paint("M"),
+                Fixed(91).paint("N"),
+                Fixed(92).paint("M"),
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&colours).into())
+        assert_eq!(expected, stati.render(&TestColours).into())
     }
 }
