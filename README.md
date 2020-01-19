@@ -25,8 +25,10 @@ exa’s options are almost, but not quite, entirely unlike `ls`'s.
 - **-R**, **--recurse**: recurse into directories
 - **-T**, **--tree**: recurse into directories as a tree
 - **-x**, **--across**: sort the grid across, rather than downwards
+- **-F**, **--classify**: display type indicator by file names
 - **--colo[u]r**: when to use terminal colours
 - **--colo[u]r-scale**: highlight levels of file sizes distinctly
+- **--icons**: display icons
 
 ### Filtering Options
 
@@ -58,6 +60,7 @@ These options are available when running with --long (`-l`):
 - **-u**, **--accessed**: use the accessed timestamp field
 - **-U**, **--created**: use the created timestamp field
 - **-@**, **--extended**: list each file's extended attributes and sizes
+- **--changed**: use the changed timestamp field
 - **--git**: list each file's Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
 - **--no-permissions**: suppress the permissions field
