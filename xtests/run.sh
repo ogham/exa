@@ -211,7 +211,7 @@ $exa $testcases/git2/deeply/nested/repository -l --git 2>&1 | diff -q - $results
 $exa $testcases/git2/{deeply,ignoreds,target} -l --git 2>&1 | diff -q - $results/git_2_all         || exit 1
 
 # Regressions test
-$exa $testcases/git3 -l --git &>/dev/null || echo "Failed to display broken symlink in git repository"; exit 1
+$exa $testcases/git3 -l --git &>/dev/null || exit 1
 
 COLUMNS=150 $exa $testcases/git/**/* $testcases --git --long --grid -d | diff -q - $results/git_1_files  || exit 1
 
