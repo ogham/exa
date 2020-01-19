@@ -4,14 +4,19 @@ Vagrant.configure(2) do |config|
 
   # We use Ubuntu instead of Debian because the image comes with two-way
   # shared folder support by default.
-  UBUNTU = 'ubuntu/xenial64'
+  UBUNTU = 'bento/ubuntu-16.04'
 
   # The main VM is the one used for development and testing.
   config.vm.define(:exa, primary: true) do |config|
     config.vm.provider :virtualbox do |v|
       v.name = 'exa'
-      v.memory = 1024
-      v.cpus = 1
+      v.memory = 2048
+      v.cpus = 2
+    end
+
+    config.vm.provider :vmware_desktop do |v|
+      v.vmx['memsize'] = '2048'
+      v.vmx['numvcpus'] = '2'
     end
 
     config.vm.box = UBUNTU
