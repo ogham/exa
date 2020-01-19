@@ -1,6 +1,6 @@
 //! Parsing the options for `FileFilter`.
 
-use crate::fs::{DotFilter, PlatformMetadata};
+use crate::fs::DotFilter;
 use crate::fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
 use crate::options::{flags, Misfire};
@@ -67,23 +67,7 @@ impl SortField {
             _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
         };
 
-        match SortField::to_platform_metadata(field) {
-            Some(m) => match m.check_supported() {
-                Ok(_) => Ok(field),
-                Err(misfire) => Err(misfire),
-            },
-            None => Ok(field),
-        }
-    }
-
-    fn to_platform_metadata(field: Self) -> Option<PlatformMetadata> {
-        match field {
-            SortField::ModifiedDate => Some(PlatformMetadata::ModifiedTime),
-            SortField::ChangedDate  => Some(PlatformMetadata::ChangedTime),
-            SortField::AccessedDate => Some(PlatformMetadata::AccessedTime),
-            SortField::CreatedDate  => Some(PlatformMetadata::CreatedTime),
-            _ => None
-        }
+        Ok(field)
     }
 }
 
