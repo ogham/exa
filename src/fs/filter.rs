@@ -129,7 +129,9 @@ impl FileFilter {
         if self.list_dirs_first {
             // This relies on the fact that `sort_by` is *stable*: it will keep
             // adjacent elements next to each other.
-            files.sort_by(|a, b| b.as_ref().is_directory().cmp(&a.as_ref().is_directory()));
+            files.sort_by(|a, b| {b.as_ref().points_to_directory()
+                .cmp(&a.as_ref().points_to_directory())
+            });
         }
     }
 }
