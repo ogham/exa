@@ -80,5 +80,5 @@ complete -c exa        -l 'no-user'        -d "Suppress the user field"
 complete -c exa        -l 'no-time'        -d "Suppress the time field"
 
 # Optional extras
-complete -c exa -s 'g' -l 'git'      -d "List each file's Git status, if tracked"
+complete -c exa -l 'git' -d "List each file's Git status, if tracked"
 complete -c exa -s '@' -l 'extended' -d "List each file's extended attributes and sizes"
