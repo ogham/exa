@@ -61,6 +61,7 @@
 
 
 use std::io::{Write, Error as IOError, Result as IOResult};
+use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
@@ -194,13 +195,13 @@ impl<'a> Render<'a> {
         use log::error;
         use crate::fs::feature::xattr;
 
-        let mut file_eggs = Vec::new();
+        let mut file_eggs = (0..src.len()).map(|_| MaybeUninit::uninit()).collect::<Vec<_>>();
 
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
             let table = table.as_ref();
 
-            for file in src {
+            for (idx, file) in src.iter().enumerate() {
                 let file_eggs = Arc::clone(&file_eggs);
 
                 scoped.execute(move || {
@@ -267,11 +268,13 @@ impl<'a> Render<'a> {
                     } else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
-                    file_eggs.lock().unwrap().push(egg);
+                    unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }
                 });
             }
         });
 
+        // this is safe because all entries have been initialized above
+        let mut file_eggs = unsafe { std::mem::transmute::<_, Vec<Egg>>(file_eggs) };
         self.filter.sort_files(&mut file_eggs);
 
         for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {
