@@ -71,9 +71,9 @@
 
 use std::ffi::{OsStr, OsString};
 
-use fs::dir_action::DirAction;
-use fs::filter::FileFilter;
-use output::{View, Mode, details, grid_details};
+use crate::fs::dir_action::DirAction;
+use crate::fs::filter::FileFilter;
+use crate::output::{View, Mode, details, grid_details};
 
 mod style;
 mod dir_action;
@@ -122,7 +122,7 @@ impl Options {
     pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString>,
           V: Vars {
-        use options::parser::{Matches, Strictness};
+        use crate::options::parser::{Matches, Strictness};
 
         let strictness = match vars.get(vars::EXA_STRICT) {
             None                         => Strictness::UseLastArguments,
@@ -148,7 +148,7 @@ impl Options {
     pub fn should_scan_for_git(&self) -> bool {
         match self.view.mode {
             Mode::Details(details::Options { table: Some(ref table), .. }) |
-            Mode::GridDetails(grid_details::Options { details: details::Options { table: Some(ref table), .. }, .. }) => table.extra_columns.git,
+            Mode::GridDetails(grid_details::Options { details: details::Options { table: Some(ref table), .. }, .. }) => table.columns.git,
             _ => false,
         }
     }
@@ -169,7 +169,7 @@ impl Options {
 #[cfg(test)]
 pub mod test {
     use super::{Options, Misfire, flags};
-    use options::parser::{Arg, MatchedFlags};
+    use crate::options::parser::{Arg, MatchedFlags};
     use std::ffi::OsString;
 
     #[derive(PartialEq, Debug)]
@@ -189,7 +189,7 @@ pub mod test {
     where F: Fn(&MatchedFlags) -> T
     {
         use self::Strictnesses::*;
-        use options::parser::{Args, Strictness};
+        use crate::options::parser::{Args, Strictness};
 
         let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
         let mut result = Vec::new();

@@ -13,3 +13,9 @@ ubuntu-xenial-16.04-cloudimg-console.log
 /exa-macos-x86_64-*.zip
 /MD5SUMS
 /SHA1SUMS
+
+# Snap stuff
+parts
+prime
+stage
+*.snap

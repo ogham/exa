@@ -42,6 +42,10 @@ __exa() {
         {-S,--blocks}"[List each file's number of filesystem blocks]" \
         {-t,--time}="[Which time field to show]:(time field):(accessed changed created modified)" \
         --time-style="[How to format timestamps]:(time style):(default iso long-iso full-iso)" \
+        --no-permissions"[Suppress the permissions field]" \
+        --no-filesize"[Suppress the filesize field]" \
+        --no-user"[Suppress the user field]" \
+        --no-time"[Suppress the time field]" \
         {-u,--accessed}"[Use the accessed timestamp field]" \
         {-U,--created}"[Use the created timestamp field]" \
         --git"[List each file's Git status, if tracked]" \

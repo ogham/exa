@@ -4,9 +4,9 @@
 
 ## Rationale
 
-**exa**  is a modern replacement for the command-line program ls that ships with Unix and Linux operating systems, with more features and better defaults. It uses colours to distinguish file types and metadata. It knows about symlinks, extended attributes, and Git. And it’s **small**, **fast**, and just one **single binary**.
+**exa**  is a modern replacement for the command-line program `ls` that ships with Unix and Linux operating systems, with more features and better defaults. It uses colours to distinguish file types and metadata. It knows about symlinks, extended attributes, and Git. And it’s **small**, **fast**, and just one **single binary**.
 
-By deliberately making some decisions differently, exa attempts to be a more featureful, more user-friendly version of ls.
+By deliberately making some decisions differently, exa attempts to be a more featureful, more user-friendly version of `ls`.
 
 ## Screenshots
 
@@ -63,6 +63,10 @@ These options are available when running with --long (`-l`):
 - **--changed**: use the changed timestamp field
 - **--git**: list each file's Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
+- **--no-permissions**: suppress the permissions field
+- **--no-filesize**: suppress the filesize field
+- **--no-user**: suppress the user field
+- **--no-time**: suppress the time field
 
 - Valid **--color** options are **always**, **automatic**, and **never**.
 - Valid sort fields are **accessed**, **changed**, **created**, **extension**, **Extension**, **inode**, **modified**, **name**, **Name**, **size**, **type**, and **none**. Fields starting with a capital letter sort uppercase before lowercase. The modified field has the aliases **date**, **time**, and **newest**, while its reverse has the aliases **age** and **oldest**.
@@ -72,7 +76,7 @@ These options are available when running with --long (`-l`):
 
 ## Installation
 
-exa is written in [Rust](http://www.rust-lang.org). You will need rustc version 1.17.0 or higher. The recommended way to install Rust is from the official download page.
+exa is written in [Rust](http://www.rust-lang.org). You will need rustc version 1.35.0 or higher. The recommended way to install Rust is from the official download page.
 Once you have it set up, a simple `make install` will compile exa and install it into `/usr/local/bin`.
 
 exa depends on [libgit2](https://github.com/alexcrichton/git2-rs) for certain features.
@@ -103,6 +107,12 @@ or:
     brew install exa --without-git
 
 [Formulae](https://github.com/Homebrew/homebrew-core/blob/master/Formula/exa.rb)
+
+### Fedora
+
+You can install the `exa` package from the official Fedora repositories by running:
+
+    dnf install exa
 
 ### Nix
 
