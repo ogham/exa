@@ -331,10 +331,9 @@ impl<'dir> File<'dir> {
     /// This file’s last modified timestamp.
     /// If the file's time is invalid, assume it was modified today
     pub fn modified_time(&self) -> Duration {
-        if self.metadata.modified().unwrap() < UNIX_EPOCH {
-            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
-        } else {
-            return self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        match self.metadata.modified() {
+            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
+            Err(_) => Duration::new(0, 0),
         }
     }
 
@@ -346,20 +345,18 @@ impl<'dir> File<'dir> {
     /// This file’s last accessed timestamp.
     /// If the file's time is invalid, assume it was accessed today
     pub fn accessed_time(&self) -> Duration {
-        if self.metadata.accessed().unwrap() < UNIX_EPOCH{
-            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
-        } else {
-            return self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        match self.metadata.accessed() {
+            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
+            Err(_) => Duration::new(0, 0),
         }
     }
 
     /// This file’s created timestamp.
     /// If the file's time is invalid, assume it was created today
     pub fn created_time(&self) -> Duration {
-        if self.metadata.created().unwrap() < UNIX_EPOCH {
-            return SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
-        } else {
-            return self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+        match self.metadata.created() {
+            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
+            Err(_) => Duration::new(0, 0),
         }
     }
 
@@ -472,41 +469,6 @@ impl<'dir> FileTarget<'dir> {
         match *self {
             FileTarget::Ok(_)                           => false,
             FileTarget::Broken(_) | FileTarget::Err(_)  => true,
-        }
-    }
-}
-
-
-pub enum PlatformMetadata {
-    ModifiedTime,
-    ChangedTime,
-    AccessedTime,
-    CreatedTime,
-}
-
-impl PlatformMetadata {
-    pub fn check_supported(&self) -> Result<(), Misfire> {
-        use std::env::temp_dir;
-        let result = match self {
-            // Call the functions that return a Result to see if it works
-            PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
-            PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
-            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
-            // We use the Unix API so we know it’s not available elsewhere
-            PlatformMetadata::ChangedTime => {
-                if cfg!(target_family = "unix") {
-                    return Ok(())
-                } else {
-                    return Err(Misfire::Unsupported(
-                        // for consistency, this error message similar to the one Rust
-                        // use when created time is not available
-                        "status modified time is not available on this platform currently".to_string()));
-                }
-            },
-        };
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(Misfire::Unsupported(err.to_string()))
         }
     }
 }
