@@ -42,6 +42,7 @@ LONG VIEW OPTIONS
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
   -U, --created      use the created timestamp field
+  --changed          use the changed timestamp field
   --time-style       how to format timestamps (default, iso, long-iso, full-iso)
   --no-permissions   suppress the permissions field
   --no-filesize      suppress the filesize field
