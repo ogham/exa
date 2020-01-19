@@ -39,7 +39,7 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
                     c.paint(file_icon).to_string() 
                 }
             });
-    format!("{} ", painted)
+    format!("{}  ", painted)
 }
 
 fn icon(file: &File) -> char {
