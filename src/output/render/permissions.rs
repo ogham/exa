@@ -1,8 +1,8 @@
 use ansi_term::{ANSIString, Style};
 
-use fs::fields as f;
-use output::cell::{TextCell, DisplayWidth};
-use output::render::FiletypeColours;
+use crate::fs::fields as f;
+use crate::output::cell::{TextCell, DisplayWidth};
+use crate::output::render::FiletypeColours;
 
 
 impl f::PermissionsPlus {
@@ -104,8 +104,8 @@ pub trait Colours {
 #[allow(unused_results)]
 pub mod test {
     use super::Colours;
-    use output::cell::TextCellContents;
-    use fs::fields as f;
+    use crate::output::cell::TextCellContents;
+    use crate::fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;

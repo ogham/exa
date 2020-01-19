@@ -2,7 +2,7 @@ use ansi_term::{ANSIString, Style};
 
 
 pub fn escape<'a>(string: String, bits: &mut Vec<ANSIString<'a>>, good: Style, bad: Style) {
-    if string.chars().all(|c| c >= 0x20 as char) {
+    if string.chars().all(|c| c >= 0x20 as char && c != 0x7f as char) {
         bits.push(good.paint(string));
     }
     else {
@@ -10,7 +10,7 @@ pub fn escape<'a>(string: String, bits: &mut Vec<ANSIString<'a>>, good: Style, b
             // The `escape_default` method on `char` is *almost* what we want here, but
             // it still escapes non-ASCII UTF-8 characters, which are still printable.
 
-            if c >= 0x20 as char {
+            if c >= 0x20 as char && c != 0x7f as char {
                 // TODO: This allocates way too much,
                 // hence the `all` check above.
                 let mut s = String::new();

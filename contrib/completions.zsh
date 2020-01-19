@@ -26,12 +26,14 @@ __exa() {
         --git-ignore"[Ignore files mentioned in '.gitignore']" \
         {-a,--all}"[Show hidden and 'dot' files]" \
         {-d,--list-dirs}"[List directories like regular files]" \
+        {-D,--only-dirs}"[List only directories]" \
         {-L,--level}"+[Limit the depth of recursion]" \
         {-r,--reverse}"[Reverse the sort order]" \
         {-s,--sort}="[Which field to sort by]:(sort field):(accessed age changed created date extension Extension filename Filename inode modified oldest name Name newest none size time type)" \
         {-I,--ignore-glob}"[Ignore files that match these glob patterns]" \
         {-b,--binary}"[List file sizes with binary prefixes]" \
         {-B,--bytes}"[List file sizes in bytes, without any prefixes]" \
+        --changed"[Use the changed timestamp field]" \
         {-g,--group}"[List each file's group]" \
         {-h,--header}"[Add a header row to each column]" \
         {-H,--links}"[List each file's number of hard links]" \
@@ -40,6 +42,10 @@ __exa() {
         {-S,--blocks}"[List each file's number of filesystem blocks]" \
         {-t,--time}="[Which time field to show]:(time field):(accessed changed created modified)" \
         --time-style="[How to format timestamps]:(time style):(default iso long-iso full-iso)" \
+        --no-permissions"[Suppress the permissions field]" \
+        --no-filesize"[Suppress the filesize field]" \
+        --no-user"[Suppress the user field]" \
+        --no-time"[Suppress the time field]" \
         {-u,--accessed}"[Use the accessed timestamp field]" \
         {-U,--created}"[Use the created timestamp field]" \
         --git"[List each file's Git status, if tracked]" \

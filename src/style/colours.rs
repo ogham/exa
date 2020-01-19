@@ -1,10 +1,10 @@
 use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
 
-use output::render;
-use output::file_name::Colours as FileNameColours;
+use crate::output::render;
+use crate::output::file_name::Colours as FileNameColours;
 
-use style::lsc::Pair;
+use crate::style::lsc::Pair;
 
 
 #[derive(Debug, Default, PartialEq)]

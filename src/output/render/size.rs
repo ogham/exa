@@ -1,11 +1,10 @@
 use ansi_term::Style;
 use locale::Numeric as NumericLocale;
-
-use fs::fields as f;
-use output::cell::{TextCell, DisplayWidth};
-use output::table::SizeFormat;
 use number_prefix::Prefix;
 
+use crate::fs::fields as f;
+use crate::output::cell::{TextCell, DisplayWidth};
+use crate::output::table::SizeFormat;
 
 
 impl f::Size {
@@ -87,9 +86,9 @@ pub trait Colours {
 #[cfg(test)]
 pub mod test {
     use super::Colours;
-    use output::cell::{TextCell, DisplayWidth};
-    use output::table::SizeFormat;
-    use fs::fields as f;
+    use crate::output::cell::{TextCell, DisplayWidth};
+    use crate::output::table::SizeFormat;
+    use crate::fs::fields as f;
 
     use locale::Numeric as NumericLocale;
     use ansi_term::Colour::*;
