@@ -211,8 +211,8 @@ impl TableOptions {
         let env = Environment::load_all();
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
-        let extra_columns = Columns::deduce(matches)?;
-        Ok(TableOptions { env, time_format, size_format, extra_columns })
+        let columns = Columns::deduce(matches)?;
+        Ok(TableOptions { env, time_format, size_format, columns })
     }
 }
 
@@ -227,7 +227,11 @@ impl Columns {
         let inode  = matches.has(&flags::INODE)?;
         let links  = matches.has(&flags::LINKS)?;
 
-        Ok(Columns { time_types, git, blocks, group, inode, links })
+        let permissions = !matches.has(&flags::NO_PERMISSIONS)?;
+        let filesize =    !matches.has(&flags::NO_FILESIZE)?;
+        let user =        !matches.has(&flags::NO_USER)?;
+
+        Ok(Columns { time_types, git, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 
@@ -309,7 +313,11 @@ impl TimeTypes {
         let accessed = matches.has(&flags::ACCESSED)?;
         let created  = matches.has(&flags::CREATED)?;
 
-        let time_types = if let Some(word) = possible_word {
+        let no_time = matches.has(&flags::NO_TIME)?;
+
+        let time_types = if no_time {
+            TimeTypes { modified: false, changed: false, accessed: false, created: false }
+        } else if let Some(word) = possible_word {
             if modified {
                 return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
             }

@@ -73,6 +73,10 @@ complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "
     long-iso\t'Display longer ISO timestaps, up to the minute'
     full-iso\t'Display full ISO timestamps, up to the nanosecond'
 "
+complete -c exa        -l 'no-permissions' -d "Suppress the permissions field"
+complete -c exa        -l 'no-filesize'    -d "Suppress the filesize field"
+complete -c exa        -l 'no-user'        -d "Suppress the user field"
+complete -c exa        -l 'no-time'        -d "Suppress the time field"
 
 # Optional extras
 complete -c exa -s 'g' -l 'git'      -d "List each file's Git status, if tracked"
