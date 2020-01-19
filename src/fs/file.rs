@@ -1,18 +1,15 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::fs::{self, metadata};
 use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{UNIX_EPOCH, Duration};
 
 use log::{debug, error};
 
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
-use crate::options::Misfire;
-
 
 /// A **File** is a wrapper around one of Rust's Path objects, along with
 /// associated data about the file.
@@ -48,7 +45,7 @@ pub struct File<'dir> {
     /// This too is queried multiple times, and is *not* cached by the OS, as
     /// it could easily change between invocations — but exa is so short-lived
     /// it's better to just cache it.
-    pub metadata: fs::Metadata,
+    pub metadata: std::fs::Metadata,
 
     /// A reference to the directory that contains this file, if any.
     ///
@@ -78,7 +75,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
         Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
@@ -89,7 +86,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
 
         Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: ".".to_string(), is_all_all })
@@ -99,7 +96,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
 
         Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: "..".to_string(), is_all_all })
@@ -239,7 +236,7 @@ impl<'dir> File<'dir> {
         // we actually look up and turn into a `File` — which needs to be
         // absolute to be accessible from any directory.
         debug!("Reading link {:?}", &self.path);
-        let path = match fs::read_link(&self.path) {
+        let path = match std::fs::read_link(&self.path) {
             Ok(p)   => p,
             Err(e)  => return FileTarget::Err(e),
         };
@@ -248,7 +245,7 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        match fs::metadata(&absolute_path) {
+        match std::fs::metadata(&absolute_path) {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
