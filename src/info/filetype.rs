@@ -24,7 +24,7 @@ impl FileExtensions {
         file.name.ends_with(".ninja") ||
         file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
-            "build.gradle", "Rakefile", "package.json", "Gruntfile.js",
+            "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
             "webpack.config.js", "meson.build",
         ])
@@ -88,7 +88,7 @@ impl FileExtensions {
     }
 
     fn is_compiled(&self, file: &File) -> bool {
-        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
+        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc", "zwc" ]) {
             true
         }
         else if let Some(dir) = file.parent_dir {
