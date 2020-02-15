@@ -249,7 +249,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name, is_all_all: false }))
+                FileTarget::Ok(Box::new(File { parent_dir: None, path: absolute_path, ext, metadata, name, is_all_all: false }))
             }
             Err(e) => {
                 error!("Error following link {:?}: {:#?}", &path, e);
