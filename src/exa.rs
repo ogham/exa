@@ -7,7 +7,6 @@ use std::io::{stderr, Write, Result as IOResult};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
-
 use log::debug;
 
 use crate::fs::{Dir, File};
