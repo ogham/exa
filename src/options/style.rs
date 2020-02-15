@@ -1,11 +1,11 @@
 use ansi_term::Style;
 use glob;
 
-use fs::File;
-use options::{flags, Vars, Misfire};
-use options::parser::MatchedFlags;
-use output::file_name::{FileStyle, Classify};
-use style::Colours;
+use crate::fs::File;
+use crate::options::{flags, Vars, Misfire};
+use crate::options::parser::MatchedFlags;
+use crate::output::file_name::{FileStyle, Classify};
+use crate::style::Colours;
 
 
 /// Under what circumstances we should display coloured, rather than plain,
@@ -82,8 +82,8 @@ impl Styles {
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
     where TW: Fn() -> Option<usize>, V: Vars {
         use self::TerminalColours::*;
-        use info::filetype::FileExtensions;
-        use output::file_name::NoFileColours;
+        use crate::info::filetype::FileExtensions;
+        use crate::output::file_name::NoFileColours;
 
         let classify = Classify::deduce(matches)?;
 
@@ -123,8 +123,10 @@ impl Styles {
 /// Also returns if the EXA_COLORS variable should reset the existing file
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
-    use options::vars;
-    use style::LSColors;
+    use log::warn;
+    
+    use crate::options::vars;
+    use crate::style::LSColors;
 
     let mut exts = ExtensionMappings::default();
 
@@ -172,7 +174,7 @@ struct ExtensionMappings {
 // Loop through backwards so that colours specified later in the list override
 // colours specified earlier, like we do with options and strict mode
 
-use output::file_name::FileColours;
+use crate::output::file_name::FileColours;
 impl FileColours for ExtensionMappings {
     fn colour_file(&self, file: &File) -> Option<Style> {
         self.mappings
@@ -210,11 +212,11 @@ impl Classify {
 mod terminal_test {
     use super::*;
     use std::ffi::OsString;
-    use options::flags;
-    use options::parser::{Flag, Arg};
+    use crate::options::flags;
+    use crate::options::parser::{Flag, Arg};
 
-    use options::test::parse_for_test;
-    use options::test::Strictnesses::*;
+    use crate::options::test::parse_for_test;
+    use crate::options::test::Strictnesses::*;
 
     static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
 
@@ -272,11 +274,11 @@ mod terminal_test {
 #[cfg(test)]
 mod colour_test {
     use super::*;
-    use options::flags;
-    use options::parser::{Flag, Arg};
+    use crate::options::flags;
+    use crate::options::parser::{Flag, Arg};
 
-    use options::test::parse_for_test;
-    use options::test::Strictnesses::*;
+    use crate::options::test::parse_for_test;
+    use crate::options::test::Strictnesses::*;
 
     static TEST_ARGS: &[&Arg] = &[ &flags::COLOR,       &flags::COLOUR,
                                    &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
@@ -323,15 +325,15 @@ mod colour_test {
     test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
     test!(width_8:  [],                        || None;      Both => Ok(Colours::plain()));
 
-    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => like Ok(Colours { scale: true,  .. }));
-    test!(scale_4:  ["--color=always",                                  ], || None;   Last => like Ok(Colours { scale: false, .. }));
+    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
+    test!(scale_4:  ["--color=always",                                  ], || None;   Last => Ok(Colours::colourful(false)));
 
     test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
-    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => like Ok(Colours { scale: true,  .. }));
-    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => like Ok(Colours { scale: false, .. }));
+    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => Ok(Colours::colourful(true)));
+    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => Ok(Colours::colourful(true)));
+    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => Ok(Colours::colourful(false)));
 }
 
 
@@ -341,7 +343,7 @@ mod customs_test {
     use std::ffi::OsString;
 
     use super::*;
-    use options::Vars;
+    use crate::options::Vars;
 
     use ansi_term::Colour::*;
 
@@ -405,7 +407,7 @@ mod customs_test {
     // Test impl that just returns the value it has.
     impl Vars for MockVars {
         fn get(&self, name: &'static str) -> Option<OsString> {
-            use options::vars;
+            use crate::options::vars;
 
             if name == vars::LS_COLORS && !self.ls.is_empty() {
                 OsString::from(self.ls.clone()).into()
@@ -461,8 +463,33 @@ mod customs_test {
     test!(exa_sf:  ls "", exa "sf=38;5;111"  =>  colours c -> { c.perms.special_other       = Fixed(111).normal(); });
     test!(exa_xa:  ls "", exa "xa=38;5;112"  =>  colours c -> { c.perms.attribute           = Fixed(112).normal(); });
 
-    test!(exa_sn:  ls "", exa "sn=38;5;113"  =>  colours c -> { c.size.numbers              = Fixed(113).normal(); });
-    test!(exa_sb:  ls "", exa "sb=38;5;114"  =>  colours c -> { c.size.unit                 = Fixed(114).normal(); });
+    test!(exa_sn:  ls "", exa "sn=38;5;113" => colours c -> {
+        c.size.number_byte = Fixed(113).normal();
+        c.size.number_kilo = Fixed(113).normal();
+        c.size.number_mega = Fixed(113).normal();
+        c.size.number_giga = Fixed(113).normal();
+        c.size.number_huge = Fixed(113).normal();
+    });
+    test!(exa_sb:  ls "", exa "sb=38;5;114" => colours c -> {
+        c.size.unit_byte = Fixed(114).normal();
+        c.size.unit_kilo = Fixed(114).normal();
+        c.size.unit_mega = Fixed(114).normal();
+        c.size.unit_giga = Fixed(114).normal();
+        c.size.unit_huge = Fixed(114).normal();
+    });
+
+    test!(exa_nb:  ls "", exa "nb=38;5;115"  =>  colours c -> { c.size.number_byte          = Fixed(115).normal(); });
+    test!(exa_nk:  ls "", exa "nk=38;5;116"  =>  colours c -> { c.size.number_kilo          = Fixed(116).normal(); });
+    test!(exa_nm:  ls "", exa "nm=38;5;117"  =>  colours c -> { c.size.number_mega          = Fixed(117).normal(); });
+    test!(exa_ng:  ls "", exa "ng=38;5;118"  =>  colours c -> { c.size.number_giga          = Fixed(118).normal(); });
+    test!(exa_nh:  ls "", exa "nh=38;5;119"  =>  colours c -> { c.size.number_huge          = Fixed(119).normal(); });
+
+    test!(exa_ub:  ls "", exa "ub=38;5;115"  =>  colours c -> { c.size.unit_byte            = Fixed(115).normal(); });
+    test!(exa_uk:  ls "", exa "uk=38;5;116"  =>  colours c -> { c.size.unit_kilo            = Fixed(116).normal(); });
+    test!(exa_um:  ls "", exa "um=38;5;117"  =>  colours c -> { c.size.unit_mega            = Fixed(117).normal(); });
+    test!(exa_ug:  ls "", exa "ug=38;5;118"  =>  colours c -> { c.size.unit_giga            = Fixed(118).normal(); });
+    test!(exa_uh:  ls "", exa "uh=38;5;119"  =>  colours c -> { c.size.unit_huge            = Fixed(119).normal(); });
+
     test!(exa_df:  ls "", exa "df=38;5;115"  =>  colours c -> { c.size.major                = Fixed(115).normal(); });
     test!(exa_ds:  ls "", exa "ds=38;5;116"  =>  colours c -> { c.size.minor                = Fixed(116).normal(); });
 

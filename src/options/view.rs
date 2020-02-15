@@ -1,20 +1,20 @@
-use output::{View, Mode, grid, details, lines};
-use output::grid_details::{self, RowThreshold};
-use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
-use output::time::TimeFormat;
+use lazy_static::lazy_static;
 
-use options::{flags, Misfire, Vars};
-use options::parser::MatchedFlags;
+use crate::options::{flags, Misfire, Vars};
+use crate::options::parser::MatchedFlags;
+use crate::output::{View, Mode, grid, details, lines};
+use crate::output::grid_details::{self, RowThreshold};
+use crate::output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
+use crate::output::time::TimeFormat;
 
-use fs::PlatformMetadata;
-use fs::feature::xattr;
+use crate::fs::feature::xattr;
 
 
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
-        use options::style::Styles;
+        use crate::options::style::Styles;
 
         let mode = Mode::deduce(matches, vars)?;
         let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
@@ -27,7 +27,7 @@ impl Mode {
 
     /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
-        use options::misfire::Misfire::*;
+        use crate::options::misfire::Misfire::*;
 
         let long = || {
             if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
@@ -80,7 +80,7 @@ impl Mode {
 
             // If the terminal width couldn’t be matched for some reason, such
             // as the program’s stdout being connected to a file, then
-            // fallback to the lines view.
+            // fallback to the lines or details view.
             else if matches.has(&flags::TREE)? {
                 let details = details::Options {
                     table: None,
@@ -91,7 +91,10 @@ impl Mode {
 
                 Ok(Mode::Details(details))
             }
-            else {
+            else if matches.has(&flags::LONG)? {
+                let details = long()?;
+                Ok(Mode::Details(details))
+            } else {
                 let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
                 Ok(Mode::Lines(lines))
             }
@@ -159,7 +162,7 @@ impl TerminalWidth {
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
     fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
-        use options::vars;
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
@@ -190,7 +193,7 @@ impl RowThreshold {
     /// Determine whether to use a row threshold based on the given
     /// environment variables.
     fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
-        use options::vars;
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
@@ -210,8 +213,8 @@ impl TableOptions {
         let env = Environment::load_all();
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
-        let extra_columns = Columns::deduce(matches)?;
-        Ok(TableOptions { env, time_format, size_format, extra_columns })
+        let columns = Columns::deduce(matches)?;
+        Ok(TableOptions { env, time_format, size_format, columns })
     }
 }
 
@@ -226,7 +229,11 @@ impl Columns {
         let inode  = matches.has(&flags::INODE)?;
         let links  = matches.has(&flags::LINKS)?;
 
-        Ok(Columns { time_types, git, blocks, group, inode, links })
+        let permissions = !matches.has(&flags::NO_PERMISSIONS)?;
+        let filesize =    !matches.has(&flags::NO_FILESIZE)?;
+        let user =        !matches.has(&flags::NO_USER)?;
+
+        Ok(Columns { time_types, git, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 
@@ -257,12 +264,12 @@ impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
     fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<TimeFormat, Misfire> {
-        pub use output::time::{DefaultFormat, ISOFormat};
+        pub use crate::output::time::{DefaultFormat, ISOFormat};
 
         let word = match matches.get(&flags::TIME_STYLE)? {
             Some(w) => w.to_os_string(),
             None    => {
-                use options::vars;
+                use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
                     Some(ref t) if !t.is_empty() => t.clone(),
                     _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
@@ -308,7 +315,11 @@ impl TimeTypes {
         let accessed = matches.has(&flags::ACCESSED)?;
         let created  = matches.has(&flags::CREATED)?;
 
-        let time_types = if let Some(word) = possible_word {
+        let no_time = matches.has(&flags::NO_TIME)?;
+
+        let time_types = if no_time {
+            TimeTypes { modified: false, changed: false, accessed: false, created: false }
+        } else if let Some(word) = possible_word {
             if modified {
                 return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
             }
@@ -344,17 +355,6 @@ impl TimeTypes {
             TimeTypes::default()
         };
 
-        let mut fields = vec![];
-        if time_types.modified { fields.push(PlatformMetadata::ModifiedTime); }
-        if time_types.changed  { fields.push(PlatformMetadata::ChangedTime); }
-        if time_types.accessed { fields.push(PlatformMetadata::AccessedTime); }
-        if time_types.created  { fields.push(PlatformMetadata::CreatedTime); }
-
-        for field in fields {
-            if let Err(misfire) = field.check_supported() {
-                return Err(misfire);
-            }
-        }
         Ok(time_types)
     }
 }
@@ -379,11 +379,11 @@ lazy_static! {
 mod test {
     use super::*;
     use std::ffi::OsString;
-    use options::flags;
-    use options::parser::{Flag, Arg};
+    use crate::options::flags;
+    use crate::options::parser::{Flag, Arg};
 
-    use options::test::parse_for_test;
-    use options::test::Strictnesses::*;
+    use crate::options::test::parse_for_test;
+    use crate::options::test::Strictnesses::*;
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
@@ -542,15 +542,9 @@ mod test {
         test!(time_a:    TimeTypes <- ["-t", "acc"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false }));
 
         // Created
-        #[cfg(not(target_os = "linux"))]
         test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(target_os = "linux")]
-        test!(cr:        TimeTypes <- ["--created"];           Both => err Misfire::Unsupported("creation time is not available on this platform currently".to_string()));
-        #[cfg(not(target_os = "linux"))]
         test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(time_cr:   TimeTypes <- ["--time=created"];      Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(t_cr:      TimeTypes <- ["-tcr"];                Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
 
         // Multiples
@@ -569,8 +563,10 @@ mod test {
 
     mod views {
         use super::*;
-        use output::grid::Options as GridOptions;
-        use output::lines::Options as LineOptions;
+
+        use crate::output::grid::Options as GridOptions;
+        use crate::output::lines::Options as LineOptions;
+
 
         // Default
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));

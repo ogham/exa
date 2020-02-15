@@ -1,8 +1,8 @@
 use std::fmt;
 
-use options::flags;
-use options::parser::MatchedFlags;
-use fs::feature::xattr;
+use crate::options::flags;
+use crate::options::parser::MatchedFlags;
+use crate::fs::feature::xattr;
 
 
 static OPTIONS: &str = r##"
@@ -49,7 +49,12 @@ LONG VIEW OPTIONS
   -t, --time FIELD   which timestamp field to list (modified, accessed, created)
   -u, --accessed     use the accessed timestamp field
   -U, --created      use the created timestamp field
-  --time-style       how to format timestamps (default, iso, long-iso, full-iso)"##;
+  --changed          use the changed timestamp field
+  --time-style       how to format timestamps (default, iso, long-iso, full-iso)
+  --no-permissions   suppress the permissions field
+  --no-filesize      suppress the filesize field
+  --no-user          suppress the user field
+  --no-time          suppress the time field"##;
 
 static GIT_HELP:      &str = r##"  --git              list each file's Git status, if tracked or ignored"##;
 static EXTENDED_HELP: &str = r##"  -@, --extended     list each file's extended attributes and sizes"##;
@@ -122,7 +127,7 @@ impl fmt::Display for HelpString {
 
 #[cfg(test)]
 mod test {
-    use options::Options;
+    use crate::options::Options;
     use std::ffi::OsString;
 
     fn os(input: &'static str) -> OsString {

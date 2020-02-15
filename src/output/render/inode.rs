@@ -1,7 +1,7 @@
 use ansi_term::Style;
 
-use output::cell::TextCell;
-use fs::fields as f;
+use crate::output::cell::TextCell;
+use crate::fs::fields as f;
 
 
 impl f::Inode {
@@ -13,8 +13,8 @@ impl f::Inode {
 
 #[cfg(test)]
 pub mod test {
-    use output::cell::TextCell;
-    use fs::fields as f;
+    use crate::output::cell::TextCell;
+    use crate::fs::fields as f;
 
     use ansi_term::Colour::*;
 

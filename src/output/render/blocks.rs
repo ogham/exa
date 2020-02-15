@@ -1,7 +1,7 @@
 use ansi_term::Style;
 
-use output::cell::TextCell;
-use fs::fields as f;
+use crate::output::cell::TextCell;
+use crate::fs::fields as f;
 
 
 impl f::Blocks {
@@ -26,8 +26,8 @@ pub mod test {
     use ansi_term::Colour::*;
 
     use super::Colours;
-    use output::cell::TextCell;
-    use fs::fields as f;
+    use crate::output::cell::TextCell;
+    use crate::fs::fields as f;
 
 
     struct TestColours;

@@ -1,4 +1,3 @@
-#!/bin/sh
 # Meta-stuff
 complete -c exa -s 'v' -l 'version' -d "Show version of exa"
 complete -c exa -s '?' -l 'help'    -d "Show list of command-line options"
@@ -49,6 +48,7 @@ complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
 "
 
 complete -c exa -s 'I' -l 'ignore-glob' -d "Ignore files that match these glob patterns" -r
+complete -c exa -s 'D' -l 'only-dirs'   -d "List only directories"
 
 # Long view options
 complete -c exa -s 'b' -l 'binary'   -d "List file sizes with binary prefixes"
@@ -74,7 +74,11 @@ complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "
     long-iso\t'Display longer ISO timestaps, up to the minute'
     full-iso\t'Display full ISO timestamps, up to the nanosecond'
 "
+complete -c exa        -l 'no-permissions' -d "Suppress the permissions field"
+complete -c exa        -l 'no-filesize'    -d "Suppress the filesize field"
+complete -c exa        -l 'no-user'        -d "Suppress the user field"
+complete -c exa        -l 'no-time'        -d "Suppress the time field"
 
 # Optional extras
-complete -c exa -s 'g' -l 'git'      -d "List each file's Git status, if tracked"
+complete -c exa -l 'git' -d "List each file's Git status, if tracked"
 complete -c exa -s '@' -l 'extended' -d "List each file's extended attributes and sizes"
