@@ -1,10 +1,10 @@
 //! Parsing the options for `FileFilter`.
 
-use fs::{DotFilter, PlatformMetadata};
-use fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
+use crate::fs::DotFilter;
+use crate::fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
-use options::{flags, Misfire};
-use options::parser::MatchedFlags;
+use crate::options::{flags, Misfire};
+use crate::options::parser::MatchedFlags;
 
 
 impl FileFilter {
@@ -67,23 +67,7 @@ impl SortField {
             _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
         };
 
-        match SortField::to_platform_metadata(field) {
-            Some(m) => match m.check_supported() {
-                Ok(_) => Ok(field),
-                Err(misfire) => Err(misfire),
-            },
-            None => Ok(field),
-        }
-    }
-
-    fn to_platform_metadata(field: Self) -> Option<PlatformMetadata> {
-        match field {
-            SortField::ModifiedDate => Some(PlatformMetadata::ModifiedTime),
-            SortField::ChangedDate  => Some(PlatformMetadata::ChangedTime),
-            SortField::AccessedDate => Some(PlatformMetadata::AccessedTime),
-            SortField::CreatedDate  => Some(PlatformMetadata::CreatedTime),
-            _ => None
-        }
+        Ok(field)
     }
 }
 
@@ -198,16 +182,16 @@ impl GitIgnore {
 mod test {
     use super::*;
     use std::ffi::OsString;
-    use options::flags;
-    use options::parser::Flag;
+    use crate::options::flags;
+    use crate::options::parser::Flag;
 
     macro_rules! test {
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => $result:expr) => {
             #[test]
             fn $name() {
-                use options::parser::Arg;
-                use options::test::parse_for_test;
-                use options::test::Strictnesses::*;
+                use crate::options::parser::Arg;
+                use crate::options::test::parse_for_test;
+                use crate::options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB, &flags::GIT_IGNORE ];
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {

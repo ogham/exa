@@ -2,11 +2,11 @@ use std::io::{Write, Result as IOResult};
 
 use term_grid as tg;
 
-use fs::File;
-use style::Colours;
-use output::file_name::FileStyle;
-use output::icons::painted_icon;
-use output::cell::DisplayWidth;
+use crate::fs::File;
+use crate::style::Colours;
+use crate::output::file_name::FileStyle;
+use crate::output::icons::painted_icon;
+use crate::output::cell::DisplayWidth;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -63,6 +63,9 @@ impl<'a> Render<'a> {
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
             for file in &self.files {
+                if self.opts.icons {
+                    write!(w, "{}", painted_icon(&file, &self.style))?;
+                }
                 let name_cell = self.style.for_file(file, self.colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }

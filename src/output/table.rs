@@ -8,14 +8,16 @@ use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
 use locale;
 
+use log::debug;
+
 use users::UsersCache;
 
-use style::Colours;
-use output::cell::TextCell;
-use output::render::TimeRender;
-use output::time::TimeFormat;
-use fs::{File, fields as f};
-use fs::feature::git::GitCache;
+use crate::style::Colours;
+use crate::output::cell::TextCell;
+use crate::output::render::TimeRender;
+use crate::output::time::TimeFormat;
+use crate::fs::{File, fields as f};
+use crate::fs::feature::git::GitCache;
 
 
 /// Options for displaying a table.
@@ -23,14 +25,14 @@ pub struct Options {
     pub env: Environment,
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
-    pub extra_columns: Columns,
+    pub columns: Columns,
 }
 
 // I had to make other types derive Debug,
 // and Mutex<UsersCache> is not that!
 impl fmt::Debug for Options {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Table({:#?})", self.extra_columns)
+        write!(f, "Table({:#?})", self.columns)
     }
 }
 
@@ -47,6 +49,11 @@ pub struct Columns {
     pub blocks: bool,
     pub group: bool,
     pub git: bool,
+
+    // Defaults to true:
+    pub permissions: bool,
+    pub filesize: bool,
+    pub user: bool,
 }
 
 impl Columns {
@@ -57,19 +64,25 @@ impl Columns {
             columns.push(Column::Inode);
         }
 
-        columns.push(Column::Permissions);
+        if self.permissions {
+            columns.push(Column::Permissions);
+        }
 
         if self.links {
             columns.push(Column::HardLinks);
         }
 
-        columns.push(Column::FileSize);
+        if self.filesize {
+            columns.push(Column::FileSize);
+        }
 
         if self.blocks {
             columns.push(Column::Blocks);
         }
 
-        columns.push(Column::User);
+        if self.user {
+            columns.push(Column::User);
+        }
 
         if self.group {
             columns.push(Column::Group);
@@ -294,7 +307,7 @@ pub struct Row {
 
 impl<'a, 'f> Table<'a> {
     pub fn new(options: &'a Options, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
-        let columns = options.extra_columns.collect(git.is_some());
+        let columns = options.columns.collect(git.is_some());
         let widths = TableWidths::zero(columns.len());
 
         Table {
@@ -338,7 +351,7 @@ impl<'a, 'f> Table<'a> {
     }
 
     fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
-        use output::table::TimeType::*;
+        use crate::output::table::TimeType::*;
 
         match *column {
             Column::Permissions    => self.permissions_plus(file, xattrs).render(self.colours),

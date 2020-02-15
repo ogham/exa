@@ -4,8 +4,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use git2;
+use log::{debug, error, info, warn};
 
-use fs::fields as f;
+use crate::fs::fields as f;
 
 
 /// A **Git cache** is assembled based on the user’s input arguments.
@@ -265,11 +266,11 @@ impl Git {
 fn reorient(path: &Path) -> PathBuf {
     use std::env::current_dir;
     // I’m not 100% on this func tbh
-    match current_dir() {
+    let path = match current_dir() {
         Err(_)  => Path::new(".").join(&path),
         Ok(dir) => dir.join(&path),
-    }.canonicalize().unwrap()   // errors can be ignored here because they only occur if
-                                // the path does not exist / a component is not a folder
+    };
+    path.canonicalize().unwrap_or(path)
 }
 
 /// The character to display if the file has been modified, but not staged.

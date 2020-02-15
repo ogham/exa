@@ -6,9 +6,9 @@
 
 use ansi_term::Style;
 
-use fs::File;
-use output::file_name::FileColours;
-use output::icons::FileIcon;
+use crate::fs::File;
+use crate::output::file_name::FileColours;
+use crate::output::icons::FileIcon;
 
 
 #[derive(Debug, Default, PartialEq)]
@@ -20,10 +20,13 @@ impl FileExtensions {
     /// in order to kick off the build of a project. It’s usually only present
     /// in directories full of source code.
     fn is_immediate(&self, file: &File) -> bool {
-        file.name.to_lowercase().starts_with("readme") || file.name_is_one_of( &[
+        file.name.to_lowercase().starts_with("readme") ||
+        file.name.ends_with(".ninja") ||
+        file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
-            "build.gradle", "Rakefile", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml"
+            "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
+            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
+            "webpack.config.js", "meson.build",
         ])
     }
 
@@ -74,7 +77,7 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
-            "lzma", "deb", "rpm", "zst",
+            "lz", "tlz", "lzma", "deb", "rpm", "zst",
         ])
     }
 
@@ -85,7 +88,7 @@ impl FileExtensions {
     }
 
     fn is_compiled(&self, file: &File) -> bool {
-        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc" ]) {
+        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc", "zwc" ]) {
             true
         }
         else if let Some(dir) = file.parent_dir {
@@ -119,7 +122,7 @@ impl FileColours for FileExtensions {
 
 impl FileIcon for FileExtensions {
     fn icon_file(&self, file: &File) -> Option<char> {
-        use output::icons::Icons;
+        use crate::output::icons::Icons;
 
         Some(match file {
             f if self.is_music(f) || self.is_lossless(f) => Icons::Audio.value(),

@@ -1,8 +1,8 @@
 use ansi_term::Style;
 use users::{Users, Groups};
 
-use fs::fields as f;
-use output::cell::TextCell;
+use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::Group {
@@ -39,8 +39,8 @@ pub trait Colours {
 #[allow(unused_results)]
 pub mod test {
     use super::Colours;
-    use fs::fields as f;
-    use output::cell::TextCell;
+    use crate::fs::fields as f;
+    use crate::output::cell::TextCell;
 
     use users::{User, Group};
     use users::mock::MockUsers;

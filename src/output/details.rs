@@ -61,23 +61,25 @@
 
 
 use std::io::{Write, Error as IOError, Result as IOResult};
+use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
 use ansi_term::{ANSIGenericString, Style};
 
-use fs::{Dir, File};
-use fs::dir_action::RecurseOptions;
-use fs::filter::FileFilter;
-use fs::feature::ignore::IgnoreCache;
-use fs::feature::git::GitCache;
-use fs::feature::xattr::{Attribute, FileAttributes};
-use style::Colours;
-use output::cell::TextCell;
-use output::tree::{TreeTrunk, TreeParams, TreeDepth};
-use output::file_name::FileStyle;
-use output::table::{Table, Options as TableOptions, Row as TableRow};
-use output::icons::painted_icon;
+use crate::fs::{Dir, File};
+use crate::fs::dir_action::RecurseOptions;
+use crate::fs::filter::FileFilter;
+use crate::fs::feature::ignore::IgnoreCache;
+use crate::fs::feature::git::GitCache;
+use crate::fs::feature::xattr::{Attribute, FileAttributes};
+use crate::style::Colours;
+use crate::output::cell::TextCell;
+use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
+use crate::output::file_name::FileStyle;
+use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
+use crate::output::icons::painted_icon;
+
 use scoped_threadpool::Pool;
 
 
@@ -190,15 +192,16 @@ impl<'a> Render<'a> {
     /// parallelisable, and uses a pool of threads.
     fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
-        use fs::feature::xattr;
+        use log::error;
+        use crate::fs::feature::xattr;
 
-        let mut file_eggs = Vec::new();
+        let mut file_eggs = (0..src.len()).map(|_| MaybeUninit::uninit()).collect::<Vec<_>>();
 
         pool.scoped(|scoped| {
             let file_eggs = Arc::new(Mutex::new(&mut file_eggs));
             let table = table.as_ref();
 
-            for file in src {
+            for (idx, file) in src.iter().enumerate() {
                 let file_eggs = Arc::clone(&file_eggs);
 
                 scoped.execute(move || {
@@ -265,11 +268,13 @@ impl<'a> Render<'a> {
                     } else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
-                    file_eggs.lock().unwrap().push(egg);
+                    unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }
                 });
             }
         });
 
+        // this is safe because all entries have been initialized above
+        let mut file_eggs = unsafe { std::mem::transmute::<_, Vec<Egg>>(file_eggs) };
         self.filter.sort_files(&mut file_eggs);
 
         for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {
@@ -343,7 +348,7 @@ impl<'a> Render<'a> {
     }
 
     fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
-        use output::file_name::Colours;
+        use crate::output::file_name::Colours;
 
         let error_message = match path {
             Some(path) => format!("<{}: {}>", path.display(), error),

@@ -1,27 +1,6 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_results)]
 
-extern crate ansi_term;
-extern crate datetime;
-extern crate glob;
-extern crate libc;
-extern crate locale;
-extern crate natord;
-extern crate num_cpus;
-extern crate number_prefix;
-extern crate scoped_threadpool;
-extern crate term_grid;
-extern crate unicode_width;
-extern crate users;
-extern crate zoneinfo_compiled;
-extern crate term_size;
-
-#[cfg(feature="git")] extern crate git2;
-
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate log;
-
-
 use std::env::var_os;
 use std::ffi::{OsStr, OsString};
 use std::io::{stderr, Write, Result as IOResult};
@@ -29,14 +8,15 @@ use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
 
-use fs::{Dir, File};
-use fs::feature::ignore::IgnoreCache;
-use fs::feature::git::GitCache;
-use fs::get_mounts::get_mount_points;
-use options::{Options, Vars};
-pub use options::vars;
-pub use options::Misfire;
-use output::{escape, lines, grid, grid_details, details, View, Mode};
+use log::debug;
+
+use crate::fs::{Dir, File};
+use crate::fs::feature::ignore::IgnoreCache;
+use crate::fs::feature::git::GitCache;
+use crate::options::{Options, Vars};
+pub use crate::options::vars;
+pub use crate::options::Misfire;
+use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
 mod info;
@@ -99,7 +79,7 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 fn ignore_cache(options: &Options) -> Option<IgnoreCache> {
-    use fs::filter::GitIgnore;
+    use crate::fs::filter::GitIgnore;
 
     match options.filter.git_ignore {
         GitIgnore::CheckAndIgnore => Some(IgnoreCache::new()),

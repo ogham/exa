@@ -4,8 +4,8 @@ use std::num::ParseIntError;
 
 use glob;
 
-use options::{flags, HelpString, VersionString};
-use options::parser::{Arg, Flag, ParseError};
+use crate::options::{flags, HelpString, VersionString};
+use crate::options::parser::{Arg, Flag, ParseError};
 
 
 /// A **misfire** is a thing that can happen instead of listing files -- a
@@ -73,7 +73,7 @@ impl From<glob::PatternError> for Misfire {
 
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use options::parser::TakesValue;
+        use crate::options::parser::TakesValue;
         use self::Misfire::*;
 
         match *self {
