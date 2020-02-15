@@ -13,10 +13,14 @@ use log::debug;
 use crate::fs::{Dir, File};
 use crate::fs::feature::ignore::IgnoreCache;
 use crate::fs::feature::git::GitCache;
+use crate::fs::get_mounts::get_mount_points;
 use crate::options::{Options, Vars};
 pub use crate::options::vars;
 pub use crate::options::Misfire;
 use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
+
+#[macro_use]
+extern crate lazy_static;
 
 mod fs;
 mod info;

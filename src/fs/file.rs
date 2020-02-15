@@ -8,7 +8,7 @@ use std::time::{UNIX_EPOCH, Duration};
 
 use log::{debug, error};
 
-use MOUNT_POINTS;
+use crate::MOUNT_POINTS;
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
 
