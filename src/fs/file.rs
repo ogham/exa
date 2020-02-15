@@ -5,6 +5,7 @@ use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 use std::time::{UNIX_EPOCH, Duration};
+use std::fs;
 
 use log::{debug, error};
 
@@ -206,12 +207,19 @@ impl<'dir> File<'dir> {
         if self.is_directory() && (self.metadata.ino() == 2 || self.metadata.ino() == 256) {
             // inode numbers look like the file is a subvolume, unwind its
             // path to see whether it's on a btrfs volume
+            let absolute_path = fs::canonicalize(&self.path);
+            let absolute_path = match absolute_path {
+                Ok(buf) => buf,
+                Err(_) => {
+                    return false;
+                },
+            };
+
             let mut ancestors: Vec<PathBuf> = Vec::new();
-            for ancestor in self.path.ancestors() {
+            for ancestor in absolute_path.ancestors() {
                 ancestors.push(ancestor.to_path_buf());
             }
             ancestors.reverse();
-
             let mut is_on_btrfs = false;
             // Start at / and work downwards
             for ancestor in ancestors {
