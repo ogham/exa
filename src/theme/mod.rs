@@ -1,6 +1,7 @@
 use ansi_term::Style;
 
 use crate::fs::File;
+use crate::info::filetype::FileExtensions;
 use crate::output::file_name::Colours as FileNameColours;
 use crate::output::render;
 
@@ -59,34 +60,28 @@ pub struct Definitions {
 
 pub struct Theme {
     pub ui: UiStyles,
-    pub exts: Box<dyn FileColours>,
+    ext_map: Option<ExtensionMappings>,
+    file_ext: Option<FileExtensions>,
 }
 
 impl Options {
 
     #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
     pub fn to_theme(&self, isatty: bool) -> Theme {
-        use crate::info::filetype::FileExtensions;
-
         if self.use_colours == UseColours::Never || (self.use_colours == UseColours::Automatic && ! isatty) {
             let ui = UiStyles::plain();
-            let exts = Box::new(NoFileColours);
-            return Theme { ui, exts };
+            return Theme { ui, ext_map: None, file_ext: None };
         }
 
         // Parse the environment variables into colours and extension mappings
         let mut ui = UiStyles::default_theme(self.colour_scale);
         let (exts, use_default_filetypes) = self.definitions.parse_color_vars(&mut ui);
 
-        // Use between 0 and 2 file name highlighters
-        let exts = match (exts.is_non_empty(), use_default_filetypes) {
-            (false, false)  => Box::new(NoFileColours)           as Box<_>,
-            (false,  true)  => Box::new(FileExtensions)          as Box<_>,
-            ( true, false)  => Box::new(exts)                    as Box<_>,
-            ( true,  true)  => Box::new((exts, FileExtensions))  as Box<_>,
-        };
-
-        Theme { ui, exts }
+        Theme {
+            ui,
+            ext_map: if exts.is_non_empty() { Some(exts) } else { None },
+            file_ext: if use_default_filetypes { Some(FileExtensions) } else { None },
+        }
     }
 }
 
@@ -96,8 +91,7 @@ impl Definitions {
     /// colours into the `ExtensionMappings` that gets returned, and using the
     /// two-character UI codes to modify the mutable `Colours`.
     ///
-    /// Also returns if the `EXA_COLORS` variable should reset the existing file
-    /// type mappings or not. The `reset` code needs to be the first one.
+    /// Also reset file type mappings if `EXA_COLORS` variable starts with `reset` code.
     fn parse_color_vars(&self, colours: &mut UiStyles) -> (ExtensionMappings, bool) {
         use log::*;
 
@@ -105,7 +99,7 @@ impl Definitions {
 
         if let Some(lsc) = &self.ls {
             LSColors(lsc).each_pair(|pair| {
-                if ! colours.set_ls(&pair) {
+                if ! colours.set_colours(&pair, true) {
                     match glob::Pattern::new(pair.key) {
                         Ok(pat) => {
                             exts.add(pat, pair.to_style());
@@ -127,7 +121,7 @@ impl Definitions {
             }
 
             LSColors(exa).each_pair(|pair| {
-                if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
+                if ! colours.set_colours(&pair, false) {
                     match glob::Pattern::new(pair.key) {
                         Ok(pat) => {
                             exts.add(pat, pair.to_style());
@@ -145,47 +139,9 @@ impl Definitions {
 }
 
 
-pub trait FileColours: std::marker::Sync {
-    fn colour_file(&self, file: &File<'_>) -> Option<Style>;
-}
-
-#[derive(PartialEq, Debug)]
-struct NoFileColours;
-impl FileColours for NoFileColours {
-    fn colour_file(&self, _file: &File<'_>) -> Option<Style> {
-        None
-    }
-}
-
-// When getting the colour of a file from a *pair* of colourisers, try the
-// first one then try the second one. This lets the user provide their own
-// file type associations, while falling back to the default set if not set
-// explicitly.
-impl<A, B> FileColours for (A, B)
-where A: FileColours,
-      B: FileColours,
-{
-    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
-        self.0.colour_file(file)
-            .or_else(|| self.1.colour_file(file))
-    }
-}
-
-
 #[derive(PartialEq, Debug, Default)]
 struct ExtensionMappings {
     mappings: Vec<(glob::Pattern, Style)>,
-}
-
-// Loop through backwards so that colours specified later in the list override
-// colours specified earlier, like we do with options and strict mode
-
-impl FileColours for ExtensionMappings {
-    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
-        self.mappings.iter().rev()
-            .find(|t| t.0.matches(&file.name))
-            .map (|t| t.1)
-    }
 }
 
 impl ExtensionMappings {
@@ -195,6 +151,14 @@ impl ExtensionMappings {
 
     fn add(&mut self, pattern: glob::Pattern, style: Style) {
         self.mappings.push((pattern, style))
+    }
+
+    // Loop through backwards so that colours specified later in the list override
+    // colours specified earlier, like we do with options and strict mode
+    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
+        self.mappings.iter().rev()
+            .find(|t| t.0.matches(&file.name))
+            .map (|t| t.1)
     }
 }
 
@@ -206,7 +170,7 @@ impl render::BlocksColours for Theme {
     fn no_blocks(&self)    -> Style { self.ui.punctuation }
 }
 
-impl render::FiletypeColours for Theme {
+impl render::FilekindColours for Theme {
     fn normal(&self)       -> Style { self.ui.filekinds.normal }
     fn directory(&self)    -> Style { self.ui.filekinds.directory }
     fn pipe(&self)         -> Style { self.ui.filekinds.pipe }
@@ -227,6 +191,19 @@ impl render::GitColours for Theme {
     fn type_change(&self)   -> Style { self.ui.git.typechange }
     fn ignored(&self)       -> Style { self.ui.git.ignored }
     fn conflicted(&self)    -> Style { self.ui.git.conflicted }
+}
+
+impl render::FiletypeColours for Theme {
+    fn temp(&self)       -> Style { self.ui.filetypes.temp }
+    fn build(&self)      -> Style { self.ui.filetypes.build }
+    fn image(&self)      -> Style { self.ui.filetypes.image }
+    fn video(&self)      -> Style { self.ui.filetypes.video }
+    fn music(&self)      -> Style { self.ui.filetypes.music }
+    fn lossless(&self)   -> Style { self.ui.filetypes.lossless }
+    fn crypto(&self)     -> Style { self.ui.filetypes.crypto }
+    fn document(&self)   -> Style { self.ui.filetypes.document }
+    fn compressed(&self) -> Style { self.ui.filetypes.compressed }
+    fn compiled(&self)   -> Style { self.ui.filetypes.compiled }
 }
 
 impl render::GroupColours for Theme {
@@ -302,7 +279,19 @@ impl FileNameColours for Theme {
     fn executable_file(&self)     -> Style { self.ui.filekinds.executable }
 
     fn colour_file(&self, file: &File<'_>) -> Style {
-        self.exts.colour_file(file).unwrap_or(self.ui.filekinds.normal)
+        if let Some(ext_map) = &self.ext_map {
+            if let Some(style) = ext_map.colour_file(&file) {
+                return style;
+            }
+        }
+
+        if let Some(file_ext) = &self.file_ext {
+            if let Some(style) = file_ext.colour_file(&file, self) {
+                return style;
+            }
+        }
+
+        self.ui.filekinds.normal
     }
 }
 

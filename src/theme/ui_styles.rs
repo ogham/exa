@@ -13,6 +13,7 @@ pub struct UiStyles {
     pub users:      Users,
     pub links:      Links,
     pub git:        Git,
+    pub filetypes:  FileTypes,
 
     pub punctuation:  Style,
     pub date:         Style,
@@ -104,6 +105,20 @@ pub struct Git {
     pub conflicted: Style,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct FileTypes {
+    pub temp: Style,
+    pub build: Style,
+    pub image: Style,
+    pub video: Style,
+    pub music: Style,
+    pub lossless: Style,
+    pub crypto: Style,
+    pub document: Style,
+    pub compressed: Style,
+    pub compiled: Style,
+}
+
 impl UiStyles {
     pub fn plain() -> Self {
         Self::default()
@@ -112,12 +127,13 @@ impl UiStyles {
 
 
 impl UiStyles {
-
     /// Sets a value on this set of colours using one of the keys understood
-    /// by the `LS_COLORS` environment variable. Invalid keys set nothing, but
-    /// return false.
-    pub fn set_ls(&mut self, pair: &Pair<'_>) -> bool {
+    /// by the `LS_COLORS` or `EXA_COLORS` environment variable. Invalid keys
+    /// set nothing, but return false.
+    pub fn set_colours(&mut self, pair: &Pair<'_>, only_ls: bool) -> bool {
         match pair.key {
+            // LS_COLORS codes:
+
             "di" => self.filekinds.directory    = pair.to_style(),  // DIR
             "ex" => self.filekinds.executable   = pair.to_style(),  // EXEC
             "fi" => self.filekinds.normal       = pair.to_style(),  // FILE
@@ -127,20 +143,39 @@ impl UiStyles {
             "cd" => self.filekinds.char_device  = pair.to_style(),  // CHR
             "ln" => self.filekinds.symlink      = pair.to_style(),  // LINK
             "or" => self.broken_symlink         = pair.to_style(),  // ORPHAN
-             _   => return false,
-             // Codes we don’t do anything with:
-             // MULTIHARDLINK, DOOR, SETUID, SETGID, CAPABILITY,
-             // STICKY_OTHER_WRITABLE, OTHER_WRITABLE, STICKY, MISSING
-        }
-        true
-    }
+            "mh" => self.links.multi_link_file  = pair.to_style(),  // MULTIHARDLINK
 
-    /// Sets a value on this set of colours using one of the keys understood
-    /// by the `EXA_COLORS` environment variable. Invalid keys set nothing,
-    /// but return false. This doesn’t take the `LS_COLORS` keys into account,
-    /// so `set_ls` should have been run first.
-    pub fn set_exa(&mut self, pair: &Pair<'_>) -> bool {
-        match pair.key {
+            // Codes we don’t do anything with:
+            "rs"   // RESET
+            | "no" // NORMAL
+            | "mi" // MISSING
+            | "do" // DOOR
+            | "sg" // SETGID
+            | "st" // STICKY
+            | "ow" // OTHER_WRITABLE
+            | "ca" // CAPABILITY
+                => {},
+
+            // Code we ignore in LS_COLORS (repurposed in EXA_COLORS):
+            "tw"   // STICKY_OTHER_WRITABLE
+            | "su" // // SETUID
+                if only_ls => {},
+
+            _ if only_ls => return false,
+
+            // EXA_COLORS exclusive codes:
+
+            "tm" => self.filetypes.temp           = pair.to_style(),
+            "bu" => self.filetypes.build          = pair.to_style(),
+            "ig" => self.filetypes.image          = pair.to_style(),
+            "vi" => self.filetypes.video          = pair.to_style(),
+            "mu" => self.filetypes.music          = pair.to_style(),
+            "lo" => self.filetypes.lossless       = pair.to_style(),
+            "cr" => self.filetypes.crypto         = pair.to_style(),
+            "dc" => self.filetypes.document       = pair.to_style(),
+            "cs" => self.filetypes.compressed     = pair.to_style(),
+            "cl" => self.filetypes.compiled       = pair.to_style(),
+
             "ur" => self.perms.user_read          = pair.to_style(),
             "uw" => self.perms.user_write         = pair.to_style(),
             "ux" => self.perms.user_execute_file  = pair.to_style(),
@@ -154,7 +189,7 @@ impl UiStyles {
             "su" => self.perms.special_user_file  = pair.to_style(),
             "sf" => self.perms.special_other      = pair.to_style(),
             "xa" => self.perms.attribute          = pair.to_style(),
-
+ 
             "sn" => self.set_number_style(pair.to_style()),
             "sb" => self.set_unit_style(pair.to_style()),
             "nb" => self.size.number_byte         = pair.to_style(),
@@ -169,21 +204,21 @@ impl UiStyles {
             "uh" => self.size.unit_huge           = pair.to_style(),
             "df" => self.size.major               = pair.to_style(),
             "ds" => self.size.minor               = pair.to_style(),
-
+ 
             "uu" => self.users.user_you           = pair.to_style(),
             "un" => self.users.user_someone_else  = pair.to_style(),
             "gu" => self.users.group_yours        = pair.to_style(),
             "gn" => self.users.group_not_yours    = pair.to_style(),
-
+ 
             "lc" => self.links.normal             = pair.to_style(),
             "lm" => self.links.multi_link_file    = pair.to_style(),
-
+ 
             "ga" => self.git.new                  = pair.to_style(),
             "gm" => self.git.modified             = pair.to_style(),
             "gd" => self.git.deleted              = pair.to_style(),
             "gv" => self.git.renamed              = pair.to_style(),
             "gt" => self.git.typechange           = pair.to_style(),
-
+ 
             "xx" => self.punctuation              = pair.to_style(),
             "da" => self.date                     = pair.to_style(),
             "in" => self.inode                    = pair.to_style(),
@@ -194,7 +229,7 @@ impl UiStyles {
             "bO" => self.broken_path_overlay      = pair.to_style(),
 
              _   => return false,
-        }
+        };
 
         true
     }

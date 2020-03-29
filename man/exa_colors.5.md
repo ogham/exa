@@ -76,8 +76,41 @@ LIST OF CODES
 `or`
 : symlinks with no target
 
+`mh`
+: hard link count when more than one hardlink
+
 
 `EXA_COLORS` can use many more:
+
+`tm`
+: a regular file that’s temporary (ex: a text editor’s backup file)
+
+`bu`
+: a regular file that’s used to build a project (ex: a build script or config)
+
+`ig`
+: a regular file that’s an image
+
+`vi`
+: a regular file that’s a video
+
+`mu`
+: a regular file that’s lossy music
+
+`lo`
+: a regular file that’s lossless music
+
+`cr`
+: a regular file that’s related to cryptography (ex: a key or a certificate)
+
+`dc`
+: a regular file that’s a document (ex: an office suite document or a PDF)
+
+`cs`
+: a regular file that’s compressed
+
+`cl`
+: a regular file that’s a compilation artifact (ex: a Java class file)
 
 `ur`
 : the user-read permission bit

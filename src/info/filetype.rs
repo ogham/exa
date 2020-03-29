@@ -8,7 +8,7 @@ use ansi_term::Style;
 
 use crate::fs::File;
 use crate::output::icons::FileIcon;
-use crate::theme::FileColours;
+use crate::output::render::FiletypeColours;
 
 
 #[derive(Debug, Default, PartialEq)]
@@ -16,10 +16,10 @@ pub struct FileExtensions;
 
 impl FileExtensions {
 
-    /// An “immediate” file is something that can be run or activated somehow
+    /// A build file is something that can be run or activated somehow
     /// in order to kick off the build of a project. It’s usually only present
     /// in directories full of source code.
-    fn is_immediate(&self, file: &File<'_>) -> bool {
+    fn is_build(&self, file: &File<'_>) -> bool {
         file.name.to_lowercase().starts_with("readme") ||
         file.name.ends_with(".ninja") ||
         file.name_is_one_of( &[
@@ -100,24 +100,20 @@ impl FileExtensions {
             false
         }
     }
-}
 
-impl FileColours for FileExtensions {
-    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
-        use ansi_term::Colour::*;
-
+    pub fn colour_file(&self, file: &File<'_>, colours: &impl FiletypeColours) -> Option<Style> {
         Some(match file {
-            f if self.is_temp(f)        => Fixed(244).normal(),
-            f if self.is_immediate(f)   => Yellow.bold().underline(),
-            f if self.is_image(f)       => Fixed(133).normal(),
-            f if self.is_video(f)       => Fixed(135).normal(),
-            f if self.is_music(f)       => Fixed(92).normal(),
-            f if self.is_lossless(f)    => Fixed(93).normal(),
-            f if self.is_crypto(f)      => Fixed(109).normal(),
-            f if self.is_document(f)    => Fixed(105).normal(),
-            f if self.is_compressed(f)  => Red.normal(),
-            f if self.is_compiled(f)    => Fixed(137).normal(),
-            _                           => return None,
+            f if self.is_temp(f)       => colours.temp(),
+            f if self.is_build(f)      => colours.build(),
+            f if self.is_image(f)      => colours.image(),
+            f if self.is_video(f)      => colours.video(),
+            f if self.is_music(f)      => colours.music(),
+            f if self.is_lossless(f)   => colours.lossless(),
+            f if self.is_crypto(f)     => colours.crypto(),
+            f if self.is_document(f)   => colours.document(),
+            f if self.is_compressed(f) => colours.compressed(),
+            f if self.is_compiled(f)   => colours.compiled(),
+            _                          => return None,
         })
     }
 }

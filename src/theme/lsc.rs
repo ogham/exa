@@ -28,13 +28,13 @@ impl<'var> LSColors<'var> {
     pub fn each_pair<C>(&mut self, mut callback: C)
     where C: FnMut(Pair<'var>)
     {
-        for next in self.0.split(':') {
+        for next in self.0.split(|c| c == ':' || c == '\n') {
             let bits = next.split('=')
                            .take(3)
                            .collect::<Vec<_>>();
 
-            if bits.len() == 2 && ! bits[0].is_empty() && ! bits[1].is_empty() {
-                callback(Pair { key: bits[0], value: bits[1] });
+            if bits.len() != 1 && ! bits[0].is_empty() && ! bits[1].is_empty() {
+                callback(Pair { key: bits[0].trim(), value: bits[1].trim() });
             }
         }
     }

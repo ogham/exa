@@ -1,11 +1,14 @@
 mod blocks;
 pub use self::blocks::Colours as BlocksColours;
 
-mod filetype;
-pub use self::filetype::Colours as FiletypeColours;
+mod filekind;
+pub use self::filekind::Colours as FilekindColours;
 
 mod git;
 pub use self::git::Colours as GitColours;
+
+mod filetype;
+pub use self::filetype::Colours as FiletypeColours;
 
 mod groups;
 pub use self::groups::Colours as GroupColours;
