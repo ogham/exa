@@ -23,6 +23,7 @@ DISPLAY OPTIONS
   --colo[u]r=WHEN    when to use terminal colours (always, auto, never)
   --colo[u]r-scale   highlight levels of file sizes distinctly
   --icons            display icons
+  --no-icons         hide icons (precedence over --icons)
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files

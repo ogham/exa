@@ -24,8 +24,13 @@ impl Classify {
 }
 
 impl ShowIcons {
+    fn enable_icons(matches: &MatchedFlags<'_>) -> bool {
+        matches.has(&flags::ICONS).unwrap_or_default()
+            && !matches.has(&flags::NO_ICONS).unwrap_or_default()
+    }
+
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        if ! matches.has(&flags::ICONS)? {
+        if ! Self::enable_icons(matches) {
             Ok(Self::Off)
         }
         else if let Some(columns) = vars.get(vars::EXA_ICON_SPACING).and_then(|s| s.into_string().ok()) {

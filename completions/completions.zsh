@@ -22,6 +22,7 @@ __exa() {
         --colo{,u}r"[When to use terminal colours]" \
         --colo{,u}r-scale"[Highlight levels of file sizes distinctly]" \
         --icons"[Display icons]" \
+        --no-icons"[Hide icons]" \
         --group-directories-first"[Sort directories before other files]" \
         --git-ignore"[Ignore files mentioned in '.gitignore']" \
         {-a,--all}"[Show hidden and 'dot' files]" \
