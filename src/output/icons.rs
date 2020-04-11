@@ -25,7 +25,7 @@ impl Icons {
 }
 
 pub fn painted_icon(file: &File, style: &FileStyle) -> String {
-    let file_icon = icon(&file).to_string();
+    let file_icon = format!("{}  ", icon(&file).to_string());
     let painted = style.exts
             .colour_file(&file)
             .map_or(file_icon.to_string(), |c| { 
@@ -39,7 +39,7 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
                     c.paint(file_icon).to_string() 
                 }
             });
-    format!("{}  ", painted)
+    return painted
 }
 
 fn icon(file: &File) -> char {
