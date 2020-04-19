@@ -262,7 +262,7 @@ impl Git {
 /// Converts a path to an absolute path based on the current directory.
 /// Paths need to be absolute for them to be compared properly, otherwise
 /// you’d ask a repo about “./README.md” but it only knows about
-/// “/vagrant/REAMDE.md”, prefixed by the workdir.
+/// “/vagrant/README.md”, prefixed by the workdir.
 fn reorient(path: &Path) -> PathBuf {
     use std::env::current_dir;
     // I’m not 100% on this func tbh

@@ -73,8 +73,8 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
         }
 
         if err > 0 {
-            // End indicies of the attribute names
-            // the buffer contains 0-terminates c-strings
+            // End indices of the attribute names
+            // the buffer contains 0-terminated c-strings
             let idx = buf.iter().enumerate().filter_map(|(i, v)|
                 if *v == 0 { Some(i) } else { None }
             );
