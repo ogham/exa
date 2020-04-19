@@ -138,7 +138,7 @@ struct Egg<'a> {
     errors:    Vec<(IOError, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
-    icon:      Option<String>, 
+    icon:      Option<String>,
 }
 
 impl<'a> AsRef<File<'a>> for Egg<'a> {
@@ -263,7 +263,7 @@ impl<'a> Render<'a> {
                         }
                     };
 
-                    let icon = if self.opts.icons { 
+                    let icon = if self.opts.icons {
                         Some(painted_icon(&file, &self.style))
                     } else { None };
 

@@ -267,7 +267,7 @@ impl Args {
                 //   -abx      =>  error
                 //
                 else {
-                    for (index, byte) in bytes.into_iter().enumerate().skip(1) {
+                    for (index, byte) in bytes.iter().enumerate().skip(1) {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
@@ -283,7 +283,7 @@ impl Args {
                                 }
                                 else {
                                     match arg.takes_value {
-                                        Forbidden => assert!(false),
+                                        Forbidden => unreachable!(),
                                         Necessary(_) => {
                                             return Err(ParseError::NeedsValue { flag, values });
                                         },
@@ -292,7 +292,6 @@ impl Args {
                                         }
                                     }
                                 }
-
                             }
                         }
                     }
@@ -309,14 +308,14 @@ impl Args {
     }
 
     fn lookup_short(&self, short: ShortArg) -> Result<&Arg, ParseError> {
-        match self.0.into_iter().find(|arg| arg.short == Some(short)) {
+        match self.0.iter().find(|arg| arg.short == Some(short)) {
             Some(arg)  => Ok(arg),
             None       => Err(ParseError::UnknownShortArgument { attempt: short })
         }
     }
 
     fn lookup_long<'b>(&self, long: &'b OsStr) -> Result<&Arg, ParseError> {
-        match self.0.into_iter().find(|arg| arg.long == long) {
+        match self.0.iter().find(|arg| arg.long == long) {
             Some(arg)  => Ok(arg),
             None       => Err(ParseError::UnknownArgument { attempt: long.to_os_string() })
         }

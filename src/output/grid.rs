@@ -50,7 +50,7 @@ impl<'a> Render<'a> {
             };
 
             grid.add(tg::Cell {
-                contents:  format!("{icon}{filename}", icon=&icon.unwrap_or("".to_string()), filename=filename.strings().to_string()),
+                contents:  format!("{icon}{filename}", icon=&icon.unwrap_or_default(), filename=filename.strings().to_string()),
                 width:     *width,
             });
         }

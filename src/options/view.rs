@@ -290,7 +290,7 @@ impl TimeFormat {
             Ok(TimeFormat::FullISO)
         }
         else {
-            Err(Misfire::BadArgument(&flags::TIME_STYLE, word.into()))
+            Err(Misfire::BadArgument(&flags::TIME_STYLE, word))
         }
     }
 }

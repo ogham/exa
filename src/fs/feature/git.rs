@@ -3,7 +3,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use git2;
 use log::{debug, error, info, warn};
 
 use crate::fs::fields as f;
