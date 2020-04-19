@@ -70,7 +70,6 @@ use ansi_term::{ANSIGenericString, Style};
 use crate::fs::{Dir, File};
 use crate::fs::dir_action::RecurseOptions;
 use crate::fs::filter::FileFilter;
-use crate::fs::feature::ignore::IgnoreCache;
 use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::{Attribute, FileAttributes};
 use crate::style::Colours;
@@ -138,7 +137,7 @@ struct Egg<'a> {
     errors:    Vec<(IOError, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
-    icon:      Option<String>, 
+    icon:      Option<String>,
 }
 
 impl<'a> AsRef<File<'a>> for Egg<'a> {
@@ -149,7 +148,7 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, ignore: Option<&'a IgnoreCache>, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
@@ -171,14 +170,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, ignore, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, git, TreeDepth::root());
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, ignore, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, git, TreeDepth::root());
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -190,7 +189,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], ignore: Option<&'ig IgnoreCache>, depth: TreeDepth) {
+    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], git: Option<&'ig GitCache>, depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
         use log::error;
         use crate::fs::feature::xattr;
@@ -263,7 +262,7 @@ impl<'a> Render<'a> {
                         }
                     };
 
-                    let icon = if self.opts.icons { 
+                    let icon = if self.opts.icons {
                         Some(painted_icon(&file, &self.style))
                     } else { None };
 
@@ -304,7 +303,7 @@ impl<'a> Render<'a> {
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter, ignore) {
+                for file_to_add in dir.files(self.filter.dot_filter, git) {
                     match file_to_add {
                         Ok(f)          => files.push(f),
                         Err((path, e)) => errors.push((e, Some(path)))
@@ -322,7 +321,7 @@ impl<'a> Render<'a> {
                         rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(pool, table, rows, &files, ignore, depth.deeper());
+                    self.add_files_to_table(pool, table, rows, &files, git, depth.deeper());
                     continue;
                 }
             }

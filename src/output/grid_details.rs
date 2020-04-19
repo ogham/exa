@@ -120,7 +120,7 @@ impl<'a> Render<'a> {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.give_up().render(git, None, w)
+            self.give_up().render(git, w)
         }
     }
 

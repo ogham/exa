@@ -72,7 +72,7 @@
 use std::ffi::{OsStr, OsString};
 
 use crate::fs::dir_action::DirAction;
-use crate::fs::filter::FileFilter;
+use crate::fs::filter::{FileFilter,GitIgnore};
 use crate::output::{View, Mode, details, grid_details};
 
 mod style;
@@ -146,6 +146,10 @@ impl Options {
     /// status column. It’s only worth trying to discover a repository if the
     /// results will end up being displayed.
     pub fn should_scan_for_git(&self) -> bool {
+        if self.filter.git_ignore == GitIgnore::CheckAndIgnore {
+            return true;
+        }
+
         match self.view.mode {
             Mode::Details(details::Options { table: Some(ref table), .. }) |
             Mode::GridDetails(grid_details::Options { details: details::Options { table: Some(ref table), .. }, .. }) => table.columns.git,
