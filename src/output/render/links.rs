@@ -35,7 +35,7 @@ pub mod test {
     struct TestColours;
 
     impl Colours for TestColours {
-        fn normal(&self)           -> Style { Blue.normal() }
+        fn normal(&self)           -> Style { Blue.bold() }
         fn multi_link_file(&self)  -> Style { Blue.on(Red) }
     }
 
@@ -49,7 +49,7 @@ pub mod test {
 
         let expected = TextCell {
             width: DisplayWidth::from(1),
-            contents: vec![ Blue.paint("1") ].into(),
+            contents: vec![ Blue.bold().paint("1") ].into(),
         };
 
         assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()).into());
@@ -64,7 +64,7 @@ pub mod test {
 
         let expected = TextCell {
             width: DisplayWidth::from(5),
-            contents: vec![ Blue.paint("3,005") ].into(),
+            contents: vec![ Blue.bold().paint("3,005") ].into(),
         };
 
         assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()).into());

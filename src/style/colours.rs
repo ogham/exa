@@ -163,7 +163,7 @@ impl Colours {
 
             git: Git {
                 new:         Green.normal(),
-                modified:    Blue.normal(),
+                modified:    Blue.bold(),
                 deleted:     Red.normal(),
                 renamed:     Yellow.normal(),
                 typechange:  Purple.normal(),
@@ -171,7 +171,7 @@ impl Colours {
             },
 
             punctuation:  Fixed(244).normal(),
-            date:         Blue.normal(),
+            date:         Blue.bold(),
             inode:        Purple.normal(),
             blocks:       Cyan.normal(),
             header:       Style::default().underline(),

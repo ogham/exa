@@ -422,31 +422,31 @@ mod customs_test {
     }
 
     // LS_COLORS can affect all of these colours:
-    test!(ls_di:   ls "di=31", exa ""  =>  colours c -> { c.filekinds.directory    = Red.normal();    });
-    test!(ls_ex:   ls "ex=32", exa ""  =>  colours c -> { c.filekinds.executable   = Green.normal();  });
-    test!(ls_fi:   ls "fi=33", exa ""  =>  colours c -> { c.filekinds.normal       = Yellow.normal(); });
-    test!(ls_pi:   ls "pi=34", exa ""  =>  colours c -> { c.filekinds.pipe         = Blue.normal();   });
-    test!(ls_so:   ls "so=35", exa ""  =>  colours c -> { c.filekinds.socket       = Purple.normal(); });
-    test!(ls_bd:   ls "bd=36", exa ""  =>  colours c -> { c.filekinds.block_device = Cyan.normal();   });
-    test!(ls_cd:   ls "cd=35", exa ""  =>  colours c -> { c.filekinds.char_device  = Purple.normal(); });
-    test!(ls_ln:   ls "ln=34", exa ""  =>  colours c -> { c.filekinds.symlink      = Blue.normal();   });
-    test!(ls_or:   ls "or=33", exa ""  =>  colours c -> { c.broken_symlink         = Yellow.normal(); });
+    test!(ls_di:   ls "di=31", exa ""   => colours c -> { c.filekinds.directory    = Red.normal();    });
+    test!(ls_ex:   ls "ex=32", exa ""   => colours c -> { c.filekinds.executable   = Green.normal();  });
+    test!(ls_fi:   ls "fi=33", exa ""   => colours c -> { c.filekinds.normal       = Yellow.normal(); });
+    test!(ls_pi:   ls "pi=1;34", exa "" => colours c -> { c.filekinds.pipe         = Blue.bold();     });
+    test!(ls_so:   ls "so=35", exa ""   => colours c -> { c.filekinds.socket       = Purple.normal(); });
+    test!(ls_bd:   ls "bd=36", exa ""   => colours c -> { c.filekinds.block_device = Cyan.normal();   });
+    test!(ls_cd:   ls "cd=35", exa ""   => colours c -> { c.filekinds.char_device  = Purple.normal(); });
+    test!(ls_ln:   ls "ln=1;34", exa "" => colours c -> { c.filekinds.symlink      = Blue.bold();     });
+    test!(ls_or:   ls "or=33", exa ""   => colours c -> { c.broken_symlink         = Yellow.normal(); });
 
     // EXA_COLORS can affect all those colours too:
-    test!(exa_di:  ls "", exa "di=32"  =>  colours c -> { c.filekinds.directory    = Green.normal();  });
-    test!(exa_ex:  ls "", exa "ex=33"  =>  colours c -> { c.filekinds.executable   = Yellow.normal(); });
-    test!(exa_fi:  ls "", exa "fi=34"  =>  colours c -> { c.filekinds.normal       = Blue.normal();   });
-    test!(exa_pi:  ls "", exa "pi=35"  =>  colours c -> { c.filekinds.pipe         = Purple.normal(); });
-    test!(exa_so:  ls "", exa "so=36"  =>  colours c -> { c.filekinds.socket       = Cyan.normal();   });
-    test!(exa_bd:  ls "", exa "bd=35"  =>  colours c -> { c.filekinds.block_device = Purple.normal(); });
-    test!(exa_cd:  ls "", exa "cd=34"  =>  colours c -> { c.filekinds.char_device  = Blue.normal();   });
-    test!(exa_ln:  ls "", exa "ln=33"  =>  colours c -> { c.filekinds.symlink      = Yellow.normal(); });
-    test!(exa_or:  ls "", exa "or=32"  =>  colours c -> { c.broken_symlink         = Green.normal();  });
+    test!(exa_di:  ls "", exa "di=32"   => colours c -> { c.filekinds.directory    = Green.normal();  });
+    test!(exa_ex:  ls "", exa "ex=33"   => colours c -> { c.filekinds.executable   = Yellow.normal(); });
+    test!(exa_fi:  ls "", exa "fi=1;34" => colours c -> { c.filekinds.normal       = Blue.bold();     });
+    test!(exa_pi:  ls "", exa "pi=35"   => colours c -> { c.filekinds.pipe         = Purple.normal(); });
+    test!(exa_so:  ls "", exa "so=36"   => colours c -> { c.filekinds.socket       = Cyan.normal();   });
+    test!(exa_bd:  ls "", exa "bd=35"   => colours c -> { c.filekinds.block_device = Purple.normal(); });
+    test!(exa_cd:  ls "", exa "cd=1;34" => colours c -> { c.filekinds.char_device  = Blue.bold();     });
+    test!(exa_ln:  ls "", exa "ln=33"   => colours c -> { c.filekinds.symlink      = Yellow.normal(); });
+    test!(exa_or:  ls "", exa "or=32"   => colours c -> { c.broken_symlink         = Green.normal();  });
 
     // EXA_COLORS will even override options from LS_COLORS:
-    test!(ls_exa_di: ls "di=31", exa "di=32"  =>  colours c -> { c.filekinds.directory  = Green.normal();  });
-    test!(ls_exa_ex: ls "ex=32", exa "ex=33"  =>  colours c -> { c.filekinds.executable = Yellow.normal(); });
-    test!(ls_exa_fi: ls "fi=33", exa "fi=34"  =>  colours c -> { c.filekinds.normal     = Blue.normal();   });
+    test!(ls_exa_di: ls "di=31", exa "di=32"   => colours c -> { c.filekinds.directory  = Green.normal();  });
+    test!(ls_exa_ex: ls "ex=32", exa "ex=33"   => colours c -> { c.filekinds.executable = Yellow.normal(); });
+    test!(ls_exa_fi: ls "fi=33", exa "fi=1;34" => colours c -> { c.filekinds.normal     = Blue.bold();     });
 
     // But more importantly, EXA_COLORS has its own, special list of colours:
     test!(exa_ur:  ls "", exa "ur=38;5;100"  =>  colours c -> { c.perms.user_read           = Fixed(100).normal(); });
@@ -542,6 +542,6 @@ mod customs_test {
     ]);
 
     // Finally, colours get applied right-to-left:
-    test!(ls_overwrite:  ls "pi=31:pi=32:pi=33", exa ""  =>  colours c -> { c.filekinds.pipe = Yellow.normal(); });
-    test!(exa_overwrite: ls "", exa "da=36:da=35:da=34"  =>  colours c -> { c.date = Blue.normal(); });
+    test!(ls_overwrite:  ls "pi=31:pi=32:pi=33", exa ""   => colours c -> { c.filekinds.pipe = Yellow.normal(); });
+    test!(exa_overwrite: ls "", exa "da=36:da=35:da=1;34" => colours c -> { c.date = Blue.bold(); });
 }

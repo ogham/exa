@@ -210,7 +210,7 @@ mod test {
     // Foreground colours
     test!(green:   "cb=32"   => [ ("cb", Green.normal()) ]);
     test!(red:     "di=31"   => [ ("di", Red.normal()) ]);
-    test!(blue:    "la=34"   => [ ("la", Blue.normal()) ]);
+    test!(blue:    "la=1;34" => [ ("la", Blue.bold()) ]);
 
     // Background colours
     test!(yellow:  "do=43"   => [ ("do", Style::default().on(Yellow)) ]);
@@ -223,6 +223,6 @@ mod test {
     test!(both:    "la=1;4"  => [ ("la", Style::default().bold().underline()) ]);
 
     // More and many
-    test!(more:  "me=43;21;55;34:yu=1;4;1"  => [ ("me", Blue.on(Yellow)), ("yu", Style::default().bold().underline()) ]);
-    test!(many:  "red=31:green=32:blue=34"  => [ ("red", Red.normal()), ("green", Green.normal()), ("blue", Blue.normal()) ]);
+    test!(more: "me=43;21;55;34:yu=1;4;1"   => [ ("me", Blue.on(Yellow)), ("yu", Style::default().bold().underline()) ]);
+    test!(many: "red=31:green=32:blue=1;34" => [ ("red", Red.normal()), ("green", Green.normal()), ("blue", Blue.bold()) ]);
 }
