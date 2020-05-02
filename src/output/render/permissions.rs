@@ -8,6 +8,7 @@ use crate::output::render::FiletypeColours;
 impl f::PermissionsPlus {
     pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> TextCell {
         let mut chars = vec![ self.file_type.render(colours) ];
+        #[cfg(unix)]
         chars.extend(self.permissions.render(colours, self.file_type.is_regular_file()));
 
         if self.xattrs {

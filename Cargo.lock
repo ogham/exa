@@ -93,6 +93,7 @@ dependencies = [
  "natord 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "number_prefix 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "os_str_bytes 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "scoped_threadpool 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "term_grid 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "term_size 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -271,6 +272,11 @@ dependencies = [
  "pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "vcpkg 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "os_str_bytes"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "pad"
@@ -506,6 +512,7 @@ dependencies = [
 "checksum number_prefix 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "17b02fc0ff9a9e4b35b3342880f48e896ebf69f2967921fe8646bf5b7125956a"
 "checksum openssl-src 111.3.0+1.1.1c (registry+https://github.com/rust-lang/crates.io-index)" = "53ed5f31d294bdf5f7a4ba0a206c2754b0f60e9a63b7e3076babc5317873c797"
 "checksum openssl-sys 0.9.48 (registry+https://github.com/rust-lang/crates.io-index)" = "b5ba300217253bcc5dc68bed23d782affa45000193866e025329aa8a7a9f05b8"
+"checksum os_str_bytes 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ced912e1439b63a8172b943887c33373f226a4a9cfab95d09c0e3c44851d04d4"
 "checksum pad 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "9c9b8de33465981073e32e1d75bb89ade49062bb853e7c97ec2c13439095563a"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 "checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"

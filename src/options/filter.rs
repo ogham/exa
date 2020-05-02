@@ -58,9 +58,12 @@ impl SortField {
             // newest files) get sorted at the top, and files with the most
             // age (the oldest) at the bottom.
             "age" | "old" | "oldest" => SortField::ModifiedAge,
+            #[cfg(unix)]
             "ch" | "changed" => SortField::ChangedDate,
             "acc" | "accessed" => SortField::AccessedDate,
+            #[cfg(unix)]
             "cr" | "created" => SortField::CreatedDate,
+            #[cfg(unix)]
             "inode" => SortField::FileInode,
             "type" => SortField::FileType,
             "none" => SortField::Unsorted,

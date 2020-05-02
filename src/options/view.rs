@@ -332,16 +332,16 @@ impl TimeTypes {
             else if created {
                 return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
             }
-            else if word == "mod" || word == "modified" {
+            else if &*word == "mod" || &*word == "modified" {
                 TimeTypes { modified: true,  changed: false, accessed: false, created: false }
             }
-            else if word == "ch" || word == "changed" {
+            else if &*word == "ch" || &*word == "changed" {
                 TimeTypes { modified: false, changed: true,  accessed: false, created: false }
             }
-            else if word == "acc" || word == "accessed" {
+            else if &*word == "acc" || &*word == "accessed" {
                 TimeTypes { modified: false, changed: false, accessed: true,  created: false }
             }
-            else if word == "cr" || word == "created" {
+            else if &*word == "cr" || &*word == "created" {
                 TimeTypes { modified: false, changed: false, accessed: false, created: true  }
             }
             else {

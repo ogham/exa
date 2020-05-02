@@ -396,6 +396,7 @@ impl render::GitColours for Colours {
     fn ignored(&self)       -> Style { self.git.ignored }
 }
 
+#[cfg(unix)]
 impl render::GroupColours for Colours {
     fn yours(&self)      -> Style { self.users.group_yours }
     fn not_yours(&self)  -> Style { self.users.group_not_yours }
@@ -452,6 +453,7 @@ impl render::SizeColours for Colours {
     fn minor(&self)   -> Style { self.size.minor }
 }
 
+#[cfg(unix)]
 impl render::UserColours for Colours {
     fn you(&self)           -> Style { self.users.user_you }
     fn someone_else(&self)  -> Style { self.users.user_someone_else }

@@ -45,13 +45,13 @@ impl TerminalColours {
             None    => return Ok(TerminalColours::default()),
         };
 
-        if word == "always" {
+        if &*word == "always" {
             Ok(TerminalColours::Always)
         }
-        else if word == "auto" || word == "automatic" {
+        else if &*word == "auto" || &*word == "automatic" {
             Ok(TerminalColours::Automatic)
         }
-        else if word == "never" {
+        else if &*word == "never" {
             Ok(TerminalColours::Never)
         }
         else {
@@ -124,7 +124,7 @@ impl Styles {
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
     use log::warn;
-    
+
     use crate::options::vars;
     use crate::style::LSColors;
 
