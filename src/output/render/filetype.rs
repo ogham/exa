@@ -28,4 +28,5 @@ pub trait Colours {
     fn char_device(&self) -> Style;
     fn socket(&self) -> Style;
     fn special(&self) -> Style;
+    fn hidden(&self) -> Style;
 }

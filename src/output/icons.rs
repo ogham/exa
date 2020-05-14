@@ -45,6 +45,7 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
 fn icon(file: &File) -> char {
     let extensions = Box::new(FileExtensions);
     if file.is_directory() { '\u{f115}' }
+    else if file.is_hidden() { '\u{fb12}' }
     else if let Some(icon) = extensions.icon_file(file) { icon }
     else { 
         if let Some(ext) = file.ext.as_ref() {

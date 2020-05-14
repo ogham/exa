@@ -200,6 +200,8 @@ impl<'dir> File<'dir> {
         self.metadata.file_type().is_socket()
     }
 
+    /// Whether this file is hidden
+    pub fn is_hidden(&self) -> bool { self.name.starts_with('.') }
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever

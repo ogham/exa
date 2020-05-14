@@ -1,5 +1,5 @@
 use ansi_term::Style;
-use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
+use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed, White};
 
 use crate::output::render;
 use crate::output::file_name::Colours as FileNameColours;
@@ -41,6 +41,7 @@ pub struct FileKinds {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
+    pub hidden: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -125,6 +126,7 @@ impl Colours {
                 socket:       Red.bold(),
                 special:      Yellow.normal(),
                 executable:   Green.bold(),
+                hidden:       White.dimmed(),
             },
 
             perms: Permissions {
@@ -383,6 +385,7 @@ impl render::FiletypeColours for Colours {
     fn char_device(&self)  -> Style { self.filekinds.char_device }
     fn socket(&self)       -> Style { self.filekinds.socket }
     fn special(&self)      -> Style { self.filekinds.special }
+    fn hidden(&self)       -> Style { self.filekinds.hidden }
 }
 
 impl render::GitColours for Colours {

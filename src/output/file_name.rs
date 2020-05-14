@@ -261,7 +261,8 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             f if f.is_char_device()      => self.colours.char_device(),
             f if f.is_socket()           => self.colours.socket(),
             f if !f.is_file()            => self.colours.special(),
-            _                            => return None,
+            f if f.is_hidden()           => self.colours.hidden(),
+            _                                  => return None,
         })
     }
 }
