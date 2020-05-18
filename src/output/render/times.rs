@@ -11,7 +11,7 @@ pub trait Render {
                         format: &TimeFormat) -> TextCell;
 }
 
-impl Render for std::time::Duration {
+impl Render for std::time::SystemTime {
     fn render(self, style: Style,
                         tz: &Option<TimeZone>,
                         format: &TimeFormat) -> TextCell {

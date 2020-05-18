@@ -4,7 +4,7 @@ use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
-use std::time::{UNIX_EPOCH, Duration};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use log::{debug, error};
 
@@ -326,35 +326,26 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp.
-    /// If the file's time is invalid, assume it was modified today
-    pub fn modified_time(&self) -> Duration {
-        match self.metadata.modified() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// If the file's time is invalid, assume it was modified at the epoch
+    pub fn modified_time(&self) -> SystemTime {
+        self.metadata.modified().unwrap_or(UNIX_EPOCH)
     }
 
     /// This file’s last changed timestamp.
-    pub fn changed_time(&self) -> Duration {
-        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
+    pub fn changed_time(&self) -> SystemTime {
+        self.metadata.modified().unwrap_or(UNIX_EPOCH)
     }
 
     /// This file’s last accessed timestamp.
-    /// If the file's time is invalid, assume it was accessed today
-    pub fn accessed_time(&self) -> Duration {
-        match self.metadata.accessed() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// If the file's time is invalid, assume it was accessed at the epoch
+    pub fn accessed_time(&self) -> SystemTime {
+        self.metadata.accessed().unwrap_or(UNIX_EPOCH)
     }
 
     /// This file’s created timestamp.
-    /// If the file's time is invalid, assume it was created today
-    pub fn created_time(&self) -> Duration {
-        match self.metadata.created() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// If the file's time is invalid, assume it was created at the epoch
+    pub fn created_time(&self) -> SystemTime {
+        self.metadata.created().unwrap_or(UNIX_EPOCH)
     }
 
     /// This file’s ‘type’.
