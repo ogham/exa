@@ -4,7 +4,7 @@ use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::{debug, error};
 
@@ -333,7 +333,17 @@ impl<'dir> File<'dir> {
 
     /// This file’s last changed timestamp.
     pub fn changed_time(&self) -> SystemTime {
-        self.metadata.modified().unwrap_or(UNIX_EPOCH)
+        let (mut sec, mut nsec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
+
+        if sec < 0 { // yeah right
+            if nsec > 0 {
+                sec += 1;
+                nsec = nsec - 1_000_000_000;
+            }
+            UNIX_EPOCH - Duration::new(sec.abs() as u64, nsec.abs() as u32)
+        } else {
+            UNIX_EPOCH + Duration::new(sec as u64, nsec as u32)
+        }
     }
 
     /// This file’s last accessed timestamp.
