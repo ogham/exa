@@ -185,14 +185,23 @@ fn systemtime_epoch(time: SystemTime) -> i64 {
     time
         .duration_since(UNIX_EPOCH)
         .map(|t| t.as_secs() as i64)
-        .unwrap_or_else(|e| -(e.duration().as_secs() as i64))
+        .unwrap_or_else(|e| {
+            -(e.duration().as_secs() as i64) - e.duration().subsec_nanos().min(1) as i64
+        })
 }
 
 fn systemtime_nanos(time: SystemTime) -> u32 {
     time
         .duration_since(UNIX_EPOCH)
         .map(|t| t.subsec_nanos())
-        .unwrap_or_else(|e| e.duration().subsec_nanos())
+        .unwrap_or_else(|e| {
+            let nanos = e.duration().subsec_nanos();
+            if nanos == 0 {
+                0
+            } else {
+                1_000_000_000 - nanos
+            }
+        })
 }
 
 #[allow(trivial_numeric_casts)]
