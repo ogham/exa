@@ -325,37 +325,36 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file’s last modified timestamp.
-    /// If the file's time is invalid, assume it was modified at the epoch
-    pub fn modified_time(&self) -> SystemTime {
-        self.metadata.modified().unwrap_or(UNIX_EPOCH)
+    /// This file’s last modified timestamp, if available on this platform.
+    pub fn modified_time(&self) -> Option<SystemTime> {
+        self.metadata.modified().ok()
     }
 
-    /// This file’s last changed timestamp.
-    pub fn changed_time(&self) -> SystemTime {
+    /// This file’s last changed timestamp, if available on this platform.
+    pub fn changed_time(&self) -> Option<SystemTime> {
         let (mut sec, mut nsec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
 
-        if sec < 0 { // yeah right
-            if nsec > 0 {
-                sec += 1;
-                nsec = nsec - 1_000_000_000;
-            }
-            UNIX_EPOCH - Duration::new(sec.abs() as u64, nsec.abs() as u32)
-        } else {
-            UNIX_EPOCH + Duration::new(sec as u64, nsec as u32)
-        }
+        Some(
+           if sec < 0 {
+               if nsec > 0 {
+                   sec += 1;
+                   nsec = nsec - 1_000_000_000;
+               }
+               UNIX_EPOCH - Duration::new(sec.abs() as u64, nsec.abs() as u32)
+           } else {
+               UNIX_EPOCH + Duration::new(sec as u64, nsec as u32)
+           }
+        )
     }
 
-    /// This file’s last accessed timestamp.
-    /// If the file's time is invalid, assume it was accessed at the epoch
-    pub fn accessed_time(&self) -> SystemTime {
-        self.metadata.accessed().unwrap_or(UNIX_EPOCH)
+    /// This file’s last accessed timestamp, if available on this platform.
+    pub fn accessed_time(&self) -> Option<SystemTime> {
+        self.metadata.accessed().ok()
     }
 
-    /// This file’s created timestamp.
-    /// If the file's time is invalid, assume it was created at the epoch
-    pub fn created_time(&self) -> SystemTime {
-        self.metadata.created().unwrap_or(UNIX_EPOCH)
+    /// This file’s created timestamp, if available on this platform.
+    pub fn created_time(&self) -> Option<SystemTime> {
+        self.metadata.created().ok()
     }
 
     /// This file’s ‘type’.

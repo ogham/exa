@@ -147,9 +147,6 @@ impl DefaultFormat {
 
     #[allow(trivial_numeric_casts)]
     fn format_local(&self, time: SystemTime) -> String {
-        if time == UNIX_EPOCH {
-            return "-".to_string();
-        }
         let date = LocalDateTime::at(systemtime_epoch(time));
 
         if self.is_recent(date) {
@@ -164,10 +161,6 @@ impl DefaultFormat {
 
     #[allow(trivial_numeric_casts)]
     fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
-        if time == UNIX_EPOCH {
-            return "-".to_string();
-        }
-
         let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
 
         if self.is_recent(date) {
