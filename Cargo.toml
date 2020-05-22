@@ -43,7 +43,7 @@ scoped_threadpool = "0.1.9"
 term_grid = "0.1.7"
 term_size = "0.3.1"
 unicode-width = "0.1.5"
-users = "0.9.1"
+users = "0.10"
 zoneinfo_compiled = "0.5"
 
 [dependencies.git2]
