@@ -27,6 +27,7 @@ impl f::GitStatus {
             f::GitStatus::Renamed      => colours.renamed().paint("R"),
             f::GitStatus::TypeChange   => colours.type_change().paint("T"),
             f::GitStatus::Ignored      => colours.ignored().paint("I"),
+            f::GitStatus::Conflicted   => colours.conflicted().paint("U"),
         }
     }
 }
@@ -40,6 +41,7 @@ pub trait Colours {
     fn renamed(&self) -> Style;
     fn type_change(&self) -> Style;
     fn ignored(&self) -> Style;
+    fn conflicted(&self) -> Style;
 }
 
 
@@ -63,6 +65,7 @@ pub mod test {
         fn renamed(&self)      -> Style { Fixed(94).normal() }
         fn type_change(&self)  -> Style { Fixed(95).normal() }
         fn ignored(&self)      -> Style { Fixed(96).normal() }
+        fn conflicted(&self)   -> Style { Fixed(93).normal() }
     }
 
 
