@@ -103,7 +103,7 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
 #[cfg(target_os = "macos")]
 mod lister {
     use std::ffi::CString;
-    use libc::{c_int, size_t, ssize_t, c_char, c_void, uint32_t};
+    use libc::{c_int, size_t, ssize_t, c_char, c_void};
     use super::FollowSymlinks;
     use std::ptr;
 
@@ -115,7 +115,7 @@ mod lister {
 
         fn getxattr(
             path: *const c_char, name: *const c_char,
-            value: *mut c_void, size: size_t, position: uint32_t,
+            value: *mut c_void, size: size_t, position: u32,
             options: c_int
         ) -> ssize_t;
     }
