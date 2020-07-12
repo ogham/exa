@@ -346,7 +346,19 @@ impl IgnorePatterns {
 
     /// Test whether the given file should be hidden from the results.
     pub fn is_ignored_path(&self, file: &Path) -> bool {
-        self.patterns.iter().any(|p| p.matches_path(file))
+        let iter = self.patterns.iter();
+        let mut is_ignored_path = false;
+        for pattern in iter {
+            if pattern.as_str().starts_with('!') {
+                let exclude_file = format!("{}{}", '!', file.display());
+                if pattern.as_str() == exclude_file {
+                    is_ignored_path = false;
+                };
+            } else {
+                is_ignored_path = is_ignored_path || pattern.matches_path(file);
+            }
+        }
+        is_ignored_path
     }
 
     // TODO(ogham): The fact that `is_ignored_path` is pub while `is_ignored`
