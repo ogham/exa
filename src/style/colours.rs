@@ -23,6 +23,7 @@ pub struct Colours {
     pub inode:        Style,
     pub blocks:       Style,
     pub header:       Style,
+    pub octal:        Style,
 
     pub symlink_path:         Style,
     pub control_char:         Style,
@@ -174,6 +175,7 @@ impl Colours {
             date:         Blue.normal(),
             inode:        Purple.normal(),
             blocks:       Cyan.normal(),
+            octal:        Purple.normal(),
             header:       Style::default().underline(),
 
             symlink_path:         Cyan.normal(),

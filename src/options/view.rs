@@ -228,12 +228,13 @@ impl Columns {
         let group  = matches.has(&flags::GROUP)?;
         let inode  = matches.has(&flags::INODE)?;
         let links  = matches.has(&flags::LINKS)?;
+        let octal  = matches.has(&flags::OCTAL)?;
 
         let permissions = !matches.has(&flags::NO_PERMISSIONS)?;
         let filesize =    !matches.has(&flags::NO_FILESIZE)?;
         let user =        !matches.has(&flags::NO_USER)?;
 
-        Ok(Columns { time_types, git, blocks, group, inode, links, permissions, filesize, user })
+        Ok(Columns { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 

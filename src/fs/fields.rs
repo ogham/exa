@@ -87,6 +87,11 @@ pub struct PermissionsPlus {
 }
 
 
+/// The permissions encoded as octal values
+pub struct OctalPermissions {
+    pub permissions: Permissions,
+}
+
 /// A file’s number of hard links on the filesystem.
 ///
 /// Under Unix, a file can exist on the filesystem only once but appear in
