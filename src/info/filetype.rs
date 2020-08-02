@@ -67,9 +67,9 @@ impl FileExtensions {
 
     fn is_document(&self, file: &File) -> bool {
         file.extension_is_one_of( &[
-            "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd",
-            "odp", "odt", "pdf", "ppt", "pptx", "rtf",
-            "xls", "xlsx",
+            "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd", "key",
+            "keynote", "numbers", "odp", "odt", "pages", "pdf", "ppt",
+            "pptx", "rtf", "xls", "xlsx",
         ])
     }
 
