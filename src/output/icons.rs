@@ -185,6 +185,7 @@ fn icon(file: &File) -> char {
                 "groovy"    => '\u{e775}',
                 "iso"       => '\u{e271}',
                 "lock"      => '\u{f023}',
+                "swift"     => '\u{e755}',
                 _           => '\u{f15b}'
             }
         } else {
