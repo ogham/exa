@@ -120,6 +120,12 @@ You can install the `exa` package from the official Fedora repositories by runni
 
     nix-env -i exa
 
+### Termux
+if You use Termux.
+You Can run this command to install `exa`:
+
+    pkg install exa
+
 ## Testing with Vagrant
 
 exa uses [Vagrant][] to configure virtual machines for testing.
