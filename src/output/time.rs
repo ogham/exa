@@ -150,15 +150,14 @@ impl DefaultFormat {
         if time.as_nanos() == 0 {
             return "-".to_string();
         }
-        let date = LocalDateTime::at(time.as_secs() as i64);
-
-        if self.is_recent(date) {
+        let dt = LocalDateTime::now() - datetime::Duration::of(time.as_secs() as i64);
+        if self.is_recent(dt) {
             format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
-            date.hour(), date.minute())
+            dt.day(), DefaultFormat::month_to_abbrev(dt.month()),
+            dt.hour(), dt.minute())
         }
         else {
-            self.date_and_year.format(&date, &self.locale)
+            self.date_and_year.format(&dt, &self.locale)
         }
     }
 
@@ -168,15 +167,18 @@ impl DefaultFormat {
             return "-".to_string();
         }
 
-        let date = zone.to_zoned(LocalDateTime::at(time.as_secs() as i64));
-
-        if self.is_recent(date) {
+        let local_dt: LocalDateTime = zone.to_zoned(LocalDateTime::now());
+        let elapsed_time: datetime::Duration = datetime::Duration::of(
+            time.as_secs() as i64
+        );
+        let dt: LocalDateTime = local_dt - elapsed_time;
+        if self.is_recent(dt) {
             format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
-            date.hour(), date.minute())
+            dt.day(), DefaultFormat::month_to_abbrev(dt.month()),
+            dt.hour(), dt.minute())
         }
         else {
-            self.date_and_year.format(&date, &self.locale)
+            self.date_and_year.format(&dt, &self.locale)
         }
     }
 }

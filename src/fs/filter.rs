@@ -250,11 +250,11 @@ impl SortField {
 
             SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
             SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
-            SortField::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
-            SortField::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
-            SortField::CreatedDate   => a.created_time().cmp(&b.created_time()),
-            SortField::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
+            SortField::ModifiedDate  => b.modified_since().cmp(&a.modified_since()), // flip b and a
+            SortField::AccessedDate  => b.accessed_since().cmp(&a.accessed_since()),
+            SortField::ChangedDate   => b.changed_since().cmp(&a.changed_since()),
+            SortField::CreatedDate   => b.created_since().cmp(&a.created_since()),
+            SortField::ModifiedAge   => a.modified_since().cmp(&b.modified_since()),
 
             SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),

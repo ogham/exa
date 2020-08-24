@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::time::{UNIX_EPOCH, Duration};
 
 use log::{debug, error};
-
+use datetime;
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
 
@@ -334,9 +334,30 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Time since this file was modified.
+    /// If the file's time is invalid, assume it was modified today.
+    pub fn modified_since(&self) -> Duration {
+        match self.metadata.modified() {
+            Ok(system_time) => match system_time.elapsed() {
+                Ok(dur) => dur,
+                Err(_) => Duration::new(0, 0),
+            },
+            Err(_) => Duration::new(0, 0),
+        }
+    }
+
     /// This file’s last changed timestamp.
     pub fn changed_time(&self) -> Duration {
         Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
+    }
+
+    /// Time since this file changed.
+    pub fn changed_since(&self) -> Duration {
+        let now = datetime::Instant::now();
+        let change_since = Duration::from_secs(
+            (now.seconds() - self.metadata.ctime()) as u64
+        );
+        change_since
     }
 
     /// This file’s last accessed timestamp.
@@ -348,11 +369,29 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Time since this file was last accessed.
+    /// If the file's time is invalid, assume it was accessed today.
+    pub fn accessed_since(&self) -> Duration {
+        match self.metadata.accessed() {
+            Ok(system_time) => system_time.elapsed().unwrap(),
+            Err(_) => Duration::new(0, 0),
+        }
+    }
+
     /// This file’s created timestamp.
     /// If the file's time is invalid, assume it was created today
     pub fn created_time(&self) -> Duration {
         match self.metadata.created() {
             Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
+            Err(_) => Duration::new(0, 0),
+        }
+    }
+
+    /// Time since this file was created
+    /// If the file's created time is invalid, assume it was created today.
+    pub fn created_since(&self) -> Duration {
+        match self.metadata.created() {
+            Ok(system_time) => system_time.elapsed().unwrap(),
             Err(_) => Duration::new(0, 0),
         }
     }
