@@ -287,11 +287,10 @@ impl Environment {
 }
 
 fn determine_time_zone() -> TZResult<TimeZone> {
-    let tz = env::var("TZ");
-    if tz.is_err() {
-        return TimeZone::from_file("/etc/localtime");
+    if let Ok(file) = env::var("TZ") {
+        TimeZone::from_file(format!("/usr/share/zoneinfo/{}", file))
     } else {
-        return TimeZone::from_file(format!("/usr/share/zoneinfo/{}", tz.unwrap()));
+        TimeZone::from_file("/etc/localtime")
     }
 }
 
