@@ -329,7 +329,9 @@ impl<'dir> File<'dir> {
     /// If the file's time is invalid, assume it was modified today
     pub fn modified_time(&self) -> Duration {
         match self.metadata.modified() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
+            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap_or_else(|_| {
+                Duration::new(0, 0)
+            }),
             Err(_) => Duration::new(0, 0),
         }
     }
