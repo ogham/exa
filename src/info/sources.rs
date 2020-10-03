@@ -22,6 +22,8 @@ impl<'a> File<'a> {
                 "aux" |                                          // TeX: auxiliary file
                 "bbl" |                                          // BibTeX bibliography file
                 "blg" |                                          // BibTeX log file
+                "fdb_latexmk" |                                  // TeX latexmk file
+                "fls" |                                          // TeX -recorder file
                 "lof" |                                          // TeX list of figures
                 "log" |                                          // TeX log file
                 "lot" |                                          // TeX list of tables
