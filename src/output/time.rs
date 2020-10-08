@@ -136,7 +136,7 @@ impl DefaultFormat {
             datetime::Month::May => "May",
             datetime::Month::June => "Jun",
             datetime::Month::July => "Jul",
-            datetime::Month::August => "August",
+            datetime::Month::August => "Aug",
             datetime::Month::September => "Sep",
             datetime::Month::October => "Oct",
             datetime::Month::November => "Nov",
