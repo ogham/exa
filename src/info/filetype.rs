@@ -26,7 +26,7 @@ impl FileExtensions {
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
-            "webpack.config.js", "meson.build",
+            "webpack.config.js", "meson.build", "composer.json", "RoboFile.php",
         ])
     }
 
