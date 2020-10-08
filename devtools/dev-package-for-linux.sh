@@ -59,7 +59,7 @@ strip -v "$exa_linux_binary"
 echo -e "\n\033[4mZipping binary...\033[0m"
 if [[ "$1" == "--weekly" ]]
   then exa_linux_zip="/vagrant/exa-linux-x86_64-${exa_version}-${date}-${git_hash}.zip"
-  else exa_linux_zip="/vagrant/exa-linux-x86_64-${exa_version}.zip"
+  else exa_linux_zip="/vagrant/exa-linux-x86_64.zip"
 fi
 rm -vf "$exa_linux_zip"
 zip -j "$exa_linux_zip" "$exa_linux_binary"
