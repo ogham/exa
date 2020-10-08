@@ -47,6 +47,7 @@ pub struct Columns {
     pub blocks: bool,
     pub group: bool,
     pub git: bool,
+    pub octal: bool,
 
     // Defaults to true:
     pub permissions: bool,
@@ -60,6 +61,10 @@ impl Columns {
 
         if self.inode {
             columns.push(Column::Inode);
+        }
+
+        if self.octal {
+            columns.push(Column::Octal);
         }
 
         if self.permissions {
@@ -123,6 +128,7 @@ pub enum Column {
     HardLinks,
     Inode,
     GitStatus,
+    Octal,
 }
 
 /// Each column can pick its own **Alignment**. Usually, numbers are
@@ -159,6 +165,7 @@ impl Column {
             Column::HardLinks     => "Links",
             Column::Inode         => "inode",
             Column::GitStatus     => "Git",
+            Column::Octal         => "Octal",
         }
     }
 }
@@ -348,6 +355,12 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
+    fn octal_permissions(&self, file: &File) -> f::OctalPermissions {
+        f::OctalPermissions {
+            permissions: file.permissions(),
+        }
+    }
+
     fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
         use crate::output::table::TimeType::*;
 
@@ -360,6 +373,7 @@ impl<'a, 'f> Table<'a> {
             Column::User           => file.user().render(self.colours, &*self.env.lock_users()),
             Column::Group          => file.group().render(self.colours, &*self.env.lock_users()),
             Column::GitStatus      => self.git_status(file).render(self.colours),
+            Column::Octal          => self.octal_permissions(file).render(self.colours.octal),
 
             Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
             Column::Timestamp(Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, &self.time_format),
