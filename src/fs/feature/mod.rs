@@ -1,5 +1,4 @@
 pub mod xattr;
-pub mod ignore;
 
 #[cfg(feature="git")] pub mod git;
 
