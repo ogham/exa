@@ -6,8 +6,6 @@ use std::sync::{Mutex, MutexGuard};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
-use locale;
-
 use log::debug;
 
 use users::UsersCache;

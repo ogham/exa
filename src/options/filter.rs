@@ -144,7 +144,7 @@ impl DotFilter {
 impl IgnorePatterns {
 
     /// Determines the set of glob patterns to use based on the
-    /// `--ignore-patterns` argument’s value. This is a list of strings
+    /// `--ignore-glob` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
     pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
 

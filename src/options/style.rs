@@ -1,5 +1,4 @@
 use ansi_term::Style;
-use glob;
 
 use crate::fs::File;
 use crate::options::{flags, Vars, Misfire};
@@ -124,7 +123,7 @@ impl Styles {
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
     use log::warn;
-    
+
     use crate::options::vars;
     use crate::style::LSColors;
 
@@ -366,7 +365,7 @@ mod customs_test {
             #[test]
             fn $name() {
                 let mappings: Vec<(glob::Pattern, Style)>
-                    = $mappings.into_iter()
+                    = $mappings.iter()
                                .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
                                .collect();
 
