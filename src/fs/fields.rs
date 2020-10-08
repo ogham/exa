@@ -201,6 +201,9 @@ pub enum GitStatus {
 
     /// A file that’s ignored (that matches a line in .gitignore)
     Ignored,
+
+    /// A file that's updated but unmerged.
+    Conflicted,
 }
 
 /// A file’s complete Git status. It’s possible to make changes to a file, add
