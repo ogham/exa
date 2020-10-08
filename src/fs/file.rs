@@ -4,7 +4,7 @@ use std::io::Error as IOError;
 use std::io::Result as IOResult;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
-use std::time::{UNIX_EPOCH, Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::{debug, error};
 
@@ -325,36 +325,36 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file’s last modified timestamp.
-    /// If the file's time is invalid, assume it was modified today
-    pub fn modified_time(&self) -> Duration {
-        match self.metadata.modified() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// This file’s last modified timestamp, if available on this platform.
+    pub fn modified_time(&self) -> Option<SystemTime> {
+        self.metadata.modified().ok()
     }
 
-    /// This file’s last changed timestamp.
-    pub fn changed_time(&self) -> Duration {
-        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
+    /// This file’s last changed timestamp, if available on this platform.
+    pub fn changed_time(&self) -> Option<SystemTime> {
+        let (mut sec, mut nsec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
+
+        Some(
+           if sec < 0 {
+               if nsec > 0 {
+                   sec += 1;
+                   nsec = nsec - 1_000_000_000;
+               }
+               UNIX_EPOCH - Duration::new(sec.abs() as u64, nsec.abs() as u32)
+           } else {
+               UNIX_EPOCH + Duration::new(sec as u64, nsec as u32)
+           }
+        )
     }
 
-    /// This file’s last accessed timestamp.
-    /// If the file's time is invalid, assume it was accessed today
-    pub fn accessed_time(&self) -> Duration {
-        match self.metadata.accessed() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// This file’s last accessed timestamp, if available on this platform.
+    pub fn accessed_time(&self) -> Option<SystemTime> {
+        self.metadata.accessed().ok()
     }
 
-    /// This file’s created timestamp.
-    /// If the file's time is invalid, assume it was created today
-    pub fn created_time(&self) -> Duration {
-        match self.metadata.created() {
-            Ok(system_time) => system_time.duration_since(UNIX_EPOCH).unwrap(),
-            Err(_) => Duration::new(0, 0),
-        }
+    /// This file’s created timestamp, if available on this platform.
+    pub fn created_time(&self) -> Option<SystemTime> {
+        self.metadata.created().ok()
     }
 
     /// This file’s ‘type’.
