@@ -185,6 +185,7 @@ fn icon(file: &File) -> char {
             "iso"       => '\u{e271}',
             "lock"      => '\u{f023}',
             "swift"     => '\u{e755}',
+            "nix"       => '\u{f313}',
             _           => '\u{f016}'
         }
     } else {
