@@ -88,7 +88,7 @@ impl FileExtensions {
     }
 
     fn is_compiled(&self, file: &File) -> bool {
-        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc", "zwc" ]) {
+        if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc", "zwc", "ko" ]) {
             true
         }
         else if let Some(dir) = file.parent_dir {
