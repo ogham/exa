@@ -76,6 +76,9 @@ pub struct Render<'a> {
     /// The minimum number of rows that there need to be before grid-details
     /// mode is activated.
     pub row_threshold: RowThreshold,
+
+    /// Whether we are skipping Git-ignored files.
+    pub git_ignoring: bool,
 }
 
 impl<'a> Render<'a> {
@@ -95,6 +98,7 @@ impl<'a> Render<'a> {
             opts: self.details,
             recurse: None,
             filter: self.filter,
+            git_ignoring: self.git_ignoring,
         }
     }
 
@@ -109,6 +113,7 @@ impl<'a> Render<'a> {
             opts: self.details,
             recurse: None,
             filter: &self.filter,
+            git_ignoring: self.git_ignoring,
         }
     }
 

@@ -128,6 +128,9 @@ pub struct Render<'a> {
 
     /// How to sort and filter the files after getting their details.
     pub filter: &'a FileFilter,
+
+    /// Whether we are skipping Git-ignored files.
+    pub git_ignoring: bool,
 }
 
 
@@ -303,7 +306,7 @@ impl<'a> Render<'a> {
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter, git) {
+                for file_to_add in dir.files(self.filter.dot_filter, git, self.git_ignoring) {
                     match file_to_add {
                         Ok(f)          => files.push(f),
                         Err((path, e)) => errors.push((e, Some(path)))

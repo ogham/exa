@@ -11,6 +11,7 @@ use ansi_term::{ANSIStrings, Style};
 use log::debug;
 
 use crate::fs::{Dir, File};
+use crate::fs::filter::GitIgnore;
 use crate::fs::feature::git::GitCache;
 use crate::options::{Options, Vars};
 pub use crate::options::vars;
@@ -142,7 +143,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             }
 
             let mut children = Vec::new();
-            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref()) {
+            let git_ignore = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
+            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore) {
                 match file {
                     Ok(file)       => children.push(file),
                     Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
@@ -201,7 +203,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     let filter = &self.options.filter;
                     let recurse = self.options.dir_action.recurse_options();
 
-                    let r = details::Render { dir, files, colours, style, opts, filter, recurse };
+                    let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
+                    let r = details::Render { dir, files, colours, style, opts, filter, recurse, git_ignoring };
                     r.render(self.git.as_ref(), self.writer)
                 }
 
@@ -211,7 +214,8 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                     let details = &opts.details;
                     let row_threshold = opts.row_threshold;
 
-                    let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold };
+                    let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
+                    let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold, git_ignoring };
                     r.render(self.git.as_ref(), self.writer)
                 }
             }
