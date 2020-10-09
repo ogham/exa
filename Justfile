@@ -10,6 +10,10 @@ all-release: build-release test-release
 @build-release:
     cargo build --release --verbose
 
+# compiles the exa binary with every combination of feature flags
+build-features:
+    cargo hack build --feature-powerset
+
 
 # runs unit tests
 @test:
@@ -18,6 +22,10 @@ all-release: build-release test-release
 # runs unit tests (in release mode)
 @test-release:
     cargo test --release --all --verbose
+
+# runs unit tests with every combination of feature flags
+test-features:
+    cargo hack test --feature-powerset --lib -- --quiet
 
 
 # prints versions of the necessary build tools
