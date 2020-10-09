@@ -59,6 +59,18 @@ Vagrant.configure(2) do |config|
     EOF
 
 
+    # Install Just, the command runner.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      if hash just &>/dev/null; then
+        echo "just is already installed"
+      else
+        wget "https://github.com/casey/just/releases/download/v0.8.0/just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        tar -xf "just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        cp just /usr/local/bin
+      fi
+    EOF
+
+
     # Use a different ‘target’ directory on the VM than on the host.
     # By default it just uses the one in /vagrant/target, which can
     # cause problems if it has different permissions than the other
