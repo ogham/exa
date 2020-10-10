@@ -36,7 +36,7 @@ impl fmt::Debug for Options {
 }
 
 /// Extra columns to display in the table.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Columns {
 
     /// At least one of these timestamps will be shown.
@@ -118,7 +118,7 @@ impl Columns {
 
 
 /// A table contains these.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Column {
     Permissions,
     FileSize,
@@ -142,8 +142,8 @@ pub enum Alignment {
 impl Column {
 
     /// Get the alignment this column should use.
-    pub fn alignment(&self) -> Alignment {
-        match *self {
+    pub fn alignment(self) -> Alignment {
+        match self {
             Self::FileSize  |
             Self::HardLinks |
             Self::Inode     |
@@ -155,8 +155,8 @@ impl Column {
 
     /// Get the text that should be printed at the top, when the user elects
     /// to have a header row printed.
-    pub fn header(&self) -> &'static str {
-        match *self {
+    pub fn header(self) -> &'static str {
+        match self {
             Self::Permissions   => "Permissions",
             Self::FileSize      => "Size",
             Self::Timestamp(t)  => t.header(),
@@ -342,7 +342,7 @@ impl<'a, 'f> Table<'a> {
 
     pub fn row_for_file(&self, file: &File, xattrs: bool) -> Row {
         let cells = self.columns.iter()
-                        .map(|c| self.display(file, c, xattrs))
+                        .map(|c| self.display(file, *c, xattrs))
                         .collect();
 
         Row { cells }
@@ -366,10 +366,10 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
-    fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
+    fn display(&self, file: &File, column: Column, xattrs: bool) -> TextCell {
         use crate::output::table::TimeType::*;
 
-        match *column {
+        match column {
             Column::Permissions    => self.permissions_plus(file, xattrs).render(self.colours),
             Column::FileSize       => file.size().render(self.colours, self.size_format, &self.env.numeric),
             Column::HardLinks      => file.links().render(self.colours, &self.env.numeric),
@@ -380,10 +380,10 @@ impl<'a, 'f> Table<'a> {
             Column::GitStatus      => self.git_status(file).render(self.colours),
             Column::Octal          => self.octal_permissions(file).render(self.colours.octal),
 
-            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, &self.time_format),
+            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, self.time_format),
         }
     }
 

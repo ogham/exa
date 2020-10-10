@@ -417,9 +417,9 @@ impl<'dir> File<'dir> {
     ///
     /// This will always return `false` if the file has no extension.
     pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
-        match self.ext {
-            Some(ref ext)  => choices.contains(&&ext[..]),
-            None           => false,
+        match &self.ext {
+            Some(ext)  => choices.contains(&&ext[..]),
+            None       => false,
         }
     }
 
@@ -463,10 +463,7 @@ impl<'dir> FileTarget<'dir> {
     /// Whether this link doesn’t lead to a file, for whatever reason. This
     /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
-        match *self {
-            FileTarget::Ok(_)                           => false,
-            FileTarget::Broken(_) | FileTarget::Err(_)  => true,
-        }
+        matches!(self, Self::Broken(_) | Self::Err(_))
     }
 }
 

@@ -143,7 +143,7 @@ impl Mode {
 
 
 /// The width of the terminal requested by the user.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 enum TerminalWidth {
 
     /// The user requested this specific number of columns.
@@ -178,8 +178,8 @@ impl TerminalWidth {
         }
     }
 
-    fn width(&self) -> Option<usize> {
-        match *self {
+    fn width(self) -> Option<usize> {
+        match self {
             Self::Set(width)       |
             Self::Terminal(width)  => Some(width),
             Self::Unset            => None,

@@ -6,9 +6,9 @@ use crate::fs::fields as f;
 
 impl f::Blocks {
     pub fn render<C: Colours>(&self, colours: &C) -> TextCell {
-        match *self {
-            Self::Some(ref blk)  => TextCell::paint(colours.block_count(), blk.to_string()),
-            Self::None           => TextCell::blank(colours.no_blocks()),
+        match self {
+            Self::Some(blk)  => TextCell::paint(colours.block_count(), blk.to_string()),
+            Self::None       => TextCell::blank(colours.no_blocks()),
         }
     }
 }

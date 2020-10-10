@@ -228,7 +228,7 @@ impl<'args> Exa<'args> {
         if !files.is_empty() {
             let View { ref mode, ref colours, ref style } = self.options.view;
 
-            match *mode {
+            match mode {
                 Mode::Lines(ref opts) => {
                     let r = lines::Render { files, colours, style, opts };
                     r.render(&mut self.writer)

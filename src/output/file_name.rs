@@ -133,8 +133,8 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
 
         if let (LinkStyle::FullLinkPaths, Some(target)) = (self.link_style, self.target.as_ref()) {
-            match *target {
-                FileTarget::Ok(ref target) => {
+            match target {
+                FileTarget::Ok(target) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.normal_arrow().paint("->"));
                     bits.push(Style::default().paint(" "));
@@ -159,7 +159,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                     }
                 },
 
-                FileTarget::Broken(ref broken_path) => {
+                FileTarget::Broken(broken_path) => {
                     bits.push(Style::default().paint(" "));
                     bits.push(self.colours.broken_symlink().paint("->"));
                     bits.push(Style::default().paint(" "));

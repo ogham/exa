@@ -55,10 +55,10 @@ impl Misfire {
 
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
-        match *self {
-            Self::Help(_)    => false,
-            Self::Version(_) => false,
-            _                   => true,
+        match self {
+            Self::Help(_)     |
+            Self::Version(_)  => false,
+            _                 => true,
         }
     }
 }
@@ -72,10 +72,9 @@ impl From<glob::PatternError> for Misfire {
 impl fmt::Display for Misfire {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use crate::options::parser::TakesValue;
-        use self::Misfire::*;
 
-        match *self {
-            BadArgument(ref arg, ref attempt) => {
+        match self {
+            Self::BadArgument(arg, attempt) => {
                 if let TakesValue::Necessary(Some(values)) = arg.takes_value {
                     write!(f, "Option {} has no {:?} setting ({})", arg, attempt, Choices(values))
                 }
@@ -83,33 +82,31 @@ impl fmt::Display for Misfire {
                     write!(f, "Option {} has no {:?} setting", arg, attempt)
                 }
             },
-            InvalidOptions(ref e)            => write!(f, "{}", e),
-            Unsupported(ref e)               => write!(f, "{}", e),
-            Help(ref text)                   => write!(f, "{}", text),
-            Version(ref version)             => write!(f, "{}", version),
-            Conflict(ref a, ref b)           => write!(f, "Option {} conflicts with option {}", a, b),
-            Duplicate(ref a, ref b)          => if a == b { write!(f, "Flag {} was given twice", a) }
-                                                     else { write!(f, "Flag {} conflicts with flag {}", a, b) },
-            Useless(ref a, false, ref b)     => write!(f, "Option {} is useless without option {}", a, b),
-            Useless(ref a, true, ref b)      => write!(f, "Option {} is useless given option {}", a, b),
-            Useless2(ref a, ref b1, ref b2)  => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
-            TreeAllAll                       => write!(f, "Option --tree is useless given --all --all"),
-            FailedParse(ref e)               => write!(f, "Failed to parse number: {}", e),
-            FailedGlobPattern(ref e)         => write!(f, "Failed to parse glob pattern: {}", e),
+            Self::InvalidOptions(e)         => write!(f, "{}", e),
+            Self::Unsupported(e)            => write!(f, "{}", e),
+            Self::Help(text)                => write!(f, "{}", text),
+            Self::Version(version)          => write!(f, "{}", version),
+            Self::Conflict(a, b)            => write!(f, "Option {} conflicts with option {}", a, b),
+            Self::Duplicate(a, b) if a == b => write!(f, "Flag {} was given twice", a),
+            Self::Duplicate(a, b)           => write!(f, "Flag {} conflicts with flag {}", a, b),
+            Self::Useless(a, false, b)      => write!(f, "Option {} is useless without option {}", a, b),
+            Self::Useless(a, true, b)       => write!(f, "Option {} is useless given option {}", a, b),
+            Self::Useless2(a, b1, b2)       => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
+            Self::TreeAllAll                => write!(f, "Option --tree is useless given --all --all"),
+            Self::FailedParse(ref e)        => write!(f, "Failed to parse number: {}", e),
+            Self::FailedGlobPattern(ref e)  => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::ParseError::*;
-
-        match *self {
-            NeedsValue { ref flag, values: None }     => write!(f, "Flag {} needs a value", flag),
-            NeedsValue { ref flag, values: Some(cs) } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
-            ForbiddenValue { ref flag }               => write!(f, "Flag {} cannot take a value", flag),
-            UnknownShortArgument { ref attempt }      => write!(f, "Unknown argument -{}", *attempt as char),
-            UnknownArgument { ref attempt }           => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
+        match self {
+            Self::NeedsValue { flag, values: None }     => write!(f, "Flag {} needs a value", flag),
+            Self::NeedsValue { flag, values: Some(cs) } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
+            Self::ForbiddenValue { flag }               => write!(f, "Flag {} cannot take a value", flag),
+            Self::UnknownShortArgument { attempt }      => write!(f, "Unknown argument -{}", *attempt as char),
+            Self::UnknownArgument { attempt }           => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
         }
     }
 }
@@ -119,12 +116,16 @@ impl Misfire {
     /// went wrong.
     pub fn suggestion(&self) -> Option<&'static str> {
         // ‘ls -lt’ and ‘ls -ltr’ are common combinations
-        match *self {
-            Self::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" =>
-                Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\""),
-            Self::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') =>
-                Some("To sort newest files last, try \"--sort newest\", or just \"-snew\""),
-            _ => None
+        match self {
+            Self::BadArgument(time, r) if *time == &flags::TIME && r == "r" => {
+                Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"")
+            }
+            Self::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') => {
+                Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"")
+            }
+            _ => {
+                None
+            }
         }
     }
 }

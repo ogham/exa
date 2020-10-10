@@ -162,7 +162,7 @@ impl<'a> Render<'a> {
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
-            let mut table = Table::new(&table, git, &self.colours);
+            let mut table = Table::new(table, git, self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -248,7 +248,7 @@ impl<'a> Render<'a> {
                         }
                     }
 
-                    let table_row = table.as_ref().map(|t| t.row_for_file(&file, !xattrs.is_empty()));
+                    let table_row = table.as_ref().map(|t| t.row_for_file(file, !xattrs.is_empty()));
 
                     if !self.opts.xattr {
                         xattrs.clear();
@@ -266,7 +266,7 @@ impl<'a> Render<'a> {
                     };
 
                     let icon = if self.opts.icons {
-                        Some(painted_icon(&file, &self.style))
+                        Some(painted_icon(file, self.style))
                     } else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
@@ -283,7 +283,7 @@ impl<'a> Render<'a> {
             let mut files = Vec::new();
             let mut errors = egg.errors;
 
-            if let (Some(ref mut t), Some(ref row)) = (table.as_mut(), egg.table_row.as_ref()) {
+            if let (Some(ref mut t), Some(row)) = (table.as_mut(), egg.table_row.as_ref()) {
                 t.add_widths(row);
             }
 
@@ -291,7 +291,7 @@ impl<'a> Render<'a> {
             if let Some(icon) = egg.icon {
                 name_cell.push(ANSIGenericString::from(icon), 2)
             }
-            name_cell.append(self.style.for_file(&egg.file, self.colours)
+            name_cell.append(self.style.for_file(egg.file, self.colours)
                                   .with_link_paths()
                                   .paint()
                                   .promote());

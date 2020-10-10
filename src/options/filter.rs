@@ -37,8 +37,8 @@ impl SortField {
 
         // Get String because we can’t match an OsStr
         let word = match word.to_str() {
-            Some(ref w) => *w,
-            None => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+            Some(w)  => w,
+            None     => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
         };
 
         let field = match word {

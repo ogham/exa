@@ -112,7 +112,7 @@ impl<'a> Render<'a> {
             style: self.style,
             opts: self.details,
             recurse: None,
-            filter: &self.filter,
+            filter: self.filter,
             git_ignoring: self.git_ignoring,
         }
     }
@@ -144,7 +144,7 @@ impl<'a> Render<'a> {
                              .map(|file| {
                                  if self.details.icons {
                                     let mut icon_cell = TextCell::default();
-                                    icon_cell.push(ANSIGenericString::from(painted_icon(&file, &self.style)), 2);
+                                    icon_cell.push(ANSIGenericString::from(painted_icon(file, self.style)), 2);
                                     let file_cell = self.style.for_file(file, self.colours).paint().promote();
                                     icon_cell.append(file_cell);
                                     icon_cell

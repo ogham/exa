@@ -39,7 +39,7 @@
 //! each directory)
 
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TreePart {
 
     /// Rightmost column, *not* the last in the directory.
@@ -59,8 +59,8 @@ impl TreePart {
 
     /// Turn this tree part into ASCII-licious box drawing characters!
     /// (Warning: not actually ASCII)
-    pub fn ascii_art(&self) -> &'static str {
-        match *self {
+    pub fn ascii_art(self) -> &'static str {
+        match self {
             Self::Edge    => "├──",
             Self::Line    => "│  ",
             Self::Corner  => "└──",

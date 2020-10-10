@@ -6,7 +6,7 @@ use crate::output::cell::TextCell;
 
 
 impl f::Group {
-    pub fn render<C: Colours, U: Users+Groups>(&self, colours: &C, users: &U) -> TextCell {
+    pub fn render<C: Colours, U: Users+Groups>(self, colours: &C, users: &U) -> TextCell {
         use users::os::unix::GroupExt;
 
         let mut style = colours.not_yours();

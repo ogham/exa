@@ -8,10 +8,10 @@ use crate::output::table::SizeFormat;
 
 
 impl f::Size {
-    pub fn render<C: Colours>(&self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
+    pub fn render<C: Colours>(self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
         use number_prefix::NumberPrefix;
 
-        let size = match *self {
+        let size = match self {
             Self::Some(s)             => s,
             Self::None                => return TextCell::blank(colours.no_size()),
             Self::DeviceIDs(ref ids)  => return ids.render(colours),
@@ -57,7 +57,7 @@ impl f::Size {
 
 
 impl f::DeviceIDs {
-    fn render<C: Colours>(&self, colours: &C) -> TextCell {
+    fn render<C: Colours>(self, colours: &C) -> TextCell {
         let major = self.major.to_string();
         let minor = self.minor.to_string();
 

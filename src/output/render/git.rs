@@ -5,7 +5,7 @@ use crate::fs::fields as f;
 
 
 impl f::Git {
-    pub fn render(&self, colours: &dyn Colours) -> TextCell {
+    pub fn render(self, colours: &dyn Colours) -> TextCell {
         TextCell {
             width: DisplayWidth::from(2),
             contents: vec![
@@ -18,8 +18,8 @@ impl f::Git {
 
 
 impl f::GitStatus {
-    fn render(&self, colours: &dyn Colours) -> ANSIString<'static> {
-        match *self {
+    fn render(self, colours: &dyn Colours) -> ANSIString<'static> {
+        match self {
             Self::NotModified  => colours.not_modified().paint("-"),
             Self::New          => colours.new().paint("N"),
             Self::Modified     => colours.modified().paint("M"),

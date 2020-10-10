@@ -64,7 +64,7 @@ static OCTAL_HELP:    &str = r##"  --octal-permissions list each file's permissi
 /// All the information needed to display the help text, which depends
 /// on which features are enabled and whether the user only wants to
 /// see one section’s help.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct HelpString {
 
     /// Only show the help for the long section, not all the help.

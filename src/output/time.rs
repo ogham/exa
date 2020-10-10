@@ -51,20 +51,20 @@ pub enum TimeFormat {
 
 impl TimeFormat {
     pub fn format_local(&self, time: SystemTime) -> String {
-        match *self {
-            Self::DefaultFormat(ref fmt) => fmt.format_local(time),
-            Self::ISOFormat(ref iso)     => iso.format_local(time),
-            Self::LongISO                => long_local(time),
-            Self::FullISO                => full_local(time),
+        match self {
+            Self::DefaultFormat(fmt)  => fmt.format_local(time),
+            Self::ISOFormat(iso)      => iso.format_local(time),
+            Self::LongISO             => long_local(time),
+            Self::FullISO             => full_local(time),
         }
     }
 
     pub fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
-        match *self {
-            Self::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
-            Self::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
-            Self::LongISO                => long_zoned(time, zone),
-            Self::FullISO                => full_zoned(time, zone),
+        match self {
+            Self::DefaultFormat(fmt)  => fmt.format_zoned(time, zone),
+            Self::ISOFormat(iso)      => iso.format_zoned(time, zone),
+            Self::LongISO             => long_zoned(time, zone),
+            Self::FullISO             => full_zoned(time, zone),
         }
     }
 }
@@ -241,7 +241,7 @@ fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ISOFormat {
 
     /// The year of the current time. This gets used to determine which date
@@ -257,12 +257,12 @@ impl ISOFormat {
 }
 
 impl ISOFormat {
-    fn is_recent(&self, date: LocalDateTime) -> bool {
+    fn is_recent(self, date: LocalDateTime) -> bool {
         date.year() == self.current_year
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: SystemTime) -> String {
+    fn format_local(self, time: SystemTime) -> String {
         let date = LocalDateTime::at(systemtime_epoch(time));
 
         if self.is_recent(date) {
@@ -277,7 +277,7 @@ impl ISOFormat {
     }
 
     #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
+    fn format_zoned(self, time: SystemTime, zone: &TimeZone) -> String {
         let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
 
         if self.is_recent(date) {

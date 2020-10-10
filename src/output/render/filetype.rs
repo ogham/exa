@@ -4,8 +4,8 @@ use crate::fs::fields as f;
 
 
 impl f::Type {
-    pub fn render<C: Colours>(&self, colours: &C) -> ANSIString<'static> {
-        match *self {
+    pub fn render<C: Colours>(self, colours: &C) -> ANSIString<'static> {
+        match self {
             Self::File        => colours.normal().paint("."),
             Self::Directory   => colours.directory().paint("d"),
             Self::Pipe        => colours.pipe().paint("|"),

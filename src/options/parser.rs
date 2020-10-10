@@ -52,7 +52,7 @@ pub type Values = &'static [&'static str];
 
 /// A **flag** is either of the two argument types, because they have to
 /// be in the same array together.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum Flag {
     Short(ShortArg),
     Long(LongArg),
@@ -60,17 +60,17 @@ pub enum Flag {
 
 impl Flag {
     pub fn matches(&self, arg: &Arg) -> bool {
-        match *self {
-            Self::Short(short)  => arg.short == Some(short),
-            Self::Long(long)    => arg.long == long,
+        match self {
+            Self::Short(short)  => arg.short == Some(*short),
+            Self::Long(long)    => arg.long == *long,
         }
     }
 }
 
 impl fmt::Display for Flag {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            Self::Short(short) => write!(f, "-{}", short as char),
+        match self {
+            Self::Short(short) => write!(f, "-{}", *short as char),
             Self::Long(long)   => write!(f, "--{}", long),
         }
     }
@@ -108,7 +108,7 @@ pub enum TakesValue {
 
 
 /// An **argument** can be matched by one of the user’s input strings.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Arg {
 
     /// The short argument that matches it, if any.
@@ -372,7 +372,7 @@ impl<'a> MatchedFlags<'a> {
                           .collect::<Vec<_>>();
 
             if all.len() < 2 { Ok(all.first().map(|t| &t.0)) }
-                        else { Err(Misfire::Duplicate(all[0].0.clone(), all[1].0.clone())) }
+                        else { Err(Misfire::Duplicate(all[0].0, all[1].0)) }
         }
         else {
             let any = self.flags.iter().rev()
@@ -406,7 +406,7 @@ impl<'a> MatchedFlags<'a> {
                             .collect::<Vec<_>>();
 
             if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
-                          else { Err(Misfire::Duplicate(those[0].0.clone(), those[1].0.clone())) }
+                          else { Err(Misfire::Duplicate(those[0].0, those[1].0)) }
         }
         else {
             let found = self.flags.iter().rev()

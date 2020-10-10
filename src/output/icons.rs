@@ -8,6 +8,7 @@ pub trait FileIcon {
     fn icon_file(&self, file: &File) -> Option<char>;
 }
 
+#[derive(Copy, Clone)]
 pub enum Icons {
     Audio,
     Image,
@@ -15,8 +16,8 @@ pub enum Icons {
 }
 
 impl Icons {
-    pub fn value(&self) -> char {
-        match *self {
+    pub fn value(self) -> char {
+        match self {
             Self::Audio => '\u{f001}',
             Self::Image => '\u{f1c5}',
             Self::Video => '\u{f03d}',
@@ -25,9 +26,9 @@ impl Icons {
 }
 
 pub fn painted_icon(file: &File, style: &FileStyle) -> String {
-    let file_icon = icon(&file).to_string();
+    let file_icon = icon(file).to_string();
     let painted = style.exts
-            .colour_file(&file)
+            .colour_file(file)
             .map_or(file_icon.to_string(), |c| {
                 // Remove underline from icon
                 if c.is_underline {

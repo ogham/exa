@@ -14,7 +14,7 @@ impl<'a> File<'a> {
     /// don't want to always blindly highlight `*.js` as compiled.
     /// (See also `FileExtensions#is_compiled`)
     pub fn get_source_files(&self) -> Vec<PathBuf> {
-        if let Some(ref ext) = self.ext {
+        if let Some(ext) = &self.ext {
             match &ext[..] {
                 "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
                 "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript

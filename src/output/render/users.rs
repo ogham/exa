@@ -7,7 +7,7 @@ use crate::output::cell::TextCell;
 
 
 impl f::User {
-    pub fn render<C: Colours, U: Users>(&self, colours: &C, users: &U) -> TextCell {
+    pub fn render<C: Colours, U: Users>(self, colours: &C, users: &U) -> TextCell {
         let user_name = match users.get_user_by_uid(self.0) {
             Some(user)  => user.name().to_string_lossy().into(),
             None        => self.0.to_string(),

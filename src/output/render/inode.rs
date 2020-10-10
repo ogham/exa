@@ -5,7 +5,7 @@ use crate::fs::fields as f;
 
 
 impl f::Inode {
-    pub fn render(&self, style: Style) -> TextCell {
+    pub fn render(self, style: Style) -> TextCell {
         TextCell::paint(style, self.0.to_string())
     }
 }

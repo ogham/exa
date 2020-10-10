@@ -41,7 +41,7 @@ impl<'a> Render<'a> {
         grid.reserve(self.files.len());
 
         for file in &self.files {
-            let icon = if self.opts.icons { Some(painted_icon(&file, &self.style)) } else { None };
+            let icon = if self.opts.icons { Some(painted_icon(file, self.style)) } else { None };
             let filename = self.style.for_file(file, self.colours).paint();
             let width = if self.opts.icons {
                 DisplayWidth::from(2) + filename.width()
@@ -64,7 +64,7 @@ impl<'a> Render<'a> {
             // displays full link paths.
             for file in &self.files {
                 if self.opts.icons {
-                    write!(w, "{}", painted_icon(&file, &self.style))?;
+                    write!(w, "{}", painted_icon(file, self.style))?;
                 }
                 let name_cell = self.style.for_file(file, self.colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
