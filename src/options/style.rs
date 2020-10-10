@@ -3,7 +3,7 @@ use ansi_term::Style;
 use crate::fs::File;
 use crate::options::{flags, Vars, Misfire};
 use crate::options::parser::MatchedFlags;
-use crate::output::file_name::{FileStyle, Classify};
+use crate::output::file_name::{Classify, FileStyle};
 use crate::style::Colours;
 
 
@@ -38,10 +38,9 @@ impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
     fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
-
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
-            Some(w) => w,
-            None    => return Ok(Self::default()),
+            Some(w)  => w,
+            None     => return Ok(Self::default()),
         };
 
         if word == "always" {
@@ -77,7 +76,7 @@ pub struct Styles {
 
 impl Styles {
 
-    #[allow(trivial_casts)]   // the "as Box<_>" stuff below warns about this for some reason
+    #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
     where TW: Fn() -> Option<usize>, V: Vars {
         use crate::info::filetype::FileExtensions;
@@ -89,12 +88,12 @@ impl Styles {
         // custom colours at all
         let tc = TerminalColours::deduce(matches)?;
 
-        if tc == TerminalColours::Never
-        || (tc == TerminalColours::Automatic && widther().is_none())
-        {
+        if tc == TerminalColours::Never || (tc == TerminalColours::Automatic && widther().is_none()) {
+            let exts = Box::new(NoFileColours);
+
             return Ok(Self {
                 colours: Colours::plain(),
-                style: FileStyle { classify, exts: Box::new(NoFileColours) },
+                style: FileStyle { classify, exts },
             });
         }
 
@@ -133,11 +132,16 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
 
     if let Some(lsc) = vars.get(vars::LS_COLORS) {
         let lsc = lsc.to_string_lossy();
+
         LSColors(lsc.as_ref()).each_pair(|pair| {
-            if !colours.set_ls(&pair) {
+            if ! colours.set_ls(&pair) {
                 match glob::Pattern::new(pair.key) {
-                    Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Ok(pat) => {
+                        exts.add(pat, pair.to_style());
+                    }
+                    Err(e) => {
+                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                    }
                 }
             }
         });
@@ -154,10 +158,14 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
         }
 
         LSColors(exa.as_ref()).each_pair(|pair| {
-            if !colours.set_ls(&pair) && !colours.set_exa(&pair) {
+            if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
                 match glob::Pattern::new(pair.key) {
-                    Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Ok(pat) => {
+                        exts.add(pat, pair.to_style());
+                    }
+                    Err(e) => {
+                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                    }
                 }
             };
         });
@@ -169,7 +177,7 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
 
 #[derive(PartialEq, Debug, Default)]
 struct ExtensionMappings {
-    mappings: Vec<(glob::Pattern, Style)>
+    mappings: Vec<(glob::Pattern, Style)>,
 }
 
 // Loop through backwards so that colours specified later in the list override
@@ -178,9 +186,7 @@ struct ExtensionMappings {
 use crate::output::file_name::FileColours;
 impl FileColours for ExtensionMappings {
     fn colour_file(&self, file: &File) -> Option<Style> {
-        self.mappings
-            .iter()
-            .rev()
+        self.mappings.iter().rev()
             .find(|t| t.0.matches(&file.name))
             .map (|t| t.1)
     }
@@ -188,7 +194,7 @@ impl FileColours for ExtensionMappings {
 
 impl ExtensionMappings {
     fn is_non_empty(&self) -> bool {
-        !self.mappings.is_empty()
+        ! self.mappings.is_empty()
     }
 
     fn add(&mut self, pattern: glob::Pattern, style: Style) {
@@ -197,16 +203,14 @@ impl ExtensionMappings {
 }
 
 
-
 impl Classify {
     fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
-        Ok(if flagged { Self::AddFileIndicators }
-                 else { Self::JustFilenames })
+        if flagged { Ok(Self::AddFileIndicators) }
+              else { Ok(Self::JustFilenames) }
     }
 }
-
 
 
 #[cfg(test)]
@@ -338,7 +342,6 @@ mod colour_test {
 }
 
 
-
 #[cfg(test)]
 mod customs_test {
     use std::ffi::OsString;
@@ -410,11 +413,11 @@ mod customs_test {
         fn get(&self, name: &'static str) -> Option<OsString> {
             use crate::options::vars;
 
-            if name == vars::LS_COLORS && !self.ls.is_empty() {
-                OsString::from(self.ls.clone()).into()
+            if name == vars::LS_COLORS && ! self.ls.is_empty() {
+                Some(OsString::from(self.ls.clone()))
             }
-            else if name == vars::EXA_COLORS && !self.exa.is_empty() {
-                OsString::from(self.exa.clone()).into()
+            else if name == vars::EXA_COLORS && ! self.exa.is_empty() {
+                Some(OsString::from(self.exa.clone()))
             }
             else {
                 None

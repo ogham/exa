@@ -21,20 +21,23 @@ impl f::Size {
             SizeFormat::DecimalBytes  => NumberPrefix::decimal(size as f64),
             SizeFormat::BinaryBytes   => NumberPrefix::binary(size as f64),
             SizeFormat::JustBytes     => {
+
                 // Use the binary prefix to select a style.
                 let prefix = match NumberPrefix::binary(size as f64) {
-                    NumberPrefix::Standalone(_) => None,
-                    NumberPrefix::Prefixed(p, _) => Some(p),
+                    NumberPrefix::Standalone(_)   => None,
+                    NumberPrefix::Prefixed(p, _)  => Some(p),
                 };
+
                 // But format the number directly using the locale.
                 let string = numerics.format_int(size);
+
                 return TextCell::paint(colours.size(prefix), string);
-            },
+            }
         };
 
         let (prefix, n) = match result {
-            NumberPrefix::Standalone(b)  => return TextCell::paint(colours.size(None), b.to_string()),
-            NumberPrefix::Prefixed(p, n) => (p, n)
+            NumberPrefix::Standalone(b)   => return TextCell::paint(colours.size(None), b.to_string()),
+            NumberPrefix::Prefixed(p, n)  => (p, n),
         };
 
         let symbol = prefix.symbol();
@@ -71,6 +74,7 @@ impl f::DeviceIDs {
         }
     }
 }
+
 
 pub trait Colours {
     fn size(&self, prefix: Option<Prefix>) -> Style;

@@ -65,7 +65,7 @@ pub mod test {
         fn renamed(&self)      -> Style { Fixed(94).normal() }
         fn type_change(&self)  -> Style { Fixed(95).normal() }
         fn ignored(&self)      -> Style { Fixed(96).normal() }
-        fn conflicted(&self)   -> Style { Fixed(93).normal() }
+        fn conflicted(&self)   -> Style { Fixed(97).normal() }
     }
 
 

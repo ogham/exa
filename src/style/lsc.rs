@@ -1,3 +1,4 @@
+use std::iter::Peekable;
 use std::ops::FnMut;
 
 use ansi_term::{Colour, Style};
@@ -21,7 +22,6 @@ use ansi_term::Colour::*;
 // just not worth doing, and there should really be a way to just use slices
 // of the LS_COLORS string without having to parse them.
 
-
 pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
@@ -33,21 +33,17 @@ impl<'var> LSColors<'var> {
                            .take(3)
                            .collect::<Vec<_>>();
 
-            if bits.len() == 2 && !bits[0].is_empty() && !bits[1].is_empty() {
+            if bits.len() == 2 && ! bits[0].is_empty() && ! bits[1].is_empty() {
                 callback(Pair { key: bits[0], value: bits[1] });
             }
         }
     }
 }
 
-pub struct Pair<'var> {
-    pub key: &'var str,
-    pub value: &'var str,
-}
 
-use std::iter::Peekable;
 fn parse_into_high_colour<'a, I>(iter: &mut Peekable<I>) -> Option<Colour>
-where I: Iterator<Item=&'a str> {
+where I: Iterator<Item = &'a str>
+{
     match iter.peek() {
         Some(&"5") => {
             let _ = iter.next();
@@ -57,11 +53,12 @@ where I: Iterator<Item=&'a str> {
                 }
             }
         }
+
         Some(&"2") => {
             let _ = iter.next();
             if let Some(hexes) = iter.next() {
                 // Some terminals support R:G:B instead of R;G;B
-                // but this clashes with splitting on ':' in each_pair above.
+                // but this clashes with splitting on ‘:’ in each_pair above.
                 /*if hexes.contains(':') {
                     let rgb = hexes.splitn(3, ':').collect::<Vec<_>>();
                     if rgb.len() != 3 {
@@ -79,9 +76,17 @@ where I: Iterator<Item=&'a str> {
                 }
             }
         }
+
         _ => {},
     }
+
     None
+}
+
+
+pub struct Pair<'var> {
+    pub key: &'var str,
+    pub value: &'var str,
 }
 
 impl<'var> Pair<'var> {
@@ -125,7 +130,7 @@ impl<'var> Pair<'var> {
                 "47" => style = style.on(White),
                 "48" => if let Some(c) = parse_into_high_colour(&mut iter) { style = style.on(c) },
 
-                 _    => {/* ignore the error and do nothing */},
+                 _   => {/* ignore the error and do nothing */},
             }
         }
 
@@ -183,7 +188,6 @@ mod ansi_test {
     test!(bgfg:  "48;5;121;38;5;212"  => Fixed(212).on(Fixed(121)));
     test!(toohi: "48;5;999"           => Style::default());
 }
-
 
 
 #[cfg(test)]

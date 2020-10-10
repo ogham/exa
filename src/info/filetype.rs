@@ -124,11 +124,17 @@ impl FileIcon for FileExtensions {
     fn icon_file(&self, file: &File) -> Option<char> {
         use crate::output::icons::Icons;
 
-        Some(match file {
-            f if self.is_music(f) || self.is_lossless(f) => Icons::Audio.value(),
-            f if self.is_image(f) => Icons::Image.value(),
-            f if self.is_video(f) => Icons::Video.value(),
-            _ => return None,
-        })
+        if self.is_music(file) || self.is_lossless(file) {
+            Some(Icons::Audio.value())
+        }
+        else if self.is_image(file) {
+            Some(Icons::Image.value())
+        }
+        else if self.is_video(file) {
+            Some(Icons::Video.value())
+        }
+        else {
+            None
+        }
     }
 }

@@ -6,7 +6,7 @@ use crate::options::{flags, HelpString, VersionString};
 use crate::options::parser::{Arg, Flag, ParseError};
 
 
-/// A **misfire** is a thing that can happen instead of listing files -- a
+/// A **misfire** is a thing that can happen instead of listing files — a
 /// catch-all for anything outside the program’s normal execution.
 #[derive(PartialEq, Debug)]
 pub enum Misfire {
@@ -34,7 +34,7 @@ pub enum Misfire {
     Conflict(&'static Arg, &'static Arg),
 
     /// An option was given that does nothing when another one either is or
-    /// isn't present.
+    /// isn’t present.
     Useless(&'static Arg, bool, &'static Arg),
 
     /// An option was given that does nothing when either of two other options
@@ -78,19 +78,19 @@ impl fmt::Display for Misfire {
                     write!(f, "Option {} has no {:?} setting", arg, attempt)
                 }
             },
-            Self::InvalidOptions(e)         => write!(f, "{}", e),
-            Self::Unsupported(e)            => write!(f, "{}", e),
-            Self::Help(text)                => write!(f, "{}", text),
-            Self::Version(version)          => write!(f, "{}", version),
-            Self::Conflict(a, b)            => write!(f, "Option {} conflicts with option {}", a, b),
-            Self::Duplicate(a, b) if a == b => write!(f, "Flag {} was given twice", a),
-            Self::Duplicate(a, b)           => write!(f, "Flag {} conflicts with flag {}", a, b),
-            Self::Useless(a, false, b)      => write!(f, "Option {} is useless without option {}", a, b),
-            Self::Useless(a, true, b)       => write!(f, "Option {} is useless given option {}", a, b),
-            Self::Useless2(a, b1, b2)       => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
-            Self::TreeAllAll                => write!(f, "Option --tree is useless given --all --all"),
-            Self::FailedParse(ref e)        => write!(f, "Failed to parse number: {}", e),
-            Self::FailedGlobPattern(ref e)  => write!(f, "Failed to parse glob pattern: {}", e),
+            Self::InvalidOptions(e)          => write!(f, "{}", e),
+            Self::Unsupported(e)             => write!(f, "{}", e),
+            Self::Help(text)                 => write!(f, "{}", text),
+            Self::Version(version)           => write!(f, "{}", version),
+            Self::Conflict(a, b)             => write!(f, "Option {} conflicts with option {}", a, b),
+            Self::Duplicate(a, b) if a == b  => write!(f, "Flag {} was given twice", a),
+            Self::Duplicate(a, b)            => write!(f, "Flag {} conflicts with flag {}", a, b),
+            Self::Useless(a, false, b)       => write!(f, "Option {} is useless without option {}", a, b),
+            Self::Useless(a, true, b)        => write!(f, "Option {} is useless given option {}", a, b),
+            Self::Useless2(a, b1, b2)        => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
+            Self::TreeAllAll                 => write!(f, "Option --tree is useless given --all --all"),
+            Self::FailedParse(ref e)         => write!(f, "Failed to parse number: {}", e),
+            Self::FailedGlobPattern(ref e)   => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
 }

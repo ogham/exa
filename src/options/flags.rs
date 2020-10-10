@@ -1,4 +1,4 @@
-use crate::options::parser::{Arg, Args, Values, TakesValue};
+use crate::options::parser::{Arg, Args, TakesValue, Values};
 
 
 // exa options
@@ -32,8 +32,8 @@ pub static GIT_IGNORE:  Arg = Arg { short: None, long: "git-ignore",           t
 pub static DIRS_FIRST:  Arg = Arg { short: None, long: "group-directories-first",  takes_value: TakesValue::Forbidden };
 pub static ONLY_DIRS:   Arg = Arg { short: Some(b'D'), long: "only-dirs", takes_value: TakesValue::Forbidden };
 const SORTS: Values = &[ "name", "Name", "size", "extension",
-                             "Extension", "modified", "changed", "accessed",
-                             "created", "inode", "type", "none" ];
+                         "Extension", "modified", "changed", "accessed",
+                         "created", "inode", "type", "none" ];
 
 // display options
 pub static BINARY:     Arg = Arg { short: Some(b'b'), long: "binary",     takes_value: TakesValue::Forbidden };

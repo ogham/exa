@@ -12,13 +12,13 @@ impl FileFilter {
     /// Determines which of all the file filter options to use.
     pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         Ok(Self {
-            list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
-            reverse:         matches.has(&flags::REVERSE)?,
-            only_dirs:       matches.has(&flags::ONLY_DIRS)?,
-            sort_field:      SortField::deduce(matches)?,
-            dot_filter:      DotFilter::deduce(matches)?,
-            ignore_patterns: IgnorePatterns::deduce(matches)?,
-            git_ignore:      GitIgnore::deduce(matches)?,
+            list_dirs_first:  matches.has(&flags::DIRS_FIRST)?,
+            reverse:          matches.has(&flags::REVERSE)?,
+            only_dirs:        matches.has(&flags::ONLY_DIRS)?,
+            sort_field:       SortField::deduce(matches)?,
+            dot_filter:       DotFilter::deduce(matches)?,
+            ignore_patterns:  IgnorePatterns::deduce(matches)?,
+            git_ignore:       GitIgnore::deduce(matches)?,
         })
     }
 }
@@ -42,29 +42,64 @@ impl SortField {
         };
 
         let field = match word {
-            "name" | "filename" => Self::Name(SortCase::AaBbCc),
-            "Name" | "Filename" => Self::Name(SortCase::ABCabc),
-            ".name" | ".filename" => Self::NameMixHidden(SortCase::AaBbCc),
-            ".Name" | ".Filename" => Self::NameMixHidden(SortCase::ABCabc),
-            "size" | "filesize" => Self::Size,
-            "ext" | "extension" => Self::Extension(SortCase::AaBbCc),
-            "Ext" | "Extension" => Self::Extension(SortCase::ABCabc),
+            "name" | "filename" => {
+                Self::Name(SortCase::AaBbCc)
+            }
+            "Name" | "Filename" => {
+                Self::Name(SortCase::ABCabc)
+            }
+            ".name" | ".filename" => {
+                Self::NameMixHidden(SortCase::AaBbCc)
+            }
+            ".Name" | ".Filename" => {
+                Self::NameMixHidden(SortCase::ABCabc)
+            }
+            "size" | "filesize" => {
+                Self::Size
+            }
+            "ext" | "extension" => {
+                Self::Extension(SortCase::AaBbCc)
+            }
+            "Ext" | "Extension" => {
+                Self::Extension(SortCase::ABCabc)
+            }
+
             // “new” sorts oldest at the top and newest at the bottom; “old”
             // sorts newest at the top and oldest at the bottom. I think this
             // is the right way round to do this: “size” puts the smallest at
             // the top and the largest at the bottom, doesn’t it?
-            "date" | "time" | "mod" | "modified" | "new" | "newest" => Self::ModifiedDate,
+            "date" | "time" | "mod" | "modified" | "new" | "newest" => {
+                Self::ModifiedDate
+            }
+
             // Similarly, “age” means that files with the least age (the
             // newest files) get sorted at the top, and files with the most
             // age (the oldest) at the bottom.
-            "age" | "old" | "oldest" => Self::ModifiedAge,
-            "ch" | "changed" => Self::ChangedDate,
-            "acc" | "accessed" => Self::AccessedDate,
-            "cr" | "created" => Self::CreatedDate,
-            "inode" => Self::FileInode,
-            "type" => Self::FileType,
-            "none" => Self::Unsorted,
-            _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+            "age" | "old" | "oldest" => {
+                Self::ModifiedAge
+            }
+
+            "ch" | "changed" => {
+                Self::ChangedDate
+            }
+            "acc" | "accessed" => {
+                Self::AccessedDate
+            }
+            "cr" | "created" => {
+                Self::CreatedDate
+            }
+            "inode" => {
+                Self::FileInode
+            }
+            "type" => {
+                Self::FileType
+            }
+            "none" => {
+                Self::Unsorted
+            }
+            _ => {
+                return Err(Misfire::BadArgument(&flags::SORT, word.into()));
+            }
         };
 
         Ok(field)
@@ -103,7 +138,6 @@ impl SortField {
 // “apps” first, then “Documents”.
 //
 // You can get the old behaviour back by sorting with `--sort=Name`.
-
 impl Default for SortField {
     fn default() -> Self {
         Self::Name(SortCase::AaBbCc)
@@ -151,8 +185,8 @@ impl IgnorePatterns {
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
         let inputs = match matches.get(&flags::IGNORE_GLOB)? {
-            None => return Ok(Self::empty()),
-            Some(is) => is,
+            Some(is)  => is,
+            None      => return Ok(Self::empty()),
         };
 
         // Awkwardly, though, a glob pattern can be invalid, and we need to
@@ -162,8 +196,8 @@ impl IgnorePatterns {
         // It can actually return more than one glob error,
         // but we only use one. (TODO)
         match errors.pop() {
-            Some(e) => Err(e.into()),
-            None    => Ok(patterns),
+            Some(e)  => Err(e.into()),
+            None     => Ok(patterns),
         }
     }
 }
@@ -171,11 +205,14 @@ impl IgnorePatterns {
 
 impl GitIgnore {
     pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
-        Ok(if matches.has(&flags::GIT_IGNORE)? { Self::CheckAndIgnore }
-                                          else { Self::Off })
+        if matches.has(&flags::GIT_IGNORE)? {
+            Ok(Self::CheckAndIgnore)
+        }
+        else {
+            Ok(Self::Off)
+        }
     }
 }
-
 
 
 #[cfg(test)]

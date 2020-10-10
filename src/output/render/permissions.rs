@@ -25,23 +25,23 @@ impl f::PermissionsPlus {
 }
 
 
-
 impl f::Permissions {
     pub fn render<C: Colours>(&self, colours: &C, is_regular_file: bool) -> Vec<ANSIString<'static>> {
 
         let bit = |bit, chr: &'static str, style: Style| {
-            if bit { style.paint(chr) } else { colours.dash().paint("-") }
+            if bit { style.paint(chr) }
+              else { colours.dash().paint("-") }
         };
 
         vec![
-            bit(self.user_read,     "r", colours.user_read()),
-            bit(self.user_write,    "w", colours.user_write()),
+            bit(self.user_read,   "r", colours.user_read()),
+            bit(self.user_write,  "w", colours.user_write()),
             self.user_execute_bit(colours, is_regular_file),
-            bit(self.group_read,    "r", colours.group_read()),
-            bit(self.group_write,   "w", colours.group_write()),
+            bit(self.group_read,  "r", colours.group_read()),
+            bit(self.group_write, "w", colours.group_write()),
             self.group_execute_bit(colours),
-            bit(self.other_read,    "r", colours.other_read()),
-            bit(self.other_write,   "w", colours.other_write()),
+            bit(self.other_read,  "r", colours.other_read()),
+            bit(self.other_write, "w", colours.other_write()),
             self.other_execute_bit(colours)
         ]
     }

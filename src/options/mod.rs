@@ -60,7 +60,7 @@
 //!
 //! `--sort=size` should override `--sort=Name` because it’s closer to the end
 //! of the arguments array. In fact, because there’s no way to tell where the
-//! arguments came from -- it’s just a heuristic -- this will still work even
+//! arguments came from — it’s just a heuristic — this will still work even
 //! if no aliases are being used!
 //!
 //! Finally, this isn’t just useful when options could override each other.
@@ -72,12 +72,13 @@
 use std::ffi::{OsStr, OsString};
 
 use crate::fs::dir_action::DirAction;
-use crate::fs::filter::{FileFilter,GitIgnore};
+use crate::fs::filter::{FileFilter, GitIgnore};
 use crate::output::{View, Mode, details, grid_details};
 
-mod style;
 mod dir_action;
 mod filter;
+mod flags;
+mod style;
 mod view;
 
 mod help;
@@ -93,7 +94,6 @@ pub mod vars;
 pub use self::vars::Vars;
 
 mod parser;
-mod flags;
 use self::parser::MatchedFlags;
 
 
@@ -120,8 +120,9 @@ impl Options {
     /// for extra options.
     #[allow(unused_results)]
     pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Self, Vec<&'args OsStr>), Misfire>
-    where I: IntoIterator<Item=&'args OsString>,
-          V: Vars {
+    where I: IntoIterator<Item = &'args OsString>,
+          V: Vars
+    {
         use crate::options::parser::{Matches, Strictness};
 
         let strictness = match vars.get(vars::EXA_STRICT) {
@@ -167,7 +168,6 @@ impl Options {
         Ok(Self { dir_action, view, filter })
     }
 }
-
 
 
 #[cfg(test)]

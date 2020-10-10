@@ -10,7 +10,7 @@ use log::*;
 use crate::fs::File;
 
 
-/// A **Dir** provides a cached list of the file paths in a directory that's
+/// A **Dir** provides a cached list of the file paths in a directory that’s
 /// being listed.
 ///
 /// This object gets passed to the Files themselves, in order for them to
@@ -39,8 +39,8 @@ impl Dir {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?
-                                             .map(|result| result.map(|entry| entry.path()))
-                                             .collect::<Result<_,_>>()?;
+                          .map(|result| result.map(|entry| entry.path()))
+                          .collect::<Result<_, _>>()?;
 
         Ok(Self { contents, path })
     }
@@ -53,7 +53,8 @@ impl Dir {
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
-            git, git_ignoring,
+            git,
+            git_ignoring,
         }
     }
 
@@ -106,7 +107,9 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
         loop {
             if let Some(path) = self.inner.next() {
                 let filename = File::filename(path);
-                if !self.dotfiles && filename.starts_with('.') { continue }
+                if ! self.dotfiles && filename.starts_with('.') {
+                    continue;
+                }
 
                 if self.git_ignoring {
                     let git_status = self.git.map(|g| g.get(path, false)).unwrap_or_default();
@@ -139,7 +142,6 @@ enum DotsNext {
     Files,
 }
 
-
 impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
@@ -149,22 +151,24 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
                 self.dots = DotsNext::DotDot;
                 Some(File::new_aa_current(self.dir)
                           .map_err(|e| (Path::new(".").to_path_buf(), e)))
-            },
+            }
+
             DotsNext::DotDot => {
                 self.dots = DotsNext::Files;
                 Some(File::new_aa_parent(self.parent(), self.dir)
                           .map_err(|e| (self.parent(), e)))
-            },
+            }
+
             DotsNext::Files => {
                 self.next_visible_file()
-            },
+            }
         }
     }
 }
 
 
 /// Usually files in Unix use a leading dot to be hidden or visible, but two
-/// entries in particular are "extra-hidden": `.` and `..`, which only become
+/// entries in particular are “extra-hidden”: `.` and `..`, which only become
 /// visible after an extra `-a` option.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum DotFilter {
@@ -199,9 +203,9 @@ impl DotFilter {
     /// Whether this filter should add dot directories to a listing.
     fn dots(self) -> DotsNext {
         match self {
-            Self::JustFiles       => DotsNext::Files,
-            Self::Dotfiles        => DotsNext::Files,
-            Self::DotfilesAndDots => DotsNext::Dot,
+            Self::JustFiles        => DotsNext::Files,
+            Self::Dotfiles         => DotsNext::Files,
+            Self::DotfilesAndDots  => DotsNext::Dot,
         }
     }
 }

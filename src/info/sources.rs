@@ -11,7 +11,7 @@ impl<'a> File<'a> {
     /// The point of this is to highlight compiled files such as `foo.js` when
     /// their source file `foo.coffee` exists in the same directory.
     /// For example, `foo.js` is perfectly valid without `foo.coffee`, so we
-    /// don't want to always blindly highlight `*.js` as compiled.
+    /// don’t want to always blindly highlight `*.js` as compiled.
     /// (See also `FileExtensions#is_compiled`)
     pub fn get_source_files(&self) -> Vec<PathBuf> {
         if let Some(ext) = &self.ext {
@@ -34,7 +34,7 @@ impl<'a> File<'a> {
             }
         }
         else {
-            vec![]  // No source files if there's no extension, either!
+            vec![]  // No source files if there’s no extension, either!
         }
     }
 }

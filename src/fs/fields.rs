@@ -1,4 +1,3 @@
-
 //! Wrapper types for the values returned from `File`s.
 //!
 //! The methods of `File` that return information about the entry on the
@@ -45,7 +44,14 @@ pub type uid_t = u32;
 /// Its ordering is used when sorting by type.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Type {
-    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special,
+    Directory,
+    File,
+    Link,
+    Pipe,
+    Socket,
+    CharDevice,
+    BlockDevice,
+    Special,
 }
 
 impl Type {
@@ -152,7 +158,7 @@ pub enum Size {
     /// have a file size. For example, a directory will just contain a list of
     /// its files as its “contents” and will be specially flagged as being a
     /// directory, rather than a file. However, seeing the “file size” of this
-    /// data is rarely useful -- I can’t think of a time when I’ve seen it and
+    /// data is rarely useful — I can’t think of a time when I’ve seen it and
     /// learnt something. So we discard it and just output “-” instead.
     ///
     /// See this answer for more: http://unix.stackexchange.com/a/68266
@@ -214,9 +220,10 @@ pub enum GitStatus {
     /// A file that’s ignored (that matches a line in .gitignore)
     Ignored,
 
-    /// A file that's updated but unmerged.
+    /// A file that’s updated but unmerged.
     Conflicted,
 }
+
 
 /// A file’s complete Git status. It’s possible to make changes to a file, add
 /// it to the staging area, then make *more* changes, so we need to list each
@@ -227,11 +234,13 @@ pub struct Git {
     pub unstaged: GitStatus,
 }
 
-use std::default::Default;
 impl Default for Git {
 
     /// Create a Git status for a file with nothing done to it.
     fn default() -> Self {
-        Self { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+        Self {
+            staged: GitStatus::NotModified,
+            unstaged: GitStatus::NotModified,
+        }
     }
 }

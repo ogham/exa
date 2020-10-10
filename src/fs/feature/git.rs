@@ -36,7 +36,9 @@ impl GitCache {
 
 use std::iter::FromIterator;
 impl FromIterator<PathBuf> for GitCache {
-    fn from_iter<I: IntoIterator<Item=PathBuf>>(iter: I) -> Self {
+    fn from_iter<I>(iter: I) -> Self
+    where I: IntoIterator<Item=PathBuf>
+    {
         let iter = iter.into_iter();
         let mut git = Self {
             repos: Vec::with_capacity(iter.size_hint().0),
@@ -61,8 +63,10 @@ impl FromIterator<PathBuf> for GitCache {
 
                         debug!("Discovered new Git repo");
                         git.repos.push(r);
-                    },
-                    Err(miss) => git.misses.push(miss),
+                    }
+                    Err(miss) => {
+                        git.misses.push(miss)
+                    }
                 }
             }
         }
@@ -70,8 +74,6 @@ impl FromIterator<PathBuf> for GitCache {
         git
     }
 }
-
-
 
 
 /// A **Git repository** is one we’ve discovered somewhere on the filesystem.
@@ -99,7 +101,9 @@ pub struct GitRepo {
 enum GitContents {
 
     /// All the interesting Git stuff goes through this.
-    Before { repo: git2::Repository },
+    Before {
+        repo: git2::Repository,
+    },
 
     /// Temporary value used in `repo_to_statuses` so we can move the
     /// repository out of the `Before` variant.
@@ -107,7 +111,9 @@ enum GitContents {
 
     /// The data we’ve extracted from the repository, but only after we’ve
     /// actually done so.
-    After { statuses: Git }
+    After {
+        statuses: Git,
+    },
 }
 
 impl GitRepo {
@@ -116,7 +122,7 @@ impl GitRepo {
     /// depending on the prefix-lookup flag) and returns its Git status.
     ///
     /// Actually querying the `git2` repository for the mapping of paths to
-    /// Git statuses is only done once, and gets cached so we don't need to
+    /// Git statuses is only done once, and gets cached so we don’t need to
     /// re-query the entire repository the times after that.
     ///
     /// The temporary `Processing` enum variant is used after the `git2`
@@ -166,7 +172,7 @@ impl GitRepo {
                 let workdir = workdir.to_path_buf();
                 let contents = Mutex::new(GitContents::Before { repo });
                 Ok(Self { contents, workdir, original_path: path, extra_paths: Vec::new() })
-            },
+            }
             None => {
                 warn!("Repository has no workdir?");
                 Err(path)
@@ -205,8 +211,10 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
                 let elem = (path, e.status());
                 statuses.push(elem);
             }
-        },
-        Err(e) => error!("Error looking up Git statuses: {:?}", e),
+        }
+        Err(e) => {
+            error!("Error looking up Git statuses: {:?}", e)
+        }
     }
 
     Git { statuses }
@@ -217,7 +225,7 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
 //   20.311276  INFO:exa::fs::feature::git: Getting Git statuses for repo with workdir "/vagrant/"
 //   20.799610  DEBUG:exa::output::table: Getting Git status for file "./Cargo.toml"
 //
-// Even inserting another logging line immediately afterwards doesn't make it
+// Even inserting another logging line immediately afterwards doesn’t make it
 // look any faster.
 
 
@@ -239,6 +247,7 @@ impl Git {
     /// Get the status for the file at the given path.
     fn file_status(&self, file: &Path) -> f::Git {
         let path = reorient(file);
+
         self.statuses.iter()
             .find(|p| p.0.as_path() == path)
             .map(|&(_, s)| f::Git { staged: index_status(s), unstaged: working_tree_status(s) })
@@ -250,13 +259,17 @@ impl Git {
     /// directories, which don’t really have an ‘official’ status.
     fn dir_status(&self, dir: &Path) -> f::Git {
         let path = reorient(dir);
-        let s = self.statuses.iter()
-                             .filter(|p| p.0.starts_with(&path))
-                             .fold(git2::Status::empty(), |a, b| a | b.1);
 
-        f::Git { staged: index_status(s), unstaged: working_tree_status(s) }
+        let s = self.statuses.iter()
+                    .filter(|p| p.0.starts_with(&path))
+                    .fold(git2::Status::empty(), |a, b| a | b.1);
+
+        let staged = index_status(s);
+        let unstaged = working_tree_status(s);
+        f::Git { staged, unstaged }
     }
 }
+
 
 /// Converts a path to an absolute path based on the current directory.
 /// Paths need to be absolute for them to be compared properly, otherwise
@@ -264,11 +277,13 @@ impl Git {
 /// “/vagrant/README.md”, prefixed by the workdir.
 fn reorient(path: &Path) -> PathBuf {
     use std::env::current_dir;
-    // I’m not 100% on this func tbh
+
+    // TODO: I’m not 100% on this func tbh
     let path = match current_dir() {
-        Err(_)  => Path::new(".").join(&path),
-        Ok(dir) => dir.join(&path),
+        Err(_)   => Path::new(".").join(&path),
+        Ok(dir)  => dir.join(&path),
     };
+
     path.canonicalize().unwrap_or(path)
 }
 

@@ -19,7 +19,7 @@ impl DirAction {
 
         if matches.is_strict() {
             // Early check for --level when it wouldn’t do anything
-            if !recurse && !tree && matches.count(&flags::LEVEL) > 0 {
+            if ! recurse && ! tree && matches.count(&flags::LEVEL) > 0 {
                 return Err(Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
             else if recurse && as_file {

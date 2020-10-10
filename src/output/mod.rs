@@ -6,8 +6,8 @@ pub use self::escape::escape;
 
 pub mod details;
 pub mod file_name;
-pub mod grid_details;
 pub mod grid;
+pub mod grid_details;
 pub mod icons;
 pub mod lines;
 pub mod render;

@@ -1,25 +1,25 @@
 use ansi_term::Style;
 
-use crate::output::cell::TextCell;
 use crate::fs::fields as f;
+use crate::output::cell::TextCell;
+
 
 impl f::OctalPermissions {
     fn bits_to_octal(r: bool, w: bool, x: bool) -> u8 {
-        (r  as u8) * 4 + (w as u8) * 2 + (x as u8)
+        (r as u8) * 4 + (w as u8) * 2 + (x as u8)
     }
 
     pub fn render(&self, style: Style) -> TextCell {
-
         let perm = &self.permissions;
         let octal_sticky = Self::bits_to_octal(perm.setuid, perm.setgid, perm.sticky);
-        let octal_owner = Self::bits_to_octal(perm.user_read, perm.user_write, perm.user_execute);
-        let octal_group = Self::bits_to_octal(perm.group_read, perm.group_write, perm.group_execute);
-        let octal_other = Self::bits_to_octal(perm.other_read, perm.other_write, perm.other_execute);
+        let octal_owner  = Self::bits_to_octal(perm.user_read, perm.user_write, perm.user_execute);
+        let octal_group  = Self::bits_to_octal(perm.group_read, perm.group_write, perm.group_execute);
+        let octal_other  = Self::bits_to_octal(perm.other_read, perm.other_write, perm.other_execute);
 
         TextCell::paint(style, format!("{}{}{}{}", octal_sticky, octal_owner, octal_group, octal_other))
     }
-
 }
+
 
 #[cfg(test)]
 pub mod test {

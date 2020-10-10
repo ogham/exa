@@ -3,10 +3,10 @@ use std::io::{Write, Result as IOResult};
 use term_grid as tg;
 
 use crate::fs::File;
-use crate::style::Colours;
+use crate::output::cell::DisplayWidth;
 use crate::output::file_name::FileStyle;
 use crate::output::icons::painted_icon;
-use crate::output::cell::DisplayWidth;
+use crate::style::Colours;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
@@ -41,16 +41,16 @@ impl<'a> Render<'a> {
         grid.reserve(self.files.len());
 
         for file in &self.files {
-            let icon = if self.opts.icons { Some(painted_icon(file, self.style)) } else { None };
+            let icon = if self.opts.icons { Some(painted_icon(file, self.style)) }
+                                     else { None };
+
             let filename = self.style.for_file(file, self.colours).paint();
-            let width = if self.opts.icons {
-                DisplayWidth::from(2) + filename.width()
-            } else {
-                filename.width()
-            };
+
+            let width = if self.opts.icons { DisplayWidth::from(2) + filename.width() }
+                                      else { filename.width() };
 
             grid.add(tg::Cell {
-                contents:  format!("{icon}{filename}", icon=&icon.unwrap_or_default(), filename=filename.strings().to_string()),
+                contents:  format!("{}{}", &icon.unwrap_or_default(), filename.strings()),
                 width:     *width,
             });
         }
@@ -66,9 +66,11 @@ impl<'a> Render<'a> {
                 if self.opts.icons {
                     write!(w, "{}", painted_icon(file, self.style))?;
                 }
+
                 let name_cell = self.style.for_file(file, self.colours).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
+
             Ok(())
         }
     }

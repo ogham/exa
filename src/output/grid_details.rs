@@ -9,15 +9,14 @@ use crate::fs::{Dir, File};
 use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::FileAttributes;
 use crate::fs::filter::FileFilter;
-
-use crate::style::Colours;
 use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
-use crate::output::grid::Options as GridOptions;
 use crate::output::file_name::FileStyle;
+use crate::output::grid::Options as GridOptions;
+use crate::output::icons::painted_icon;
 use crate::output::table::{Table, Row as TableRow, Options as TableOptions};
 use crate::output::tree::{TreeParams, TreeDepth};
-use crate::output::icons::painted_icon;
+use crate::style::Colours;
 
 
 #[derive(Debug)]
@@ -84,21 +83,21 @@ pub struct Render<'a> {
 impl<'a> Render<'a> {
 
     /// Create a temporary Details render that gets used for the columns of
-    /// the grid-details render that's being generated.
+    /// the grid-details render that’s being generated.
     ///
     /// This includes an empty files vector because the files get added to
     /// the table in *this* file, not in details: we only want to insert every
     /// *n* files into each column’s table, not all of them.
     pub fn details(&self) -> DetailsRender<'a> {
         DetailsRender {
-            dir: self.dir,
-            files: Vec::new(),
-            colours: self.colours,
-            style: self.style,
-            opts: self.details,
-            recurse: None,
-            filter: self.filter,
-            git_ignoring: self.git_ignoring,
+            dir:           self.dir,
+            files:         Vec::new(),
+            colours:       self.colours,
+            style:         self.style,
+            opts:          self.details,
+            recurse:       None,
+            filter:        self.filter,
+            git_ignoring:  self.git_ignoring,
         }
     }
 
@@ -106,14 +105,14 @@ impl<'a> Render<'a> {
     /// in the terminal (or something has gone wrong) and we have given up.
     pub fn give_up(self) -> DetailsRender<'a> {
         DetailsRender {
-            dir: self.dir,
-            files: self.files,
-            colours: self.colours,
-            style: self.style,
-            opts: self.details,
-            recurse: None,
-            filter: self.filter,
-            git_ignoring: self.git_ignoring,
+            dir:           self.dir,
+            files:         self.files,
+            colours:       self.colours,
+            style:         self.style,
+            opts:          self.details,
+            recurse:       None,
+            filter:        self.filter,
+            git_ignoring:  self.git_ignoring,
         }
     }
 
@@ -138,7 +137,7 @@ impl<'a> Render<'a> {
 
         let rows = self.files.iter()
                        .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
-                       .collect::<Vec<TableRow>>();
+                       .collect::<Vec<_>>();
 
         let file_names = self.files.iter()
                              .map(|file| {
@@ -148,11 +147,12 @@ impl<'a> Render<'a> {
                                     let file_cell = self.style.for_file(file, self.colours).paint().promote();
                                     icon_cell.append(file_cell);
                                     icon_cell
-                                 } else {
+                                 }
+                                 else {
                                      self.style.for_file(file, self.colours).paint().promote()
                                  }
                              })
-                             .collect::<Vec<TextCell>>();
+                             .collect::<Vec<_>>();
 
         let mut last_working_table = self.make_grid(1, options, git, &file_names, rows.clone(), &drender);
 
@@ -188,8 +188,8 @@ impl<'a> Render<'a> {
 
     fn make_table(&'a self, options: &'a TableOptions, mut git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
         match (git, self.dir) {
-            (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
-            (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+            (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { git = None },
+            (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
             (None,    _)        => {/* Keep Git how it is */},
         }
 
@@ -206,7 +206,6 @@ impl<'a> Render<'a> {
     }
 
     fn make_grid(&'a self, column_count: usize, options: &'a TableOptions, git: Option<&GitCache>, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
-
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
             tables.push(self.make_table(options, git, drender));
@@ -234,17 +233,19 @@ impl<'a> Render<'a> {
             rows.push(details_row);
         }
 
-        let columns: Vec<_> = tables.into_iter().map(|(table, details_rows)| {
-            drender.iterate_with_table(table, details_rows).collect::<Vec<_>>()
-        }).collect();
+        let columns = tables
+            .into_iter()
+            .map(|(table, details_rows)| {
+                drender.iterate_with_table(table, details_rows)
+                       .collect::<Vec<_>>()
+                })
+            .collect::<Vec<_>>();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }
                                        else { grid::Direction::TopToBottom };
 
-        let mut grid = grid::Grid::new(grid::GridOptions {
-            direction,
-            filling:    grid::Filling::Spaces(4),
-        });
+        let filling = grid::Filling::Spaces(4);
+        let mut grid = grid::Grid::new(grid::GridOptions { direction, filling });
 
         if self.grid.across {
             for row in 0 .. height {
@@ -280,14 +281,18 @@ impl<'a> Render<'a> {
 
 fn divide_rounding_up(a: usize, b: usize) -> usize {
     let mut result = a / b;
-    if a % b != 0 { result += 1; }
+
+    if a % b != 0 {
+        result += 1;
+    }
+
     result
 }
 
 
 fn file_has_xattrs(file: &File) -> bool {
     match file.path.attributes() {
-        Ok(attrs) => !attrs.is_empty(),
-        Err(_) => false,
+        Ok(attrs)  => ! attrs.is_empty(),
+        Err(_)     => false,
     }
 }

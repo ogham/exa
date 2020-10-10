@@ -119,28 +119,25 @@ impl DefaultFormat {
 
         Self { current_year, locale, date_and_time, date_and_year }
     }
-}
 
-
-impl DefaultFormat {
     fn is_recent(&self, date: LocalDateTime) -> bool {
         date.year() == self.current_year
     }
 
     fn month_to_abbrev(month: datetime::Month) -> &'static str {
         match month {
-            datetime::Month::January => "Jan",
-            datetime::Month::February => "Feb",
-            datetime::Month::March => "Mar",
-            datetime::Month::April => "Apr",
-            datetime::Month::May => "May",
-            datetime::Month::June => "Jun",
-            datetime::Month::July => "Jul",
-            datetime::Month::August => "Aug",
-            datetime::Month::September => "Sep",
-            datetime::Month::October => "Oct",
-            datetime::Month::November => "Nov",
-            datetime::Month::December => "Dec",
+            datetime::Month::January    => "Jan",
+            datetime::Month::February   => "Feb",
+            datetime::Month::March      => "Mar",
+            datetime::Month::April      => "Apr",
+            datetime::Month::May        => "May",
+            datetime::Month::June       => "Jun",
+            datetime::Month::July       => "Jul",
+            datetime::Month::August     => "Aug",
+            datetime::Month::September  => "Sep",
+            datetime::Month::October    => "Oct",
+            datetime::Month::November   => "Nov",
+            datetime::Month::December   => "Dec",
         }
     }
 
@@ -217,7 +214,6 @@ fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
             date.hour(), date.minute())
 }
 
-
 #[allow(trivial_numeric_casts)]
 fn full_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
@@ -238,7 +234,6 @@ fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
             date.hour(), date.minute(), date.second(), systemtime_nanos(time),
             offset.hours(), offset.minutes().abs())
 }
-
 
 
 #[derive(Debug, Copy, Clone)]

@@ -11,8 +11,9 @@
 /// - https://crates.io/crates/vergen
 
 extern crate datetime;
-use std::io::Result as IOResult;
 use std::env;
+use std::io::Result as IOResult;
+
 
 fn git_hash() -> String {
     use std::process::Command;
@@ -52,7 +53,8 @@ fn write_statics() -> IOResult<()> {
 
     let ver = if is_development_version() {
         format!("exa v{} ({} built on {})", cargo_version(), git_hash(), build_date())
-    } else {
+    }
+    else {
         format!("exa v{}", cargo_version())
     };
 

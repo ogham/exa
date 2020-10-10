@@ -70,8 +70,8 @@ impl Flag {
 impl fmt::Display for Flag {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
-            Self::Short(short) => write!(f, "-{}", *short as char),
-            Self::Long(long)   => write!(f, "--{}", long),
+            Self::Short(short)  => write!(f, "-{}", *short as char),
+            Self::Long(long)    => write!(f, "--{}", long),
         }
     }
 }
@@ -144,7 +144,8 @@ impl Args {
     /// Iterates over the given list of command-line arguments and parses
     /// them into a list of matched flags and free strings.
     pub fn parse<'args, I>(&self, inputs: I, strictness: Strictness) -> Result<Matches<'args>, ParseError>
-    where I: IntoIterator<Item=&'args OsString> {
+    where I: IntoIterator<Item = &'args OsString>
+    {
         use std::os::unix::ffi::OsStrExt;
 
         let mut parsing = true;
@@ -164,7 +165,7 @@ impl Args {
             // This allows a file named “--arg” to be specified by passing in
             // the pair “-- --arg”, without it getting matched as a flag that
             // doesn’t exist.
-            if !parsing {
+            if ! parsing {
                 frees.push(arg)
             }
             else if arg == "--" {
@@ -348,7 +349,7 @@ pub struct Matches<'args> {
     pub flags: MatchedFlags<'args>,
 
     /// All the strings that weren’t matched as arguments, as well as anything
-    /// after the special "--" string.
+    /// after the special “--” string.
     pub frees: Vec<&'args OsStr>,
 }
 
@@ -373,7 +374,8 @@ impl<'a> MatchedFlags<'a> {
     /// Returns `true` if it was, `false` if it wasn’t, and an error in
     /// strict mode if it was specified more than once.
     pub fn has(&self, arg: &'static Arg) -> Result<bool, Misfire> {
-        self.has_where(|flag| flag.matches(arg)).map(|flag| flag.is_some())
+        self.has_where(|flag| flag.matches(arg))
+            .map(|flag| flag.is_some())
     }
 
     /// Returns the first found argument that satisfies the predicate, or
@@ -488,7 +490,7 @@ fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
         let (before, after) = input.as_bytes().split_at(index);
 
         // The after string contains the = that we need to remove.
-        if !before.is_empty() && after.len() >= 2 {
+        if ! before.is_empty() && after.len() >= 2 {
             return Some((OsStr::from_bytes(before),
                          OsStr::from_bytes(&after[1..])))
         }
@@ -569,7 +571,9 @@ mod parse_test {
 
                 let strictness = Strictness::UseLastArguments;  // this isn’t even used
                 let got = Args(TEST_ARGS).parse(inputs.iter(), strictness);
-                let expected = Ok(Matches { frees, flags: MatchedFlags { flags, strictness } });
+                let flags = MatchedFlags { flags, strictness };
+
+                let expected = Ok(Matches { frees, flags });
                 assert_eq!(got, expected);
             }
         };
@@ -580,9 +584,11 @@ mod parse_test {
                 use self::ParseError::*;
 
                 let strictness = Strictness::UseLastArguments;  // this isn’t even used
-                let bits = $inputs.as_ref().into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
-                let got = Args(TEST_ARGS).parse(bits.iter(), strictness);
+                let bits = $inputs.as_ref().into_iter()
+                                  .map(|&o| os(o))
+                                  .collect::<Vec<_>>();
 
+                let got = Args(TEST_ARGS).parse(bits.iter(), strictness);
                 assert_eq!(got, Err($error));
             }
         };
@@ -719,6 +725,6 @@ mod matches_test {
     fn no_count() {
         let flags = MatchedFlags { flags: Vec::new(), strictness: Strictness::UseLastArguments };
 
-        assert!(!flags.has(&COUNT).unwrap());
+        assert_eq!(flags.has(&COUNT).unwrap(), false);
     }
 }

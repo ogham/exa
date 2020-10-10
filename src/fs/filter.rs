@@ -5,8 +5,8 @@ use std::iter::FromIterator;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
-use crate::fs::File;
 use crate::fs::DotFilter;
+use crate::fs::File;
 
 
 /// The **file filter** processes a list of files before displaying them to
@@ -88,12 +88,11 @@ pub struct FileFilter {
     pub git_ignore: GitIgnore,
 }
 
-
 impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
     pub fn filter_child_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(&f.name));
+        files.retain(|f| ! self.ignore_patterns.is_ignored(&f.name));
 
         if self.only_dirs {
             files.retain(File::is_directory);
@@ -110,14 +109,18 @@ impl FileFilter {
     /// `exa -I='*.ogg' music/*` should filter out the ogg files obtained
     /// from the glob, even though the globbing is done by the shell!
     pub fn filter_argument_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(&f.name));
+        files.retain(|f| {
+            ! self.ignore_patterns.is_ignored(&f.name)
+        });
     }
 
     /// Sort the files in the given vector based on the sort field option.
     pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
-    where F: AsRef<File<'a>> {
-
-        files.sort_by(|a, b| self.sort_field.compare_files(a.as_ref(), b.as_ref()));
+    where F: AsRef<File<'a>>
+    {
+        files.sort_by(|a, b| {
+            self.sort_field.compare_files(a.as_ref(), b.as_ref())
+        });
 
         if self.reverse {
             files.reverse();
@@ -126,8 +129,9 @@ impl FileFilter {
         if self.list_dirs_first {
             // This relies on the fact that `sort_by` is *stable*: it will keep
             // adjacent elements next to each other.
-            files.sort_by(|a, b| {b.as_ref().points_to_directory()
-                .cmp(&a.as_ref().points_to_directory())
+            files.sort_by(|a, b| {
+                b.as_ref().points_to_directory()
+                    .cmp(&a.as_ref().points_to_directory())
             });
         }
     }
@@ -175,13 +179,13 @@ pub enum SortField {
     /// The time the file was changed (the “ctime”).
     ///
     /// This field is used to mark the time when a file’s metadata
-    /// changed -- its permissions, owners, or link count.
+    /// changed — its permissions, owners, or link count.
     ///
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
     ChangedDate,
 
-    /// The time the file was created (the "btime" or "birthtime").
+    /// The time the file was created (the “btime” or “birthtime”).
     CreatedDate,
 
     /// The type of the file: directories, links, pipes, regular, files, etc.
@@ -280,11 +284,8 @@ impl SortField {
     }
 
     fn strip_dot(n: &str) -> &str {
-        if n.starts_with('.') {
-            &n[1..]
-        } else {
-            n
-        }
+        if n.starts_with('.') { &n[1..] }
+                         else { n }
     }
 }
 
@@ -298,8 +299,12 @@ pub struct IgnorePatterns {
 }
 
 impl FromIterator<glob::Pattern> for IgnorePatterns {
-    fn from_iter<I: IntoIterator<Item = glob::Pattern>>(iter: I) -> Self {
-        Self { patterns: iter.into_iter().collect() }
+
+    fn from_iter<I>(iter: I) -> Self
+    where I: IntoIterator<Item = glob::Pattern>
+    {
+        let patterns = iter.into_iter().collect();
+        Self { patterns }
     }
 }
 
@@ -369,7 +374,6 @@ pub enum GitIgnore {
 // > By default, all ignore files found are respected. This includes .ignore,
 // > .gitignore, .git/info/exclude and even your global gitignore globs,
 // > usually found in $XDG_CONFIG_HOME/git/ignore.
-
 
 
 #[cfg(test)]

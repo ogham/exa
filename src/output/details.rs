@@ -1,6 +1,6 @@
 //! The **Details** output view displays each file as a row in a table.
 //!
-//! It's used in the following situations:
+//! It’s used in the following situations:
 //!
 //! - Most commonly, when using the `--long` command-line argument to display the
 //!   details of each file, which requires using a table view to hold all the data;
@@ -66,20 +66,19 @@ use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
 use ansi_term::{ANSIGenericString, Style};
+use scoped_threadpool::Pool;
 
 use crate::fs::{Dir, File};
 use crate::fs::dir_action::RecurseOptions;
-use crate::fs::filter::FileFilter;
 use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::{Attribute, FileAttributes};
+use crate::fs::filter::FileFilter;
 use crate::style::Colours;
 use crate::output::cell::TextCell;
-use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
+use crate::output::icons::painted_icon;
 use crate::output::file_name::FileStyle;
 use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
-use crate::output::icons::painted_icon;
-
-use scoped_threadpool::Pool;
+use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -105,13 +104,12 @@ pub struct Options {
     /// Whether to show a header line or not.
     pub header: bool,
 
-    /// Whether to show each file's extended attributes.
+    /// Whether to show each file’s extended attributes.
     pub xattr: bool,
 
-    /// Enables --icons mode
+    /// Whether icons mode is enabled.
     pub icons: bool,
 }
-
 
 
 pub struct Render<'a> {
@@ -157,8 +155,8 @@ impl<'a> Render<'a> {
 
         if let Some(ref table) = self.opts.table {
             match (git, self.dir) {
-                (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
-                (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+                (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { git = None },
+                (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
@@ -248,26 +246,26 @@ impl<'a> Render<'a> {
                         }
                     }
 
-                    let table_row = table.as_ref().map(|t| t.row_for_file(file, !xattrs.is_empty()));
+                    let table_row = table.as_ref()
+                                         .map(|t| t.row_for_file(file, ! xattrs.is_empty()));
 
-                    if !self.opts.xattr {
+                    if ! self.opts.xattr {
                         xattrs.clear();
                     }
 
                     let mut dir = None;
 
                     if let Some(r) = self.recurse {
-                        if file.is_directory() && r.tree && !r.is_too_deep(depth.0) {
+                        if file.is_directory() && r.tree && ! r.is_too_deep(depth.0) {
                             match file.to_dir() {
-                                Ok(d)  => { dir = Some(d); },
-                                Err(e) => { errors.push((e, None)) },
+                                Ok(d)   => { dir = Some(d); },
+                                Err(e)  => { errors.push((e, None)) },
                             }
                         }
                     };
 
-                    let icon = if self.opts.icons {
-                        Some(painted_icon(file, self.style))
-                    } else { None };
+                    let icon = if self.opts.icons { Some(painted_icon(file, self.style)) }
+                                             else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
                     unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }
@@ -291,10 +289,12 @@ impl<'a> Render<'a> {
             if let Some(icon) = egg.icon {
                 name_cell.push(ANSIGenericString::from(icon), 2)
             }
-            name_cell.append(self.style.for_file(egg.file, self.colours)
-                                  .with_link_paths()
-                                  .paint()
-                                  .promote());
+
+            let style = self.style.for_file(egg.file, self.colours)
+                            .with_link_paths()
+                            .paint()
+                            .promote();
+            name_cell.append(style);
 
 
             let row = Row {
@@ -308,14 +308,18 @@ impl<'a> Render<'a> {
             if let Some(ref dir) = egg.dir {
                 for file_to_add in dir.files(self.filter.dot_filter, git, self.git_ignoring) {
                     match file_to_add {
-                        Ok(f)          => files.push(f),
-                        Err((path, e)) => errors.push((e, Some(path)))
+                        Ok(f) => {
+                            files.push(f);
+                        }
+                        Err((path, e)) => {
+                            errors.push((e, Some(path)));
+                        }
                     }
                 }
 
                 self.filter.filter_child_files(&mut files);
 
-                if !files.is_empty() {
+                if ! files.is_empty() {
                     for xattr in egg.xattrs {
                         rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), false)));
                     }
@@ -331,12 +335,16 @@ impl<'a> Render<'a> {
 
             let count = egg.xattrs.len();
             for (index, xattr) in egg.xattrs.into_iter().enumerate() {
-                rows.push(self.render_xattr(&xattr, TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1)));
+                let params = TreeParams::new(depth.deeper(), errors.is_empty() && index == count - 1);
+                let r = self.render_xattr(&xattr, params);
+                rows.push(r);
             }
 
             let count = errors.len();
             for (index, (error, path)) in errors.into_iter().enumerate() {
-                rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), index == count - 1), path));
+                let params = TreeParams::new(depth.deeper(), index == count - 1);
+                let r = self.render_error(&error, params, path);
+                rows.push(r);
             }
         }
     }
@@ -396,13 +404,13 @@ pub struct Row {
 
     /// Vector of cells to display.
     ///
-    /// Most of the rows will be used to display files' metadata, so this will
+    /// Most of the rows will be used to display files’ metadata, so this will
     /// almost always be `Some`, containing a vector of cells. It will only be
     /// `None` for a row displaying an attribute or error, neither of which
     /// have cells.
     pub cells: Option<TableRow>,
 
-    /// This file's name, in coloured output. The name is treated separately
+    /// This file’s name, in coloured output. The name is treated separately
     /// from the other cells, as it never requires padding.
     pub name: TextCell,
 
@@ -441,7 +449,7 @@ impl<'a> Iterator for TableIter<'a> {
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if !row.tree.is_at_root() {
+            if ! row.tree.is_at_root() {
                 cell.add_spaces(1);
             }
 
@@ -471,7 +479,7 @@ impl Iterator for Iter {
 
             // If any tree characters have been printed, then add an extra
             // space, which makes the output look much better.
-            if !row.tree.is_at_root() {
+            if ! row.tree.is_at_root() {
                 cell.add_spaces(1);
             }
 

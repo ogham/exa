@@ -4,9 +4,11 @@ use crate::fs::File;
 use crate::info::filetype::FileExtensions;
 use crate::output::file_name::FileStyle;
 
+
 pub trait FileIcon {
     fn icon_file(&self, file: &File) -> Option<char>;
 }
+
 
 #[derive(Copy, Clone)]
 pub enum Icons {
@@ -18,35 +20,48 @@ pub enum Icons {
 impl Icons {
     pub fn value(self) -> char {
         match self {
-            Self::Audio => '\u{f001}',
-            Self::Image => '\u{f1c5}',
-            Self::Video => '\u{f03d}',
+            Self::Audio  => '\u{f001}',
+            Self::Image  => '\u{f1c5}',
+            Self::Video  => '\u{f03d}',
         }
     }
 }
 
+
 pub fn painted_icon(file: &File, style: &FileStyle) -> String {
     let file_icon = icon(file).to_string();
     let painted = style.exts
-            .colour_file(file)
-            .map_or(file_icon.to_string(), |c| {
-                // Remove underline from icon
-                if c.is_underline {
-                    match c.foreground {
-                        Some(color) => Style::from(color).paint(file_icon).to_string(),
-                        None => Style::default().paint(file_icon).to_string(),
+        .colour_file(file)
+        .map_or(file_icon.to_string(), |c| {
+            // Remove underline from icon
+            if c.is_underline {
+                match c.foreground {
+                    Some(color) => {
+                        Style::from(color).paint(file_icon).to_string()
                     }
-                } else {
-                    c.paint(file_icon).to_string()
+                    None => {
+                        Style::default().paint(file_icon).to_string()
+                    }
                 }
-            });
+            }
+            else {
+                c.paint(file_icon).to_string()
+            }
+        });
+
     format!("{}  ", painted)
 }
 
+
 fn icon(file: &File) -> char {
     let extensions = Box::new(FileExtensions);
-    if file.points_to_directory() { '\u{f115}' }
-    else if let Some(icon) = extensions.icon_file(file) { icon }
+
+    if file.points_to_directory() {
+        '\u{f115}'
+    }
+    else if let Some(icon) = extensions.icon_file(file) {
+        icon
+    }
     else if let Some(ext) = file.ext.as_ref() {
         match ext.as_str() {
             "ai"        => '\u{e7b4}',
@@ -189,7 +204,8 @@ fn icon(file: &File) -> char {
             "nix"       => '\u{f313}',
             _           => '\u{f016}'
         }
-    } else {
+    }
+    else {
         '\u{f016}'
     }
 }

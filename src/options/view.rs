@@ -1,13 +1,12 @@
 use lazy_static::lazy_static;
 
+use crate::fs::feature::xattr;
 use crate::options::{flags, Misfire, Vars};
 use crate::options::parser::MatchedFlags;
 use crate::output::{View, Mode, grid, details, lines};
 use crate::output::grid_details::{self, RowThreshold};
 use crate::output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
 use crate::output::time::TimeFormat;
-
-use crate::fs::feature::xattr;
 
 
 impl View {
@@ -28,7 +27,7 @@ impl Mode {
     /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         let long = || {
-            if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
+            if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
                 Err(Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
             }
             else if matches.has(&flags::ONE_LINE)? {
@@ -104,7 +103,8 @@ impl Mode {
                 let other_options_mode = other_options_scan()?;
                 if let Self::Grid(grid) = other_options_mode {
                     let row_threshold = RowThreshold::deduce(vars)?;
-                    return Ok(Self::GridDetails(grid_details::Options { grid, details, row_threshold }));
+                    let opts = grid_details::Options { grid, details, row_threshold };
+                    return Ok(Self::GridDetails(opts));
                 }
                 else {
                     return Ok(other_options_mode);
@@ -125,11 +125,11 @@ impl Mode {
                 }
             }
 
-            if cfg!(feature="git") && matches.has(&flags::GIT)? {
+            if cfg!(feature = "git") && matches.has(&flags::GIT)? {
                 return Err(Misfire::Useless(&flags::GIT, false, &flags::LONG));
             }
-            else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
-                // TODO: I'm not sure if the code even gets this far.
+            else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
+                // TODO: I’m not sure if the code even gets this far.
                 // There is an identical check in dir_action
                 return Err(Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
@@ -220,7 +220,7 @@ impl TableOptions {
 impl Columns {
     fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let time_types = TimeTypes::deduce(matches)?;
-        let git = cfg!(feature="git") && matches.has(&flags::GIT)?;
+        let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;
@@ -228,9 +228,9 @@ impl Columns {
         let links  = matches.has(&flags::LINKS)?;
         let octal  = matches.has(&flags::OCTAL)?;
 
-        let permissions = !matches.has(&flags::NO_PERMISSIONS)?;
-        let filesize =    !matches.has(&flags::NO_FILESIZE)?;
-        let user =        !matches.has(&flags::NO_USER)?;
+        let permissions = ! matches.has(&flags::NO_PERMISSIONS)?;
+        let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
+        let user =        ! matches.has(&flags::NO_USER)?;
 
         Ok(Self { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
     }
@@ -266,12 +266,14 @@ impl TimeFormat {
         pub use crate::output::time::{DefaultFormat, ISOFormat};
 
         let word = match matches.get(&flags::TIME_STYLE)? {
-            Some(w) => w.to_os_string(),
-            None    => {
+            Some(w) => {
+                w.to_os_string()
+            }
+            None => {
                 use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
-                    Some(ref t) if !t.is_empty() => t.clone(),
-                    _                            => return Ok(Self::DefaultFormat(DefaultFormat::load()))
+                    Some(ref t) if ! t.is_empty()  => t.clone(),
+                    _                              => return Ok(Self::DefaultFormat(DefaultFormat::load()))
                 }
             },
         };
@@ -371,7 +373,6 @@ lazy_static! {
         dimensions_stdout().map(|t| t.0)
     };
 }
-
 
 
 #[cfg(test)]
@@ -600,7 +601,7 @@ mod test {
         test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
         test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
 
-        #[cfg(feature="git")]
+        #[cfg(feature = "git")]
         test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
 
         test!(just_header_2: Mode <- ["--header"], None;  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
@@ -611,7 +612,7 @@ mod test {
         test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
         test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err Misfire::Useless(&flags::BYTES,  false, &flags::LONG));
 
-        #[cfg(feature="git")]
+        #[cfg(feature = "git")]
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err Misfire::Useless(&flags::GIT,    false, &flags::LONG));
     }
 }

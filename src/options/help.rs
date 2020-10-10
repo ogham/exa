@@ -1,8 +1,8 @@
 use std::fmt;
 
+use crate::fs::feature::xattr;
 use crate::options::flags;
 use crate::options::parser::MatchedFlags;
-use crate::fs::feature::xattr;
 
 
 static OPTIONS: &str = r##"
@@ -106,7 +106,7 @@ impl fmt::Display for HelpString {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         writeln!(f, "Usage:\n  exa [options] [files...]")?;
 
-        if !self.only_long {
+        if ! self.only_long {
             write!(f, "{}", OPTIONS)?;
         }
 
@@ -125,7 +125,6 @@ impl fmt::Display for HelpString {
         Ok(())
     }
 }
-
 
 
 #[cfg(test)]

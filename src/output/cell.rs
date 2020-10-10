@@ -149,7 +149,7 @@ impl Deref for TextCellContents {
     }
 }
 
-// No DerefMut implementation here -- it would be publicly accessible, and as
+// No DerefMut implementation here — it would be publicly accessible, and as
 // the contents only get changed in this module, the mutators in the struct
 // above can just access the value directly.
 
@@ -188,7 +188,7 @@ impl TextCellContents {
 /// when calculating widths for displaying tables in a terminal.
 ///
 /// This type is used to ensure that the width, rather than the length, is
-/// used when constructing a `TextCell` -- it's too easy to write something
+/// used when constructing a `TextCell` — it’s too easy to write something
 /// like `file_name.len()` and assume it will work!
 ///
 /// It has `From` impls that convert an input string or fixed with to values
@@ -239,7 +239,9 @@ impl Add<usize> for DisplayWidth {
 }
 
 impl Sum for DisplayWidth {
-    fn sum<I>(iter: I) -> Self where I: Iterator<Item=Self> {
+    fn sum<I>(iter: I) -> Self
+    where I: Iterator<Item = Self>
+    {
         iter.fold(Self(0), Add::add)
     }
 }

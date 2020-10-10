@@ -12,14 +12,16 @@ impl f::Group {
         let mut style = colours.not_yours();
 
         let group = match users.get_group_by_gid(self.0) {
-            Some(g) => (*g).clone(),
-            None    => return TextCell::paint(style, self.0.to_string()),
+            Some(g)  => (*g).clone(),
+            None     => return TextCell::paint(style, self.0.to_string()),
         };
 
         let current_uid = users.get_current_uid();
         if let Some(current_user) = users.get_user_by_uid(current_uid) {
+
             if current_user.primary_group_id() == group.gid()
-            || group.members().iter().any(|u| u == current_user.name()) {
+            || group.members().iter().any(|u| u == current_user.name())
+            {
                 style = colours.yours();
             }
         }

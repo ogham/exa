@@ -1,9 +1,8 @@
-use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
+use ansi_term::Style;
 
-use crate::output::render;
 use crate::output::file_name::Colours as FileNameColours;
-
+use crate::output::render;
 use crate::style::lsc::Pair;
 
 
@@ -190,11 +189,8 @@ impl Colours {
 
 impl Size {
     pub fn colourful(scale: bool) -> Self {
-        if scale {
-            Self::colourful_scale()
-        } else {
-            Self::colourful_plain()
-        }
+        if scale { Self::colourful_scale() }
+            else { Self::colourful_plain() }
     }
 
     fn colourful_plain() -> Self {
@@ -233,7 +229,6 @@ impl Size {
             unit_giga: Green.normal(),
             unit_huge: Green.normal(),
         }
-
     }
 }
 
@@ -352,6 +347,7 @@ impl Colours {
 
              _   => return false,
         }
+
         true
     }
 

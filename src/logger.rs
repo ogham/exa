@@ -57,10 +57,10 @@ impl log::Log for Logger {
 
 fn level(level: log::Level) -> ANSIString<'static> {
     match level {
-        log::Level::Error => Colour::Red.paint("ERROR"),
-        log::Level::Warn  => Colour::Yellow.paint("WARN"),
-        log::Level::Info  => Colour::Cyan.paint("INFO"),
-        log::Level::Debug => Colour::Blue.paint("DEBUG"),
-        log::Level::Trace => Colour::Fixed(245).paint("TRACE"),
+        log::Level::Error  => Colour::Red.paint("ERROR"),
+        log::Level::Warn   => Colour::Yellow.paint("WARN"),
+        log::Level::Info   => Colour::Cyan.paint("INFO"),
+        log::Level::Debug  => Colour::Blue.paint("DEBUG"),
+        log::Level::Trace  => Colour::Fixed(245).paint("TRACE"),
     }
 }

@@ -1,7 +1,7 @@
 use ansi_term::Style;
 
-use crate::output::cell::TextCell;
 use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::Inode {
