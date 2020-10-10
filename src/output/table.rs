@@ -144,12 +144,12 @@ impl Column {
     /// Get the alignment this column should use.
     pub fn alignment(&self) -> Alignment {
         match *self {
-            Column::FileSize
-            | Column::HardLinks
-            | Column::Inode
-            | Column::Blocks
-            | Column::GitStatus => Alignment::Right,
-            _                   => Alignment::Left,
+            Self::FileSize  |
+            Self::HardLinks |
+            Self::Inode     |
+            Self::Blocks    |
+            Self::GitStatus => Alignment::Right,
+            _               => Alignment::Left,
         }
     }
 
@@ -157,16 +157,16 @@ impl Column {
     /// to have a header row printed.
     pub fn header(&self) -> &'static str {
         match *self {
-            Column::Permissions   => "Permissions",
-            Column::FileSize      => "Size",
-            Column::Timestamp(t)  => t.header(),
-            Column::Blocks        => "Blocks",
-            Column::User          => "User",
-            Column::Group         => "Group",
-            Column::HardLinks     => "Links",
-            Column::Inode         => "inode",
-            Column::GitStatus     => "Git",
-            Column::Octal         => "Octal",
+            Self::Permissions   => "Permissions",
+            Self::FileSize      => "Size",
+            Self::Timestamp(t)  => t.header(),
+            Self::Blocks        => "Blocks",
+            Self::User          => "User",
+            Self::Group         => "Group",
+            Self::HardLinks     => "Links",
+            Self::Inode         => "inode",
+            Self::GitStatus     => "Git",
+            Self::Octal         => "Octal",
         }
     }
 }
@@ -189,8 +189,8 @@ pub enum SizeFormat {
 }
 
 impl Default for SizeFormat {
-    fn default() -> SizeFormat {
-        SizeFormat::DecimalBytes
+    fn default() -> Self {
+        Self::DecimalBytes
     }
 }
 
@@ -217,10 +217,10 @@ impl TimeType {
     /// Returns the text to use for a column’s heading in the columns output.
     pub fn header(self) -> &'static str {
         match self {
-            TimeType::Modified  => "Date Modified",
-            TimeType::Changed   => "Date Changed",
-            TimeType::Accessed  => "Date Accessed",
-            TimeType::Created   => "Date Created",
+            Self::Modified  => "Date Modified",
+            Self::Changed   => "Date Changed",
+            Self::Accessed  => "Date Accessed",
+            Self::Created   => "Date Created",
         }
     }
 }
@@ -243,8 +243,8 @@ impl Default for TimeTypes {
 
     /// By default, display just the ‘modified’ time. This is the most
     /// common option, which is why it has this shorthand.
-    fn default() -> TimeTypes {
-        TimeTypes { modified: true, changed: false, accessed: false, created: false }
+    fn default() -> Self {
+        Self { modified: true, changed: false, accessed: false, created: false }
     }
 }
 
@@ -287,7 +287,7 @@ impl Environment {
 
         let users = Mutex::new(UsersCache::new());
 
-        Environment { tz, numeric, users }
+        Self { tz, numeric, users }
     }
 }
 
@@ -425,8 +425,8 @@ impl Deref for TableWidths {
 }
 
 impl TableWidths {
-    pub fn zero(count: usize) -> TableWidths {
-        TableWidths(vec![ 0; count ])
+    pub fn zero(count: usize) -> Self {
+        Self(vec![ 0; count ])
     }
 
     pub fn add_widths(&mut self, row: &Row) {

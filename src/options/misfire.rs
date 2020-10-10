@@ -56,16 +56,16 @@ impl Misfire {
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
         match *self {
-            Misfire::Help(_)    => false,
-            Misfire::Version(_) => false,
+            Self::Help(_)    => false,
+            Self::Version(_) => false,
             _                   => true,
         }
     }
 }
 
 impl From<glob::PatternError> for Misfire {
-    fn from(error: glob::PatternError) -> Misfire {
-        Misfire::FailedGlobPattern(error.to_string())
+    fn from(error: glob::PatternError) -> Self {
+        Self::FailedGlobPattern(error.to_string())
     }
 }
 
@@ -120,9 +120,9 @@ impl Misfire {
     pub fn suggestion(&self) -> Option<&'static str> {
         // ‘ls -lt’ and ‘ls -ltr’ are common combinations
         match *self {
-            Misfire::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" =>
+            Self::BadArgument(ref time, ref r) if *time == &flags::TIME && r == "r" =>
                 Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\""),
-            Misfire::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') =>
+            Self::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') =>
                 Some("To sort newest files last, try \"--sort newest\", or just \"-snew\""),
             _ => None
         }

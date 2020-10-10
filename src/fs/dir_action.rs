@@ -41,7 +41,7 @@ impl DirAction {
     /// Gets the recurse options, if this dir action has any.
     pub fn recurse_options(&self) -> Option<RecurseOptions> {
         match *self {
-            DirAction::Recurse(o) => Some(o),
+            Self::Recurse(o) => Some(o),
             _                     => None,
         }
     }
@@ -49,8 +49,8 @@ impl DirAction {
     /// Whether to treat directories as regular files or not.
     pub fn treat_dirs_as_files(&self) -> bool {
         match *self {
-            DirAction::AsFile      => true,
-            DirAction::Recurse(o)  => o.tree,
+            Self::AsFile      => true,
+            Self::Recurse(o)  => o.tree,
             _                      => false,
         }
     }

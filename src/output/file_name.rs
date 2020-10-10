@@ -65,8 +65,8 @@ pub enum Classify {
 }
 
 impl Default for Classify {
-    fn default() -> Classify {
-        Classify::JustFilenames
+    fn default() -> Self {
+        Self::JustFilenames
     }
 }
 

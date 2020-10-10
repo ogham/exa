@@ -20,14 +20,14 @@ impl f::Git {
 impl f::GitStatus {
     fn render(&self, colours: &dyn Colours) -> ANSIString<'static> {
         match *self {
-            f::GitStatus::NotModified  => colours.not_modified().paint("-"),
-            f::GitStatus::New          => colours.new().paint("N"),
-            f::GitStatus::Modified     => colours.modified().paint("M"),
-            f::GitStatus::Deleted      => colours.deleted().paint("D"),
-            f::GitStatus::Renamed      => colours.renamed().paint("R"),
-            f::GitStatus::TypeChange   => colours.type_change().paint("T"),
-            f::GitStatus::Ignored      => colours.ignored().paint("I"),
-            f::GitStatus::Conflicted   => colours.conflicted().paint("U"),
+            Self::NotModified  => colours.not_modified().paint("-"),
+            Self::New          => colours.new().paint("N"),
+            Self::Modified     => colours.modified().paint("M"),
+            Self::Deleted      => colours.deleted().paint("D"),
+            Self::Renamed      => colours.renamed().paint("R"),
+            Self::TypeChange   => colours.type_change().paint("T"),
+            Self::Ignored      => colours.ignored().paint("I"),
+            Self::Conflicted   => colours.conflicted().paint("U"),
         }
     }
 }

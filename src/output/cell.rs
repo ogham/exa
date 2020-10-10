@@ -42,7 +42,7 @@ impl TextCell {
     pub fn paint(style: Style, text: String) -> Self {
         let width = DisplayWidth::from(&*text);
 
-        TextCell {
+        Self {
             contents: vec![ style.paint(text) ].into(),
             width,
         }
@@ -54,7 +54,7 @@ impl TextCell {
     pub fn paint_str(style: Style, text: &'static str) -> Self {
         let width = DisplayWidth::from(text);
 
-        TextCell {
+        Self {
             contents: vec![ style.paint(text) ].into(),
             width,
         }
@@ -67,7 +67,7 @@ impl TextCell {
     /// This is used in place of empty table cells, as it is easier to read
     /// tabular data when there is *something* in each cell.
     pub fn blank(style: Style) -> Self {
-        TextCell {
+        Self {
             contents: vec![ style.paint("-") ].into(),
             width:    DisplayWidth::from(1),
         }
@@ -92,7 +92,7 @@ impl TextCell {
     }
 
     /// Adds all the contents of another `TextCell` to the end of this cell.
-    pub fn append(&mut self, other: TextCell) {
+    pub fn append(&mut self, other: Self) {
         (*self.width) += *other.width;
         self.contents.0.extend(other.contents.0);
     }
@@ -136,8 +136,8 @@ impl TextCell {
 pub struct TextCellContents(Vec<ANSIString<'static>>);
 
 impl From<Vec<ANSIString<'static>>> for TextCellContents {
-    fn from(strings: Vec<ANSIString<'static>>) -> TextCellContents {
-        TextCellContents(strings)
+    fn from(strings: Vec<ANSIString<'static>>) -> Self {
+        Self(strings)
     }
 }
 
@@ -197,14 +197,14 @@ impl TextCellContents {
 pub struct DisplayWidth(usize);
 
 impl<'a> From<&'a str> for DisplayWidth {
-    fn from(input: &'a str) -> DisplayWidth {
-        DisplayWidth(UnicodeWidthStr::width(input))
+    fn from(input: &'a str) -> Self {
+        Self(UnicodeWidthStr::width(input))
     }
 }
 
 impl From<usize> for DisplayWidth {
-    fn from(width: usize) -> DisplayWidth {
-        DisplayWidth(width)
+    fn from(width: usize) -> Self {
+        Self(width)
     }
 }
 
@@ -223,24 +223,24 @@ impl DerefMut for DisplayWidth {
 }
 
 impl Add for DisplayWidth {
-    type Output = DisplayWidth;
+    type Output = Self;
 
-    fn add(self, rhs: DisplayWidth) -> Self::Output {
-        DisplayWidth(self.0 + rhs.0)
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
     }
 }
 
 impl Add<usize> for DisplayWidth {
-    type Output = DisplayWidth;
+    type Output = Self;
 
     fn add(self, rhs: usize) -> Self::Output {
-        DisplayWidth(self.0 + rhs)
+        Self(self.0 + rhs)
     }
 }
 
 impl Sum for DisplayWidth {
     fn sum<I>(iter: I) -> Self where I: Iterator<Item=Self> {
-        iter.fold(DisplayWidth(0), Add::add)
+        iter.fold(Self(0), Add::add)
     }
 }
 

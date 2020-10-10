@@ -50,7 +50,7 @@ pub enum Type {
 
 impl Type {
     pub fn is_regular_file(&self) -> bool {
-        matches!(*self, Type::File)
+        matches!(*self, Self::File)
     }
 }
 
@@ -220,7 +220,7 @@ use std::default::Default;
 impl Default for Git {
 
     /// Create a Git status for a file with nothing done to it.
-    fn default() -> Git {
-        Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+    fn default() -> Self {
+        Self { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
     }
 }

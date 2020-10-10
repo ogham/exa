@@ -240,41 +240,41 @@ impl SortField {
         use self::SortCase::{ABCabc, AaBbCc};
 
         match self {
-            SortField::Unsorted  => Ordering::Equal,
+            Self::Unsorted  => Ordering::Equal,
 
-            SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
-            SortField::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
+            Self::Name(ABCabc)  => natord::compare(&a.name, &b.name),
+            Self::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
-            SortField::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
-            SortField::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
-            SortField::CreatedDate   => a.created_time().cmp(&b.created_time()),
-            SortField::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
+            Self::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
+            Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
+            Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
+            Self::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
+            Self::CreatedDate   => a.created_time().cmp(&b.created_time()),
+            Self::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
 
-            SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
+            Self::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
+            Self::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
+            Self::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::NameMixHidden(ABCabc) => natord::compare(
-                SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
+            Self::NameMixHidden(ABCabc) => natord::compare(
+                Self::strip_dot(&a.name),
+                Self::strip_dot(&b.name)
             ),
-            SortField::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
-                SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
+            Self::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
+                Self::strip_dot(&a.name),
+                Self::strip_dot(&b.name)
             )
         }
     }
@@ -299,7 +299,7 @@ pub struct IgnorePatterns {
 
 impl FromIterator<glob::Pattern> for IgnorePatterns {
     fn from_iter<I: IntoIterator<Item = glob::Pattern>>(iter: I) -> Self {
-        IgnorePatterns { patterns: iter.into_iter().collect() }
+        Self { patterns: iter.into_iter().collect() }
     }
 }
 
@@ -328,12 +328,12 @@ impl IgnorePatterns {
             }
         }
 
-        (IgnorePatterns { patterns }, errors)
+        (Self { patterns }, errors)
     }
 
     /// Create a new empty set of patterns that matches nothing.
-    pub fn empty() -> IgnorePatterns {
-        IgnorePatterns { patterns: Vec::new() }
+    pub fn empty() -> Self {
+        Self { patterns: Vec::new() }
     }
 
     /// Test whether the given file should be hidden from the results.

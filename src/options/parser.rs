@@ -61,8 +61,8 @@ pub enum Flag {
 impl Flag {
     pub fn matches(&self, arg: &Arg) -> bool {
         match *self {
-            Flag::Short(short)  => arg.short == Some(short),
-            Flag::Long(long)    => arg.long == long,
+            Self::Short(short)  => arg.short == Some(short),
+            Self::Long(long)    => arg.long == long,
         }
     }
 }
@@ -70,8 +70,8 @@ impl Flag {
 impl fmt::Display for Flag {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            Flag::Short(short) => write!(f, "-{}", short as char),
-            Flag::Long(long)   => write!(f, "--{}", long),
+            Self::Short(short) => write!(f, "-{}", short as char),
+            Self::Long(long)   => write!(f, "--{}", long),
         }
     }
 }

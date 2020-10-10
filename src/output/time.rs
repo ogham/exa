@@ -52,19 +52,19 @@ pub enum TimeFormat {
 impl TimeFormat {
     pub fn format_local(&self, time: SystemTime) -> String {
         match *self {
-            TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
-            TimeFormat::ISOFormat(ref iso)     => iso.format_local(time),
-            TimeFormat::LongISO                => long_local(time),
-            TimeFormat::FullISO                => full_local(time),
+            Self::DefaultFormat(ref fmt) => fmt.format_local(time),
+            Self::ISOFormat(ref iso)     => iso.format_local(time),
+            Self::LongISO                => long_local(time),
+            Self::FullISO                => full_local(time),
         }
     }
 
     pub fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
         match *self {
-            TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
-            TimeFormat::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
-            TimeFormat::LongISO                => long_zoned(time, zone),
-            TimeFormat::FullISO                => full_zoned(time, zone),
+            Self::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
+            Self::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
+            Self::LongISO                => long_zoned(time, zone),
+            Self::FullISO                => full_zoned(time, zone),
         }
     }
 }
@@ -88,7 +88,7 @@ pub struct DefaultFormat {
 }
 
 impl DefaultFormat {
-    pub fn load() -> DefaultFormat {
+    pub fn load() -> Self {
         use unicode_width::UnicodeWidthStr;
 
         let locale = locale::Time::load_user_locale()
@@ -117,7 +117,7 @@ impl DefaultFormat {
             _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
         };
 
-        DefaultFormat { current_year, locale, date_and_time, date_and_year }
+        Self { current_year, locale, date_and_time, date_and_year }
     }
 }
 
@@ -150,7 +150,7 @@ impl DefaultFormat {
 
         if self.is_recent(date) {
             format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
+            date.day(), Self::month_to_abbrev(date.month()),
             date.hour(), date.minute())
         }
         else {
@@ -164,7 +164,7 @@ impl DefaultFormat {
 
         if self.is_recent(date) {
             format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
+            date.day(), Self::month_to_abbrev(date.month()),
             date.hour(), date.minute())
         }
         else {
@@ -250,9 +250,9 @@ pub struct ISOFormat {
 }
 
 impl ISOFormat {
-    pub fn load() -> ISOFormat {
+    pub fn load() -> Self {
         let current_year = LocalDateTime::now().year();
-        ISOFormat { current_year }
+        Self { current_year }
     }
 }
 

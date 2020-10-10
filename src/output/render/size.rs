@@ -12,9 +12,9 @@ impl f::Size {
         use number_prefix::NumberPrefix;
 
         let size = match *self {
-            f::Size::Some(s)             => s,
-            f::Size::None                => return TextCell::blank(colours.no_size()),
-            f::Size::DeviceIDs(ref ids)  => return ids.render(colours),
+            Self::Some(s)             => s,
+            Self::None                => return TextCell::blank(colours.no_size()),
+            Self::DeviceIDs(ref ids)  => return ids.render(colours),
         };
 
         let result = match size_format {

@@ -13,12 +13,12 @@ use crate::fs::feature::xattr;
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         use crate::options::style::Styles;
 
         let mode = Mode::deduce(matches, vars)?;
         let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
-        Ok(View { mode, colours, style })
+        Ok(Self { mode, colours, style })
     }
 }
 
@@ -26,7 +26,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         use crate::options::misfire::Misfire::*;
 
         let long = || {
@@ -54,7 +54,7 @@ impl Mode {
                     }
                     else {
                         let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
-                        Ok(Mode::Lines(lines))
+                        Ok(Self::Lines(lines))
                     }
                 }
                 else if matches.has(&flags::TREE)? {
@@ -65,7 +65,7 @@ impl Mode {
                         icons: matches.has(&flags::ICONS)?,
                     };
 
-                    Ok(Mode::Details(details))
+                    Ok(Self::Details(details))
                 }
                 else {
                     let grid = grid::Options {
@@ -74,7 +74,7 @@ impl Mode {
                         icons: matches.has(&flags::ICONS)?,
                     };
 
-                    Ok(Mode::Grid(grid))
+                    Ok(Self::Grid(grid))
                 }
             }
 
@@ -89,14 +89,14 @@ impl Mode {
                     icons: matches.has(&flags::ICONS)?,
                 };
 
-                Ok(Mode::Details(details))
+                Ok(Self::Details(details))
             }
             else if matches.has(&flags::LONG)? {
                 let details = long()?;
-                Ok(Mode::Details(details))
+                Ok(Self::Details(details))
             } else {
                 let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
-                Ok(Mode::Lines(lines))
+                Ok(Self::Lines(lines))
             }
         };
 
@@ -104,16 +104,16 @@ impl Mode {
             let details = long()?;
             if matches.has(&flags::GRID)? {
                 let other_options_mode = other_options_scan()?;
-                if let Mode::Grid(grid) = other_options_mode {
+                if let Self::Grid(grid) = other_options_mode {
                     let row_threshold = RowThreshold::deduce(vars)?;
-                    return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold }));
+                    return Ok(Self::GridDetails(grid_details::Options { grid, details, row_threshold }));
                 }
                 else {
                     return Ok(other_options_mode);
                 }
             }
             else {
-                return Ok(Mode::Details(details));
+                return Ok(Self::Details(details));
             }
         }
 
@@ -161,28 +161,28 @@ impl TerminalWidth {
     /// Determine a requested terminal width from the command-line arguments.
     ///
     /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
+    fn deduce<V: Vars>(vars: &V) -> Result<Self, Misfire> {
         use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(width)  => Ok(TerminalWidth::Set(width)),
+                Ok(width)  => Ok(Self::Set(width)),
                 Err(e)     => Err(Misfire::FailedParse(e)),
             }
         }
         else if let Some(width) = *TERM_WIDTH {
-            Ok(TerminalWidth::Terminal(width))
+            Ok(Self::Terminal(width))
         }
         else {
-            Ok(TerminalWidth::Unset)
+            Ok(Self::Unset)
         }
     }
 
     fn width(&self) -> Option<usize> {
         match *self {
-            TerminalWidth::Set(width)       |
-            TerminalWidth::Terminal(width)  => Some(width),
-            TerminalWidth::Unset            => None,
+            Self::Set(width)       |
+            Self::Terminal(width)  => Some(width),
+            Self::Unset            => None,
         }
     }
 }
@@ -192,17 +192,17 @@ impl RowThreshold {
 
     /// Determine whether to use a row threshold based on the given
     /// environment variables.
-    fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
+    fn deduce<V: Vars>(vars: &V) -> Result<Self, Misfire> {
         use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(rows)  => Ok(RowThreshold::MinimumRows(rows)),
+                Ok(rows)  => Ok(Self::MinimumRows(rows)),
                 Err(e)    => Err(Misfire::FailedParse(e)),
             }
         }
         else {
-            Ok(RowThreshold::AlwaysGrid)
+            Ok(Self::AlwaysGrid)
         }
     }
 }
@@ -214,7 +214,7 @@ impl TableOptions {
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
         let columns = Columns::deduce(matches)?;
-        Ok(TableOptions { env, time_format, size_format, columns })
+        Ok(Self { env, time_format, size_format, columns })
     }
 }
 
@@ -234,7 +234,7 @@ impl Columns {
         let filesize =    !matches.has(&flags::NO_FILESIZE)?;
         let user =        !matches.has(&flags::NO_USER)?;
 
-        Ok(Columns { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
+        Ok(Self { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 
@@ -249,13 +249,13 @@ impl SizeFormat {
     /// strings of digits in your head. Changing the format to anything else
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
-    fn deduce(matches: &MatchedFlags) -> Result<SizeFormat, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let flag = matches.has_where(|f| f.matches(&flags::BINARY) || f.matches(&flags::BYTES))?;
 
         Ok(match flag {
-            Some(f) if f.matches(&flags::BINARY)  => SizeFormat::BinaryBytes,
-            Some(f) if f.matches(&flags::BYTES)   => SizeFormat::JustBytes,
-            _                                     => SizeFormat::DecimalBytes,
+            Some(f) if f.matches(&flags::BINARY)  => Self::BinaryBytes,
+            Some(f) if f.matches(&flags::BYTES)   => Self::JustBytes,
+            _                                     => Self::DecimalBytes,
         })
     }
 }
@@ -264,7 +264,7 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<TimeFormat, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         pub use crate::output::time::{DefaultFormat, ISOFormat};
 
         let word = match matches.get(&flags::TIME_STYLE)? {
@@ -273,22 +273,22 @@ impl TimeFormat {
                 use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
                     Some(ref t) if !t.is_empty() => t.clone(),
-                    _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
+                    _                            => return Ok(Self::DefaultFormat(DefaultFormat::load()))
                 }
             },
         };
 
         if &word == "default" {
-            Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
+            Ok(Self::DefaultFormat(DefaultFormat::load()))
         }
         else if &word == "iso" {
-            Ok(TimeFormat::ISOFormat(ISOFormat::load()))
+            Ok(Self::ISOFormat(ISOFormat::load()))
         }
         else if &word == "long-iso" {
-            Ok(TimeFormat::LongISO)
+            Ok(Self::LongISO)
         }
         else if &word == "full-iso" {
-            Ok(TimeFormat::FullISO)
+            Ok(Self::FullISO)
         }
         else {
             Err(Misfire::BadArgument(&flags::TIME_STYLE, word))
@@ -309,7 +309,7 @@ impl TimeTypes {
     /// It’s valid to show more than one column by passing in more than one
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
-    fn deduce(matches: &MatchedFlags) -> Result<TimeTypes, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let possible_word = matches.get(&flags::TIME)?;
         let modified = matches.has(&flags::MODIFIED)?;
         let changed  = matches.has(&flags::CHANGED)?;
@@ -319,7 +319,7 @@ impl TimeTypes {
         let no_time = matches.has(&flags::NO_TIME)?;
 
         let time_types = if no_time {
-            TimeTypes { modified: false, changed: false, accessed: false, created: false }
+            Self { modified: false, changed: false, accessed: false, created: false }
         } else if let Some(word) = possible_word {
             if modified {
                 return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
@@ -334,26 +334,26 @@ impl TimeTypes {
                 return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
             }
             else if word == "mod" || word == "modified" {
-                TimeTypes { modified: true,  changed: false, accessed: false, created: false }
+                Self { modified: true,  changed: false, accessed: false, created: false }
             }
             else if word == "ch" || word == "changed" {
-                TimeTypes { modified: false, changed: true,  accessed: false, created: false }
+                Self { modified: false, changed: true,  accessed: false, created: false }
             }
             else if word == "acc" || word == "accessed" {
-                TimeTypes { modified: false, changed: false, accessed: true,  created: false }
+                Self { modified: false, changed: false, accessed: true,  created: false }
             }
             else if word == "cr" || word == "created" {
-                TimeTypes { modified: false, changed: false, accessed: false, created: true  }
+                Self { modified: false, changed: false, accessed: false, created: true  }
             }
             else {
                 return Err(Misfire::BadArgument(&flags::TIME, word.into()));
             }
         }
         else if modified || changed || accessed || created {
-            TimeTypes { modified, changed, accessed, created }
+            Self { modified, changed, accessed, created }
         }
         else {
-            TimeTypes::default()
+            Self::default()
         };
 
         Ok(time_types)

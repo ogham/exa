@@ -17,9 +17,9 @@ pub enum Icons {
 impl Icons {
     pub fn value(&self) -> char {
         match *self {
-            Icons::Audio => '\u{f001}',
-            Icons::Image => '\u{f1c5}',
-            Icons::Video => '\u{f03d}',
+            Self::Audio => '\u{f001}',
+            Self::Image => '\u{f1c5}',
+            Self::Video => '\u{f03d}',
         }
     }
 }

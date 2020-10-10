@@ -28,8 +28,8 @@ enum TerminalColours {
 }
 
 impl Default for TerminalColours {
-    fn default() -> TerminalColours {
-        TerminalColours::Automatic
+    fn default() -> Self {
+        Self::Automatic
     }
 }
 
@@ -37,21 +37,21 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &MatchedFlags) -> Result<TerminalColours, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
 
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w) => w,
-            None    => return Ok(TerminalColours::default()),
+            None    => return Ok(Self::default()),
         };
 
         if word == "always" {
-            Ok(TerminalColours::Always)
+            Ok(Self::Always)
         }
         else if word == "auto" || word == "automatic" {
-            Ok(TerminalColours::Automatic)
+            Ok(Self::Automatic)
         }
         else if word == "never" {
-            Ok(TerminalColours::Never)
+            Ok(Self::Never)
         }
         else {
             Err(Misfire::BadArgument(&flags::COLOR, word.into()))
@@ -90,7 +90,7 @@ impl Styles {
         // custom colours at all
         let tc = TerminalColours::deduce(matches)?;
         if tc == Never || (tc == Automatic && widther().is_none()) {
-            return Ok(Styles {
+            return Ok(Self {
                 colours: Colours::plain(),
                 style: FileStyle { classify, exts: Box::new(NoFileColours) },
             });
@@ -111,7 +111,7 @@ impl Styles {
         };
 
         let style = FileStyle { classify, exts };
-        Ok(Styles { colours, style })
+        Ok(Self { colours, style })
     }
 }
 
@@ -197,11 +197,11 @@ impl ExtensionMappings {
 
 
 impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Result<Classify, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
-        Ok(if flagged { Classify::AddFileIndicators }
-                 else { Classify::JustFilenames })
+        Ok(if flagged { Self::AddFileIndicators }
+                 else { Self::JustFilenames })
     }
 }
 

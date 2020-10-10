@@ -35,14 +35,14 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf) -> IOResult<Dir> {
+    pub fn read_dir(path: PathBuf) -> IOResult<Self> {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?
                                              .map(|result| result.map(|entry| entry.path()))
                                              .collect::<Result<_,_>>()?;
 
-        Ok(Dir { contents, path })
+        Ok(Self { contents, path })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
@@ -180,8 +180,8 @@ pub enum DotFilter {
 }
 
 impl Default for DotFilter {
-    fn default() -> DotFilter {
-        DotFilter::JustFiles
+    fn default() -> Self {
+        Self::JustFiles
     }
 }
 
@@ -190,18 +190,18 @@ impl DotFilter {
     /// Whether this filter should show dotfiles in a listing.
     fn shows_dotfiles(self) -> bool {
         match self {
-            DotFilter::JustFiles       => false,
-            DotFilter::Dotfiles        => true,
-            DotFilter::DotfilesAndDots => true,
+            Self::JustFiles       => false,
+            Self::Dotfiles        => true,
+            Self::DotfilesAndDots => true,
         }
     }
 
     /// Whether this filter should add dot directories to a listing.
     fn dots(self) -> DotsNext {
         match self {
-            DotFilter::JustFiles       => DotsNext::Files,
-            DotFilter::Dotfiles        => DotsNext::Files,
-            DotFilter::DotfilesAndDots => DotsNext::Dot,
+            Self::JustFiles       => DotsNext::Files,
+            Self::Dotfiles        => DotsNext::Files,
+            Self::DotfilesAndDots => DotsNext::Dot,
         }
     }
 }

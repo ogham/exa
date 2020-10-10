@@ -86,12 +86,12 @@ impl HelpString {
     /// We don’t do any strict-mode error checking here: it’s OK to give
     /// the --help or --long flags more than once. Actually checking for
     /// errors when the user wants help is kind of petty!
-    pub fn deduce(matches: &MatchedFlags) -> Result<(), HelpString> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<(), Self> {
         if matches.count(&flags::HELP) > 0 {
             let only_long = matches.count(&flags::LONG) > 0;
             let git       = cfg!(feature="git");
             let xattrs    = xattr::ENABLED;
-            Err(HelpString { only_long, git, xattrs })
+            Err(Self { only_long, git, xattrs })
         }
         else {
             Ok(())  // no help needs to be shown

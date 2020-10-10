@@ -10,8 +10,8 @@ use crate::options::parser::MatchedFlags;
 impl FileFilter {
 
     /// Determines which of all the file filter options to use.
-    pub fn deduce(matches: &MatchedFlags) -> Result<FileFilter, Misfire> {
-        Ok(FileFilter {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+        Ok(Self {
             list_dirs_first: matches.has(&flags::DIRS_FIRST)?,
             reverse:         matches.has(&flags::REVERSE)?,
             only_dirs:       matches.has(&flags::ONLY_DIRS)?,
@@ -29,10 +29,10 @@ impl SortField {
     /// This argument’s value can be one of several flags, listed above.
     /// Returns the default sort field if none is given, or `Err` if the
     /// value doesn’t correspond to a sort field we know about.
-    fn deduce(matches: &MatchedFlags) -> Result<SortField, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let word = match matches.get(&flags::SORT)? {
             Some(w)  => w,
-            None     => return Ok(SortField::default()),
+            None     => return Ok(Self::default()),
         };
 
         // Get String because we can’t match an OsStr
@@ -42,28 +42,28 @@ impl SortField {
         };
 
         let field = match word {
-            "name" | "filename" => SortField::Name(SortCase::AaBbCc),
-            "Name" | "Filename" => SortField::Name(SortCase::ABCabc),
-            ".name" | ".filename" => SortField::NameMixHidden(SortCase::AaBbCc),
-            ".Name" | ".Filename" => SortField::NameMixHidden(SortCase::ABCabc),
-            "size" | "filesize" => SortField::Size,
-            "ext" | "extension" => SortField::Extension(SortCase::AaBbCc),
-            "Ext" | "Extension" => SortField::Extension(SortCase::ABCabc),
+            "name" | "filename" => Self::Name(SortCase::AaBbCc),
+            "Name" | "Filename" => Self::Name(SortCase::ABCabc),
+            ".name" | ".filename" => Self::NameMixHidden(SortCase::AaBbCc),
+            ".Name" | ".Filename" => Self::NameMixHidden(SortCase::ABCabc),
+            "size" | "filesize" => Self::Size,
+            "ext" | "extension" => Self::Extension(SortCase::AaBbCc),
+            "Ext" | "Extension" => Self::Extension(SortCase::ABCabc),
             // “new” sorts oldest at the top and newest at the bottom; “old”
             // sorts newest at the top and oldest at the bottom. I think this
             // is the right way round to do this: “size” puts the smallest at
             // the top and the largest at the bottom, doesn’t it?
-            "date" | "time" | "mod" | "modified" | "new" | "newest" => SortField::ModifiedDate,
+            "date" | "time" | "mod" | "modified" | "new" | "newest" => Self::ModifiedDate,
             // Similarly, “age” means that files with the least age (the
             // newest files) get sorted at the top, and files with the most
             // age (the oldest) at the bottom.
-            "age" | "old" | "oldest" => SortField::ModifiedAge,
-            "ch" | "changed" => SortField::ChangedDate,
-            "acc" | "accessed" => SortField::AccessedDate,
-            "cr" | "created" => SortField::CreatedDate,
-            "inode" => SortField::FileInode,
-            "type" => SortField::FileType,
-            "none" => SortField::Unsorted,
+            "age" | "old" | "oldest" => Self::ModifiedAge,
+            "ch" | "changed" => Self::ChangedDate,
+            "acc" | "accessed" => Self::AccessedDate,
+            "cr" | "created" => Self::CreatedDate,
+            "inode" => Self::FileInode,
+            "type" => Self::FileType,
+            "none" => Self::Unsorted,
             _ => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
         };
 
@@ -105,8 +105,8 @@ impl SortField {
 // You can get the old behaviour back by sorting with `--sort=Name`.
 
 impl Default for SortField {
-    fn default() -> SortField {
-        SortField::Name(SortCase::AaBbCc)
+    fn default() -> Self {
+        Self::Name(SortCase::AaBbCc)
     }
 }
 
@@ -119,14 +119,14 @@ impl DotFilter {
     /// It also checks for the `--tree` option in strict mode, because of a
     /// special case where `--tree --all --all` won’t work: listing the
     /// parent directory in tree mode would loop onto itself!
-    pub fn deduce(matches: &MatchedFlags) -> Result<DotFilter, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let count = matches.count(&flags::ALL);
 
         if count == 0 {
-            Ok(DotFilter::JustFiles)
+            Ok(Self::JustFiles)
         }
         else if count == 1 {
-            Ok(DotFilter::Dotfiles)
+            Ok(Self::Dotfiles)
         }
         else if matches.count(&flags::TREE) > 0 {
             Err(Misfire::TreeAllAll)
@@ -135,7 +135,7 @@ impl DotFilter {
             Err(Misfire::Conflict(&flags::ALL, &flags::ALL))
         }
         else {
-            Ok(DotFilter::DotfilesAndDots)
+            Ok(Self::DotfilesAndDots)
         }
     }
 }
@@ -146,18 +146,18 @@ impl IgnorePatterns {
     /// Determines the set of glob patterns to use based on the
     /// `--ignore-glob` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
-    pub fn deduce(matches: &MatchedFlags) -> Result<IgnorePatterns, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
 
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
         let inputs = match matches.get(&flags::IGNORE_GLOB)? {
-            None => return Ok(IgnorePatterns::empty()),
+            None => return Ok(Self::empty()),
             Some(is) => is,
         };
 
         // Awkwardly, though, a glob pattern can be invalid, and we need to
         // deal with invalid patterns somehow.
-        let (patterns, mut errors) = IgnorePatterns::parse_from_iter(inputs.to_string_lossy().split('|'));
+        let (patterns, mut errors) = Self::parse_from_iter(inputs.to_string_lossy().split('|'));
 
         // It can actually return more than one glob error,
         // but we only use one. (TODO)
@@ -171,8 +171,8 @@ impl IgnorePatterns {
 
 impl GitIgnore {
     pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
-        Ok(if matches.has(&flags::GIT_IGNORE)? { GitIgnore::CheckAndIgnore }
-                                          else { GitIgnore::Off })
+        Ok(if matches.has(&flags::GIT_IGNORE)? { Self::CheckAndIgnore }
+                                          else { Self::Off })
     }
 }
 

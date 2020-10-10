@@ -38,7 +38,7 @@ use std::iter::FromIterator;
 impl FromIterator<PathBuf> for GitCache {
     fn from_iter<I: IntoIterator<Item=PathBuf>>(iter: I) -> Self {
         let iter = iter.into_iter();
-        let mut git = GitCache {
+        let mut git = Self {
             repos: Vec::with_capacity(iter.size_hint().0),
             misses: Vec::new(),
         };
@@ -152,7 +152,7 @@ impl GitRepo {
 
     /// Searches for a Git repository at any point above the given path.
     /// Returns the original buffer if none is found.
-    fn discover(path: PathBuf) -> Result<GitRepo, PathBuf> {
+    fn discover(path: PathBuf) -> Result<Self, PathBuf> {
         info!("Searching for Git repository above {:?}", path);
         let repo = match git2::Repository::discover(&path) {
             Ok(r) => r,
@@ -165,7 +165,7 @@ impl GitRepo {
         match repo.workdir().map(|wd| wd.to_path_buf()) {
             Some(workdir) => {
                 let contents = Mutex::new(GitContents::Before { repo });
-                Ok(GitRepo { contents, workdir, original_path: path, extra_paths: Vec::new() })
+                Ok(Self { contents, workdir, original_path: path, extra_paths: Vec::new() })
             },
             None => {
                 warn!("Repository has no workdir?");
@@ -181,7 +181,7 @@ impl GitContents {
     /// (consuming the value) if it has. This is needed because the entire
     /// enum variant gets replaced when a repo is queried (see above).
     fn inner_repo(self) -> git2::Repository {
-        if let GitContents::Before { repo } = self {
+        if let Self::Before { repo } = self {
             repo
         }
         else {

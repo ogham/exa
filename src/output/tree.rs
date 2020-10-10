@@ -61,10 +61,10 @@ impl TreePart {
     /// (Warning: not actually ASCII)
     pub fn ascii_art(&self) -> &'static str {
         match *self {
-            TreePart::Edge    => "├──",
-            TreePart::Line    => "│  ",
-            TreePart::Corner  => "└──",
-            TreePart::Blank   => "   ",
+            Self::Edge    => "├──",
+            Self::Line    => "│  ",
+            Self::Corner  => "└──",
+            Self::Blank   => "   ",
         }
     }
 }
@@ -138,8 +138,8 @@ impl TreeTrunk {
 }
 
 impl TreeParams {
-    pub fn new(depth: TreeDepth, last: bool) -> TreeParams {
-        TreeParams { depth, last }
+    pub fn new(depth: TreeDepth, last: bool) -> Self {
+        Self { depth, last }
     }
 
     pub fn is_at_root(&self) -> bool {
@@ -148,12 +148,12 @@ impl TreeParams {
 }
 
 impl TreeDepth {
-    pub fn root() -> TreeDepth {
-        TreeDepth(0)
+    pub fn root() -> Self {
+        Self(0)
     }
 
-    pub fn deeper(self) -> TreeDepth {
-        TreeDepth(self.0 + 1)
+    pub fn deeper(self) -> Self {
+        Self(self.0 + 1)
     }
 
     /// Creates an iterator that, as well as yielding each value, yields a

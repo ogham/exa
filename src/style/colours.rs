@@ -109,12 +109,12 @@ pub struct Git {
 }
 
 impl Colours {
-    pub fn plain() -> Colours {
-        Colours::default()
+    pub fn plain() -> Self {
+        Self::default()
     }
 
-    pub fn colourful(scale: bool) -> Colours {
-        Colours {
+    pub fn colourful(scale: bool) -> Self {
+        Self {
             colourful: true,
 
             filekinds: FileKinds {

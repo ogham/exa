@@ -126,13 +126,13 @@ mod lister {
     }
 
     impl Lister {
-        pub fn new(do_follow: FollowSymlinks) -> Lister {
+        pub fn new(do_follow: FollowSymlinks) -> Self {
             let c_flags: c_int = match do_follow {
                 FollowSymlinks::Yes => 0x0001,
                 FollowSymlinks::No  => 0x0000,
             };
 
-            Lister { c_flags }
+            Self { c_flags }
         }
 
         pub fn translate_attribute_name(&self, input: &[u8]) -> String {

@@ -12,7 +12,7 @@ impl DirAction {
     /// There are three possible actions, and they overlap somewhat: the
     /// `--tree` flag is another form of recursion, so those two are allowed
     /// to both be present, but the `--list-dirs` flag is used separately.
-    pub fn deduce(matches: &MatchedFlags) -> Result<DirAction, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
         let recurse = matches.has(&flags::RECURSE)?;
         let as_file = matches.has(&flags::LIST_DIRS)?;
         let tree    = matches.has(&flags::TREE)?;
@@ -31,16 +31,16 @@ impl DirAction {
         }
 
         if tree {
-            Ok(DirAction::Recurse(RecurseOptions::deduce(matches, true)?))
+            Ok(Self::Recurse(RecurseOptions::deduce(matches, true)?))
         }
         else if recurse {
-            Ok(DirAction::Recurse(RecurseOptions::deduce(matches, false)?))
+            Ok(Self::Recurse(RecurseOptions::deduce(matches, false)?))
         }
         else if as_file {
-            Ok(DirAction::AsFile)
+            Ok(Self::AsFile)
         }
         else {
-            Ok(DirAction::List)
+            Ok(Self::List)
         }
     }
 }
@@ -52,7 +52,7 @@ impl RecurseOptions {
     /// flag’s value, and whether the `--tree` flag was passed, which was
     /// determined earlier. The maximum level should be a number, and this
     /// will fail with an `Err` if it isn’t.
-    pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<RecurseOptions, Misfire> {
+    pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<Self, Misfire> {
         let max_depth = if let Some(level) = matches.get(&flags::LEVEL)? {
             match level.to_string_lossy().parse() {
                 Ok(l)   => Some(l),
@@ -63,7 +63,7 @@ impl RecurseOptions {
             None
         };
 
-        Ok(RecurseOptions { tree, max_depth })
+        Ok(Self { tree, max_depth })
     }
 }
 

@@ -119,7 +119,7 @@ impl Options {
     /// struct and a list of free filenames, using the environment variables
     /// for extra options.
     #[allow(unused_results)]
-    pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
+    pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Self, Vec<&'args OsStr>), Misfire>
     where I: IntoIterator<Item=&'args OsString>,
           V: Vars {
         use crate::options::parser::{Matches, Strictness};
@@ -138,7 +138,7 @@ impl Options {
         HelpString::deduce(&flags).map_err(Misfire::Help)?;
         VersionString::deduce(&flags).map_err(Misfire::Version)?;
 
-        let options = Options::deduce(&flags, vars)?;
+        let options = Self::deduce(&flags, vars)?;
         Ok((options, frees))
     }
 
@@ -159,12 +159,12 @@ impl Options {
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Options, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
 
-        Ok(Options { dir_action, view, filter })
+        Ok(Self { dir_action, view, filter })
     }
 }
 

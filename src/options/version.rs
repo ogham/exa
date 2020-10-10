@@ -19,9 +19,9 @@ impl VersionString {
     /// ‘deduce’ functions, returning Err if help needs to be shown.
     ///
     /// Like --help, this doesn’t bother checking for errors.
-    pub fn deduce(matches: &MatchedFlags) -> Result<(), VersionString> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<(), Self> {
         if matches.count(&flags::VERSION) > 0 {
-            Err(VersionString)
+            Err(Self)
         }
         else {
             Ok(())  // no version needs to be shown
