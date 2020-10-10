@@ -169,8 +169,8 @@ pub enum Size {
 /// The major and minor device IDs that gets displayed for device files.
 ///
 /// You can see what these device numbers mean:
-/// - http://www.lanana.org/docs/device-list/
-/// - http://www.lanana.org/docs/device-list/devices-2.6+.txt
+/// - <http://www.lanana.org/docs/device-list/>
+/// - <http://www.lanana.org/docs/device-list/devices-2.6+.txt>
 #[derive(Copy, Clone)]
 pub struct DeviceIDs {
     pub major: u8,

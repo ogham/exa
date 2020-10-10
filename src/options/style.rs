@@ -117,11 +117,11 @@ impl Styles {
     }
 }
 
-/// Parse the environment variables into LS_COLORS pairs, putting file glob
+/// Parse the environment variables into `LS_COLORS` pairs, putting file glob
 /// colours into the `ExtensionMappings` that gets returned, and using the
 /// two-character UI codes to modify the mutable `Colours`.
 ///
-/// Also returns if the EXA_COLORS variable should reset the existing file
+/// Also returns if the `EXA_COLORS` variable should reset the existing file
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
     use log::*;

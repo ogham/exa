@@ -165,7 +165,7 @@ impl TextCellContents {
     /// counting the number of characters in each unformatted ANSI string.
     pub fn width(&self) -> DisplayWidth {
         self.0.iter()
-            .map(|anstr| DisplayWidth::from(anstr.deref()))
+            .map(|anstr| DisplayWidth::from(&**anstr))
             .sum()
     }
 

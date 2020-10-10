@@ -96,7 +96,7 @@ impl FileFilter {
         files.retain(|f| !self.ignore_patterns.is_ignored(&f.name));
 
         if self.only_dirs {
-            files.retain(|f| f.is_directory());
+            files.retain(File::is_directory);
         }
     }
 
@@ -306,8 +306,8 @@ impl FromIterator<glob::Pattern> for IgnorePatterns {
 impl IgnorePatterns {
 
     /// Create a new list from the input glob strings, turning the inputs that
-    /// are valid glob patterns into an IgnorePatterns. The inputs that don’t
-    /// parse correctly are returned separately.
+    /// are valid glob patterns into an `IgnorePatterns`. The inputs that
+    /// don’t parse correctly are returned separately.
     pub fn parse_from_iter<'a, I: IntoIterator<Item = &'a str>>(iter: I) -> (Self, Vec<glob::PatternError>) {
         let iter = iter.into_iter();
 

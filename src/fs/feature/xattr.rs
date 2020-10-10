@@ -66,7 +66,7 @@ pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attrib
         Ordering::Greater => {},
     }
 
-    let mut buf = vec![0u8; bufsize as usize];
+    let mut buf = vec![0_u8; bufsize as usize];
     let err = lister.listxattr_second(&c_path, &mut buf, bufsize);
 
     match err.cmp(&0) {

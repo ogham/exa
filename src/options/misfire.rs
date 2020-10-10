@@ -55,11 +55,7 @@ impl Misfire {
 
     /// The OS return code this misfire should signify.
     pub fn is_error(&self) -> bool {
-        match self {
-            Self::Help(_)     |
-            Self::Version(_)  => false,
-            _                 => true,
-        }
+        ! matches!(self, Self::Help(_) | Self::Version(_))
     }
 }
 

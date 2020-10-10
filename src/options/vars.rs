@@ -18,7 +18,7 @@ pub static TIME_STYLE: &str = "TIME_STYLE";
 // exa-specific variables
 
 /// Environment variable used to colour exa’s interface when colours are
-/// enabled. This includes all the colours that LS_COLORS would recognise,
+/// enabled. This includes all the colours that `LS_COLORS` would recognise,
 /// overriding them if necessary. It can also contain exa-specific codes.
 pub static EXA_COLORS: &str = "EXA_COLORS";
 

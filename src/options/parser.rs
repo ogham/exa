@@ -38,9 +38,9 @@ use crate::options::Misfire;
 pub type ShortArg = u8;
 
 /// A **long argument** is a string. This can be a UTF-8 string, even though
-/// the arguments will all be unchecked OsStrings, because we don’t actually
-/// store the user’s input after it’s been matched to a flag, we just store
-/// which flag it was.
+/// the arguments will all be unchecked `OsString` values, because we don’t
+/// actually store the user’s input after it’s been matched to a flag, we just
+/// store which flag it was.
 pub type LongArg = &'static str;
 
 /// A **list of values** that an option can have, to be displayed when the

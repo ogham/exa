@@ -121,7 +121,7 @@ impl GitRepo {
     ///
     /// The temporary `Processing` enum variant is used after the `git2`
     /// repository is moved out, but before the results have been moved in!
-    /// See https://stackoverflow.com/q/45985827/3484614
+    /// See <https://stackoverflow.com/q/45985827/3484614>
     fn search(&self, index: &Path, prefix_lookup: bool) -> f::Git {
         use std::mem::replace;
 
@@ -161,8 +161,9 @@ impl GitRepo {
             }
         };
 
-        match repo.workdir().map(|wd| wd.to_path_buf()) {
+        match repo.workdir() {
             Some(workdir) => {
+                let workdir = workdir.to_path_buf();
                 let contents = Mutex::new(GitContents::Before { repo });
                 Ok(Self { contents, workdir, original_path: path, extra_paths: Vec::new() })
             },
