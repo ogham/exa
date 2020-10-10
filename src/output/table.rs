@@ -7,7 +7,7 @@ use std::sync::{Mutex, MutexGuard};
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
-use log::debug;
+use log::*;
 
 use users::UsersCache;
 

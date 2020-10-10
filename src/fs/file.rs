@@ -6,7 +6,7 @@ use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use log::{debug, error};
+use log::*;
 
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;

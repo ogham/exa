@@ -8,7 +8,7 @@ use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
 
-use log::debug;
+use log::*;
 
 use crate::fs::{Dir, File};
 use crate::fs::filter::GitIgnore;
@@ -20,6 +20,7 @@ use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
 mod info;
+mod logger;
 mod options;
 mod output;
 mod style;
@@ -28,7 +29,7 @@ mod style;
 fn main() {
     use std::process::exit;
 
-    configure_logger();
+    logger::configure(env::var_os(vars::EXA_DEBUG));
 
     let args: Vec<OsString> = env::args_os().skip(1).collect();
     match Exa::from_args(args.iter(), &mut stdout()) {
@@ -63,34 +64,6 @@ fn main() {
             exit(exits::SUCCESS);
         },
     };
-}
-
-
-/// Sets up a global logger if one is asked for.
-/// The ‘EXA_DEBUG’ environment variable controls whether log messages are
-/// displayed or not. Currently there are just two settings (on and off).
-///
-/// This can’t be done in exa’s own option parsing because that part of it
-/// logs as well, so by the time execution gets there, the logger needs to
-/// have already been set up.
-pub fn configure_logger() {
-    extern crate env_logger;
-    extern crate log;
-
-    let present = match env::var_os(vars::EXA_DEBUG) {
-        Some(debug)  => debug.len() > 0,
-        None         => false,
-    };
-
-    let mut logs = env_logger::Builder::new();
-    if present {
-        logs.filter(None, log::LevelFilter::Debug);
-    }
-    else {
-        logs.filter(None, log::LevelFilter::Off);
-    }
-
-    logs.init()
 }
 
 

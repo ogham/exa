@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use log::{debug, error, info, warn};
+use log::*;
 
 use crate::fs::fields as f;
 

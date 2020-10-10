@@ -24,7 +24,6 @@ name = "exa"
 [dependencies]
 ansi_term = "0.12.0"
 datetime = "0.5"
-env_logger = "0.6.1"
 glob = "0.3.0"
 lazy_static = "1.3.0"
 libc = "0.2.51"
@@ -37,7 +36,7 @@ scoped_threadpool = "0.1.9"
 term_grid = "0.1.7"
 term_size = "0.3.1"
 unicode-width = "0.1.5"
-users = "0.10"
+users = "0.11"
 zoneinfo_compiled = "0.5"
 
 [dependencies.git2]

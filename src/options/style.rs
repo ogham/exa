@@ -122,7 +122,7 @@ impl Styles {
 /// Also returns if the EXA_COLORS variable should reset the existing file
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
-    use log::warn;
+    use log::*;
 
     use crate::options::vars;
     use crate::style::LSColors;

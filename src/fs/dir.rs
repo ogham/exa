@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use log::info;
+use log::*;
 
 use crate::fs::File;
 
