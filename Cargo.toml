@@ -22,25 +22,25 @@ name = "exa"
 
 
 [dependencies]
-ansi_term = "0.12.0"
+ansi_term = "0.12"
 datetime = "0.5"
-glob = "0.3.0"
-lazy_static = "1.3.0"
-libc = "0.2.51"
-locale = "0.2.2"
-log = "0.4.6"
-natord = "1.0.9"
-num_cpus = "1.10.0"
-number_prefix = "0.3.0"
-scoped_threadpool = "0.1.9"
-term_grid = "0.1.7"
-term_size = "0.3.1"
-unicode-width = "0.1.5"
+glob = "0.3"
+lazy_static = "1.3"
+libc = "0.2"
+locale = "0.2"
+log = "0.4"
+natord = "1.0"
+num_cpus = "1.10"
+number_prefix = "0.4"
+scoped_threadpool = "0.1"
+term_grid = "0.1"
+term_size = "0.3"
+unicode-width = "0.1"
 users = "0.11"
 zoneinfo_compiled = "0.5"
 
 [dependencies.git2]
-version = "0.9.1"
+version = "0.13"
 optional = true
 default-features = false
 

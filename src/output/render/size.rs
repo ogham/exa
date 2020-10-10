@@ -9,7 +9,7 @@ use crate::output::table::SizeFormat;
 
 impl f::Size {
     pub fn render<C: Colours>(&self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
-        use number_prefix::{Prefixed, Standalone, NumberPrefix, PrefixNames};
+        use number_prefix::NumberPrefix;
 
         let size = match *self {
             f::Size::Some(s)             => s,
@@ -23,8 +23,8 @@ impl f::Size {
             SizeFormat::JustBytes     => {
                 // Use the binary prefix to select a style.
                 let prefix = match NumberPrefix::binary(size as f64) {
-                    Standalone(_) => None,
-                    Prefixed(p, _) => Some(p),
+                    NumberPrefix::Standalone(_) => None,
+                    NumberPrefix::Prefixed(p, _) => Some(p),
                 };
                 // But format the number directly using the locale.
                 let string = numerics.format_int(size);
@@ -33,8 +33,8 @@ impl f::Size {
         };
 
         let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(colours.size(None), b.to_string()),
-            Prefixed(p, n) => (p, n)
+            NumberPrefix::Standalone(b)  => return TextCell::paint(colours.size(None), b.to_string()),
+            NumberPrefix::Prefixed(p, n) => (p, n)
         };
 
         let symbol = prefix.symbol();

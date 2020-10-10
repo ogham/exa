@@ -28,6 +28,12 @@ test-features:
     cargo hack test --feature-powerset -- --quiet
 
 
+# updates dependency versions, and checks for outdated ones
+@update:
+    cargo update
+    cargo outdated
+
+
 # prints versions of the necessary build tools
 @versions:
     rustc --version

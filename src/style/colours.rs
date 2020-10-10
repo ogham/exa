@@ -434,7 +434,7 @@ impl render::SizeColours for Colours {
         match prefix {
             None                    => self.size.number_byte,
             Some(Kilo) | Some(Kibi) => self.size.number_kilo,
-            Some(Mega) | Some(Mibi) => self.size.number_mega,
+            Some(Mega) | Some(Mebi) => self.size.number_mega,
             Some(Giga) | Some(Gibi) => self.size.number_giga,
             Some(_)                 => self.size.number_huge,
         }
@@ -445,7 +445,7 @@ impl render::SizeColours for Colours {
         match prefix {
             None                    => self.size.unit_byte,
             Some(Kilo) | Some(Kibi) => self.size.unit_kilo,
-            Some(Mega) | Some(Mibi) => self.size.unit_mega,
+            Some(Mega) | Some(Mebi) => self.size.unit_mega,
             Some(Giga) | Some(Gibi) => self.size.unit_giga,
             Some(_)                 => self.size.unit_huge,
         }
