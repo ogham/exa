@@ -80,7 +80,6 @@ impl Styles {
     #[allow(trivial_casts)]   // the "as Box<_>" stuff below warns about this for some reason
     pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
     where TW: Fn() -> Option<usize>, V: Vars {
-        use self::TerminalColours::*;
         use crate::info::filetype::FileExtensions;
         use crate::output::file_name::NoFileColours;
 
@@ -89,7 +88,10 @@ impl Styles {
         // Before we do anything else, figure out if we need to consider
         // custom colours at all
         let tc = TerminalColours::deduce(matches)?;
-        if tc == Never || (tc == Automatic && widther().is_none()) {
+
+        if tc == TerminalColours::Never
+        || (tc == TerminalColours::Automatic && widther().is_none())
+        {
             return Ok(Self {
                 colours: Colours::plain(),
                 style: FileStyle { classify, exts: Box::new(NoFileColours) },

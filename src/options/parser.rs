@@ -146,7 +146,6 @@ impl Args {
     pub fn parse<'args, I>(&self, inputs: I, strictness: Strictness) -> Result<Matches<'args>, ParseError>
     where I: IntoIterator<Item=&'args OsString> {
         use std::os::unix::ffi::OsStrExt;
-        use self::TakesValue::*;
 
         let mut parsing = true;
 
@@ -183,8 +182,9 @@ impl Args {
                     let arg = self.lookup_long(before)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Necessary(_)|Optional(_)  => result_flags.push((flag, Some(after))),
-                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
+                        TakesValue::Necessary(_) |
+                        TakesValue::Optional(_)  => result_flags.push((flag, Some(after))),
+                        TakesValue::Forbidden    => return Err(ParseError::ForbiddenValue { flag }),
                     }
                 }
 
@@ -194,16 +194,18 @@ impl Args {
                     let arg = self.lookup_long(long_arg_name)?;
                     let flag = Flag::Long(arg.long);
                     match arg.takes_value {
-                        Forbidden         => result_flags.push((flag, None)),
-                        Necessary(values) => {
+                        TakesValue::Forbidden => {
+                            result_flags.push((flag, None))
+                        }
+                        TakesValue::Necessary(values) => {
                             if let Some(next_arg) = inputs.next() {
                                 result_flags.push((flag, Some(next_arg)));
                             }
                             else {
                                 return Err(ParseError::NeedsValue { flag, values })
                             }
-                        },
-                        Optional(_) => {
+                        }
+                        TakesValue::Optional(_) => {
                             if let Some(next_arg) = inputs.next() {
                                 result_flags.push((flag, Some(next_arg)));
                             }
@@ -240,8 +242,13 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden|Optional(_)  => result_flags.push((flag, None)),
-                            Necessary(values)  => return Err(ParseError::NeedsValue { flag, values })
+                            TakesValue::Forbidden |
+                            TakesValue::Optional(_)  => {
+                                result_flags.push((flag, None));
+                            }
+                            TakesValue::Necessary(values) => {
+                                return Err(ParseError::NeedsValue { flag, values });
+                            }
                         }
                     }
 
@@ -249,8 +256,13 @@ impl Args {
                     let arg = self.lookup_short(*arg_with_value)?;
                     let flag = Flag::Short(arg.short.unwrap());
                     match arg.takes_value {
-                        Necessary(_)|Optional(_)  => result_flags.push((flag, Some(after))),
-                        Forbidden  => return Err(ParseError::ForbiddenValue { flag })
+                        TakesValue::Necessary(_) |
+                        TakesValue::Optional(_)  => {
+                            result_flags.push((flag, Some(after)));
+                        }
+                        TakesValue::Forbidden => {
+                            return Err(ParseError::ForbiddenValue { flag });
+                        }
                     }
                 }
 
@@ -271,8 +283,11 @@ impl Args {
                         let arg = self.lookup_short(*byte)?;
                         let flag = Flag::Short(*byte);
                         match arg.takes_value {
-                            Forbidden         => result_flags.push((flag, None)),
-                            Necessary(values)|Optional(values) => {
+                            TakesValue::Forbidden => {
+                                result_flags.push((flag, None))
+                            }
+                            TakesValue::Necessary(values) |
+                            TakesValue::Optional(values) => {
                                 if index < bytes.len() - 1 {
                                     let remnants = &bytes[index+1 ..];
                                     result_flags.push((flag, Some(OsStr::from_bytes(remnants))));
@@ -283,11 +298,13 @@ impl Args {
                                 }
                                 else {
                                     match arg.takes_value {
-                                        Forbidden => unreachable!(),
-                                        Necessary(_) => {
+                                        TakesValue::Forbidden => {
+                                            unreachable!()
+                                        }
+                                        TakesValue::Necessary(_) => {
                                             return Err(ParseError::NeedsValue { flag, values });
-                                        },
-                                        Optional(_) => {
+                                        }
+                                        TakesValue::Optional(_) => {
                                             result_flags.push((flag, None));
                                         }
                                     }

@@ -431,6 +431,7 @@ impl render::PermissionsColours for Colours {
 impl render::SizeColours for Colours {
     fn size(&self, prefix: Option<number_prefix::Prefix>) -> Style {
         use number_prefix::Prefix::*;
+
         match prefix {
             None                    => self.size.number_byte,
             Some(Kilo) | Some(Kibi) => self.size.number_kilo,
@@ -442,6 +443,7 @@ impl render::SizeColours for Colours {
 
     fn unit(&self, prefix: Option<number_prefix::Prefix>) -> Style {
         use number_prefix::Prefix::*;
+
         match prefix {
             None                    => self.size.unit_byte,
             Some(Kilo) | Some(Kibi) => self.size.unit_kilo,

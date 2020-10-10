@@ -27,14 +27,12 @@ impl Mode {
 
     /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
-        use crate::options::misfire::Misfire::*;
-
         let long = || {
             if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
-                Err(Useless(&flags::ACROSS, true, &flags::LONG))
+                Err(Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
             }
             else if matches.has(&flags::ONE_LINE)? {
-                Err(Useless(&flags::ONE_LINE, true, &flags::LONG))
+                Err(Misfire::Useless(&flags::ONE_LINE, true, &flags::LONG))
             }
             else {
                 Ok(details::Options {
@@ -50,7 +48,7 @@ impl Mode {
             if let Some(width) = TerminalWidth::deduce(vars)?.width() {
                 if matches.has(&flags::ONE_LINE)? {
                     if matches.has(&flags::ACROSS)? {
-                        Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
+                        Err(Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
                         let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
@@ -123,17 +121,17 @@ impl Mode {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
                              &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
                 if matches.has(option)? {
-                    return Err(Useless(*option, false, &flags::LONG));
+                    return Err(Misfire::Useless(*option, false, &flags::LONG));
                 }
             }
 
             if cfg!(feature="git") && matches.has(&flags::GIT)? {
-                return Err(Useless(&flags::GIT, false, &flags::LONG));
+                return Err(Misfire::Useless(&flags::GIT, false, &flags::LONG));
             }
             else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
                 // TODO: I'm not sure if the code even gets this far.
                 // There is an identical check in dir_action
-                return Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
+                return Err(Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
         }
 

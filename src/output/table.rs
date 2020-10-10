@@ -367,8 +367,6 @@ impl<'a, 'f> Table<'a> {
     }
 
     fn display(&self, file: &File, column: Column, xattrs: bool) -> TextCell {
-        use crate::output::table::TimeType::*;
-
         match column {
             Column::Permissions    => self.permissions_plus(file, xattrs).render(self.colours),
             Column::FileSize       => file.size().render(self.colours, self.size_format, &self.env.numeric),
@@ -380,10 +378,10 @@ impl<'a, 'f> Table<'a> {
             Column::GitStatus      => self.git_status(file).render(self.colours),
             Column::Octal          => self.octal_permissions(file).render(self.colours.octal),
 
-            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, self.time_format),
-            Column::Timestamp(Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, self.time_format),
-            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, self.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(TimeType::Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(TimeType::Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(TimeType::Created)   => file.created_time() .render(self.colours.date, &self.env.tz, self.time_format),
+            Column::Timestamp(TimeType::Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, self.time_format),
         }
     }
 

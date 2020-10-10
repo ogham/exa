@@ -123,20 +123,19 @@ impl GitRepo {
     /// repository is moved out, but before the results have been moved in!
     /// See https://stackoverflow.com/q/45985827/3484614
     fn search(&self, index: &Path, prefix_lookup: bool) -> f::Git {
-        use self::GitContents::*;
         use std::mem::replace;
 
         let mut contents = self.contents.lock().unwrap();
-        if let After { ref statuses } = *contents {
+        if let GitContents::After { ref statuses } = *contents {
             debug!("Git repo {:?} has been found in cache", &self.workdir);
             return statuses.status(index, prefix_lookup);
         }
 
         debug!("Querying Git repo {:?} for the first time", &self.workdir);
-        let repo = replace(&mut *contents, Processing).inner_repo();
+        let repo = replace(&mut *contents, GitContents::Processing).inner_repo();
         let statuses = repo_to_statuses(&repo, &self.workdir);
         let result = statuses.status(index, prefix_lookup);
-        let _processing = replace(&mut *contents, After { statuses });
+        let _processing = replace(&mut *contents, GitContents::After { statuses });
         result
     }
 
