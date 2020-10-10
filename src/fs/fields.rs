@@ -50,10 +50,7 @@ pub enum Type {
 
 impl Type {
     pub fn is_regular_file(&self) -> bool {
-        match *self {
-            Type::File  => true,
-            _           => false,
-        }
+        matches!(*self, Type::File)
     }
 }
 

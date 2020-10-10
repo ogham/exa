@@ -5,7 +5,7 @@ use crate::fs::fields as f;
 
 impl f::OctalPermissions {
     fn bits_to_octal(r: bool, w: bool, x: bool) -> u8 {
-        (r  as u8) * 4 + (w as u8) * 2 + (x as u8) * 1
+        (r  as u8) * 4 + (w as u8) * 2 + (x as u8)
     }
 
     pub fn render(&self, style: Style) -> TextCell {

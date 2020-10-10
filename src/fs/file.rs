@@ -338,7 +338,7 @@ impl<'dir> File<'dir> {
            if sec < 0 {
                if nsec > 0 {
                    sec += 1;
-                   nsec = nsec - 1_000_000_000;
+                   nsec -= 1_000_000_000;
                }
                UNIX_EPOCH - Duration::new(sec.abs() as u64, nsec.abs() as u32)
            } else {

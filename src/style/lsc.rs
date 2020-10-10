@@ -25,7 +25,9 @@ use ansi_term::Colour::*;
 pub struct LSColors<'var>(pub &'var str);
 
 impl<'var> LSColors<'var> {
-    pub fn each_pair<C>(&mut self, mut callback: C) where C: FnMut(Pair<'var>) -> () {
+    pub fn each_pair<C>(&mut self, mut callback: C)
+    where C: FnMut(Pair<'var>)
+    {
         for next in self.0.split(':') {
             let bits = next.split('=')
                            .take(3)
