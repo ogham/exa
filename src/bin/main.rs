@@ -74,12 +74,14 @@ pub fn configure_logger() {
 }
 
 
-extern crate libc;
-#[allow(trivial_numeric_casts)]
 mod exits {
-    use libc::{self, c_int};
 
-    pub const SUCCESS:       c_int = libc::EXIT_SUCCESS;
-    pub const RUNTIME_ERROR: c_int = libc::EXIT_FAILURE;
-    pub const OPTIONS_ERROR: c_int = 3 as c_int;
+    /// Exit code for when exa runs OK.
+    pub const SUCCESS: i32 = 0;
+
+    /// Exit code for when there was at least one I/O error during execution.
+    pub const RUNTIME_ERROR: i32 = 1;
+
+    /// Exit code for when the command-line options are invalid.
+    pub const OPTIONS_ERROR: i32 = 3;
 }
