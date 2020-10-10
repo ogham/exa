@@ -3,7 +3,7 @@
 
 use std::env;
 use std::ffi::{OsStr, OsString};
-use std::io::{stdout, stderr, Write, Result as IOResult, ErrorKind};
+use std::io::{stdout, Stdout, stderr, Write, Result as IOResult, ErrorKind};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
@@ -31,8 +31,8 @@ fn main() {
 
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
-    let args: Vec<OsString> = env::args_os().skip(1).collect();
-    match Exa::from_args(args.iter(), &mut stdout()) {
+    let args: Vec<_> = env::args_os().skip(1).collect();
+    match Exa::from_args(args.iter(), stdout()) {
         Ok(mut exa) => {
             match exa.run() {
                 Ok(exit_status) => exit(exit_status),
@@ -68,15 +68,13 @@ fn main() {
 
 
 /// The main program wrapper.
-pub struct Exa<'args, 'w, W: Write + 'w> {
+pub struct Exa<'args> {
 
     /// List of command-line options, having been successfully parsed.
     pub options: Options,
 
-    /// The output handle that we write to. When running the program normally,
-    /// this will be `std::io::Stdout`, but it can accept any struct that’s
-    /// `Write` so we can write into, say, a vector for testing.
-    pub writer: &'w mut W,
+    /// The output handle that we write to.
+    pub writer: Stdout,
 
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
@@ -109,23 +107,23 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
     }
 }
 
-impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
-    pub fn from_args<I>(args: I, writer: &'w mut W) -> Result<Exa<'args, 'w, W>, Misfire>
-    where I: Iterator<Item=&'args OsString> {
-        Options::parse(args, &LiveVars).map(move |(options, mut args)| {
-            debug!("Dir action from arguments: {:#?}", options.dir_action);
-            debug!("Filter from arguments: {:#?}", options.filter);
-            debug!("View from arguments: {:#?}", options.view.mode);
+impl<'args> Exa<'args> {
+    pub fn from_args<I>(args: I, writer: Stdout) -> Result<Exa<'args>, Misfire>
+    where I: Iterator<Item=&'args OsString>
+    {
+        let (options, mut args) = Options::parse(args, &LiveVars)?;
+        debug!("Dir action from arguments: {:#?}", options.dir_action);
+        debug!("Filter from arguments: {:#?}", options.filter);
+        debug!("View from arguments: {:#?}", options.view.mode);
 
-            // List the current directory by default, like ls.
-            // This has to be done here, otherwise git_options won’t see it.
-            if args.is_empty() {
-                args = vec![ OsStr::new(".") ];
-            }
+        // List the current directory by default, like ls.
+        // This has to be done here, otherwise git_options won’t see it.
+        if args.is_empty() {
+            args = vec![ OsStr::new(".") ];
+        }
 
-            let git = git_options(&options, &args);
-            Exa { options, writer, args, git }
-        })
+        let git = git_options(&options, &args);
+        Ok(Exa { options, writer, args, git })
     }
 
     pub fn run(&mut self) -> IOResult<i32> {
@@ -175,13 +173,13 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
                 first = false;
             }
             else {
-                writeln!(self.writer)?;
+                writeln!(&mut self.writer)?;
             }
 
             if !is_only_dir {
                 let mut bits = Vec::new();
                 escape(dir.path.display().to_string(), &mut bits, Style::default(), Style::default());
-                writeln!(self.writer, "{}:", ANSIStrings(&bits))?;
+                writeln!(&mut self.writer, "{}:", ANSIStrings(&bits))?;
             }
 
             let mut children = Vec::new();
@@ -233,12 +231,12 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             match *mode {
                 Mode::Lines(ref opts) => {
                     let r = lines::Render { files, colours, style, opts };
-                    r.render(self.writer)
+                    r.render(&mut self.writer)
                 }
 
                 Mode::Grid(ref opts) => {
                     let r = grid::Render { files, colours, style, opts };
-                    r.render(self.writer)
+                    r.render(&mut self.writer)
                 }
 
                 Mode::Details(ref opts) => {
@@ -247,7 +245,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
 
                     let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                     let r = details::Render { dir, files, colours, style, opts, filter, recurse, git_ignoring };
-                    r.render(self.git.as_ref(), self.writer)
+                    r.render(self.git.as_ref(), &mut self.writer)
                 }
 
                 Mode::GridDetails(ref opts) => {
@@ -258,7 +256,7 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
 
                     let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                     let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold, git_ignoring };
-                    r.render(self.git.as_ref(), self.writer)
+                    r.render(self.git.as_ref(), &mut self.writer)
                 }
             }
         }
