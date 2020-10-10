@@ -19,13 +19,7 @@ exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
 
 [[bin]]
 name = "exa"
-path = "src/bin/main.rs"
-doc = false
 
-
-[lib]
-name = "exa"
-path = "src/exa.rs"
 
 [dependencies]
 ansi_term = "0.12.0"

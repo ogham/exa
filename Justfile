@@ -25,7 +25,7 @@ build-features:
 
 # runs unit tests with every combination of feature flags
 test-features:
-    cargo hack test --feature-powerset --lib -- --quiet
+    cargo hack test --feature-powerset -- --quiet
 
 
 # prints versions of the necessary build tools

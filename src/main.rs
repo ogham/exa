@@ -1,9 +1,9 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_results)]
 
-use std::env::var_os;
+use std::env;
 use std::ffi::{OsStr, OsString};
-use std::io::{stderr, Write, Result as IOResult};
+use std::io::{stdout, stderr, Write, Result as IOResult, ErrorKind};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
@@ -23,6 +23,75 @@ mod info;
 mod options;
 mod output;
 mod style;
+
+
+fn main() {
+    use std::process::exit;
+
+    configure_logger();
+
+    let args: Vec<OsString> = env::args_os().skip(1).collect();
+    match Exa::from_args(args.iter(), &mut stdout()) {
+        Ok(mut exa) => {
+            match exa.run() {
+                Ok(exit_status) => exit(exit_status),
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::BrokenPipe => exit(exits::SUCCESS),
+                        _ => {
+                            eprintln!("{}", e);
+                            exit(exits::RUNTIME_ERROR);
+                        },
+                    };
+                }
+            };
+        },
+
+        Err(ref e) if e.is_error() => {
+            let mut stderr = stderr();
+            writeln!(stderr, "{}", e).unwrap();
+
+            if let Some(s) = e.suggestion() {
+                let _ = writeln!(stderr, "{}", s);
+            }
+
+            exit(exits::OPTIONS_ERROR);
+        },
+
+        Err(ref e) => {
+            println!("{}", e);
+            exit(exits::SUCCESS);
+        },
+    };
+}
+
+
+/// Sets up a global logger if one is asked for.
+/// The ‘EXA_DEBUG’ environment variable controls whether log messages are
+/// displayed or not. Currently there are just two settings (on and off).
+///
+/// This can’t be done in exa’s own option parsing because that part of it
+/// logs as well, so by the time execution gets there, the logger needs to
+/// have already been set up.
+pub fn configure_logger() {
+    extern crate env_logger;
+    extern crate log;
+
+    let present = match env::var_os(vars::EXA_DEBUG) {
+        Some(debug)  => debug.len() > 0,
+        None         => false,
+    };
+
+    let mut logs = env_logger::Builder::new();
+    if present {
+        logs.filter(None, log::LevelFilter::Debug);
+    }
+    else {
+        logs.filter(None, log::LevelFilter::Off);
+    }
+
+    logs.init()
+}
 
 
 /// The main program wrapper.
@@ -52,7 +121,7 @@ pub struct Exa<'args, 'w, W: Write + 'w> {
 struct LiveVars;
 impl Vars for LiveVars {
     fn get(&self, name: &'static str) -> Option<OsString> {
-        var_os(name)
+        env::var_os(name)
     }
 }
 
@@ -224,4 +293,17 @@ impl<'args, 'w, W: Write + 'w> Exa<'args, 'w, W> {
             Ok(())
         }
     }
+}
+
+
+mod exits {
+
+    /// Exit code for when exa runs OK.
+    pub const SUCCESS: i32 = 0;
+
+    /// Exit code for when there was at least one I/O error during execution.
+    pub const RUNTIME_ERROR: i32 = 1;
+
+    /// Exit code for when the command-line options are invalid.
+    pub const OPTIONS_ERROR: i32 = 3;
 }
