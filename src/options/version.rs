@@ -39,25 +39,19 @@ impl fmt::Display for VersionString {
 #[cfg(test)]
 mod test {
     use crate::options::{Options, OptionsResult};
-    use std::ffi::OsString;
-
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
+    use std::ffi::OsStr;
 
     #[test]
     fn version() {
-        let args = [ os("--version") ];
-        let opts = Options::parse(&args, &None);
+        let args = vec![ OsStr::new("--version") ];
+        let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Version(_)));
     }
 
     #[test]
     fn version_with_file() {
-        let args = [ os("--version"), os("me") ];
-        let opts = Options::parse(&args, &None);
+        let args = vec![ OsStr::new("--version"), OsStr::new("me") ];
+        let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Version(_)));
     }
 }

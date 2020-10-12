@@ -69,7 +69,7 @@
 //! it’s clear what the user wants.
 
 
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 
 use crate::fs::dir_action::DirAction;
 use crate::fs::filter::{FileFilter, GitIgnore};
@@ -120,7 +120,7 @@ impl Options {
     /// for extra options.
     #[allow(unused_results)]
     pub fn parse<'args, I, V>(args: I, vars: &V) -> OptionsResult<'args>
-    where I: IntoIterator<Item = &'args OsString>,
+    where I: IntoIterator<Item = &'args OsStr>,
           V: Vars,
     {
         use crate::options::parser::{Matches, Strictness};
@@ -198,7 +198,7 @@ pub enum OptionsResult<'args> {
 #[cfg(test)]
 pub mod test {
     use crate::options::parser::{Arg, MatchedFlags};
-    use std::ffi::OsString;
+    use std::ffi::OsStr;
 
     #[derive(PartialEq, Debug)]
     pub enum Strictnesses {
@@ -219,27 +219,19 @@ pub mod test {
         use self::Strictnesses::*;
         use crate::options::parser::{Args, Strictness};
 
-        let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+        let bits = inputs.into_iter().map(OsStr::new).collect::<Vec<_>>();
         let mut result = Vec::new();
 
         if strictnesses == Last || strictnesses == Both {
-            let results = Args(args).parse(bits.iter(), Strictness::UseLastArguments);
+            let results = Args(args).parse(bits.clone(), Strictness::UseLastArguments);
             result.push(get(&results.unwrap().flags));
         }
 
         if strictnesses == Complain || strictnesses == Both {
-            let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
+            let results = Args(args).parse(bits, Strictness::ComplainAboutRedundantArguments);
             result.push(get(&results.unwrap().flags));
         }
 
         result
-    }
-
-    /// Creates an `OSStr` (used in tests)
-    #[cfg(test)]
-    fn os(input: &str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
     }
 }

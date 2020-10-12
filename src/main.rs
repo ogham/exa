@@ -30,7 +30,7 @@ fn main() {
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
     let args: Vec<_> = env::args_os().skip(1).collect();
-    match Options::parse(&args, &LiveVars) {
+    match Options::parse(args.iter().map(|e| e.as_ref()), &LiveVars) {
         OptionsResult::Ok(options, mut input_paths) => {
 
             // List the current directory by default.

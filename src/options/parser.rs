@@ -144,7 +144,7 @@ impl Args {
     /// Iterates over the given list of command-line arguments and parses
     /// them into a list of matched flags and free strings.
     pub fn parse<'args, I>(&self, inputs: I, strictness: Strictness) -> Result<Matches<'args>, ParseError>
-    where I: IntoIterator<Item = &'args OsString>
+    where I: IntoIterator<Item = &'args OsStr>
     {
         use std::os::unix::ffi::OsStrExt;
 
@@ -507,24 +507,16 @@ fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
 }
 
 
-/// Creates an `OSString` (used in tests)
-#[cfg(test)]
-fn os(input: &'static str) -> OsString {
-    let mut os = OsString::new();
-    os.push(input);
-    os
-}
-
-
 #[cfg(test)]
 mod split_test {
-    use super::{split_on_equals, os};
+    use super::split_on_equals;
+    use std::ffi::{OsStr, OsString};
 
     macro_rules! test_split {
         ($name:ident: $input:expr => None) => {
             #[test]
             fn $name() {
-                assert_eq!(split_on_equals(&os($input)),
+                assert_eq!(split_on_equals(&OsString::from($input)),
                            None);
             }
         };
@@ -532,8 +524,8 @@ mod split_test {
         ($name:ident: $input:expr => $before:expr, $after:expr) => {
             #[test]
             fn $name() {
-                assert_eq!(split_on_equals(&os($input)),
-                           Some((&*os($before), &*os($after))));
+                assert_eq!(split_on_equals(&OsString::from($input)),
+                           Some((OsStr::new($before), OsStr::new($after))));
             }
         };
     }
@@ -555,29 +547,21 @@ mod split_test {
 mod parse_test {
     use super::*;
 
-    pub fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
-
-
     macro_rules! test {
         ($name:ident: $inputs:expr => frees: $frees:expr, flags: $flags:expr) => {
             #[test]
             fn $name() {
 
-                // Annoyingly the input &strs need to be converted to OsStrings
-                let inputs: Vec<OsString> = $inputs.as_ref().into_iter().map(|&o| os(o)).collect();
+                let inputs: &[&'static str] = $inputs.as_ref();
+                let inputs = inputs.iter().map(OsStr::new);
 
-                // Same with the frees
-                let frees: Vec<OsString> = $frees.as_ref().into_iter().map(|&o| os(o)).collect();
-                let frees: Vec<&OsStr> = frees.iter().map(|os| os.as_os_str()).collect();
+                let frees: &[&'static str] = $frees.as_ref();
+                let frees  = frees.iter().map(OsStr::new).collect();
 
                 let flags = <[_]>::into_vec(Box::new($flags));
 
                 let strictness = Strictness::UseLastArguments;  // this isn’t even used
-                let got = Args(TEST_ARGS).parse(inputs.iter(), strictness);
+                let got = Args(TEST_ARGS).parse(inputs, strictness);
                 let flags = MatchedFlags { flags, strictness };
 
                 let expected = Ok(Matches { frees, flags });
@@ -590,12 +574,10 @@ mod parse_test {
             fn $name() {
                 use self::ParseError::*;
 
-                let strictness = Strictness::UseLastArguments;  // this isn’t even used
-                let bits = $inputs.as_ref().into_iter()
-                                  .map(|&o| os(o))
-                                  .collect::<Vec<_>>();
+                let inputs = $inputs.iter().map(OsStr::new);
 
-                let got = Args(TEST_ARGS).parse(bits.iter(), strictness);
+                let strictness = Strictness::UseLastArguments;  // this isn’t even used
+                let got = Args(TEST_ARGS).parse(inputs, strictness);
                 assert_eq!(got, Err($error));
             }
         };
@@ -663,8 +645,8 @@ mod parse_test {
 
 
     // Unknown args
-    test!(unknown_long:          ["--quiet"]      => error UnknownArgument      { attempt: os("quiet") });
-    test!(unknown_long_eq:       ["--quiet=shhh"] => error UnknownArgument      { attempt: os("quiet") });
+    test!(unknown_long:          ["--quiet"]      => error UnknownArgument      { attempt: OsString::from("quiet") });
+    test!(unknown_long_eq:       ["--quiet=shhh"] => error UnknownArgument      { attempt: OsString::from("quiet") });
     test!(unknown_short:         ["-q"]           => error UnknownShortArgument { attempt: b'q' });
     test!(unknown_short_2nd:     ["-lq"]          => error UnknownShortArgument { attempt: b'q' });
     test!(unknown_short_eq:      ["-q=shhh"]      => error UnknownShortArgument { attempt: b'q' });
@@ -704,7 +686,7 @@ mod matches_test {
 
     #[test]
     fn only_count() {
-        let everything = os("everything");
+        let everything = OsString::from("everything");
 
         let flags = MatchedFlags {
             flags: vec![ (Flag::Short(b'c'), Some(&*everything)) ],
@@ -716,8 +698,8 @@ mod matches_test {
 
     #[test]
     fn rightmost_count() {
-        let everything = os("everything");
-        let nothing    = os("nothing");
+        let everything = OsString::from("everything");
+        let nothing    = OsString::from("nothing");
 
         let flags = MatchedFlags {
             flags: vec![ (Flag::Short(b'c'), Some(&*everything)),

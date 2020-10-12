@@ -130,32 +130,26 @@ impl fmt::Display for HelpString {
 #[cfg(test)]
 mod test {
     use crate::options::{Options, OptionsResult};
-    use std::ffi::OsString;
-
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
+    use std::ffi::OsStr;
 
     #[test]
     fn help() {
-        let args = [ os("--help") ];
-        let opts = Options::parse(&args, &None);
+        let args = vec![ OsStr::new("--help") ];
+        let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Help(_)));
     }
 
     #[test]
     fn help_with_file() {
-        let args = [ os("--help"), os("me") ];
-        let opts = Options::parse(&args, &None);
+        let args = vec![ OsStr::new("--help"), OsStr::new("me") ];
+        let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Help(_)));
     }
 
     #[test]
     fn unhelpful() {
-        let args = [];
-        let opts = Options::parse(&args, &None);
+        let args = vec![];
+        let opts = Options::parse(args, &None);
         assert!(! matches!(opts, OptionsResult::Help(_)))  // no help when --help isn’t passed
     }
 }
