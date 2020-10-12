@@ -1,7 +1,7 @@
 use ansi_term::Style;
 
 use crate::fs::File;
-use crate::options::{flags, Vars, Misfire};
+use crate::options::{flags, Vars, OptionsError};
 use crate::options::parser::MatchedFlags;
 use crate::output::file_name::{Classify, FileStyle};
 use crate::style::Colours;
@@ -37,7 +37,7 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w)  => w,
             None     => return Ok(Self::default()),
@@ -53,7 +53,7 @@ impl TerminalColours {
             Ok(Self::Never)
         }
         else {
-            Err(Misfire::BadArgument(&flags::COLOR, word.into()))
+            Err(OptionsError::BadArgument(&flags::COLOR, word.into()))
         }
     }
 }
@@ -77,7 +77,7 @@ pub struct Styles {
 impl Styles {
 
     #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
-    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
+    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, OptionsError>
     where TW: Fn() -> Option<usize>, V: Vars {
         use crate::info::filetype::FileExtensions;
         use crate::output::file_name::NoFileColours;
@@ -204,7 +204,7 @@ impl ExtensionMappings {
 
 
 impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
         if flagged { Ok(Self::AddFileIndicators) }
@@ -260,8 +260,8 @@ mod terminal_test {
     test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
     // Errors
-    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
-    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
+    test!(no_u_error:    ["--color=upstream"];   Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
+    test!(u_error:       ["--colour=lovers"];    Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
 
     // Overriding
     test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
@@ -269,10 +269,10 @@ mod terminal_test {
     test!(overridden_3:  ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
     test!(overridden_4:  ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
 
-    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
-    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
-    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
-    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
+    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
+    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("color")));
+    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("color")));
 }
 
 
@@ -335,7 +335,7 @@ mod colour_test {
     test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
     test!(scale_4:  ["--color=always",                                  ], || None;   Last => Ok(Colours::colourful(false)));
 
-    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
+    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err OptionsError::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
     test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => Ok(Colours::colourful(true)));
     test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => Ok(Colours::colourful(true)));
     test!(scale_8:  ["--color=always",                                  ], || None;   Complain => Ok(Colours::colourful(false)));

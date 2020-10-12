@@ -13,8 +13,7 @@ use log::*;
 use crate::fs::{Dir, File};
 use crate::fs::feature::git::GitCache;
 use crate::fs::filter::GitIgnore;
-use crate::options::{Options, Vars};
-pub use crate::options::{Misfire, vars};
+use crate::options::{Options, Vars, vars, OptionsResult};
 use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
 
 mod fs;
@@ -31,42 +30,52 @@ fn main() {
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
     let args: Vec<_> = env::args_os().skip(1).collect();
-    match Exa::from_args(args.iter(), stdout()) {
-        Ok(mut exa) => {
+    match Options::parse(&args, &LiveVars) {
+        OptionsResult::Ok(options, mut input_paths) => {
+
+            // List the current directory by default.
+            // (This has to be done here, otherwise git_options won’t see it.)
+            if input_paths.is_empty() {
+                input_paths = vec![ OsStr::new(".") ];
+            }
+
+            let git = git_options(&options, &input_paths);
+            let writer = stdout();
+            let exa = Exa { options, writer, input_paths, git };
+
             match exa.run() {
                 Ok(exit_status) => {
-                    exit(exit_status)
+                    exit(exit_status);
+                }
+
+                Err(e) if e.kind() == ErrorKind::BrokenPipe => {
+                    warn!("Broken pipe error: {}", e);
+                    exit(exits::SUCCESS);
                 }
 
                 Err(e) => {
-                    match e.kind() {
-                        ErrorKind::BrokenPipe => {
-                            exit(exits::SUCCESS);
-                        }
-
-                        _ => {
-                            eprintln!("{}", e);
-                            exit(exits::RUNTIME_ERROR);
-                        }
-                    };
+                    eprintln!("{}", e);
+                    exit(exits::RUNTIME_ERROR);
                 }
-            };
+            }
         }
 
-        Err(ref e) if e.is_error() => {
-            let mut stderr = stderr();
-            writeln!(stderr, "{}", e).unwrap();
+        OptionsResult::Help(help_text) => {
+            println!("{}", help_text);
+        }
 
-            if let Some(s) = e.suggestion() {
-                let _ = writeln!(stderr, "{}", s);
+        OptionsResult::Version(version_str) => {
+            println!("{}", version_str);
+        }
+
+        OptionsResult::InvalidOptions(error) => {
+            eprintln!("{}", error);
+
+            if let Some(s) = error.suggestion() {
+                eprintln!("{}", s);
             }
 
             exit(exits::OPTIONS_ERROR);
-        }
-
-        Err(ref e) => {
-            println!("{}", e);
-            exit(exits::SUCCESS);
         }
     }
 }
@@ -83,7 +92,7 @@ pub struct Exa<'args> {
 
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
-    pub args: Vec<&'args OsStr>,
+    pub input_paths: Vec<&'args OsStr>,
 
     /// A global Git cache, if the option was passed in.
     /// This has to last the lifetime of the program, because the user might
@@ -113,30 +122,14 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 impl<'args> Exa<'args> {
-    pub fn from_args<I>(args: I, writer: Stdout) -> Result<Exa<'args>, Misfire>
-    where I: Iterator<Item = &'args OsString>
-    {
-        let (options, mut args) = Options::parse(args, &LiveVars)?;
-        debug!("Dir action from arguments: {:#?}", options.dir_action);
-        debug!("Filter from arguments: {:#?}", options.filter);
-        debug!("View from arguments: {:#?}", options.view.mode);
+    pub fn run(mut self) -> IOResult<i32> {
+        debug!("Running with options: {:#?}", self.options);
 
-        // List the current directory by default, like ls.
-        // This has to be done here, otherwise git_options won’t see it.
-        if args.is_empty() {
-            args = vec![ OsStr::new(".") ];
-        }
-
-        let git = git_options(&options, &args);
-        Ok(Exa { options, writer, args, git })
-    }
-
-    pub fn run(&mut self) -> IOResult<i32> {
         let mut files = Vec::new();
         let mut dirs = Vec::new();
         let mut exit_status = 0;
 
-        for file_path in &self.args {
+        for file_path in &self.input_paths {
             match File::from_args(PathBuf::from(file_path), None, None) {
                 Err(e) => {
                     exit_status = 2;

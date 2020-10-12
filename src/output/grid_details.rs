@@ -19,7 +19,7 @@ use crate::output::tree::{TreeParams, TreeDepth};
 use crate::style::Colours;
 
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Options {
     pub grid: GridOptions,
     pub details: DetailsOptions,
@@ -33,7 +33,7 @@ pub struct Options {
 /// small directory of four files in four columns, the files just look spaced
 /// out and it’s harder to see what’s going on. So it can be enabled just for
 /// larger directory listings.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum RowThreshold {
 
     /// Only use grid-details view if it would result in at least this many

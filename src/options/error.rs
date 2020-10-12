@@ -2,30 +2,22 @@ use std::ffi::OsString;
 use std::fmt;
 use std::num::ParseIntError;
 
-use crate::options::{flags, HelpString, VersionString};
+use crate::options::flags;
 use crate::options::parser::{Arg, Flag, ParseError};
 
 
-/// A **misfire** is a thing that can happen instead of listing files — a
-/// catch-all for anything outside the program’s normal execution.
+/// Something wrong with the combination of options the user has picked.
 #[derive(PartialEq, Debug)]
-pub enum Misfire {
+pub enum OptionsError {
 
-    /// The getopts crate didn’t like these Arguments.
-    InvalidOptions(ParseError),
+    /// There was an error (from `getopts`) parsing the arguments.
+    Parse(ParseError),
 
     /// The user supplied an illegal choice to an Argument.
     BadArgument(&'static Arg, OsString),
 
     /// The user supplied a set of options
     Unsupported(String),
-
-    /// The user asked for help. This isn’t strictly an error, which is why
-    /// this enum isn’t named Error!
-    Help(HelpString),
-
-    /// The user wanted the version number.
-    Version(VersionString),
 
     /// An option was given twice or more in strict mode.
     Duplicate(Flag, Flag),
@@ -51,21 +43,13 @@ pub enum Misfire {
     FailedGlobPattern(String),
 }
 
-impl Misfire {
-
-    /// The OS return code this misfire should signify.
-    pub fn is_error(&self) -> bool {
-        ! matches!(self, Self::Help(_) | Self::Version(_))
-    }
-}
-
-impl From<glob::PatternError> for Misfire {
+impl From<glob::PatternError> for OptionsError {
     fn from(error: glob::PatternError) -> Self {
         Self::FailedGlobPattern(error.to_string())
     }
 }
 
-impl fmt::Display for Misfire {
+impl fmt::Display for OptionsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use crate::options::parser::TakesValue;
 
@@ -77,11 +61,9 @@ impl fmt::Display for Misfire {
                 else {
                     write!(f, "Option {} has no {:?} setting", arg, attempt)
                 }
-            },
-            Self::InvalidOptions(e)          => write!(f, "{}", e),
+            }
+            Self::Parse(e)                   => write!(f, "{}", e),
             Self::Unsupported(e)             => write!(f, "{}", e),
-            Self::Help(text)                 => write!(f, "{}", text),
-            Self::Version(version)           => write!(f, "{}", version),
             Self::Conflict(a, b)             => write!(f, "Option {} conflicts with option {}", a, b),
             Self::Duplicate(a, b) if a == b  => write!(f, "Flag {} was given twice", a),
             Self::Duplicate(a, b)            => write!(f, "Flag {} conflicts with flag {}", a, b),
@@ -95,19 +77,8 @@ impl fmt::Display for Misfire {
     }
 }
 
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::NeedsValue { flag, values: None }     => write!(f, "Flag {} needs a value", flag),
-            Self::NeedsValue { flag, values: Some(cs) } => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
-            Self::ForbiddenValue { flag }               => write!(f, "Flag {} cannot take a value", flag),
-            Self::UnknownShortArgument { attempt }      => write!(f, "Unknown argument -{}", *attempt as char),
-            Self::UnknownArgument { attempt }           => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
-        }
-    }
-}
+impl OptionsError {
 
-impl Misfire {
     /// Try to second-guess what the user was trying to do, depending on what
     /// went wrong.
     pub fn suggestion(&self) -> Option<&'static str> {
@@ -116,7 +87,7 @@ impl Misfire {
             Self::BadArgument(time, r) if *time == &flags::TIME && r == "r" => {
                 Some("To sort oldest files last, try \"--sort oldest\", or just \"-sold\"")
             }
-            Self::InvalidOptions(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') => {
+            Self::Parse(ParseError::NeedsValue { ref flag, .. }) if *flag == Flag::Short(b't') => {
                 Some("To sort newest files last, try \"--sort newest\", or just \"-snew\"")
             }
             _ => {
@@ -129,7 +100,7 @@ impl Misfire {
 
 /// A list of legal choices for an argument-taking option.
 #[derive(PartialEq, Debug)]
-pub struct Choices(&'static [&'static str]);
+pub struct Choices(pub &'static [&'static str]);
 
 impl fmt::Display for Choices {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

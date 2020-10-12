@@ -31,7 +31,7 @@
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 
-use crate::options::Misfire;
+use crate::options::error::{OptionsError, Choices};
 
 
 /// A **short argument** is a single ASCII character.
@@ -373,7 +373,7 @@ impl<'a> MatchedFlags<'a> {
     /// Whether the given argument was specified.
     /// Returns `true` if it was, `false` if it wasn’t, and an error in
     /// strict mode if it was specified more than once.
-    pub fn has(&self, arg: &'static Arg) -> Result<bool, Misfire> {
+    pub fn has(&self, arg: &'static Arg) -> Result<bool, OptionsError> {
         self.has_where(|flag| flag.matches(arg))
             .map(|flag| flag.is_some())
     }
@@ -383,7 +383,7 @@ impl<'a> MatchedFlags<'a> {
     /// argument satisfy the predicate.
     ///
     /// You’ll have to test the resulting flag to see which argument it was.
-    pub fn has_where<P>(&self, predicate: P) -> Result<Option<&Flag>, Misfire>
+    pub fn has_where<P>(&self, predicate: P) -> Result<Option<&Flag>, OptionsError>
     where P: Fn(&Flag) -> bool {
         if self.is_strict() {
             let all = self.flags.iter()
@@ -391,7 +391,7 @@ impl<'a> MatchedFlags<'a> {
                           .collect::<Vec<_>>();
 
             if all.len() < 2 { Ok(all.first().map(|t| &t.0)) }
-                        else { Err(Misfire::Duplicate(all[0].0, all[1].0)) }
+                        else { Err(OptionsError::Duplicate(all[0].0, all[1].0)) }
         }
         else {
             let any = self.flags.iter().rev()
@@ -408,7 +408,7 @@ impl<'a> MatchedFlags<'a> {
     /// Returns the value of the given argument if it was specified, nothing
     /// if it wasn’t, and an error in strict mode if it was specified more
     /// than once.
-    pub fn get(&self, arg: &'static Arg) -> Result<Option<&OsStr>, Misfire> {
+    pub fn get(&self, arg: &'static Arg) -> Result<Option<&OsStr>, OptionsError> {
         self.get_where(|flag| flag.matches(arg))
     }
 
@@ -417,7 +417,7 @@ impl<'a> MatchedFlags<'a> {
     /// multiple arguments matched the predicate.
     ///
     /// It’s not possible to tell which flag the value belonged to from this.
-    pub fn get_where<P>(&self, predicate: P) -> Result<Option<&OsStr>, Misfire>
+    pub fn get_where<P>(&self, predicate: P) -> Result<Option<&OsStr>, OptionsError>
     where P: Fn(&Flag) -> bool {
         if self.is_strict() {
             let those = self.flags.iter()
@@ -425,7 +425,7 @@ impl<'a> MatchedFlags<'a> {
                             .collect::<Vec<_>>();
 
             if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
-                          else { Err(Misfire::Duplicate(those[0].0, those[1].0)) }
+                          else { Err(OptionsError::Duplicate(those[0].0, those[1].0)) }
         }
         else {
             let found = self.flags.iter().rev()
@@ -475,10 +475,17 @@ pub enum ParseError {
     UnknownArgument { attempt: OsString },
 }
 
-// It’s technically possible for ParseError::UnknownArgument to borrow its
-// OsStr rather than owning it, but that would give ParseError a lifetime,
-// which would give Misfire a lifetime, which gets used everywhere. And this
-// only happens when an error occurs, so it’s not really worth it.
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::NeedsValue { flag, values: None }      => write!(f, "Flag {} needs a value", flag),
+            Self::NeedsValue { flag, values: Some(cs) }  => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),
+            Self::ForbiddenValue { flag }                => write!(f, "Flag {} cannot take a value", flag),
+            Self::UnknownShortArgument { attempt }       => write!(f, "Unknown argument -{}", *attempt as char),
+            Self::UnknownArgument { attempt }            => write!(f, "Unknown argument --{}", attempt.to_string_lossy()),
+        }
+    }
+}
 
 
 /// Splits a string on its `=` character, returning the two substrings on

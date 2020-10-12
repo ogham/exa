@@ -1,14 +1,13 @@
 use std::cmp::max;
 use std::env;
-use std::fmt;
 use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
+use lazy_static::lazy_static;
 use log::*;
-
 use users::UsersCache;
 
 use crate::fs::{File, fields as f};
@@ -20,19 +19,11 @@ use crate::style::Colours;
 
 
 /// Options for displaying a table.
+#[derive(PartialEq, Debug)]
 pub struct Options {
-    pub env: Environment,
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
     pub columns: Columns,
-}
-
-// I had to make other types derive Debug,
-// and Mutex<UsersCache> is not that!
-impl fmt::Debug for Options {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Table({:#?})", self.columns)
-    }
 }
 
 /// Extra columns to display in the table.
@@ -278,7 +269,7 @@ impl Environment {
         self.users.lock().unwrap()
     }
 
-    pub fn load_all() -> Self {
+    fn load_all() -> Self {
         let tz = match determine_time_zone() {
             Ok(t) => {
                 Some(t)
@@ -307,6 +298,10 @@ fn determine_time_zone() -> TZResult<TimeZone> {
     }
 }
 
+lazy_static! {
+    static ref ENVIRONMENT: Environment = Environment::load_all();
+}
+
 
 pub struct Table<'a> {
     columns: Vec<Column>,
@@ -327,13 +322,14 @@ impl<'a, 'f> Table<'a> {
     pub fn new(options: &'a Options, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
         let columns = options.columns.collect(git.is_some());
         let widths = TableWidths::zero(columns.len());
+        let env = &*ENVIRONMENT;
 
         Table {
             colours,
             widths,
             columns,
             git,
-            env:         &options.env,
+            env,
             time_format: &options.time_format,
             size_format:  options.size_format,
         }

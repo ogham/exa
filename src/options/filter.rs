@@ -3,14 +3,14 @@
 use crate::fs::DotFilter;
 use crate::fs::filter::{FileFilter, SortField, SortCase, IgnorePatterns, GitIgnore};
 
-use crate::options::{flags, Misfire};
+use crate::options::{flags, OptionsError};
 use crate::options::parser::MatchedFlags;
 
 
 impl FileFilter {
 
     /// Determines which of all the file filter options to use.
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         Ok(Self {
             list_dirs_first:  matches.has(&flags::DIRS_FIRST)?,
             reverse:          matches.has(&flags::REVERSE)?,
@@ -29,7 +29,7 @@ impl SortField {
     /// This argument’s value can be one of several flags, listed above.
     /// Returns the default sort field if none is given, or `Err` if the
     /// value doesn’t correspond to a sort field we know about.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let word = match matches.get(&flags::SORT)? {
             Some(w)  => w,
             None     => return Ok(Self::default()),
@@ -38,7 +38,7 @@ impl SortField {
         // Get String because we can’t match an OsStr
         let word = match word.to_str() {
             Some(w)  => w,
-            None     => return Err(Misfire::BadArgument(&flags::SORT, word.into()))
+            None     => return Err(OptionsError::BadArgument(&flags::SORT, word.into()))
         };
 
         let field = match word {
@@ -98,7 +98,7 @@ impl SortField {
                 Self::Unsorted
             }
             _ => {
-                return Err(Misfire::BadArgument(&flags::SORT, word.into()));
+                return Err(OptionsError::BadArgument(&flags::SORT, word.into()));
             }
         };
 
@@ -153,7 +153,7 @@ impl DotFilter {
     /// It also checks for the `--tree` option in strict mode, because of a
     /// special case where `--tree --all --all` won’t work: listing the
     /// parent directory in tree mode would loop onto itself!
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let count = matches.count(&flags::ALL);
 
         if count == 0 {
@@ -163,10 +163,10 @@ impl DotFilter {
             Ok(Self::Dotfiles)
         }
         else if matches.count(&flags::TREE) > 0 {
-            Err(Misfire::TreeAllAll)
+            Err(OptionsError::TreeAllAll)
         }
         else if count >= 3 && matches.is_strict() {
-            Err(Misfire::Conflict(&flags::ALL, &flags::ALL))
+            Err(OptionsError::Conflict(&flags::ALL, &flags::ALL))
         }
         else {
             Ok(Self::DotfilesAndDots)
@@ -180,7 +180,7 @@ impl IgnorePatterns {
     /// Determines the set of glob patterns to use based on the
     /// `--ignore-glob` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
 
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
@@ -204,7 +204,7 @@ impl IgnorePatterns {
 
 
 impl GitIgnore {
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         if matches.has(&flags::GIT_IGNORE)? {
             Ok(Self::CheckAndIgnore)
         }
@@ -260,13 +260,13 @@ mod test {
         test!(mix_hidden_uppercase:     SortField <- ["--sort", ".Name"];  Both => Ok(SortField::NameMixHidden(SortCase::ABCabc)));
 
         // Errors
-        test!(error:         SortField <- ["--sort=colour"];   Both => Err(Misfire::BadArgument(&flags::SORT, OsString::from("colour"))));
+        test!(error:         SortField <- ["--sort=colour"];   Both => Err(OptionsError::BadArgument(&flags::SORT, OsString::from("colour"))));
 
         // Overriding
         test!(overridden:    SortField <- ["--sort=cr",       "--sort", "mod"];     Last => Ok(SortField::ModifiedDate));
         test!(overridden_2:  SortField <- ["--sort", "none",  "--sort=Extension"];  Last => Ok(SortField::Extension(SortCase::ABCabc)));
-        test!(overridden_3:  SortField <- ["--sort=cr",       "--sort", "mod"];     Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
-        test!(overridden_4:  SortField <- ["--sort", "none",  "--sort=Extension"];  Complain => Err(Misfire::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
+        test!(overridden_3:  SortField <- ["--sort=cr",       "--sort", "mod"];     Complain => Err(OptionsError::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
+        test!(overridden_4:  SortField <- ["--sort", "none",  "--sort=Extension"];  Complain => Err(OptionsError::Duplicate(Flag::Long("sort"), Flag::Long("sort"))));
     }
 
 
@@ -282,12 +282,12 @@ mod test {
         test!(all_all_2:  DotFilter <- ["-aa"];          Both => Ok(DotFilter::DotfilesAndDots));
 
         test!(all_all_3:  DotFilter <- ["-aaa"];         Last => Ok(DotFilter::DotfilesAndDots));
-        test!(all_all_4:  DotFilter <- ["-aaa"];         Complain => Err(Misfire::Conflict(&flags::ALL, &flags::ALL)));
+        test!(all_all_4:  DotFilter <- ["-aaa"];         Complain => Err(OptionsError::Conflict(&flags::ALL, &flags::ALL)));
 
         // --all and --tree
         test!(tree_a:     DotFilter <- ["-Ta"];          Both => Ok(DotFilter::Dotfiles));
-        test!(tree_aa:    DotFilter <- ["-Taa"];         Both => Err(Misfire::TreeAllAll));
-        test!(tree_aaa:   DotFilter <- ["-Taaa"];        Both => Err(Misfire::TreeAllAll));
+        test!(tree_aa:    DotFilter <- ["-Taa"];         Both => Err(OptionsError::TreeAllAll));
+        test!(tree_aaa:   DotFilter <- ["-Taaa"];        Both => Err(OptionsError::TreeAllAll));
     }
 
 
@@ -309,8 +309,8 @@ mod test {
         // Overriding
         test!(overridden:   IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.mp3") ])));
         test!(overridden_2: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.MP3") ])));
-        test!(overridden_3: IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
-        test!(overridden_4: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Complain => Err(Misfire::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
+        test!(overridden_3: IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Complain => Err(OptionsError::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
+        test!(overridden_4: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Complain => Err(OptionsError::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
     }
 
 
