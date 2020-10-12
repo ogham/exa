@@ -1,6 +1,6 @@
 //! The grid-details view lists several details views side-by-side.
 
-use std::io::{Write, Result as IOResult};
+use std::io::{self, Write};
 
 use ansi_term::{ANSIGenericString, ANSIStrings};
 use term_grid as grid;
@@ -119,7 +119,7 @@ impl<'a> Render<'a> {
     // This doesn’t take an IgnoreCache even though the details one does
     // because grid-details has no tree view.
 
-    pub fn render<W: Write>(self, git: Option<&GitCache>, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, git: Option<&GitCache>, w: &mut W) -> io::Result<()> {
         if let Some((grid, width)) = self.find_fitting_grid(git) {
             write!(w, "{}", grid.fit_into_columns(width))
         }

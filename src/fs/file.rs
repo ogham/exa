@@ -1,7 +1,6 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::io::Error as IOError;
-use std::io::Result as IOResult;
+use std::io;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -67,7 +66,7 @@ pub struct File<'dir> {
 }
 
 impl<'dir> File<'dir> {
-    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> io::Result<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -82,7 +81,7 @@ impl<'dir> File<'dir> {
         Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
     }
 
-    pub fn new_aa_current(parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+    pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
         let path       = parent_dir.path.to_path_buf();
         let ext        = File::ext(&path);
 
@@ -94,7 +93,7 @@ impl<'dir> File<'dir> {
         Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
     }
 
-    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
@@ -162,7 +161,7 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn’t be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self) -> IOResult<Dir> {
+    pub fn to_dir(&self) -> io::Result<Dir> {
         Dir::read_dir(self.path.clone())
     }
 
@@ -459,10 +458,10 @@ pub enum FileTarget<'dir> {
     /// There was an IO error when following the link. This can happen if the
     /// file isn’t a link to begin with, but also if, say, we don’t have
     /// permission to follow it.
-    Err(IOError),
+    Err(io::Error),
 
     // Err is its own variant, instead of having the whole thing be inside an
-    // `IOResult`, because being unable to follow a symlink is not a serious
+    // `io::Result`, because being unable to follow a symlink is not a serious
     // error — we just display the error message and move on.
 }
 

@@ -1,4 +1,4 @@
-use std::io::{Write, Result as IOResult};
+use std::io::{self, Write};
 
 use ansi_term::{ANSIStrings, ANSIGenericString};
 
@@ -23,7 +23,7 @@ pub struct Render<'a> {
 }
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(&self, w: &mut W) -> io::Result<()> {
         for file in &self.files {
             let name_cell = self.render_file(file).paint();
             if self.opts.icons {

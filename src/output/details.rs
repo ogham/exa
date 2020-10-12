@@ -60,7 +60,7 @@
 //! can be displayed, in order to make sure that every column is wide enough.
 
 
-use std::io::{Write, Error as IOError, Result as IOResult};
+use std::io::{self, Write};
 use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
@@ -135,7 +135,7 @@ pub struct Render<'a> {
 struct Egg<'a> {
     table_row: Option<TableRow>,
     xattrs:    Vec<Attribute>,
-    errors:    Vec<(IOError, Option<PathBuf>)>,
+    errors:    Vec<(io::Error, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
     icon:      Option<String>,
@@ -149,7 +149,7 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> io::Result<()> {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
@@ -357,7 +357,7 @@ impl<'a> Render<'a> {
         }
     }
 
-    fn render_error(&self, error: &IOError, tree: TreeParams, path: Option<PathBuf>) -> Row {
+    fn render_error(&self, error: &io::Error, tree: TreeParams, path: Option<PathBuf>) -> Row {
         use crate::output::file_name::Colours;
 
         let error_message = match path {

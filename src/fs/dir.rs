@@ -1,6 +1,6 @@
 use crate::fs::feature::git::GitCache;
 use crate::fs::fields::GitStatus;
-use std::io::{self, Result as IOResult};
+use std::io;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
@@ -35,7 +35,7 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf) -> IOResult<Self> {
+    pub fn read_dir(path: PathBuf) -> io::Result<Self> {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?

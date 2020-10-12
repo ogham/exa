@@ -12,7 +12,7 @@
 
 extern crate datetime;
 use std::env;
-use std::io::Result as IOResult;
+use std::io;
 
 
 fn git_hash() -> String {
@@ -46,7 +46,7 @@ fn build_date() -> String {
     format!("{}", now.date().iso())
 }
 
-fn write_statics() -> IOResult<()> {
+fn write_statics() -> io::Result<()> {
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;

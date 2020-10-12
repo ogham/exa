@@ -1,4 +1,4 @@
-use std::io::{Write, Result as IOResult};
+use std::io::{self, Write};
 
 use term_grid as tg;
 
@@ -32,7 +32,7 @@ pub struct Render<'a> {
 }
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(&self, w: &mut W) -> io::Result<()> {
         let mut grid = tg::Grid::new(tg::GridOptions {
             direction:  self.opts.direction(),
             filling:    tg::Filling::Spaces(2),

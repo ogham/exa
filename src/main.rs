@@ -3,7 +3,7 @@
 
 use std::env;
 use std::ffi::{OsStr, OsString};
-use std::io::{stdout, Stdout, stderr, Write, Result as IOResult, ErrorKind};
+use std::io::{self, Write, ErrorKind};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
@@ -40,7 +40,7 @@ fn main() {
             }
 
             let git = git_options(&options, &input_paths);
-            let writer = stdout();
+            let writer = io::stdout();
             let exa = Exa { options, writer, input_paths, git };
 
             match exa.run() {
@@ -88,7 +88,7 @@ pub struct Exa<'args> {
     pub options: Options,
 
     /// The output handle that we write to.
-    pub writer: Stdout,
+    pub writer: io::Stdout,
 
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
@@ -122,7 +122,7 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 impl<'args> Exa<'args> {
-    pub fn run(mut self) -> IOResult<i32> {
+    pub fn run(mut self) -> io::Result<i32> {
         debug!("Running with options: {:#?}", self.options);
 
         let mut files = Vec::new();
@@ -133,14 +133,14 @@ impl<'args> Exa<'args> {
             match File::from_args(PathBuf::from(file_path), None, None) {
                 Err(e) => {
                     exit_status = 2;
-                    writeln!(stderr(), "{:?}: {}", file_path, e)?;
+                    writeln!(io::stderr(), "{:?}: {}", file_path, e)?;
                 }
 
                 Ok(f) => {
                     if f.points_to_directory() && ! self.options.dir_action.treat_dirs_as_files() {
                         match f.to_dir() {
                             Ok(d)   => dirs.push(d),
-                            Err(e)  => writeln!(stderr(), "{:?}: {}", file_path, e)?,
+                            Err(e)  => writeln!(io::stderr(), "{:?}: {}", file_path, e)?,
                         }
                     }
                     else {
@@ -163,7 +163,7 @@ impl<'args> Exa<'args> {
         self.print_dirs(dirs, no_files, is_only_dir, exit_status)
     }
 
-    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32) -> IOResult<i32> {
+    fn print_dirs(&mut self, dir_files: Vec<Dir>, mut first: bool, is_only_dir: bool, exit_status: i32) -> io::Result<i32> {
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and
@@ -185,8 +185,8 @@ impl<'args> Exa<'args> {
             let git_ignore = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
             for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore) {
                 match file {
-                    Ok(file)       => children.push(file),
-                    Err((path, e)) => writeln!(stderr(), "[{}: {}]", path.display(), e)?,
+                    Ok(file)        => children.push(file),
+                    Err((path, e))  => writeln!(io::stderr(), "[{}: {}]", path.display(), e)?,
                 }
             };
 
@@ -200,15 +200,15 @@ impl<'args> Exa<'args> {
                     let mut child_dirs = Vec::new();
                     for child_dir in children.iter().filter(|f| f.is_directory() && ! f.is_all_all) {
                         match child_dir.to_dir() {
-                            Ok(d)  => child_dirs.push(d),
-                            Err(e) => writeln!(stderr(), "{}: {}", child_dir.path.display(), e)?,
+                            Ok(d)   => child_dirs.push(d),
+                            Err(e)  => writeln!(io::stderr(), "{}: {}", child_dir.path.display(), e)?,
                         }
                     }
 
                     self.print_files(Some(&dir), children)?;
                     match self.print_dirs(child_dirs, false, false, exit_status) {
-                        Ok(_) => (),
-                        Err(e) => return Err(e),
+                        Ok(_)   => (),
+                        Err(e)  => return Err(e),
                     }
                     continue;
                 }
@@ -223,7 +223,7 @@ impl<'args> Exa<'args> {
     /// Prints the list of files using whichever view is selected.
     /// For various annoying logistical reasons, each one handles
     /// printing differently...
-    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> IOResult<()> {
+    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> io::Result<()> {
         if files.is_empty() {
             return Ok(());
         }
