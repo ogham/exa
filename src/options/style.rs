@@ -37,7 +37,7 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w)  => w,
             None     => return Ok(Self::default()),
@@ -77,7 +77,7 @@ pub struct Styles {
 impl Styles {
 
     #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
-    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, OptionsError>
+    pub fn deduce<V, TW>(matches: &MatchedFlags<'_>, vars: &V, widther: TW) -> Result<Self, OptionsError>
     where TW: Fn() -> Option<usize>, V: Vars {
         use crate::info::filetype::FileExtensions;
         use crate::output::file_name::NoFileColours;
@@ -185,7 +185,7 @@ struct ExtensionMappings {
 
 use crate::output::file_name::FileColours;
 impl FileColours for ExtensionMappings {
-    fn colour_file(&self, file: &File) -> Option<Style> {
+    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
         self.mappings.iter().rev()
             .find(|t| t.0.matches(&file.name))
             .map (|t| t.1)
@@ -204,7 +204,7 @@ impl ExtensionMappings {
 
 
 impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
         if flagged { Ok(Self::AddFileIndicators) }

@@ -50,7 +50,7 @@ impl From<glob::PatternError> for OptionsError {
 }
 
 impl fmt::Display for OptionsError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use crate::options::parser::TakesValue;
 
         match self {
@@ -103,7 +103,7 @@ impl OptionsError {
 pub struct Choices(pub &'static [&'static str]);
 
 impl fmt::Display for Choices {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "choices: {}", self.0.join(", "))
     }
 }

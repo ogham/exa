@@ -68,7 +68,7 @@ impl Flag {
 }
 
 impl fmt::Display for Flag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
             Self::Short(short)  => write!(f, "-{}", *short as char),
             Self::Long(long)    => write!(f, "--{}", long),
@@ -123,7 +123,7 @@ pub struct Arg {
 }
 
 impl fmt::Display for Arg {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "--{}", self.long)?;
 
         if let Some(short) = self.short {
@@ -476,7 +476,7 @@ pub enum ParseError {
 }
 
 impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::NeedsValue { flag, values: None }      => write!(f, "Flag {} needs a value", flag),
             Self::NeedsValue { flag, values: Some(cs) }  => write!(f, "Flag {} needs a value ({})", flag, Choices(cs)),

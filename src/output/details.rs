@@ -276,7 +276,7 @@ impl<'a> Render<'a> {
         });
 
         // this is safe because all entries have been initialized above
-        let mut file_eggs = unsafe { std::mem::transmute::<_, Vec<Egg>>(file_eggs) };
+        let mut file_eggs = unsafe { std::mem::transmute::<_, Vec<Egg<'_>>>(file_eggs) };
         self.filter.sort_files(&mut file_eggs);
 
         for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {

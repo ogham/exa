@@ -91,7 +91,7 @@ pub struct FileFilter {
 impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
-    pub fn filter_child_files(&self, files: &mut Vec<File>) {
+    pub fn filter_child_files(&self, files: &mut Vec<File<'_>>) {
         files.retain(|f| ! self.ignore_patterns.is_ignored(&f.name));
 
         if self.only_dirs {
@@ -108,7 +108,7 @@ impl FileFilter {
     /// dotfile, because it’s been directly specified. But running
     /// `exa -I='*.ogg' music/*` should filter out the ogg files obtained
     /// from the glob, even though the globbing is done by the shell!
-    pub fn filter_argument_files(&self, files: &mut Vec<File>) {
+    pub fn filter_argument_files(&self, files: &mut Vec<File<'_>>) {
         files.retain(|f| {
             ! self.ignore_patterns.is_ignored(&f.name)
         });
@@ -240,7 +240,7 @@ impl SortField {
     /// into groups between letters and numbers, and then sorts those blocks
     /// together, so `file10` will sort after `file9`, instead of before it
     /// because of the `1`.
-    pub fn compare_files(self, a: &File, b: &File) -> Ordering {
+    pub fn compare_files(self, a: &File<'_>, b: &File<'_>) -> Ordering {
         use self::SortCase::{ABCabc, AaBbCc};
 
         match self {

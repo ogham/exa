@@ -265,7 +265,7 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn lock_users(&self) -> MutexGuard<UsersCache> {
+    pub fn lock_users(&self) -> MutexGuard<'_, UsersCache> {
         self.users.lock().unwrap()
     }
 
@@ -347,7 +347,7 @@ impl<'a, 'f> Table<'a> {
         Row { cells }
     }
 
-    pub fn row_for_file(&self, file: &File, xattrs: bool) -> Row {
+    pub fn row_for_file(&self, file: &File<'_>, xattrs: bool) -> Row {
         let cells = self.columns.iter()
                         .map(|c| self.display(file, *c, xattrs))
                         .collect();
@@ -359,7 +359,7 @@ impl<'a, 'f> Table<'a> {
         self.widths.add_widths(row)
     }
 
-    fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
+    fn permissions_plus(&self, file: &File<'_>, xattrs: bool) -> f::PermissionsPlus {
         f::PermissionsPlus {
             file_type: file.type_char(),
             permissions: file.permissions(),
@@ -367,13 +367,13 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
-    fn octal_permissions(&self, file: &File) -> f::OctalPermissions {
+    fn octal_permissions(&self, file: &File<'_>) -> f::OctalPermissions {
         f::OctalPermissions {
             permissions: file.permissions(),
         }
     }
 
-    fn display(&self, file: &File, column: Column, xattrs: bool) -> TextCell {
+    fn display(&self, file: &File<'_>, column: Column, xattrs: bool) -> TextCell {
         match column {
             Column::Permissions => {
                 self.permissions_plus(file, xattrs).render(self.colours)
@@ -418,7 +418,7 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
-    fn git_status(&self, file: &File) -> f::Git {
+    fn git_status(&self, file: &File<'_>) -> f::Git {
         debug!("Getting Git status for file {:?}", file.path);
 
         self.git

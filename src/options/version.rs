@@ -19,7 +19,7 @@ impl VersionString {
     /// ‘deduce’ functions, returning Err if help needs to be shown.
     ///
     /// Like --help, this doesn’t check for errors.
-    pub fn deduce(matches: &MatchedFlags) -> Option<Self> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Option<Self> {
         if matches.count(&flags::VERSION) > 0 {
             Some(Self)
         }
@@ -30,7 +30,7 @@ impl VersionString {
 }
 
 impl fmt::Display for VersionString {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
     }
 }

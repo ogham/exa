@@ -12,7 +12,7 @@ use crate::output::time::TimeFormat;
 impl View {
 
     /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, OptionsError> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         use crate::options::style::Styles;
 
         let mode = Mode::deduce(matches, vars)?;
@@ -25,7 +25,7 @@ impl View {
 impl Mode {
 
     /// Determine the mode from the command-line arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, OptionsError> {
+    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let long = || {
             if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
                 Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG))
@@ -207,7 +207,7 @@ impl RowThreshold {
 
 
 impl TableOptions {
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, OptionsError> {
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
         let columns = Columns::deduce(matches)?;
@@ -217,7 +217,7 @@ impl TableOptions {
 
 
 impl Columns {
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
         let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
 
@@ -246,7 +246,7 @@ impl SizeFormat {
     /// strings of digits in your head. Changing the format to anything else
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let flag = matches.has_where(|f| f.matches(&flags::BINARY) || f.matches(&flags::BYTES))?;
 
         Ok(match flag {
@@ -261,7 +261,7 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, OptionsError> {
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let word = match matches.get(&flags::TIME_STYLE)? {
             Some(w) => {
                 w.to_os_string()
@@ -306,7 +306,7 @@ impl TimeTypes {
     /// It’s valid to show more than one column by passing in more than one
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let possible_word = matches.get(&flags::TIME)?;
         let modified = matches.has(&flags::MODIFIED)?;
         let changed  = matches.has(&flags::CHANGED)?;

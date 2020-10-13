@@ -19,7 +19,7 @@ impl FileExtensions {
     /// An “immediate” file is something that can be run or activated somehow
     /// in order to kick off the build of a project. It’s usually only present
     /// in directories full of source code.
-    fn is_immediate(&self, file: &File) -> bool {
+    fn is_immediate(&self, file: &File<'_>) -> bool {
         file.name.to_lowercase().starts_with("readme") ||
         file.name.ends_with(".ninja") ||
         file.name_is_one_of( &[
@@ -30,7 +30,7 @@ impl FileExtensions {
         ])
     }
 
-    fn is_image(&self, file: &File) -> bool {
+    fn is_image(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
@@ -39,33 +39,33 @@ impl FileExtensions {
         ])
     }
 
-    fn is_video(&self, file: &File) -> bool {
+    fn is_video(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "avi", "flv", "m2v", "m4v", "mkv", "mov", "mp4", "mpeg",
             "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts",
         ])
     }
 
-    fn is_music(&self, file: &File) -> bool {
+    fn is_music(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "aac", "m4a", "mp3", "ogg", "wma", "mka", "opus",
         ])
     }
 
     // Lossless music, rather than any other kind of data...
-    fn is_lossless(&self, file: &File) -> bool {
+    fn is_lossless(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "alac", "ape", "flac", "wav",
         ])
     }
 
-    fn is_crypto(&self, file: &File) -> bool {
+    fn is_crypto(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "asc", "enc", "gpg", "pgp", "sig", "signature", "pfx", "p12",
         ])
     }
 
-    fn is_document(&self, file: &File) -> bool {
+    fn is_document(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd", "key",
             "keynote", "numbers", "odp", "odt", "pages", "pdf", "ppt",
@@ -73,7 +73,7 @@ impl FileExtensions {
         ])
     }
 
-    fn is_compressed(&self, file: &File) -> bool {
+    fn is_compressed(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
@@ -81,13 +81,13 @@ impl FileExtensions {
         ])
     }
 
-    fn is_temp(&self, file: &File) -> bool {
+    fn is_temp(&self, file: &File<'_>) -> bool {
         file.name.ends_with('~')
             || (file.name.starts_with('#') && file.name.ends_with('#'))
             || file.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak", "bk" ])
     }
 
-    fn is_compiled(&self, file: &File) -> bool {
+    fn is_compiled(&self, file: &File<'_>) -> bool {
         if file.extension_is_one_of( &[ "class", "elc", "hi", "o", "pyc", "zwc", "ko" ]) {
             true
         }
@@ -101,7 +101,7 @@ impl FileExtensions {
 }
 
 impl FileColours for FileExtensions {
-    fn colour_file(&self, file: &File) -> Option<Style> {
+    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
         use ansi_term::Colour::*;
 
         Some(match file {
@@ -121,7 +121,7 @@ impl FileColours for FileExtensions {
 }
 
 impl FileIcon for FileExtensions {
-    fn icon_file(&self, file: &File) -> Option<char> {
+    fn icon_file(&self, file: &File<'_>) -> Option<char> {
         use crate::output::icons::Icons;
 
         if self.is_music(file) || self.is_lossless(file) {

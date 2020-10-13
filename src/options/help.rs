@@ -86,7 +86,7 @@ impl HelpString {
     /// We don’t do any strict-mode error checking here: it’s OK to give
     /// the --help or --long flags more than once. Actually checking for
     /// errors when the user wants help is kind of petty!
-    pub fn deduce(matches: &MatchedFlags) -> Option<Self> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Option<Self> {
         if matches.count(&flags::HELP) > 0 {
             let only_long = matches.count(&flags::LONG) > 0;
             let git       = cfg!(feature="git");
@@ -103,7 +103,7 @@ impl fmt::Display for HelpString {
 
     /// Format this help options into an actual string of help
     /// text to be displayed to the user.
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         writeln!(f, "Usage:\n  exa [options] [files...]")?;
 
         if ! self.only_long {

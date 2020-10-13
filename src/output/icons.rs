@@ -6,7 +6,7 @@ use crate::output::file_name::FileStyle;
 
 
 pub trait FileIcon {
-    fn icon_file(&self, file: &File) -> Option<char>;
+    fn icon_file(&self, file: &File<'_>) -> Option<char>;
 }
 
 
@@ -28,7 +28,7 @@ impl Icons {
 }
 
 
-pub fn painted_icon(file: &File, style: &FileStyle) -> String {
+pub fn painted_icon(file: &File<'_>, style: &FileStyle) -> String {
     let file_icon = icon(file).to_string();
     let painted = style.exts
         .colour_file(file)
@@ -53,7 +53,7 @@ pub fn painted_icon(file: &File, style: &FileStyle) -> String {
 }
 
 
-fn icon(file: &File) -> char {
+fn icon(file: &File<'_>) -> char {
     let extensions = Box::new(FileExtensions);
 
     if file.points_to_directory() {

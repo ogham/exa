@@ -76,7 +76,7 @@ impl Default for Classify {
 
 /// A **file name** holds all the information necessary to display the name
 /// of the given file. This is used in all of the views.
-pub struct FileName<'a,  'dir: 'a,  C: Colours+'a> {
+pub struct FileName<'a, 'dir,  C: Colours> {
 
     /// A reference to the file that we’re getting the name of.
     file: &'a File<'dir>,
@@ -191,7 +191,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
     /// Adds the bits of the parent path to the given bits vector.
     /// The path gets its characters escaped based on the colours.
-    fn add_parent_bits(&self, bits: &mut Vec<ANSIString>, parent: &Path) {
+    fn add_parent_bits(&self, bits: &mut Vec<ANSIString<'_>>, parent: &Path) {
         let coconut = parent.components().count();
 
         if coconut == 1 && parent.has_root() {
@@ -324,14 +324,14 @@ pub trait Colours: FiletypeColours {
 
 // needs Debug because FileStyle derives it
 pub trait FileColours: Debug + Sync {
-    fn colour_file(&self, file: &File) -> Option<Style>;
+    fn colour_file(&self, file: &File<'_>) -> Option<Style>;
 }
 
 
 #[derive(PartialEq, Debug)]
 pub struct NoFileColours;
 impl FileColours for NoFileColours {
-    fn colour_file(&self, _file: &File) -> Option<Style> {
+    fn colour_file(&self, _file: &File<'_>) -> Option<Style> {
         None
     }
 }
@@ -344,7 +344,7 @@ impl<A, B> FileColours for (A, B)
 where A: FileColours,
       B: FileColours,
 {
-    fn colour_file(&self, file: &File) -> Option<Style> {
+    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
         self.0.colour_file(file)
             .or_else(|| self.1.colour_file(file))
     }

@@ -268,7 +268,7 @@ impl Colours {
     /// Sets a value on this set of colours using one of the keys understood
     /// by the `LS_COLORS` environment variable. Invalid keys set nothing, but
     /// return false.
-    pub fn set_ls(&mut self, pair: &Pair) -> bool {
+    pub fn set_ls(&mut self, pair: &Pair<'_>) -> bool {
         match pair.key {
             "di" => self.filekinds.directory    = pair.to_style(),  // DIR
             "ex" => self.filekinds.executable   = pair.to_style(),  // EXEC
@@ -291,7 +291,7 @@ impl Colours {
     /// by the `EXA_COLORS` environment variable. Invalid keys set nothing,
     /// but return false. This doesn’t take the `LS_COLORS` keys into account,
     /// so `set_ls` should have been run first.
-    pub fn set_exa(&mut self, pair: &Pair) -> bool {
+    pub fn set_exa(&mut self, pair: &Pair<'_>) -> bool {
         match pair.key {
             "ur" => self.perms.user_read          = pair.to_style(),
             "uw" => self.perms.user_write         = pair.to_style(),

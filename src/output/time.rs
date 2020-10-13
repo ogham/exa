@@ -25,7 +25,7 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// Currently exa does not support *custom* styles, where the user enters a
 /// format string in an environment variable or something. Just these four.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeFormat {
 
     /// The **default format** uses the user’s locale to print month names,

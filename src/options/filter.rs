@@ -10,7 +10,7 @@ use crate::options::parser::MatchedFlags;
 impl FileFilter {
 
     /// Determines which of all the file filter options to use.
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         Ok(Self {
             list_dirs_first:  matches.has(&flags::DIRS_FIRST)?,
             reverse:          matches.has(&flags::REVERSE)?,
@@ -29,7 +29,7 @@ impl SortField {
     /// This argument’s value can be one of several flags, listed above.
     /// Returns the default sort field if none is given, or `Err` if the
     /// value doesn’t correspond to a sort field we know about.
-    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let word = match matches.get(&flags::SORT)? {
             Some(w)  => w,
             None     => return Ok(Self::default()),
@@ -153,7 +153,7 @@ impl DotFilter {
     /// It also checks for the `--tree` option in strict mode, because of a
     /// special case where `--tree --all --all` won’t work: listing the
     /// parent directory in tree mode would loop onto itself!
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let count = matches.count(&flags::ALL);
 
         if count == 0 {
@@ -180,7 +180,7 @@ impl IgnorePatterns {
     /// Determines the set of glob patterns to use based on the
     /// `--ignore-glob` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
 
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
@@ -204,7 +204,7 @@ impl IgnorePatterns {
 
 
 impl GitIgnore {
-    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         if matches.has(&flags::GIT_IGNORE)? {
             Ok(Self::CheckAndIgnore)
         }

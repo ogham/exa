@@ -1,5 +1,10 @@
+#![warn(deprecated_in_future)]
+#![warn(future_incompatible)]
+#![warn(nonstandard_style)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 #![warn(trivial_casts, trivial_numeric_casts)]
-#![warn(unused_results)]
+#![warn(unused)]
 
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -223,7 +228,7 @@ impl<'args> Exa<'args> {
     /// Prints the list of files using whichever view is selected.
     /// For various annoying logistical reasons, each one handles
     /// printing differently...
-    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File>) -> io::Result<()> {
+    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File<'_>>) -> io::Result<()> {
         if files.is_empty() {
             return Ok(());
         }

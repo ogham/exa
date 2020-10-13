@@ -190,7 +190,7 @@ impl<'a> Render<'a> {
         None
     }
 
-    fn make_table(&mut self, options: &'a TableOptions, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+    fn make_table(&mut self, options: &'a TableOptions, drender: &DetailsRender<'_>) -> (Table<'a>, Vec<DetailsRow>) {
         match (self.git, self.dir) {
             (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { self.git = None },
             (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { self.git = None },
@@ -209,7 +209,7 @@ impl<'a> Render<'a> {
         (table, rows)
     }
 
-    fn make_grid(&mut self, column_count: usize, options: &'a TableOptions, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
+    fn make_grid(&mut self, column_count: usize, options: &'a TableOptions, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender<'_>) -> grid::Grid {
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
             tables.push(self.make_table(options, drender));
@@ -294,7 +294,7 @@ fn divide_rounding_up(a: usize, b: usize) -> usize {
 }
 
 
-fn file_has_xattrs(file: &File) -> bool {
+fn file_has_xattrs(file: &File<'_>) -> bool {
     match file.path.attributes() {
         Ok(attrs)  => ! attrs.is_empty(),
         Err(_)     => false,

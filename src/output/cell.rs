@@ -157,7 +157,7 @@ impl TextCellContents {
 
     /// Produces an `ANSIStrings` value that can be used to print the styled
     /// values of this cell as an ANSI-terminal-formatted string.
-    pub fn strings(&self) -> ANSIStrings {
+    pub fn strings(&self) -> ANSIStrings<'_> {
         ANSIStrings(&self.0)
     }
 
