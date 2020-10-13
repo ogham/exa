@@ -42,3 +42,18 @@ all-release: build-release test-release
 @versions:
     rustc --version
     cargo --version
+
+
+# builds the man pages
+@man:
+    mkdir -p "${CARGO_TARGET_DIR:-target}/man"
+    pandoc --standalone -f markdown -t man man/exa.1.md        > "${CARGO_TARGET_DIR:-target}/man/exa.1"
+    pandoc --standalone -f markdown -t man man/exa_colors.5.md > "${CARGO_TARGET_DIR:-target}/man/exa_colors.5"
+
+# builds and previews the main man page (exa.1)
+@man-1-preview: man
+    man "${CARGO_TARGET_DIR:-target}/man/exa.1"
+
+# builds and previews the colour configuration man page (exa_colors.5)
+@man-5-preview: man
+    man "${CARGO_TARGET_DIR:-target}/man/exa_colors.5"
