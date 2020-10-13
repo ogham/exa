@@ -2,9 +2,11 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
+use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece, Month};
 use datetime::fmt::DateFormat;
-use std::cmp;
+
+use lazy_static::lazy_static;
+use unicode_width::UnicodeWidthStr;
 
 
 /// Every timestamp in exa needs to be rendered by a **time format**.
@@ -23,18 +25,18 @@ use std::cmp;
 ///
 /// Currently exa does not support *custom* styles, where the user enters a
 /// format string in an environment variable or something. Just these four.
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum TimeFormat {
 
     /// The **default format** uses the user’s locale to print month names,
     /// and specifies the timestamp down to the minute for recent times, and
     /// day for older times.
-    DefaultFormat(DefaultFormat),
+    DefaultFormat,
 
     /// Use the **ISO format**, which specifies the timestamp down to the
     /// minute for recent times, and day for older times. It uses a number
-    /// for the month so it doesn’t need a locale.
-    ISOFormat(ISOFormat),
+    /// for the month so it doesn’t use the locale.
+    ISOFormat,
 
     /// Use the **long ISO format**, which specifies the timestamp down to the
     /// minute using only numbers, without needing the locale or year.
@@ -51,154 +53,63 @@ pub enum TimeFormat {
 
 impl TimeFormat {
     pub fn format_local(&self, time: SystemTime) -> String {
-        match *self {
-            TimeFormat::DefaultFormat(ref fmt) => fmt.format_local(time),
-            TimeFormat::ISOFormat(ref iso)     => iso.format_local(time),
-            TimeFormat::LongISO                => long_local(time),
-            TimeFormat::FullISO                => full_local(time),
+        match self {
+            Self::DefaultFormat  => default_local(time),
+            Self::ISOFormat      => iso_local(time),
+            Self::LongISO        => long_local(time),
+            Self::FullISO        => full_local(time),
         }
     }
 
     pub fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
-        match *self {
-            TimeFormat::DefaultFormat(ref fmt) => fmt.format_zoned(time, zone),
-            TimeFormat::ISOFormat(ref iso)     => iso.format_zoned(time, zone),
-            TimeFormat::LongISO                => long_zoned(time, zone),
-            TimeFormat::FullISO                => full_zoned(time, zone),
+        match self {
+            Self::DefaultFormat  => default_zoned(time, zone),
+            Self::ISOFormat      => iso_zoned(time, zone),
+            Self::LongISO        => long_zoned(time, zone),
+            Self::FullISO        => full_zoned(time, zone),
         }
     }
 }
 
 
-#[derive(Debug, Clone)]
-pub struct DefaultFormat {
+#[allow(trivial_numeric_casts)]
+fn default_local(time: SystemTime) -> String {
+    let date = LocalDateTime::at(systemtime_epoch(time));
 
-    /// The year of the current time. This gets used to determine which date
-    /// format to use.
-    pub current_year: i64,
-
-    /// Localisation rules for formatting timestamps.
-    pub locale: locale::Time,
-
-    /// Date format for printing out timestamps that are in the current year.
-    pub date_and_time: DateFormat<'static>,
-
-    /// Date format for printing out timestamps that *aren’t*.
-    pub date_and_year: DateFormat<'static>,
-}
-
-impl DefaultFormat {
-    pub fn load() -> DefaultFormat {
-        use unicode_width::UnicodeWidthStr;
-
-        let locale = locale::Time::load_user_locale()
-                       .unwrap_or_else(|_| locale::Time::english());
-
-        let current_year = LocalDateTime::now().year();
-
-        // Some locales use a three-character wide month name (Jan to Dec);
-        // others vary between three to four (1月 to 12月, juil.). We check each month width
-        // to detect the longest and set the output format accordingly.
-        let mut maximum_month_width = 0;
-        for i in 0..11 {
-            let current_month_width = UnicodeWidthStr::width(&*locale.short_month_name(i));
-            maximum_month_width = cmp::max(maximum_month_width, current_month_width);
-        }
-
-        let date_and_time = match maximum_month_width {
-            4  => DateFormat::parse("{2>:D} {4<:M} {2>:h}:{02>:m}").unwrap(),
-            5  => DateFormat::parse("{2>:D} {5<:M} {2>:h}:{02>:m}").unwrap(),
-            _  => DateFormat::parse("{2>:D} {:M} {2>:h}:{02>:m}").unwrap(),
+    if date.year() == *CURRENT_YEAR {
+        format!("{:2} {} {:02}:{:02}",
+                date.day(), month_to_abbrev(date.month()),
+                date.hour(), date.minute())
+    }
+    else {
+        let date_format = match *MAXIMUM_MONTH_WIDTH {
+            4  => &*FOUR_WIDE_DATE_TIME,
+            5  => &*FIVE_WIDE_DATE_TIME,
+            _  => &*OTHER_WIDE_DATE_TIME,
         };
 
-        let date_and_year = match maximum_month_width {
-            4 => DateFormat::parse("{2>:D} {4<:M} {5>:Y}").unwrap(),
-            5 => DateFormat::parse("{2>:D} {5<:M} {5>:Y}").unwrap(),
-            _ => DateFormat::parse("{2>:D} {:M} {5>:Y}").unwrap()
+        date_format.format(&date, &*LOCALE)
+    }
+}
+
+#[allow(trivial_numeric_casts)]
+fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
+    let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
+
+    if date.year() == *CURRENT_YEAR {
+        format!("{:2} {} {:02}:{:02}",
+                date.day(), month_to_abbrev(date.month()),
+                date.hour(), date.minute())
+    }
+    else {
+        let date_format = match *MAXIMUM_MONTH_WIDTH {
+            4  => &*FOUR_WIDE_DATE_YEAR,
+            5  => &*FIVE_WIDE_DATE_YEAR,
+            _  => &*OTHER_WIDE_DATE_YEAR,
         };
 
-        DefaultFormat { current_year, locale, date_and_time, date_and_year }
+        date_format.format(&date, &*LOCALE)
     }
-}
-
-
-impl DefaultFormat {
-    fn is_recent(&self, date: LocalDateTime) -> bool {
-        date.year() == self.current_year
-    }
-
-    fn month_to_abbrev(month: datetime::Month) -> &'static str {
-        match month {
-            datetime::Month::January => "Jan",
-            datetime::Month::February => "Feb",
-            datetime::Month::March => "Mar",
-            datetime::Month::April => "Apr",
-            datetime::Month::May => "May",
-            datetime::Month::June => "Jun",
-            datetime::Month::July => "Jul",
-            datetime::Month::August => "Aug",
-            datetime::Month::September => "Sep",
-            datetime::Month::October => "Oct",
-            datetime::Month::November => "Nov",
-            datetime::Month::December => "Dec",
-        }
-    }
-
-    #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: SystemTime) -> String {
-        let date = LocalDateTime::at(systemtime_epoch(time));
-
-        if self.is_recent(date) {
-            format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
-            date.hour(), date.minute())
-        }
-        else {
-            self.date_and_year.format(&date, &self.locale)
-        }
-    }
-
-    #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
-
-        if self.is_recent(date) {
-            format!("{:2} {} {:02}:{:02}",
-            date.day(), DefaultFormat::month_to_abbrev(date.month()),
-            date.hour(), date.minute())
-        }
-        else {
-            self.date_and_year.format(&date, &self.locale)
-        }
-    }
-}
-
-fn systemtime_epoch(time: SystemTime) -> i64 {
-    time
-        .duration_since(UNIX_EPOCH)
-        .map(|t| t.as_secs() as i64)
-        .unwrap_or_else(|e| {
-            let diff = e.duration();
-            let mut secs = diff.as_secs();
-            if diff.subsec_nanos() > 0 {
-                secs += 1;
-            }
-            -(secs as i64)
-        })
-}
-
-fn systemtime_nanos(time: SystemTime) -> u32 {
-    time
-        .duration_since(UNIX_EPOCH)
-        .map(|t| t.subsec_nanos())
-        .unwrap_or_else(|e| {
-            let nanos = e.duration().subsec_nanos();
-            if nanos > 0 {
-                1_000_000_000 - nanos
-            } else {
-                nanos
-            }
-        })
 }
 
 #[allow(trivial_numeric_casts)]
@@ -216,7 +127,6 @@ fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
             date.year(), date.month() as usize, date.day(),
             date.hour(), date.minute())
 }
-
 
 #[allow(trivial_numeric_casts)]
 fn full_local(time: SystemTime) -> String {
@@ -239,55 +149,127 @@ fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
             offset.hours(), offset.minutes().abs())
 }
 
+#[allow(trivial_numeric_casts)]
+fn iso_local(time: SystemTime) -> String {
+    let date = LocalDateTime::at(systemtime_epoch(time));
 
-
-#[derive(Debug, Clone)]
-pub struct ISOFormat {
-
-    /// The year of the current time. This gets used to determine which date
-    /// format to use.
-    pub current_year: i64,
-}
-
-impl ISOFormat {
-    pub fn load() -> ISOFormat {
-        let current_year = LocalDateTime::now().year();
-        ISOFormat { current_year }
+    if is_recent(date) {
+        format!("{:02}-{:02} {:02}:{:02}",
+                date.month() as usize, date.day(),
+                date.hour(), date.minute())
+    }
+    else {
+        format!("{:04}-{:02}-{:02}",
+                date.year(), date.month() as usize, date.day())
     }
 }
 
-impl ISOFormat {
-    fn is_recent(&self, date: LocalDateTime) -> bool {
-        date.year() == self.current_year
+#[allow(trivial_numeric_casts)]
+fn iso_zoned(time: SystemTime, zone: &TimeZone) -> String {
+    let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
+
+    if is_recent(date) {
+        format!("{:02}-{:02} {:02}:{:02}",
+                date.month() as usize, date.day(),
+                date.hour(), date.minute())
     }
-
-    #[allow(trivial_numeric_casts)]
-    fn format_local(&self, time: SystemTime) -> String {
-        let date = LocalDateTime::at(systemtime_epoch(time));
-
-        if self.is_recent(date) {
-            format!("{:02}-{:02} {:02}:{:02}",
-                    date.month() as usize, date.day(),
-                    date.hour(), date.minute())
-        }
-        else {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
+    else {
+        format!("{:04}-{:02}-{:02}",
+                date.year(), date.month() as usize, date.day())
     }
+}
 
-    #[allow(trivial_numeric_casts)]
-    fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
-        let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
 
-        if self.is_recent(date) {
-            format!("{:02}-{:02} {:02}:{:02}",
-                    date.month() as usize, date.day(),
-                    date.hour(), date.minute())
-        }
-        else {
-            format!("{:04}-{:02}-{:02}",
-                    date.year(), date.month() as usize, date.day())
-        }
+fn systemtime_epoch(time: SystemTime) -> i64 {
+    time.duration_since(UNIX_EPOCH)
+        .map(|t| t.as_secs() as i64)
+        .unwrap_or_else(|e| {
+            let diff = e.duration();
+            let mut secs = diff.as_secs();
+            if diff.subsec_nanos() > 0 {
+                secs += 1;
+            }
+            -(secs as i64)
+        })
+}
+
+fn systemtime_nanos(time: SystemTime) -> u32 {
+    time.duration_since(UNIX_EPOCH)
+        .map(|t| t.subsec_nanos())
+        .unwrap_or_else(|e| {
+            let nanos = e.duration().subsec_nanos();
+            if nanos > 0 {
+                1_000_000_000 - nanos
+            } else {
+                nanos
+            }
+        })
+}
+
+fn is_recent(date: LocalDateTime) -> bool {
+    date.year() == *CURRENT_YEAR
+}
+
+fn month_to_abbrev(month: Month) -> &'static str {
+    match month {
+        Month::January    => "Jan",
+        Month::February   => "Feb",
+        Month::March      => "Mar",
+        Month::April      => "Apr",
+        Month::May        => "May",
+        Month::June       => "Jun",
+        Month::July       => "Jul",
+        Month::August     => "Aug",
+        Month::September  => "Sep",
+        Month::October    => "Oct",
+        Month::November   => "Nov",
+        Month::December   => "Dec",
     }
+}
+
+
+lazy_static! {
+
+    static ref CURRENT_YEAR: i64 = LocalDateTime::now().year();
+
+    static ref LOCALE: locale::Time = {
+        locale::Time::load_user_locale()
+               .unwrap_or_else(|_| locale::Time::english())
+    };
+
+    static ref MAXIMUM_MONTH_WIDTH: usize = {
+        // Some locales use a three-character wide month name (Jan to Dec);
+        // others vary between three to four (1月 to 12月, juil.). We check each month width
+        // to detect the longest and set the output format accordingly.
+        let mut maximum_month_width = 0;
+        for i in 0..11 {
+            let current_month_width = UnicodeWidthStr::width(&*LOCALE.short_month_name(i));
+            maximum_month_width = std::cmp::max(maximum_month_width, current_month_width);
+        }
+        maximum_month_width
+    };
+
+    static ref FOUR_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {4<:M} {2>:h}:{02>:m}"
+    ).unwrap();
+
+    static ref FIVE_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {5<:M} {2>:h}:{02>:m}"
+    ).unwrap();
+
+    static ref OTHER_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {:M} {2>:h}:{02>:m}"
+    ).unwrap();
+
+    static ref FOUR_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {4<:M} {5>:Y}"
+    ).unwrap();
+
+    static ref FIVE_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {5<:M} {5>:Y}"
+    ).unwrap();
+
+    static ref OTHER_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
+        "{2>:D} {:M} {5>:Y}"
+    ).unwrap();
 }

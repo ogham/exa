@@ -4,16 +4,16 @@ use crate::fs::fields as f;
 
 
 impl f::Type {
-    pub fn render<C: Colours>(&self, colours: &C) -> ANSIString<'static> {
-        match *self {
-            f::Type::File        => colours.normal().paint("."),
-            f::Type::Directory   => colours.directory().paint("d"),
-            f::Type::Pipe        => colours.pipe().paint("|"),
-            f::Type::Link        => colours.symlink().paint("l"),
-            f::Type::BlockDevice => colours.block_device().paint("b"),
-            f::Type::CharDevice  => colours.char_device().paint("c"),
-            f::Type::Socket      => colours.socket().paint("s"),
-            f::Type::Special     => colours.special().paint("?"),
+    pub fn render<C: Colours>(self, colours: &C) -> ANSIString<'static> {
+        match self {
+            Self::File         => colours.normal().paint("."),
+            Self::Directory    => colours.directory().paint("d"),
+            Self::Pipe         => colours.pipe().paint("|"),
+            Self::Link         => colours.symlink().paint("l"),
+            Self::BlockDevice  => colours.block_device().paint("b"),
+            Self::CharDevice   => colours.char_device().paint("c"),
+            Self::Socket       => colours.socket().paint("s"),
+            Self::Special      => colours.special().paint("?"),
         }
     }
 }

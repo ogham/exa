@@ -1,6 +1,6 @@
 //! The grid-details view lists several details views side-by-side.
 
-use std::io::{Write, Result as IOResult};
+use std::io::{self, Write};
 
 use ansi_term::{ANSIGenericString, ANSIStrings};
 use term_grid as grid;
@@ -9,18 +9,17 @@ use crate::fs::{Dir, File};
 use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::FileAttributes;
 use crate::fs::filter::FileFilter;
-
-use crate::style::Colours;
 use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
-use crate::output::grid::Options as GridOptions;
 use crate::output::file_name::FileStyle;
+use crate::output::grid::Options as GridOptions;
+use crate::output::icons::painted_icon;
 use crate::output::table::{Table, Row as TableRow, Options as TableOptions};
 use crate::output::tree::{TreeParams, TreeDepth};
-use crate::output::icons::painted_icon;
+use crate::style::Colours;
 
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Options {
     pub grid: GridOptions,
     pub details: DetailsOptions,
@@ -34,7 +33,7 @@ pub struct Options {
 /// small directory of four files in four columns, the files just look spaced
 /// out and it’s harder to see what’s going on. So it can be enabled just for
 /// larger directory listings.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum RowThreshold {
 
     /// Only use grid-details view if it would result in at least this many
@@ -79,26 +78,29 @@ pub struct Render<'a> {
 
     /// Whether we are skipping Git-ignored files.
     pub git_ignoring: bool,
+
+    pub git: Option<&'a GitCache>,
 }
 
 impl<'a> Render<'a> {
 
     /// Create a temporary Details render that gets used for the columns of
-    /// the grid-details render that's being generated.
+    /// the grid-details render that’s being generated.
     ///
     /// This includes an empty files vector because the files get added to
     /// the table in *this* file, not in details: we only want to insert every
     /// *n* files into each column’s table, not all of them.
     pub fn details(&self) -> DetailsRender<'a> {
         DetailsRender {
-            dir: self.dir,
-            files: Vec::new(),
-            colours: self.colours,
-            style: self.style,
-            opts: self.details,
-            recurse: None,
-            filter: self.filter,
-            git_ignoring: self.git_ignoring,
+            dir:           self.dir,
+            files:         Vec::new(),
+            colours:       self.colours,
+            style:         self.style,
+            opts:          self.details,
+            recurse:       None,
+            filter:        self.filter,
+            git_ignoring:  self.git_ignoring,
+            git:           self.git,
         }
     }
 
@@ -106,60 +108,62 @@ impl<'a> Render<'a> {
     /// in the terminal (or something has gone wrong) and we have given up.
     pub fn give_up(self) -> DetailsRender<'a> {
         DetailsRender {
-            dir: self.dir,
-            files: self.files,
-            colours: self.colours,
-            style: self.style,
-            opts: self.details,
-            recurse: None,
-            filter: &self.filter,
-            git_ignoring: self.git_ignoring,
+            dir:           self.dir,
+            files:         self.files,
+            colours:       self.colours,
+            style:         self.style,
+            opts:          self.details,
+            recurse:       None,
+            filter:        self.filter,
+            git_ignoring:  self.git_ignoring,
+            git:           self.git,
         }
     }
 
     // This doesn’t take an IgnoreCache even though the details one does
     // because grid-details has no tree view.
 
-    pub fn render<W: Write>(self, git: Option<&GitCache>, w: &mut W) -> IOResult<()> {
-        if let Some((grid, width)) = self.find_fitting_grid(git) {
+    pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
+        if let Some((grid, width)) = self.find_fitting_grid() {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.give_up().render(git, w)
+            self.give_up().render(w)
         }
     }
 
-    pub fn find_fitting_grid(&self, git: Option<&GitCache>) -> Option<(grid::Grid, grid::Width)> {
+    pub fn find_fitting_grid(&mut self) -> Option<(grid::Grid, grid::Width)> {
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
         let drender = self.details();
 
-        let (first_table, _) = self.make_table(options, git, &drender);
+        let (first_table, _) = self.make_table(options, &drender);
 
         let rows = self.files.iter()
                        .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
-                       .collect::<Vec<TableRow>>();
+                       .collect::<Vec<_>>();
 
         let file_names = self.files.iter()
                              .map(|file| {
                                  if self.details.icons {
                                     let mut icon_cell = TextCell::default();
-                                    icon_cell.push(ANSIGenericString::from(painted_icon(&file, &self.style)), 2);
+                                    icon_cell.push(ANSIGenericString::from(painted_icon(file, self.style)), 2);
                                     let file_cell = self.style.for_file(file, self.colours).paint().promote();
                                     icon_cell.append(file_cell);
                                     icon_cell
-                                 } else {
+                                 }
+                                 else {
                                      self.style.for_file(file, self.colours).paint().promote()
                                  }
                              })
-                             .collect::<Vec<TextCell>>();
+                             .collect::<Vec<_>>();
 
-        let mut last_working_table = self.make_grid(1, options, git, &file_names, rows.clone(), &drender);
+        let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
 
         // If we can’t fit everything in a grid 100 columns wide, then
         // something has gone seriously awry
         for column_count in 2..100 {
-            let grid = self.make_grid(column_count, options, git, &file_names, rows.clone(), &drender);
+            let grid = self.make_grid(column_count, options, &file_names, rows.clone(), &drender);
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
@@ -186,14 +190,14 @@ impl<'a> Render<'a> {
         None
     }
 
-    fn make_table(&'a self, options: &'a TableOptions, mut git: Option<&'a GitCache>, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
-        match (git, self.dir) {
-            (Some(g), Some(d))  => if !g.has_anything_for(&d.path) { git = None },
-            (Some(g), None)     => if !self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+    fn make_table(&mut self, options: &'a TableOptions, drender: &DetailsRender) -> (Table<'a>, Vec<DetailsRow>) {
+        match (self.git, self.dir) {
+            (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { self.git = None },
+            (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { self.git = None },
             (None,    _)        => {/* Keep Git how it is */},
         }
 
-        let mut table = Table::new(options, git, self.colours);
+        let mut table = Table::new(options, self.git, self.colours);
         let mut rows = Vec::new();
 
         if self.details.header {
@@ -205,11 +209,10 @@ impl<'a> Render<'a> {
         (table, rows)
     }
 
-    fn make_grid(&'a self, column_count: usize, options: &'a TableOptions, git: Option<&GitCache>, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
-
+    fn make_grid(&mut self, column_count: usize, options: &'a TableOptions, file_names: &[TextCell], rows: Vec<TableRow>, drender: &DetailsRender) -> grid::Grid {
         let mut tables = Vec::new();
         for _ in 0 .. column_count {
-            tables.push(self.make_table(options, git, drender));
+            tables.push(self.make_table(options, drender));
         }
 
         let mut num_cells = rows.len();
@@ -234,17 +237,19 @@ impl<'a> Render<'a> {
             rows.push(details_row);
         }
 
-        let columns: Vec<_> = tables.into_iter().map(|(table, details_rows)| {
-            drender.iterate_with_table(table, details_rows).collect::<Vec<_>>()
-        }).collect();
+        let columns = tables
+            .into_iter()
+            .map(|(table, details_rows)| {
+                drender.iterate_with_table(table, details_rows)
+                       .collect::<Vec<_>>()
+                })
+            .collect::<Vec<_>>();
 
         let direction = if self.grid.across { grid::Direction::LeftToRight }
                                        else { grid::Direction::TopToBottom };
 
-        let mut grid = grid::Grid::new(grid::GridOptions {
-            direction,
-            filling:    grid::Filling::Spaces(4),
-        });
+        let filling = grid::Filling::Spaces(4);
+        let mut grid = grid::Grid::new(grid::GridOptions { direction, filling });
 
         if self.grid.across {
             for row in 0 .. height {
@@ -280,14 +285,18 @@ impl<'a> Render<'a> {
 
 fn divide_rounding_up(a: usize, b: usize) -> usize {
     let mut result = a / b;
-    if a % b != 0 { result += 1; }
+
+    if a % b != 0 {
+        result += 1;
+    }
+
     result
 }
 
 
 fn file_has_xattrs(file: &File) -> bool {
     match file.path.attributes() {
-        Ok(attrs) => !attrs.is_empty(),
-        Err(_) => false,
+        Ok(attrs)  => ! attrs.is_empty(),
+        Err(_)     => false,
     }
 }

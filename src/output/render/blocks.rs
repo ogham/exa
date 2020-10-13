@@ -1,14 +1,14 @@
 use ansi_term::Style;
 
-use crate::output::cell::TextCell;
 use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::Blocks {
     pub fn render<C: Colours>(&self, colours: &C) -> TextCell {
-        match *self {
-            f::Blocks::Some(ref blk)  => TextCell::paint(colours.block_count(), blk.to_string()),
-            f::Blocks::None           => TextCell::blank(colours.no_blocks()),
+        match self {
+            Self::Some(blk)  => TextCell::paint(colours.block_count(), blk.to_string()),
+            Self::None       => TextCell::blank(colours.no_blocks()),
         }
     }
 }

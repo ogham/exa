@@ -1,9 +1,9 @@
 use ansi_term::Style;
 
 use crate::fs::File;
-use crate::options::{flags, Vars, Misfire};
+use crate::options::{flags, Vars, OptionsError};
 use crate::options::parser::MatchedFlags;
-use crate::output::file_name::{FileStyle, Classify};
+use crate::output::file_name::{Classify, FileStyle};
 use crate::style::Colours;
 
 
@@ -28,8 +28,8 @@ enum TerminalColours {
 }
 
 impl Default for TerminalColours {
-    fn default() -> TerminalColours {
-        TerminalColours::Automatic
+    fn default() -> Self {
+        Self::Automatic
     }
 }
 
@@ -37,24 +37,23 @@ impl Default for TerminalColours {
 impl TerminalColours {
 
     /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &MatchedFlags) -> Result<TerminalColours, Misfire> {
-
+    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
-            Some(w) => w,
-            None    => return Ok(TerminalColours::default()),
+            Some(w)  => w,
+            None     => return Ok(Self::default()),
         };
 
         if word == "always" {
-            Ok(TerminalColours::Always)
+            Ok(Self::Always)
         }
         else if word == "auto" || word == "automatic" {
-            Ok(TerminalColours::Automatic)
+            Ok(Self::Automatic)
         }
         else if word == "never" {
-            Ok(TerminalColours::Never)
+            Ok(Self::Never)
         }
         else {
-            Err(Misfire::BadArgument(&flags::COLOR, word.into()))
+            Err(OptionsError::BadArgument(&flags::COLOR, word.into()))
         }
     }
 }
@@ -77,10 +76,9 @@ pub struct Styles {
 
 impl Styles {
 
-    #[allow(trivial_casts)]   // the "as Box<_>" stuff below warns about this for some reason
-    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, Misfire>
+    #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
+    pub fn deduce<V, TW>(matches: &MatchedFlags, vars: &V, widther: TW) -> Result<Self, OptionsError>
     where TW: Fn() -> Option<usize>, V: Vars {
-        use self::TerminalColours::*;
         use crate::info::filetype::FileExtensions;
         use crate::output::file_name::NoFileColours;
 
@@ -89,10 +87,13 @@ impl Styles {
         // Before we do anything else, figure out if we need to consider
         // custom colours at all
         let tc = TerminalColours::deduce(matches)?;
-        if tc == Never || (tc == Automatic && widther().is_none()) {
-            return Ok(Styles {
+
+        if tc == TerminalColours::Never || (tc == TerminalColours::Automatic && widther().is_none()) {
+            let exts = Box::new(NoFileColours);
+
+            return Ok(Self {
                 colours: Colours::plain(),
-                style: FileStyle { classify, exts: Box::new(NoFileColours) },
+                style: FileStyle { classify, exts },
             });
         }
 
@@ -111,18 +112,18 @@ impl Styles {
         };
 
         let style = FileStyle { classify, exts };
-        Ok(Styles { colours, style })
+        Ok(Self { colours, style })
     }
 }
 
-/// Parse the environment variables into LS_COLORS pairs, putting file glob
+/// Parse the environment variables into `LS_COLORS` pairs, putting file glob
 /// colours into the `ExtensionMappings` that gets returned, and using the
 /// two-character UI codes to modify the mutable `Colours`.
 ///
-/// Also returns if the EXA_COLORS variable should reset the existing file
+/// Also returns if the `EXA_COLORS` variable should reset the existing file
 /// type mappings or not. The `reset` code needs to be the first one.
 fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
-    use log::warn;
+    use log::*;
 
     use crate::options::vars;
     use crate::style::LSColors;
@@ -131,11 +132,16 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
 
     if let Some(lsc) = vars.get(vars::LS_COLORS) {
         let lsc = lsc.to_string_lossy();
+
         LSColors(lsc.as_ref()).each_pair(|pair| {
-            if !colours.set_ls(&pair) {
+            if ! colours.set_ls(&pair) {
                 match glob::Pattern::new(pair.key) {
-                    Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Ok(pat) => {
+                        exts.add(pat, pair.to_style());
+                    }
+                    Err(e) => {
+                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                    }
                 }
             }
         });
@@ -152,10 +158,14 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
         }
 
         LSColors(exa.as_ref()).each_pair(|pair| {
-            if !colours.set_ls(&pair) && !colours.set_exa(&pair) {
+            if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
                 match glob::Pattern::new(pair.key) {
-                    Ok(pat) => exts.add(pat, pair.to_style()),
-                    Err(e)  => warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e),
+                    Ok(pat) => {
+                        exts.add(pat, pair.to_style());
+                    }
+                    Err(e) => {
+                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                    }
                 }
             };
         });
@@ -167,7 +177,7 @@ fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappi
 
 #[derive(PartialEq, Debug, Default)]
 struct ExtensionMappings {
-    mappings: Vec<(glob::Pattern, Style)>
+    mappings: Vec<(glob::Pattern, Style)>,
 }
 
 // Loop through backwards so that colours specified later in the list override
@@ -176,9 +186,7 @@ struct ExtensionMappings {
 use crate::output::file_name::FileColours;
 impl FileColours for ExtensionMappings {
     fn colour_file(&self, file: &File) -> Option<Style> {
-        self.mappings
-            .iter()
-            .rev()
+        self.mappings.iter().rev()
             .find(|t| t.0.matches(&file.name))
             .map (|t| t.1)
     }
@@ -186,7 +194,7 @@ impl FileColours for ExtensionMappings {
 
 impl ExtensionMappings {
     fn is_non_empty(&self) -> bool {
-        !self.mappings.is_empty()
+        ! self.mappings.is_empty()
     }
 
     fn add(&mut self, pattern: glob::Pattern, style: Style) {
@@ -195,16 +203,14 @@ impl ExtensionMappings {
 }
 
 
-
 impl Classify {
-    fn deduce(matches: &MatchedFlags) -> Result<Classify, Misfire> {
+    fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let flagged = matches.has(&flags::CLASSIFY)?;
 
-        Ok(if flagged { Classify::AddFileIndicators }
-                 else { Classify::JustFilenames })
+        if flagged { Ok(Self::AddFileIndicators) }
+              else { Ok(Self::JustFilenames) }
     }
 }
-
 
 
 #[cfg(test)]
@@ -254,8 +260,8 @@ mod terminal_test {
     test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
 
     // Errors
-    test!(no_u_error:    ["--color=upstream"];   Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
-    test!(u_error:       ["--colour=lovers"];    Both => err Misfire::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
+    test!(no_u_error:    ["--color=upstream"];   Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
+    test!(u_error:       ["--colour=lovers"];    Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
 
     // Overriding
     test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
@@ -263,10 +269,10 @@ mod terminal_test {
     test!(overridden_3:  ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
     test!(overridden_4:  ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
 
-    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
-    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
-    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("colour"), Flag::Long("color")));
-    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err Misfire::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
+    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
+    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("color")));
+    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("color")));
 }
 
 
@@ -329,12 +335,11 @@ mod colour_test {
     test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
     test!(scale_4:  ["--color=always",                                  ], || None;   Last => Ok(Colours::colourful(false)));
 
-    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err Misfire::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
+    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err OptionsError::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
     test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => Ok(Colours::colourful(true)));
     test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => Ok(Colours::colourful(true)));
     test!(scale_8:  ["--color=always",                                  ], || None;   Complain => Ok(Colours::colourful(false)));
 }
-
 
 
 #[cfg(test)]
@@ -408,11 +413,11 @@ mod customs_test {
         fn get(&self, name: &'static str) -> Option<OsString> {
             use crate::options::vars;
 
-            if name == vars::LS_COLORS && !self.ls.is_empty() {
-                OsString::from(self.ls.clone()).into()
+            if name == vars::LS_COLORS && ! self.ls.is_empty() {
+                Some(OsString::from(self.ls.clone()))
             }
-            else if name == vars::EXA_COLORS && !self.exa.is_empty() {
-                OsString::from(self.exa.clone()).into()
+            else if name == vars::EXA_COLORS && ! self.exa.is_empty() {
+                Some(OsString::from(self.exa.clone()))
             }
             else {
                 None

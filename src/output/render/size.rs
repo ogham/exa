@@ -8,38 +8,41 @@ use crate::output::table::SizeFormat;
 
 
 impl f::Size {
-    pub fn render<C: Colours>(&self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
-        use number_prefix::{Prefixed, Standalone, NumberPrefix, PrefixNames};
+    pub fn render<C: Colours>(self, colours: &C, size_format: SizeFormat, numerics: &NumericLocale) -> TextCell {
+        use number_prefix::NumberPrefix;
 
-        let size = match *self {
-            f::Size::Some(s)             => s,
-            f::Size::None                => return TextCell::blank(colours.no_size()),
-            f::Size::DeviceIDs(ref ids)  => return ids.render(colours),
+        let size = match self {
+            Self::Some(s)             => s,
+            Self::None                => return TextCell::blank(colours.no_size()),
+            Self::DeviceIDs(ref ids)  => return ids.render(colours),
         };
 
         let result = match size_format {
             SizeFormat::DecimalBytes  => NumberPrefix::decimal(size as f64),
             SizeFormat::BinaryBytes   => NumberPrefix::binary(size as f64),
             SizeFormat::JustBytes     => {
+
                 // Use the binary prefix to select a style.
                 let prefix = match NumberPrefix::binary(size as f64) {
-                    Standalone(_) => None,
-                    Prefixed(p, _) => Some(p),
+                    NumberPrefix::Standalone(_)   => None,
+                    NumberPrefix::Prefixed(p, _)  => Some(p),
                 };
+
                 // But format the number directly using the locale.
                 let string = numerics.format_int(size);
+
                 return TextCell::paint(colours.size(prefix), string);
-            },
+            }
         };
 
         let (prefix, n) = match result {
-            Standalone(b)  => return TextCell::paint(colours.size(None), b.to_string()),
-            Prefixed(p, n) => (p, n)
+            NumberPrefix::Standalone(b)   => return TextCell::paint(colours.size(None), b.to_string()),
+            NumberPrefix::Prefixed(p, n)  => (p, n),
         };
 
         let symbol = prefix.symbol();
-        let number = if n < 10f64 { numerics.format_float(n, 1) }
-                             else { numerics.format_int(n as isize) };
+        let number = if n < 10_f64 { numerics.format_float(n, 1) }
+                              else { numerics.format_int(n as isize) };
 
         // The numbers and symbols are guaranteed to be written in ASCII, so
         // we can skip the display width calculation.
@@ -57,7 +60,7 @@ impl f::Size {
 
 
 impl f::DeviceIDs {
-    fn render<C: Colours>(&self, colours: &C) -> TextCell {
+    fn render<C: Colours>(self, colours: &C) -> TextCell {
         let major = self.major.to_string();
         let minor = self.minor.to_string();
 
@@ -71,6 +74,7 @@ impl f::DeviceIDs {
         }
     }
 }
+
 
 pub trait Colours {
     fn size(&self, prefix: Option<Prefix>) -> Style;

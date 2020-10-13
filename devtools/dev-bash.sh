@@ -12,7 +12,7 @@ bash /vagrant/devtools/dev-versions.sh
 # The Cool Prompt tells you whether you’re in debug or strict mode, whether
 # you have colours configured, and whether your last command failed.
 function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }
-function debug_mode()  { [ -n "$EXA_DEBUG" ]  && echo "debug "; }
+function debug_mode()  { [ "$EXA_DEBUG" == "trace" ] && echo -n "trace-"; [ -n "$EXA_DEBUG" ]  && echo "debug "; }
 function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }
 function lsc_mode()    { [ -n "$LS_COLORS" ]  && echo "lsc "; }
 function exac_mode()   { [ -n "$EXA_COLORS" ] && echo "exac "; }
@@ -22,10 +22,14 @@ export PS1="\[\e[1;36m\]\h \[\e[32m\]\w \[\e[31m\]\`nonzero_return\`\[\e[35m\]\`
 # The ‘debug’ function lets you switch debug mode on and off.
 # Turn it on if you need to see exa’s debugging logs.
 function debug () {
-  case "$1" in "on") export EXA_DEBUG=1 ;;
-    "off") export EXA_DEBUG= ;;
-    "")    [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;
-    *)     echo "Usage: debug on|off"; return 1 ;; esac; }
+  case "$1" in
+    ""|"on")  export EXA_DEBUG=1 ;;
+    "off")    export EXA_DEBUG= ;;
+    "trace")  export EXA_DEBUG=trace ;;
+    "status") [ -n "$EXA_DEBUG" ] && echo "debug on" || echo "debug off" ;;
+    *)        echo "Usage: debug on|off|trace|status"; return 1 ;;
+  esac;
+}
 
 # The ‘strict’ function lets you switch strict mode on and off.
 # Turn it on if you’d like exa’s command-line arguments checked.
@@ -33,7 +37,9 @@ function strict () {
   case "$1" in "on") export EXA_STRICT=1 ;;
     "off") export EXA_STRICT= ;;
     "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;
-    *) echo "Usage: strict on|off"; return 1 ;; esac; }
+    *) echo "Usage: strict on|off"; return 1 ;;
+  esac;
+}
 
 # The ‘colors’ function sets or unsets the ‘LS_COLORS’ and ‘EXA_COLORS’
 # environment variables. There’s also a ‘hacker’ theme which turns everything
@@ -53,4 +59,6 @@ function colors () {
     "")
       [ -n "$LS_COLORS" ]  && echo "LS_COLORS=$LS_COLORS"   || echo "ls-colors off"
       [ -n "$EXA_COLORS" ] && echo "EXA_COLORS=$EXA_COLORS" || echo "exa-colors off" ;;
-    *) echo "Usage: ls-colors ls|hacker|off"; return 1 ;; esac; }
+    *) echo "Usage: ls-colors ls|hacker|off"; return 1 ;;
+  esac;
+}

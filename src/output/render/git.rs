@@ -5,7 +5,7 @@ use crate::fs::fields as f;
 
 
 impl f::Git {
-    pub fn render(&self, colours: &dyn Colours) -> TextCell {
+    pub fn render(self, colours: &dyn Colours) -> TextCell {
         TextCell {
             width: DisplayWidth::from(2),
             contents: vec![
@@ -18,16 +18,16 @@ impl f::Git {
 
 
 impl f::GitStatus {
-    fn render(&self, colours: &dyn Colours) -> ANSIString<'static> {
-        match *self {
-            f::GitStatus::NotModified  => colours.not_modified().paint("-"),
-            f::GitStatus::New          => colours.new().paint("N"),
-            f::GitStatus::Modified     => colours.modified().paint("M"),
-            f::GitStatus::Deleted      => colours.deleted().paint("D"),
-            f::GitStatus::Renamed      => colours.renamed().paint("R"),
-            f::GitStatus::TypeChange   => colours.type_change().paint("T"),
-            f::GitStatus::Ignored      => colours.ignored().paint("I"),
-            f::GitStatus::Conflicted   => colours.conflicted().paint("U"),
+    fn render(self, colours: &dyn Colours) -> ANSIString<'static> {
+        match self {
+            Self::NotModified  => colours.not_modified().paint("-"),
+            Self::New          => colours.new().paint("N"),
+            Self::Modified     => colours.modified().paint("M"),
+            Self::Deleted      => colours.deleted().paint("D"),
+            Self::Renamed      => colours.renamed().paint("R"),
+            Self::TypeChange   => colours.type_change().paint("T"),
+            Self::Ignored      => colours.ignored().paint("I"),
+            Self::Conflicted   => colours.conflicted().paint("U"),
         }
     }
 }
@@ -65,7 +65,7 @@ pub mod test {
         fn renamed(&self)      -> Style { Fixed(94).normal() }
         fn type_change(&self)  -> Style { Fixed(95).normal() }
         fn ignored(&self)      -> Style { Fixed(96).normal() }
-        fn conflicted(&self)   -> Style { Fixed(93).normal() }
+        fn conflicted(&self)   -> Style { Fixed(97).normal() }
     }
 
 

@@ -4,19 +4,18 @@ Vagrant.configure(2) do |config|
 
   # We use Ubuntu instead of Debian because the image comes with two-way
   # shared folder support by default.
-  UBUNTU = 'bento/ubuntu-16.04'
+  UBUNTU = 'hashicorp/bionic64'
 
-  # The main VM is the one used for development and testing.
-  config.vm.define(:exa, primary: true) do |config|
+  config.vm.define(:exa) do |config|
     config.vm.provider :virtualbox do |v|
       v.name = 'exa'
       v.memory = 2048
-      v.cpus = 2
+      v.cpus = `nproc`.chomp.to_i
     end
 
     config.vm.provider :vmware_desktop do |v|
       v.vmx['memsize'] = '2048'
-      v.vmx['numvcpus'] = '2'
+      v.vmx['numvcpus'] = `nproc`.chomp
     end
 
     config.vm.box = UBUNTU
@@ -56,6 +55,19 @@ Vagrant.configure(2) do |config|
       else
         set -xe
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        cargo install cargo-hack
+      fi
+    EOF
+
+
+    # Install Just, the command runner.
+    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      if hash just &>/dev/null; then
+        echo "just is already installed"
+      else
+        wget "https://github.com/casey/just/releases/download/v0.8.0/just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        tar -xf "just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        cp just /usr/local/bin
       fi
     EOF
 
@@ -80,7 +92,7 @@ Vagrant.configure(2) do |config|
       echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml \\$@" > /usr/bin/build-exa
       ln -sf /usr/bin/build-exa /usr/bin/b
 
-      echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml --lib \\$@ -- --quiet" > /usr/bin/test-exa
+      echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml \\$@ -- --quiet" > /usr/bin/test-exa
       ln -sf /usr/bin/test-exa /usr/bin/t
 
       echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/run-xtests
@@ -561,48 +573,5 @@ Vagrant.configure(2) do |config|
         cargo kcov --print-install-kcov-sh | sudo sh
       EOF
     end
-  end
-
-
-  # Remember that problem that exa had where the binary wasn’t actually
-  # self-contained? Or the problem where the Linux binary was actually the
-  # macOS binary in disguise?
-  #
-  # This is a “fresh” VM that intentionally downloads no dependencies and
-  # installs nothing so that we can check that exa still runs!
-  config.vm.define(:fresh) do |config|
-    config.vm.box = UBUNTU
-    config.vm.hostname = 'fresh'
-
-    config.vm.provider :virtualbox do |v|
-      v.name = 'exa-fresh'
-      v.memory = 384
-      v.cpus = 1
-    end
-
-    # Well, we do need *one* dependency...
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      set -xe
-      apt-get install -qq -o=Dpkg::Use-Pty=0 -y unzip
-    EOF
-
-    # This thing also has its own welcoming text.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      rm -f /etc/update-motd.d/*
-
-      # Capture the help text so it gets displayed first
-      bash /vagrant/devtools/dev-help-testvm.sh > /etc/motd
-
-      # Disable last login date in sshd
-      sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
-      systemctl restart sshd
-    EOF
-
-    # Make the checker script a command.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      set -xe
-      echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-download-and-check-release.sh \"\\$*\"" > /usr/bin/check-release
-      chmod +x /usr/bin/check-release
-    EOF
   end
 end

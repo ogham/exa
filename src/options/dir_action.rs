@@ -1,7 +1,7 @@
 //! Parsing the options for `DirAction`.
 
 use crate::options::parser::MatchedFlags;
-use crate::options::{flags, Misfire};
+use crate::options::{flags, OptionsError};
 
 use crate::fs::dir_action::{DirAction, RecurseOptions};
 
@@ -12,35 +12,35 @@ impl DirAction {
     /// There are three possible actions, and they overlap somewhat: the
     /// `--tree` flag is another form of recursion, so those two are allowed
     /// to both be present, but the `--list-dirs` flag is used separately.
-    pub fn deduce(matches: &MatchedFlags) -> Result<DirAction, Misfire> {
+    pub fn deduce(matches: &MatchedFlags) -> Result<Self, OptionsError> {
         let recurse = matches.has(&flags::RECURSE)?;
         let as_file = matches.has(&flags::LIST_DIRS)?;
         let tree    = matches.has(&flags::TREE)?;
 
         if matches.is_strict() {
             // Early check for --level when it wouldn’t do anything
-            if !recurse && !tree && matches.count(&flags::LEVEL) > 0 {
-                return Err(Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
+            if ! recurse && ! tree && matches.count(&flags::LEVEL) > 0 {
+                return Err(OptionsError::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
             else if recurse && as_file {
-                return Err(Misfire::Conflict(&flags::RECURSE, &flags::LIST_DIRS));
+                return Err(OptionsError::Conflict(&flags::RECURSE, &flags::LIST_DIRS));
             }
             else if tree && as_file {
-                return Err(Misfire::Conflict(&flags::TREE, &flags::LIST_DIRS));
+                return Err(OptionsError::Conflict(&flags::TREE, &flags::LIST_DIRS));
             }
         }
 
         if tree {
-            Ok(DirAction::Recurse(RecurseOptions::deduce(matches, true)?))
+            Ok(Self::Recurse(RecurseOptions::deduce(matches, true)?))
         }
         else if recurse {
-            Ok(DirAction::Recurse(RecurseOptions::deduce(matches, false)?))
+            Ok(Self::Recurse(RecurseOptions::deduce(matches, false)?))
         }
         else if as_file {
-            Ok(DirAction::AsFile)
+            Ok(Self::AsFile)
         }
         else {
-            Ok(DirAction::List)
+            Ok(Self::List)
         }
     }
 }
@@ -52,18 +52,18 @@ impl RecurseOptions {
     /// flag’s value, and whether the `--tree` flag was passed, which was
     /// determined earlier. The maximum level should be a number, and this
     /// will fail with an `Err` if it isn’t.
-    pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<RecurseOptions, Misfire> {
+    pub fn deduce(matches: &MatchedFlags, tree: bool) -> Result<Self, OptionsError> {
         let max_depth = if let Some(level) = matches.get(&flags::LEVEL)? {
             match level.to_string_lossy().parse() {
                 Ok(l)   => Some(l),
-                Err(e)  => return Err(Misfire::FailedParse(e)),
+                Err(e)  => return Err(OptionsError::FailedParse(e)),
             }
         }
         else {
             None
         };
 
-        Ok(RecurseOptions { tree, max_depth })
+        Ok(Self { tree, max_depth })
     }
 }
 
@@ -115,12 +115,12 @@ mod test {
     test!(dirs_tree:       DirAction <- ["--list-dirs", "--tree"];        Last => Ok(Recurse(RecurseOptions { tree: true,  max_depth: None })));
     test!(just_level:      DirAction <- ["--level=4"];                    Last => Ok(DirAction::List));
 
-    test!(dirs_recurse_2:  DirAction <- ["--list-dirs", "--recurse"]; Complain => Err(Misfire::Conflict(&flags::RECURSE, &flags::LIST_DIRS)));
-    test!(dirs_tree_2:     DirAction <- ["--list-dirs", "--tree"];    Complain => Err(Misfire::Conflict(&flags::TREE,    &flags::LIST_DIRS)));
-    test!(just_level_2:    DirAction <- ["--level=4"];                Complain => Err(Misfire::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE)));
+    test!(dirs_recurse_2:  DirAction <- ["--list-dirs", "--recurse"]; Complain => Err(OptionsError::Conflict(&flags::RECURSE, &flags::LIST_DIRS)));
+    test!(dirs_tree_2:     DirAction <- ["--list-dirs", "--tree"];    Complain => Err(OptionsError::Conflict(&flags::TREE,    &flags::LIST_DIRS)));
+    test!(just_level_2:    DirAction <- ["--level=4"];                Complain => Err(OptionsError::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE)));
 
 
     // Overriding levels
     test!(overriding_1:    DirAction <- ["-RL=6", "-L=7"];                Last => Ok(Recurse(RecurseOptions { tree: false, max_depth: Some(7) })));
-    test!(overriding_2:    DirAction <- ["-RL=6", "-L=7"];            Complain => Err(Misfire::Duplicate(Flag::Short(b'L'), Flag::Short(b'L'))));
+    test!(overriding_2:    DirAction <- ["-RL=6", "-L=7"];            Complain => Err(OptionsError::Duplicate(Flag::Short(b'L'), Flag::Short(b'L'))));
 }

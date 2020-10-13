@@ -1,8 +1,8 @@
 use std::fmt;
 
+use crate::fs::feature::xattr;
 use crate::options::flags;
 use crate::options::parser::MatchedFlags;
-use crate::fs::feature::xattr;
 
 
 static OPTIONS: &str = r##"
@@ -64,7 +64,7 @@ static OCTAL_HELP:    &str = r##"  --octal-permissions list each file's permissi
 /// All the information needed to display the help text, which depends
 /// on which features are enabled and whether the user only wants to
 /// see one section’s help.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct HelpString {
 
     /// Only show the help for the long section, not all the help.
@@ -86,15 +86,15 @@ impl HelpString {
     /// We don’t do any strict-mode error checking here: it’s OK to give
     /// the --help or --long flags more than once. Actually checking for
     /// errors when the user wants help is kind of petty!
-    pub fn deduce(matches: &MatchedFlags) -> Result<(), HelpString> {
+    pub fn deduce(matches: &MatchedFlags) -> Option<Self> {
         if matches.count(&flags::HELP) > 0 {
             let only_long = matches.count(&flags::LONG) > 0;
             let git       = cfg!(feature="git");
             let xattrs    = xattr::ENABLED;
-            Err(HelpString { only_long, git, xattrs })
+            Some(Self { only_long, git, xattrs })
         }
         else {
-            Ok(())  // no help needs to be shown
+            None
         }
     }
 }
@@ -106,7 +106,7 @@ impl fmt::Display for HelpString {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         writeln!(f, "Usage:\n  exa [options] [files...]")?;
 
-        if !self.only_long {
+        if ! self.only_long {
             write!(f, "{}", OPTIONS)?;
         }
 
@@ -127,36 +127,29 @@ impl fmt::Display for HelpString {
 }
 
 
-
 #[cfg(test)]
 mod test {
-    use crate::options::Options;
-    use std::ffi::OsString;
-
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
+    use crate::options::{Options, OptionsResult};
+    use std::ffi::OsStr;
 
     #[test]
     fn help() {
-        let args = [ os("--help") ];
-        let opts = Options::parse(&args, &None);
-        assert!(opts.is_err())
+        let args = vec![ OsStr::new("--help") ];
+        let opts = Options::parse(args, &None);
+        assert!(matches!(opts, OptionsResult::Help(_)));
     }
 
     #[test]
     fn help_with_file() {
-        let args = [ os("--help"), os("me") ];
-        let opts = Options::parse(&args, &None);
-        assert!(opts.is_err())
+        let args = vec![ OsStr::new("--help"), OsStr::new("me") ];
+        let opts = Options::parse(args, &None);
+        assert!(matches!(opts, OptionsResult::Help(_)));
     }
 
     #[test]
     fn unhelpful() {
-        let args = [];
-        let opts = Options::parse(&args, &None);
-        assert!(opts.is_ok())  // no help when --help isn’t passed
+        let args = vec![];
+        let opts = Options::parse(args, &None);
+        assert!(! matches!(opts, OptionsResult::Help(_)))  // no help when --help isn’t passed
     }
 }

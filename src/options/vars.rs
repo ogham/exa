@@ -15,10 +15,11 @@ pub static COLUMNS: &str = "COLUMNS";
 /// Environment variable used to datetime format.
 pub static TIME_STYLE: &str = "TIME_STYLE";
 
+
 // exa-specific variables
 
 /// Environment variable used to colour exa’s interface when colours are
-/// enabled. This includes all the colours that LS_COLORS would recognise,
+/// enabled. This includes all the colours that `LS_COLORS` would recognise,
 /// overriding them if necessary. It can also contain exa-specific codes.
 pub static EXA_COLORS: &str = "EXA_COLORS";
 
@@ -37,7 +38,6 @@ pub static EXA_DEBUG: &str = "EXA_DEBUG";
 /// (`--grid --long`) so it’s only activated if there’s at least the given
 /// number of rows of output.
 pub static EXA_GRID_ROWS: &str = "EXA_GRID_ROWS";
-
 
 
 /// Mockable wrapper for `std::env::var_os`.

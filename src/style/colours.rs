@@ -1,9 +1,8 @@
-use ansi_term::Style;
 use ansi_term::Colour::{Red, Green, Yellow, Blue, Cyan, Purple, Fixed};
+use ansi_term::Style;
 
-use crate::output::render;
 use crate::output::file_name::Colours as FileNameColours;
-
+use crate::output::render;
 use crate::style::lsc::Pair;
 
 
@@ -109,12 +108,12 @@ pub struct Git {
 }
 
 impl Colours {
-    pub fn plain() -> Colours {
-        Colours::default()
+    pub fn plain() -> Self {
+        Self::default()
     }
 
-    pub fn colourful(scale: bool) -> Colours {
-        Colours {
+    pub fn colourful(scale: bool) -> Self {
+        Self {
             colourful: true,
 
             filekinds: FileKinds {
@@ -190,11 +189,8 @@ impl Colours {
 
 impl Size {
     pub fn colourful(scale: bool) -> Self {
-        if scale {
-            Self::colourful_scale()
-        } else {
-            Self::colourful_plain()
-        }
+        if scale { Self::colourful_scale() }
+            else { Self::colourful_plain() }
     }
 
     fn colourful_plain() -> Self {
@@ -233,7 +229,6 @@ impl Size {
             unit_giga: Green.normal(),
             unit_huge: Green.normal(),
         }
-
     }
 }
 
@@ -352,6 +347,7 @@ impl Colours {
 
              _   => return false,
         }
+
         true
     }
 
@@ -431,10 +427,11 @@ impl render::PermissionsColours for Colours {
 impl render::SizeColours for Colours {
     fn size(&self, prefix: Option<number_prefix::Prefix>) -> Style {
         use number_prefix::Prefix::*;
+
         match prefix {
             None                    => self.size.number_byte,
             Some(Kilo) | Some(Kibi) => self.size.number_kilo,
-            Some(Mega) | Some(Mibi) => self.size.number_mega,
+            Some(Mega) | Some(Mebi) => self.size.number_mega,
             Some(Giga) | Some(Gibi) => self.size.number_giga,
             Some(_)                 => self.size.number_huge,
         }
@@ -442,10 +439,11 @@ impl render::SizeColours for Colours {
 
     fn unit(&self, prefix: Option<number_prefix::Prefix>) -> Style {
         use number_prefix::Prefix::*;
+
         match prefix {
             None                    => self.size.unit_byte,
             Some(Kilo) | Some(Kibi) => self.size.unit_kilo,
-            Some(Mega) | Some(Mibi) => self.size.unit_mega,
+            Some(Mega) | Some(Mebi) => self.size.unit_mega,
             Some(Giga) | Some(Gibi) => self.size.unit_giga,
             Some(_)                 => self.size.unit_huge,
         }

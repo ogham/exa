@@ -60,7 +60,7 @@
 //!
 //! `--sort=size` should override `--sort=Name` because it’s closer to the end
 //! of the arguments array. In fact, because there’s no way to tell where the
-//! arguments came from -- it’s just a heuristic -- this will still work even
+//! arguments came from — it’s just a heuristic — this will still work even
 //! if no aliases are being used!
 //!
 //! Finally, this isn’t just useful when options could override each other.
@@ -69,32 +69,32 @@
 //! it’s clear what the user wants.
 
 
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 
 use crate::fs::dir_action::DirAction;
-use crate::fs::filter::{FileFilter,GitIgnore};
+use crate::fs::filter::{FileFilter, GitIgnore};
 use crate::output::{View, Mode, details, grid_details};
 
-mod style;
 mod dir_action;
 mod filter;
+mod flags;
+mod style;
 mod view;
+
+mod error;
+pub use self::error::OptionsError;
 
 mod help;
 use self::help::HelpString;
 
-mod version;
-use self::version::VersionString;
-
-mod misfire;
-pub use self::misfire::Misfire;
+mod parser;
+use self::parser::MatchedFlags;
 
 pub mod vars;
 pub use self::vars::Vars;
 
-mod parser;
-mod flags;
-use self::parser::MatchedFlags;
+mod version;
+use self::version::VersionString;
 
 
 /// These **options** represent a parsed, error-checked versions of the
@@ -119,9 +119,10 @@ impl Options {
     /// struct and a list of free filenames, using the environment variables
     /// for extra options.
     #[allow(unused_results)]
-    pub fn parse<'args, I, V>(args: I, vars: &V) -> Result<(Options, Vec<&'args OsStr>), Misfire>
-    where I: IntoIterator<Item=&'args OsString>,
-          V: Vars {
+    pub fn parse<'args, I, V>(args: I, vars: &V) -> OptionsResult<'args>
+    where I: IntoIterator<Item = &'args OsStr>,
+          V: Vars,
+    {
         use crate::options::parser::{Matches, Strictness};
 
         let strictness = match vars.get(vars::EXA_STRICT) {
@@ -131,15 +132,22 @@ impl Options {
         };
 
         let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, strictness) {
-            Ok(m)   => m,
-            Err(e)  => return Err(Misfire::InvalidOptions(e)),
+            Ok(m)    => m,
+            Err(pe)  => return OptionsResult::InvalidOptions(OptionsError::Parse(pe)),
         };
 
-        HelpString::deduce(&flags).map_err(Misfire::Help)?;
-        VersionString::deduce(&flags).map_err(Misfire::Version)?;
+        if let Some(help) = HelpString::deduce(&flags) {
+            return OptionsResult::Help(help);
+        }
 
-        let options = Options::deduce(&flags, vars)?;
-        Ok((options, frees))
+        if let Some(version) = VersionString::deduce(&flags) {
+            return OptionsResult::Version(version);
+        }
+
+        match Self::deduce(&flags, vars) {
+            Ok(options)  => OptionsResult::Ok(options, frees),
+            Err(oe)      => OptionsResult::InvalidOptions(oe),
+        }
     }
 
     /// Whether the View specified in this set of options includes a Git
@@ -159,22 +167,38 @@ impl Options {
 
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Options, Misfire> {
+    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, OptionsError> {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
 
-        Ok(Options { dir_action, view, filter })
+        Ok(Self { dir_action, view, filter })
     }
 }
 
 
+/// The result of the `Options::getopts` function.
+#[derive(Debug)]
+pub enum OptionsResult<'args> {
+
+    /// The options were parsed successfully.
+    Ok(Options, Vec<&'args OsStr>),
+
+    /// There was an error parsing the arguments.
+    InvalidOptions(OptionsError),
+
+    /// One of the arguments was `--help`, so display help.
+    Help(HelpString),
+
+    /// One of the arguments was `--version`, so display the version number.
+    Version(VersionString),
+}
+
 
 #[cfg(test)]
 pub mod test {
-    use super::{Options, Misfire, flags};
     use crate::options::parser::{Arg, MatchedFlags};
-    use std::ffi::OsString;
+    use std::ffi::OsStr;
 
     #[derive(PartialEq, Debug)]
     pub enum Strictnesses {
@@ -195,55 +219,19 @@ pub mod test {
         use self::Strictnesses::*;
         use crate::options::parser::{Args, Strictness};
 
-        let bits = inputs.into_iter().map(|&o| os(o)).collect::<Vec<OsString>>();
+        let bits = inputs.into_iter().map(OsStr::new).collect::<Vec<_>>();
         let mut result = Vec::new();
 
         if strictnesses == Last || strictnesses == Both {
-            let results = Args(args).parse(bits.iter(), Strictness::UseLastArguments);
+            let results = Args(args).parse(bits.clone(), Strictness::UseLastArguments);
             result.push(get(&results.unwrap().flags));
         }
 
         if strictnesses == Complain || strictnesses == Both {
-            let results = Args(args).parse(bits.iter(), Strictness::ComplainAboutRedundantArguments);
+            let results = Args(args).parse(bits, Strictness::ComplainAboutRedundantArguments);
             result.push(get(&results.unwrap().flags));
         }
 
         result
-    }
-
-    /// Creates an `OSStr` (used in tests)
-    #[cfg(test)]
-    fn os(input: &str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
-    }
-
-    #[test]
-    fn files() {
-        let args = [ os("this file"), os("that file") ];
-        let outs = Options::parse(&args, &None).unwrap().1;
-        assert_eq!(outs, vec![ &os("this file"), &os("that file") ])
-    }
-
-    #[test]
-    fn no_args() {
-        let nothing: Vec<OsString> = Vec::new();
-        let outs = Options::parse(&nothing, &None).unwrap().1;
-        assert!(outs.is_empty());  // Listing the `.` directory is done in main.rs
-    }
-
-    #[test]
-    fn long_across() {
-        let args = [ os("--long"), os("--across") ];
-        let opts = Options::parse(&args, &None);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::LONG))
-    }
-
-    #[test]
-    fn oneline_across() {
-        let args = [ os("--oneline"), os("--across") ];
-        let opts = Options::parse(&args, &None);
-        assert_eq!(opts.unwrap_err(), Misfire::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
     }
 }

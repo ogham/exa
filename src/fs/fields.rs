@@ -1,4 +1,3 @@
-
 //! Wrapper types for the values returned from `File`s.
 //!
 //! The methods of `File` that return information about the entry on the
@@ -43,22 +42,27 @@ pub type uid_t = u32;
 /// regular file. (See the `filetype` module for those checks.)
 ///
 /// Its ordering is used when sorting by type.
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Type {
-    Directory, File, Link, Pipe, Socket, CharDevice, BlockDevice, Special,
+    Directory,
+    File,
+    Link,
+    Pipe,
+    Socket,
+    CharDevice,
+    BlockDevice,
+    Special,
 }
 
 impl Type {
-    pub fn is_regular_file(&self) -> bool {
-        match *self {
-            Type::File  => true,
-            _           => false,
-        }
+    pub fn is_regular_file(self) -> bool {
+        matches!(self, Self::File)
     }
 }
 
 
 /// The file’s Unix permission bitfield, with one entry per bit.
+#[derive(Copy, Clone)]
 pub struct Permissions {
     pub user_read:      bool,
     pub user_write:     bool,
@@ -80,6 +84,7 @@ pub struct Permissions {
 /// The three pieces of information that are displayed as a single column in
 /// the details view. These values are fused together to make the output a
 /// little more compressed.
+#[derive(Copy, Clone)]
 pub struct PermissionsPlus {
     pub file_type:   Type,
     pub permissions: Permissions,
@@ -88,6 +93,7 @@ pub struct PermissionsPlus {
 
 
 /// The permissions encoded as octal values
+#[derive(Copy, Clone)]
 pub struct OctalPermissions {
     pub permissions: Permissions,
 }
@@ -98,6 +104,7 @@ pub struct OctalPermissions {
 /// multiple directories. However, it’s rare (but occasionally useful!) for a
 /// regular file to have a link count greater than 1, so we highlight the
 /// block count specifically for this case.
+#[derive(Copy, Clone)]
 pub struct Links {
 
     /// The actual link count.
@@ -111,10 +118,12 @@ pub struct Links {
 /// A file’s inode. Every directory entry on a Unix filesystem has an inode,
 /// including directories and links, so this is applicable to everything exa
 /// can deal with.
+#[derive(Copy, Clone)]
 pub struct Inode(pub ino_t);
 
 
 /// The number of blocks that a file takes up on the filesystem, if any.
+#[derive(Copy, Clone)]
 pub enum Blocks {
 
     /// This file has the given number of blocks.
@@ -127,14 +136,17 @@ pub enum Blocks {
 
 /// The ID of the user that owns a file. This will only ever be a number;
 /// looking up the username is done in the `display` module.
+#[derive(Copy, Clone)]
 pub struct User(pub uid_t);
 
 /// The ID of the group that a file belongs to.
+#[derive(Copy, Clone)]
 pub struct Group(pub gid_t);
 
 
 /// A file’s size, in bytes. This is usually formatted by the `number_prefix`
 /// crate into something human-readable.
+#[derive(Copy, Clone)]
 pub enum Size {
 
     /// This file has a defined size.
@@ -146,7 +158,7 @@ pub enum Size {
     /// have a file size. For example, a directory will just contain a list of
     /// its files as its “contents” and will be specially flagged as being a
     /// directory, rather than a file. However, seeing the “file size” of this
-    /// data is rarely useful -- I can’t think of a time when I’ve seen it and
+    /// data is rarely useful — I can’t think of a time when I’ve seen it and
     /// learnt something. So we discard it and just output “-” instead.
     ///
     /// See this answer for more: http://unix.stackexchange.com/a/68266
@@ -163,8 +175,9 @@ pub enum Size {
 /// The major and minor device IDs that gets displayed for device files.
 ///
 /// You can see what these device numbers mean:
-/// - http://www.lanana.org/docs/device-list/
-/// - http://www.lanana.org/docs/device-list/devices-2.6+.txt
+/// - <http://www.lanana.org/docs/device-list/>
+/// - <http://www.lanana.org/docs/device-list/devices-2.6+.txt>
+#[derive(Copy, Clone)]
 pub struct DeviceIDs {
     pub major: u8,
     pub minor: u8,
@@ -182,7 +195,7 @@ pub struct Time {
 /// A file’s status in a Git repository. Whether a file is in a repository or
 /// not is handled by the Git module, rather than having a “null” variant in
 /// this enum.
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum GitStatus {
 
     /// This file hasn’t changed since the last commit.
@@ -207,23 +220,27 @@ pub enum GitStatus {
     /// A file that’s ignored (that matches a line in .gitignore)
     Ignored,
 
-    /// A file that's updated but unmerged.
+    /// A file that’s updated but unmerged.
     Conflicted,
 }
+
 
 /// A file’s complete Git status. It’s possible to make changes to a file, add
 /// it to the staging area, then make *more* changes, so we need to list each
 /// file’s status for both of these.
+#[derive(Copy, Clone)]
 pub struct Git {
     pub staged:   GitStatus,
     pub unstaged: GitStatus,
 }
 
-use std::default::Default;
 impl Default for Git {
 
     /// Create a Git status for a file with nothing done to it.
-    fn default() -> Git {
-        Git { staged: GitStatus::NotModified, unstaged: GitStatus::NotModified }
+    fn default() -> Self {
+        Self {
+            staged: GitStatus::NotModified,
+            unstaged: GitStatus::NotModified,
+        }
     }
 }
