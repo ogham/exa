@@ -246,8 +246,9 @@ impl<'args> Exa<'args> {
                 let recurse = self.options.dir_action.recurse_options();
 
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
-                let r = details::Render { dir, files, colours, style, opts, filter, recurse, git_ignoring };
-                r.render(self.git.as_ref(), &mut self.writer)
+                let git = self.git.as_ref();
+                let r = details::Render { dir, files, colours, style, opts, filter, recurse, git_ignoring, git };
+                r.render(&mut self.writer)
             }
 
             Mode::GridDetails(ref opts) => {
@@ -257,8 +258,9 @@ impl<'args> Exa<'args> {
                 let row_threshold = opts.row_threshold;
 
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
-                let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold, git_ignoring };
-                r.render(self.git.as_ref(), &mut self.writer)
+                let git = self.git.as_ref();
+                let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold, git_ignoring, git };
+                r.render(&mut self.writer)
             }
         }
     }

@@ -129,6 +129,8 @@ pub struct Render<'a> {
 
     /// Whether we are skipping Git-ignored files.
     pub git_ignoring: bool,
+
+    pub git: Option<&'a GitCache>,
 }
 
 
@@ -149,18 +151,18 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(self, mut git: Option<&'a GitCache>, w: &mut W) -> io::Result<()> {
+    pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
         if let Some(ref table) = self.opts.table {
-            match (git, self.dir) {
-                (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { git = None },
-                (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { git = None },
+            match (self.git, self.dir) {
+                (Some(g), Some(d))  => if ! g.has_anything_for(&d.path) { self.git = None },
+                (Some(g), None)     => if ! self.files.iter().any(|f| g.has_anything_for(&f.path)) { self.git = None },
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
-            let mut table = Table::new(table, git, self.colours);
+            let mut table = Table::new(table, self.git, self.colours);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -171,14 +173,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, git, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, TreeDepth::root());
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, git, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, TreeDepth::root());
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -190,7 +192,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir, 'ig>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], git: Option<&'ig GitCache>, depth: TreeDepth) {
+    fn add_files_to_table<'dir>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], depth: TreeDepth) {
         use std::sync::{Arc, Mutex};
         use log::*;
         use crate::fs::feature::xattr;
@@ -306,7 +308,7 @@ impl<'a> Render<'a> {
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter, git, self.git_ignoring) {
+                for file_to_add in dir.files(self.filter.dot_filter, self.git, self.git_ignoring) {
                     match file_to_add {
                         Ok(f) => {
                             files.push(f);
@@ -328,7 +330,7 @@ impl<'a> Render<'a> {
                         rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(pool, table, rows, &files, git, depth.deeper());
+                    self.add_files_to_table(pool, table, rows, &files, depth.deeper());
                     continue;
                 }
             }
