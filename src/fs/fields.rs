@@ -13,6 +13,7 @@
 
 // C-style `blkcnt_t` types don’t follow Rust’s rules!
 #![allow(non_camel_case_types)]
+#![allow(clippy::struct_excessive_bools)]
 
 
 /// The type of a file’s block count.

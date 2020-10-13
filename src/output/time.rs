@@ -52,7 +52,7 @@ pub enum TimeFormat {
 // timestamps are separate types.
 
 impl TimeFormat {
-    pub fn format_local(&self, time: SystemTime) -> String {
+    pub fn format_local(self, time: SystemTime) -> String {
         match self {
             Self::DefaultFormat  => default_local(time),
             Self::ISOFormat      => iso_local(time),
@@ -61,7 +61,7 @@ impl TimeFormat {
         }
     }
 
-    pub fn format_zoned(&self, time: SystemTime, zone: &TimeZone) -> String {
+    pub fn format_zoned(self, time: SystemTime, zone: &TimeZone) -> String {
         match self {
             Self::DefaultFormat  => default_zoned(time, zone),
             Self::ISOFormat      => iso_zoned(time, zone),

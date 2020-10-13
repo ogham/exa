@@ -225,6 +225,7 @@ impl TimeType {
 /// There should always be at least one of these — there’s no way to disable
 /// the time columns entirely (yet).
 #[derive(PartialEq, Debug, Copy, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct TimeTypes {
     pub modified: bool,
     pub changed:  bool,
@@ -308,7 +309,7 @@ pub struct Table<'a> {
     colours: &'a Colours,
     env: &'a Environment,
     widths: TableWidths,
-    time_format: &'a TimeFormat,
+    time_format: TimeFormat,
     size_format: SizeFormat,
     git: Option<&'a GitCache>,
 }
@@ -330,8 +331,8 @@ impl<'a, 'f> Table<'a> {
             columns,
             git,
             env,
-            time_format: &options.time_format,
-            size_format:  options.size_format,
+            time_format: options.time_format,
+            size_format: options.size_format,
         }
     }
 

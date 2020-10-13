@@ -337,19 +337,19 @@ impl<'dir> File<'dir> {
 
     /// This file’s last changed timestamp, if available on this platform.
     pub fn changed_time(&self) -> Option<SystemTime> {
-        let (mut sec, mut nsec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
+        let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
 
         if sec < 0 {
-            if nsec > 0 {
+            if nanosec > 0 {
                 sec += 1;
-                nsec -= 1_000_000_000;
+                nanosec -= 1_000_000_000;
             }
 
-            let duration = Duration::new(sec.abs() as u64, nsec.abs() as u32);
+            let duration = Duration::new(sec.abs() as u64, nanosec.abs() as u32);
             Some(UNIX_EPOCH - duration)
         }
         else {
-            let duration = Duration::new(sec as u64, nsec as u32);
+            let duration = Duration::new(sec as u64, nanosec as u32);
             Some(UNIX_EPOCH + duration)
         }
     }

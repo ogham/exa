@@ -167,16 +167,14 @@ impl GitRepo {
             }
         };
 
-        match repo.workdir() {
-            Some(workdir) => {
-                let workdir = workdir.to_path_buf();
-                let contents = Mutex::new(GitContents::Before { repo });
-                Ok(Self { contents, workdir, original_path: path, extra_paths: Vec::new() })
-            }
-            None => {
-                warn!("Repository has no workdir?");
-                Err(path)
-            }
+        if let Some(workdir) = repo.workdir() {
+            let workdir = workdir.to_path_buf();
+            let contents = Mutex::new(GitContents::Before { repo });
+            Ok(Self { contents, workdir, original_path: path, extra_paths: Vec::new() })
+        }
+        else {
+            warn!("Repository has no workdir?");
+            Err(path)
         }
     }
 }

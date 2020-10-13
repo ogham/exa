@@ -128,7 +128,7 @@ impl Options {
         let strictness = match vars.get(vars::EXA_STRICT) {
             None                         => Strictness::UseLastArguments,
             Some(ref t) if t.is_empty()  => Strictness::UseLastArguments,
-            _                            => Strictness::ComplainAboutRedundantArguments,
+            Some(_)                      => Strictness::ComplainAboutRedundantArguments,
         };
 
         let Matches { flags, frees } = match flags::ALL_ARGS.parse(args, strictness) {

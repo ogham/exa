@@ -262,18 +262,17 @@ impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
     fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let word = match matches.get(&flags::TIME_STYLE)? {
-            Some(w) => {
+        let word =
+            if let Some(w) = matches.get(&flags::TIME_STYLE)? {
                 w.to_os_string()
             }
-            None => {
+            else {
                 use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
                     Some(ref t) if ! t.is_empty()  => t.clone(),
                     _                              => return Ok(Self::DefaultFormat)
                 }
-            },
-        };
+            };
 
         if &word == "default" {
             Ok(Self::DefaultFormat)
