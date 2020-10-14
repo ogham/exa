@@ -205,12 +205,22 @@ Once Rust is installed, you can compile exa with Cargo:
     $ cargo build
     $ cargo test
 
-The [just](https://github.com/casey/just) command runner can be used to run some helpful development commands, in a manner similar to `make`.
+- The [just](https://github.com/casey/just) command runner can be used to run some helpful development commands, in a manner similar to `make`.
+Run `just --tasks` to get an overview of what’s available.
 
-exa depends on [libgit2](https://github.com/rust-lang/git2-rs) for certain features.
+- If you are compiling a copy for yourself, be sure to run `cargo build --release` or `just build-release` to benefit from release-mode optimisations.
+Copy the resulting binary, which will be in the `target/release` directory, into a folder in your `$PATH`.
+`/usr/local/bin` is usually a good choice.
+
+- To compile and install the manual pages, you will need [pandoc](https://pandoc.org/).
+The `just man` command will compile the Markdown into manual pages, which it will place in the `target/man` directory.
+To use them, copy them into a directory that `man` will read.
+`/usr/local/share/man` is usually a good choice.
+
+- exa depends on [libgit2](https://github.com/rust-lang/git2-rs) for certain features.
 If you’re unable to compile libgit2, you can opt out of Git support by running `cargo build --no-default-features`.
 
-If you intend to compile for musl, you will need to use the flag `vendored-openssl` if you want to get the Git feature working.
+- If you intend to compile for musl, you will need to use the flag `vendored-openssl` if you want to get the Git feature working.
 The full command is `cargo build --release --target=x86_64-unknown-linux-musl --features vendored-openssl,git`.
 
 For more information, see the [Building from Source page](https://the.exa.website/install/source).
