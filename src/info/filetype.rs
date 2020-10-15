@@ -26,7 +26,7 @@ impl FileExtensions {
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
-            "webpack.config.js", "meson.build", "composer.json", "RoboFile.php",
+            "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
         ])
     }
 
@@ -35,14 +35,14 @@ impl FileExtensions {
             "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
             "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
             "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf",
-            "cbz", "xpm", "ico", "cr2", "orf", "nef",
+            "cbz", "xpm", "ico", "cr2", "orf", "nef", "heif",
         ])
     }
 
     fn is_video(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "avi", "flv", "m2v", "m4v", "mkv", "mov", "mp4", "mpeg",
-            "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts",
+            "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts", "heic",
         ])
     }
 
