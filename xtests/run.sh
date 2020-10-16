@@ -290,7 +290,6 @@ fi
 
 # And finally...
 $exa --help        | diff -q - $results/help       || exit 1
-$exa --help --long | diff -q - $results/help_long  || exit 1
 
 
 echo "All the tests passed!"

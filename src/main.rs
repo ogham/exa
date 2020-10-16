@@ -81,11 +81,11 @@ fn main() {
         }
 
         OptionsResult::Help(help_text) => {
-            println!("{}", help_text);
+            print!("{}", help_text);
         }
 
         OptionsResult::Version(version_str) => {
-            println!("{}", version_str);
+            print!("{}", version_str);
         }
 
         OptionsResult::InvalidOptions(error) => {

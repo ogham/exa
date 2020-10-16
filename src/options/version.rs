@@ -31,7 +31,7 @@ impl VersionString {
 
 impl fmt::Display for VersionString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
+        writeln!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
     }
 }
 
