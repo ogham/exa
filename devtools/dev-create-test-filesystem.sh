@@ -190,21 +190,25 @@ echo -e "\033[1m[ 8/13]\033[0m Creating date and time testcases"
 # there’s no way to touch the created date of a file...
 # so we have to do this the old-fashioned way!
 # (and make sure these don't actually get listed)
-touch -t $OLD_DATE    "$TEST_ROOT/dates/peach";  sleep 1
-touch -t $MED_DATE    "$TEST_ROOT/dates/plum";   sleep 1
-touch -t $NEW_DATE    "$TEST_ROOT/dates/pear"
+touch -t $FIXED_OLD_DATE    "$TEST_ROOT/dates/peach";  sleep 1
+touch -t $FIXED_MED_DATE    "$TEST_ROOT/dates/plum";   sleep 1
+touch -t $FIXED_NEW_DATE    "$TEST_ROOT/dates/pear"
 
 # modified dates
-touch -t $OLD_DATE -m "$TEST_ROOT/dates/pear"
-touch -t $MED_DATE -m "$TEST_ROOT/dates/peach"
-touch -t $NEW_DATE -m "$TEST_ROOT/dates/plum"
+touch -t $FIXED_OLD_DATE -m "$TEST_ROOT/dates/pear"
+touch -t $FIXED_MED_DATE -m "$TEST_ROOT/dates/peach"
+touch -t $FIXED_NEW_DATE -m "$TEST_ROOT/dates/plum"
 
 # accessed dates
-touch -t $OLD_DATE -a "$TEST_ROOT/dates/plum"
-touch -t $MED_DATE -a "$TEST_ROOT/dates/pear"
-touch -t $NEW_DATE -a "$TEST_ROOT/dates/peach"
+touch -t $FIXED_OLD_DATE -a "$TEST_ROOT/dates/plum"
+touch -t $FIXED_MED_DATE -a "$TEST_ROOT/dates/pear"
+touch -t $FIXED_NEW_DATE -a "$TEST_ROOT/dates/peach"
 
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/dates"
+
+mkdir "$TEST_ROOT/far-dates"
+touch -t $FIXED_PAST_DATE    "$TEST_ROOT/far-dates/the-distant-past"
+touch -t $FIXED_FUTURE_DATE  "$TEST_ROOT/far-dates/beyond-the-future"
 
 
 # Awkward extended attribute testcases.

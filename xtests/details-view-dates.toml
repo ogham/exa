@@ -1,3 +1,41 @@
+# various date fields
+
+[[cmd]]
+name = "‘exa -lh’ produces a table using the modified time field"
+shell = "exa -lh /testcases/dates"
+stdout = { file = "outputs/dates_long_time_modified.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header', 'time' ]
+
+[[cmd]]
+name = "‘exa -lh --time=modified’ produces a table using the modified time field"
+shell = "exa -lh --time=modified /testcases/dates"
+stdout = { file = "outputs/dates_long_time_modified.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header', 'time' ]
+
+[[cmd]]
+name = "‘exa -lh --time=accessed’ produces a table using the accessed time field"
+shell = "exa -lh --time=accessed /testcases/dates"
+stdout = { file = "outputs/dates_long_time_accessed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header', 'time' ]
+
+
+# distant past and far future dates
+
+[[cmd]]
+name = "‘exa -l’ handles dates far past and future dates"
+shell = "exa -l /testcases/far-dates"
+stdout = { file = "outputs/far_dates_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'time' ]
+
+
 # alternate date formats
 
 [[cmd]]
