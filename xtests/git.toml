@@ -181,22 +181,3 @@ stdout = { file = "outputs/files_long_grid_1col.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'env', 'long', 'grid', 'git' ]
-
-
-# Git-ignoring
-
-[[cmd]]
-name = "‘exa --git-ignore -lR’ skips Git-ignored files"
-shell = "exa --git-ignore -lR /testcases/git2"
-stdout = { file = "outputs/git2_long_recurse_gitignore.ansitxt" }
-stderr = { empty = true }
-status = 0
-tags = [ 'long', 'git-ignore' ]
-
-[[cmd]]
-name = "‘exa --git-ignore -lT’ skips Git-ignored files"
-shell = "exa --git-ignore -lT /testcases/git2"
-stdout = { file = "outputs/git2_long_tree_gitignore.ansitxt" }
-stderr = { empty = true }
-status = 0
-tags = [ 'long', 'git-ignore' ]

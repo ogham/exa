@@ -18,6 +18,15 @@ stderr = { empty = true }
 status = 0
 tags = [ 'env', 'grid', 'across' ]
 
+[[cmd]]
+name = "‘exa -d’ displays, ‘.’, ‘..’, and ‘/’ correctly"
+shell = "exa -d . .. /"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/dirs_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'list-dirs' ]
+
 
 # recurse tests
 
