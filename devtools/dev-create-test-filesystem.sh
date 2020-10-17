@@ -323,9 +323,7 @@ git init >/dev/null
 ln -s aaa/aaa/a b
 
 # This normally fails with:
-#  touch: cannot touch '/testcases/git3/b': No such file or directory
-# but that’s expected (the file deliberately does not exist)
-find "$TEST_ROOT/git3" -exec touch {} -t $FIXED_DATE \; 2>/dev/null
+find "$TEST_ROOT/git3" -exec touch {} -h -t $FIXED_DATE \;
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git3"
 
 
