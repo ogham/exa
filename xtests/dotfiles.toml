@@ -1,0 +1,58 @@
+# hidden files in grid view
+
+[[cmd]]
+name = "‘exa’ does not show hidden files (in grid view)"
+shell = "exa /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'grid' ]
+
+[[cmd]]
+name = "‘exa -a’ shows hidden files (in grid view)"
+shell = "exa -a /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_grid_all.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'grid' ]
+
+[[cmd]]
+name = "‘exa -aa’ shows hidden files, ., and .. (in grid view)"
+shell = "exa -aa /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_grid_all_all.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'grid' ]
+
+
+# hidden files in long view
+
+[[cmd]]
+name = "‘exa -l’ does not show hidden files (in details view)"
+shell = "exa -l /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'long' ]
+
+[[cmd]]
+name = "‘exa -la’ shows hidden files (in details view)"
+shell = "exa -la /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_long_all.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'long' ]
+
+[[cmd]]
+name = "‘exa -laa’ shows hidden files, ., and .. (in details view)"
+shell = "exa -laa /testcases/hiddens"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/hiddens_long_all_all.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'all', 'long' ]

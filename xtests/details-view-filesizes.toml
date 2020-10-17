@@ -1,0 +1,63 @@
+[[cmd]]
+name = "‘exa -lb’ produces a details table with binary file sizes"
+shell = "exa -lb /testcases/files"
+stdout = { file = "outputs/files_long_binary.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'binary' ]
+
+[[cmd]]
+name = "‘exa -lB’ produces a details table with bytes file sizes"
+shell = "exa -lB /testcases/files"
+stdout = { file = "outputs/files_long_bytes.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'bytes' ]
+
+[[cmd]]
+name = "‘exa -lhb’ produces a details table with a header and binary file sizes"
+shell = "exa -lhb /testcases/files"
+stdout = { file = "outputs/files_long_header_binary.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header', 'binary' ]
+
+[[cmd]]
+name = "‘exa -lhB’ produces a details table with a header and bytes file sizes"
+shell = "exa -lhB /testcases/files"
+stdout = { file = "outputs/files_long_header_bytes.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header', 'bytes' ]
+
+[[cmd]]
+name = "‘exa -l --color-scale’ (US spelling) produces a details table using a file size colour scale"
+shell = "exa -l --color-scale /testcases/files"
+stdout = { file = "outputs/files_long_colourscale.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-scale' ]
+
+[[cmd]]
+name = "‘exa -l --colour-scale’ (UK spelling) produces a details table using a file size colour scale"
+shell = "exa -l --colour-scale /testcases/files"
+stdout = { file = "outputs/files_long_colourscale.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-scale' ]
+
+[[cmd]]
+name = "‘exa -l --colour-scale --binary’ produces a details table using a file size colour scale and binary sizes"
+shell = "exa -l --colour-scale --binary /testcases/files"
+stdout = { file = "outputs/files_long_colourscale_binary.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-scale', 'binary' ]
+
+[[cmd]]
+name = "‘exa -l --colour-scale --bytes’ produces a details table using a file size colour scale and byte sizes"
+shell = "exa -l --colour-scale --bytes /testcases/files"
+stdout = { file = "outputs/files_long_colourscale_bytes.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-scale', 'bytes' ]

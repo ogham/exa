@@ -1,0 +1,17 @@
+[[cmd]]
+name = "‘EXA_DEBUG=1 exa’ produces debug output"
+shell = "exa --long /testcases"
+environment = { EXA_DEBUG = "1" }
+stdout = { empty = false }
+stderr = { string = "DEBUG" }
+status = 0
+tags = [ 'debug', 'env', 'long' ]
+
+[[cmd]]
+name = "‘EXA_DEBUG=trace exa’ produces trace-level debug output"
+shell = "exa --long /testcases"
+environment = { EXA_DEBUG = "trace" }
+stdout = { empty = false }
+stderr = { string = "TRACE" }
+status = 0
+tags = [ 'debug', 'env', 'long' ]

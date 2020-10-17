@@ -1,0 +1,112 @@
+# links
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ to theme symlinks"
+shell = "exa -1 /testcases/file-names/links"
+environment = { EXA_COLORS = "or=32:bO=1:cc=35:ln=31:xx=33" }
+stdout = { file = "outputs/links_oneline_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+
+# special files
+
+[[cmd]]
+name = "exa uses ‘LS_COLORS’ to theme pipes and devices"
+shell = "exa -1 /testcases/specials"
+environment = { LS_COLORS = "bd=31:cd=32:pi=34" }
+stdout = { file = "outputs/specials_oneline_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ to theme pipes and devices"
+shell = "exa -1 /testcases/specials"
+environment = { EXA_COLORS = "bd=31:cd=32:pi=34" }
+stdout = { file = "outputs/specials_oneline_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa prefers ‘EXA_COLORS’ over ‘LS_COLORS’ to theme pipes and devices"
+shell = "exa -1 /testcases/specials"
+environment = { LS_COLORS = "bd=32:cd=34:pi=31", EXA_COLORS = "bd=31:cd=32:pi=34" }
+stdout = { file = "outputs/specials_oneline_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+
+# extensions
+
+[[cmd]]
+name = "exa uses ‘LS_COLORS’ to theme files based on their extension"
+shell = "exa -1 /testcases/file-names-exts/compressed.*"
+environment = { LS_COLORS = "*.deb=1;37:*.tar.*=1;37" }
+stdout = { file = "outputs/exts_compressed_paths_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ to theme files based on their extension"
+shell = "exa -1 /testcases/file-names-exts/compressed.*"
+environment = { LS_COLORS = "*.deb=1;37:*.tar.*=1;37" }
+stdout = { file = "outputs/exts_compressed_paths_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa uses both ‘LS_COLORS’ and ‘EXA_COLORS’ to theme files based on their extension"
+shell = "exa -1 /testcases/file-names-exts/compressed.*"
+environment = { EXA_COLORS = "*.deb=1;37", LS_COLORS="*.tar.*=1;37" }
+stdout = { file = "outputs/exts_compressed_paths_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ with only ‘reset’ to not theme any files"
+shell = "exa -1 /testcases/file-names-exts"
+environment = { EXA_COLORS = "reset" }
+stdout = { file = "outputs/exts_themed_reset.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+
+# extensions with resets
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ with ‘reset:’ to theme files based on their extension, and no others"
+shell = "exa -1 /testcases/file-names-exts/compressed.*"
+environment = { EXA_COLORS = "reset:*.deb=1;37:*.tar.*=1;37" }
+stdout = { file = "outputs/exts_compressed_paths_themed_reset.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+[[cmd]]
+name = "exa ignores ‘LS_COLORS’ with ‘reset:’"
+shell = "exa -1 /testcases/file-names-exts/compressed.*"
+environment = { LS_COLORS = "reset:*.deb=1;37:*.tar.*=1;37" }
+stdout = { file = "outputs/exts_compressed_paths_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]
+
+
+# details view
+
+[[cmd]]
+name = "exa uses ‘EXA_COLORS’ to theme metadata"
+shell = "exa --long /testcases/permissions"
+environment = { EXA_COLORS = "di=38;5;195:fi=38;5;250:xx=38;5;237:ur=38;5;194:uw=38;5;193:ux=38;5;192:gr=38;5;191:gw=38;5;190:gx=38;5;118:tr=38;5;119:tw=38;5;120:tx=38;5;121:su=38;5;51:sf=38;5;50:sn=38;5;49:un=38;5;46:da=38;5;47:ex=38;5;48" }
+stdout = { file = "outputs/permissions_long_themed.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'themes' ]

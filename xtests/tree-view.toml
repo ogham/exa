@@ -1,0 +1,31 @@
+# file name tests
+
+[[cmd]]
+name = "‘exa -T’ produces a tree of file names"
+shell = "exa -T /testcases/file-names"
+stdout = { file = "outputs/names_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree' ]
+
+
+# symlinks tests
+
+[[cmd]]
+name = "‘exa -T’ lists the destination of symlinks"
+shell = "exa -T /testcases/links"
+stdout = { file = "outputs/links_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree' ]
+
+
+# permission errors tests
+
+[[cmd]]
+name = "‘exa -T’ displays an inaccessible directory"
+shell = "exa -T /proc/1/root"
+stdout = { file = "outputs/proc_1_root.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree' ]

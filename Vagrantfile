@@ -1,5 +1,3 @@
-require 'date'
-
 Vagrant.configure(2) do |config|
 
   # We use Ubuntu instead of Debian because the image comes with two-way

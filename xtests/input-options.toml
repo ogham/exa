@@ -1,0 +1,77 @@
+[[cmd]]
+name = "exa can handle invalid UTF-8 in command-line arguments"
+shell = "exa /testcases/file-names/*"
+stdout = { empty = false }
+stderr = { empty = true }
+status = 0
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays an error for an unknown short option"
+shell = "exa -4"
+stdout = { empty = true }
+stderr = { string = "Unknown argument -4" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays an error for an unknown long option"
+shell = "exa --ternary"
+stdout = { empty = true }
+stderr = { string = "Unknown argument --ternary" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays an error for an option missing a parameter"
+shell = "exa --time"
+stdout = { empty = true }
+stderr = { string = "Flag --time needs a value (choices: modified, changed, accessed, created)" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays an error for an option that cannot take a parameter has one"
+shell = "exa --long=time"
+stdout = { empty = true }
+stderr = { string = "Flag --long cannot take a value" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays an error for option that takes the wrong parameter"
+shell = "exa -l --time-style=24"
+stdout = { empty = true }
+stderr = { string = "Option --time-style has no \"24\" setting (choices: default, long-iso, full-iso, iso)" }
+status = 3
+tags = [ 'options' ]
+
+
+# strict mode settings
+
+[[cmd]]
+name = "exa displays a warning for a useless option in strict mode"
+shell = "exa --binary"
+environment = { EXA_STRICT = "1" }
+stdout = { empty = true }
+stderr = { string = "Option --binary (-b) is useless without option --long (-l)" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays a warning for a short option given twice in strict mode"
+shell = "exa -ll"
+environment = { EXA_STRICT = "1" }
+stdout = { empty = true }
+stderr = { string = "Flag -l was given twice" }
+status = 3
+tags = [ 'options' ]
+
+[[cmd]]
+name = "exa displays a warning for a short option also given as long in strict mode"
+shell = "exa -l --long"
+environment = { EXA_STRICT = "1" }
+stdout = { empty = true }
+stderr = { string = "Flag -l conflicts with flag --long" }
+status = 3
+tags = [ 'options' ]

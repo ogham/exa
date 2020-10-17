@@ -20,6 +20,7 @@ fi
 
 sudo mkdir "$TEST_ROOT"
 sudo chmod 777 "$TEST_ROOT"
+sudo mkdir "$TEST_ROOT/empty"
 
 
 # Awkward file size testcases.
@@ -302,6 +303,10 @@ mkdir "deeply/nested/repository"
 cd    "deeply/nested/repository"
 git init >/dev/null
 touch subfile
+# This file, ‘subfile’, should _not_ be marked as a new file by exa, because
+# it’s in the sub-repository but hasn’t been added to it. Were the sub-repo not
+# present, it would be marked as a new file, as the top-level repo knows about
+# the ‘deeply’ directory.
 
 find "$TEST_ROOT/git2" -exec touch {} -t $FIXED_DATE \;
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git2"
@@ -332,6 +337,7 @@ shopt -u dotglob
 GLOBIGNORE=".:.."
 
 mkdir "$TEST_ROOT/hiddens"
+cd    "$TEST_ROOT/hiddens"
 touch "$TEST_ROOT/hiddens/visible"
 touch "$TEST_ROOT/hiddens/.hidden"
 touch "$TEST_ROOT/hiddens/..extra-hidden"
