@@ -29,18 +29,17 @@ Vagrant.configure(2) do |config|
     # Install the dependencies needed for exa to build, as quietly as
     # apt can do.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
-      trap 'exit' ERR
-      apt-get update
-      apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
-        git cmake curl attr libgit2-dev zip \
-        fish zsh bash bash-completion
+      if hash fish &>/dev/null; then
+        echo "Tools are already installed"
+      else
+        trap 'exit' ERR
+        echo "Installing tools"
+        apt-get update -qq
+        apt-get install -qq -o=Dpkg::Use-Pty=0 \
+          git gcc curl attr libgit2-dev zip \
+          fish zsh bash bash-completion
+      fi
     EOF
-
-
-    # Guarantee that the timezone is UTC -- some of the tests
-    # depend on this (for now).
-    config.vm.provision :shell, privileged: true, inline:
-      %[timedatectl set-timezone UTC]
 
 
     # Install Rust.
@@ -52,38 +51,43 @@ Vagrant.configure(2) do |config|
         echo "Rust is already installed"
       else
         trap 'exit' ERR
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "Installing Rust"
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --component rustc,rust-std,cargo,clippy -y
         source $HOME/.cargo/env
-        cargo install cargo-hack
+        cargo install -q cargo-hack
       fi
     EOF
 
 
-    # Install Just, the command runner.
+    # Privileged installation and setup scripts.
     config.vm.provision :shell, privileged: true, inline: <<-EOF
+
+      # Install Just, the command runner.
       if hash just &>/dev/null; then
         echo "just is already installed"
       else
-        wget "https://github.com/casey/just/releases/download/v0.8.0/just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        trap 'exit' ERR
+        echo "Installing just"
+        wget -q "https://github.com/casey/just/releases/download/v0.8.0/just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
         tar -xf "just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
         cp just /usr/local/bin
       fi
-    EOF
 
 
-    # Use a different ‘target’ directory on the VM than on the host.
-    # By default it just uses the one in /vagrant/target, which can
-    # cause problems if it has different permissions than the other
-    # directories, or contains object files compiled for the host.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
+      # Guarantee that the timezone is UTC — some of the tests
+      # depend on this (for now).
+      timedatectl set-timezone UTC
+
+
+      # Use a different ‘target’ directory on the VM than on the host.
+      # By default it just uses the one in /vagrant/target, which can
+      # cause problems if it has different permissions than the other
+      # directories, or contains object files compiled for the host.
       echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/#{developer}/.cargo/bin"' > /etc/environment
       echo 'CARGO_TARGET_DIR="/home/#{developer}/target"'                                                     >> /etc/environment
-    EOF
 
 
-    # Create a variety of misc scripts.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      trap 'exit' ERR
+      # Create a variety of misc scripts.
 
       ln -sf /vagrant/devtools/dev-run-debug.sh   /usr/bin/exa
       ln -sf /vagrant/devtools/dev-run-release.sh /usr/bin/rexa
@@ -104,16 +108,12 @@ Vagrant.configure(2) do |config|
       echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
 
       chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
-    EOF
 
 
-    # Configure the welcoming text that gets shown.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      trap 'exit' ERR
-
-      rm -f /etc/update-motd.d/*
+      # Configure the welcoming text that gets shown:
 
       # Capture the help text so it gets displayed first
+      rm -f /etc/update-motd.d/*
       bash /vagrant/devtools/dev-help.sh > /etc/motd
 
       # Tell bash to execute a bunch of stuff when a session starts
@@ -123,19 +123,19 @@ Vagrant.configure(2) do |config|
       # Disable last login date in sshd
       sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
       systemctl restart sshd
-    EOF
 
 
-    # Link the completion files so they’re “installed”.
-    config.vm.provision :shell, privileged: true, inline: <<-EOF
-      trap 'exit' ERR
+      # Link the completion files so they’re “installed”:
 
+      # bash
       test -h /etc/bash_completion.d/exa \
         || ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
 
+      # zsh
       test -h /usr/share/zsh/vendor-completions/_exa \
         || ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
 
+      # fish
       test -h /usr/share/fish/completions/exa.fish \
         || ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
     EOF
