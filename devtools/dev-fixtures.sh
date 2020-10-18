@@ -34,6 +34,10 @@ export FIXED_LONG_USER="antidisestablishmentarienism"
 
 
 # A couple of dates, for date-time testing.
-export OLD_DATE='200303030000.00'
-export MED_DATE='200606152314.29'   # the june gets used for fr_FR locale tests
-export NEW_DATE='200912221038.53'   # and the december for ja_JP local tests
+export FIXED_OLD_DATE='200303030000.00'
+export FIXED_MED_DATE='200606152314.29'   # the june gets used for fr_FR locale tests
+export FIXED_NEW_DATE='200912221038.53'   # and the december for ja_JP local tests
+
+# Dates that extend beyond 32-bit timespace.
+export FIXED_PAST_DATE='170001010000.00'
+export FIXED_FUTURE_DATE='230001010000.00'

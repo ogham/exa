@@ -20,6 +20,7 @@ fi
 
 sudo mkdir "$TEST_ROOT"
 sudo chmod 777 "$TEST_ROOT"
+sudo mkdir "$TEST_ROOT/empty"
 
 
 # Awkward file size testcases.
@@ -189,21 +190,25 @@ echo -e "\033[1m[ 8/13]\033[0m Creating date and time testcases"
 # there’s no way to touch the created date of a file...
 # so we have to do this the old-fashioned way!
 # (and make sure these don't actually get listed)
-touch -t $OLD_DATE    "$TEST_ROOT/dates/peach";  sleep 1
-touch -t $MED_DATE    "$TEST_ROOT/dates/plum";   sleep 1
-touch -t $NEW_DATE    "$TEST_ROOT/dates/pear"
+touch -t $FIXED_OLD_DATE    "$TEST_ROOT/dates/peach";  sleep 1
+touch -t $FIXED_MED_DATE    "$TEST_ROOT/dates/plum";   sleep 1
+touch -t $FIXED_NEW_DATE    "$TEST_ROOT/dates/pear"
 
 # modified dates
-touch -t $OLD_DATE -m "$TEST_ROOT/dates/pear"
-touch -t $MED_DATE -m "$TEST_ROOT/dates/peach"
-touch -t $NEW_DATE -m "$TEST_ROOT/dates/plum"
+touch -t $FIXED_OLD_DATE -m "$TEST_ROOT/dates/pear"
+touch -t $FIXED_MED_DATE -m "$TEST_ROOT/dates/peach"
+touch -t $FIXED_NEW_DATE -m "$TEST_ROOT/dates/plum"
 
 # accessed dates
-touch -t $OLD_DATE -a "$TEST_ROOT/dates/plum"
-touch -t $MED_DATE -a "$TEST_ROOT/dates/pear"
-touch -t $NEW_DATE -a "$TEST_ROOT/dates/peach"
+touch -t $FIXED_OLD_DATE -a "$TEST_ROOT/dates/plum"
+touch -t $FIXED_MED_DATE -a "$TEST_ROOT/dates/pear"
+touch -t $FIXED_NEW_DATE -a "$TEST_ROOT/dates/peach"
 
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/dates"
+
+mkdir "$TEST_ROOT/far-dates"
+touch -t $FIXED_PAST_DATE    "$TEST_ROOT/far-dates/the-distant-past"
+touch -t $FIXED_FUTURE_DATE  "$TEST_ROOT/far-dates/beyond-the-future"
 
 
 # Awkward extended attribute testcases.
@@ -302,6 +307,10 @@ mkdir "deeply/nested/repository"
 cd    "deeply/nested/repository"
 git init >/dev/null
 touch subfile
+# This file, ‘subfile’, should _not_ be marked as a new file by exa, because
+# it’s in the sub-repository but hasn’t been added to it. Were the sub-repo not
+# present, it would be marked as a new file, as the top-level repo knows about
+# the ‘deeply’ directory.
 
 find "$TEST_ROOT/git2" -exec touch {} -t $FIXED_DATE \;
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git2"
@@ -318,9 +327,7 @@ git init >/dev/null
 ln -s aaa/aaa/a b
 
 # This normally fails with:
-#  touch: cannot touch '/testcases/git3/b': No such file or directory
-# but that’s expected (the file deliberately does not exist)
-find "$TEST_ROOT/git3" -exec touch {} -t $FIXED_DATE \; 2>/dev/null
+find "$TEST_ROOT/git3" -exec touch {} -h -t $FIXED_DATE \;
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git3"
 
 
@@ -332,6 +339,7 @@ shopt -u dotglob
 GLOBIGNORE=".:.."
 
 mkdir "$TEST_ROOT/hiddens"
+cd    "$TEST_ROOT/hiddens"
 touch "$TEST_ROOT/hiddens/visible"
 touch "$TEST_ROOT/hiddens/.hidden"
 touch "$TEST_ROOT/hiddens/..extra-hidden"

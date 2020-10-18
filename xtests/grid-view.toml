@@ -1,0 +1,133 @@
+# file name tests
+
+[[cmd]]
+name = "‘exa’ produces a grid of file names"
+shell = "exa /testcases/file-names"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/names_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘exa -x’ produces an across grid of file names"
+shell = "exa -x /testcases/file-names"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/names_grid_across.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'across' ]
+
+[[cmd]]
+name = "‘exa -d’ displays, ‘.’, ‘..’, and ‘/’ correctly"
+shell = "exa -d . .. /"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/dirs_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'list-dirs' ]
+
+
+# recurse tests
+
+[[cmd]]
+name = "‘exa -R’ produces several grids of file names"
+shell = "exa -R /testcases/file-names"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/names_grid_recurse.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'recurse' ]
+
+
+# symlink tests
+
+[[cmd]]
+name = "‘exa’ highlights symlinks and broken symlinks"
+shell = "exa /testcases/links"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/links_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+
+
+# columns and width tests
+
+[[cmd]]
+name = "‘COLUMNS=40 exa’ produces a grid of 4 columns"
+shell = "exa /testcases/files"
+environment = { COLUMNS = "40" }
+stdout = { file = "outputs/files_grid_4col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=80 exa’ produces a grid of 8 columns"
+shell = "exa /testcases/files"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_grid_8col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=120 exa’ produces a grid of 13 columns"
+shell = "exa /testcases/files"
+environment = { COLUMNS = "120" }
+stdout = { file = "outputs/files_grid_13col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=160 exa’ produces a grid of 13 columns"
+shell = "exa /testcases/files"
+environment = { COLUMNS = "160" }
+stdout = { file = "outputs/files_grid_13col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 exa’ produces a grid of 20 columns"
+shell = "exa /testcases/files"
+environment = { COLUMNS = "200" }
+stdout = { file = "outputs/files_grid_20col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+
+# columns and width tests with files
+# (these rely on bash’s glob sort order)
+# (some of the output files also have trailing whitespace)
+
+[[cmd]]
+name = "‘COLUMNS=100 exa’ with file arguments produces a grid of 3 columns, with full paths"
+shell = "exa /testcases/files/*"
+environment = { COLUMNS = "100" }
+stdout = { file = "outputs/files_paths_grid_3col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=150 exa’ with file arguments produces a grid of 5 columns, with full paths"
+shell = "exa /testcases/files/*"
+environment = { COLUMNS = "150" }
+stdout = { file = "outputs/files_paths_grid_5col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 exa’ with file arguments produces a grid of 7 columns, with full paths"
+shell = "exa /testcases/files/*"
+environment = { COLUMNS = "200" }
+stdout = { file = "outputs/files_paths_grid_7col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid' ]

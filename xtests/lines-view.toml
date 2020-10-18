@@ -1,0 +1,36 @@
+# file name tests
+
+[[cmd]]
+name = "‘exa -1’ displays file names, one on each line"
+shell = "exa -1 /testcases/file-names"
+stdout = { file = "outputs/names_lines.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline' ]
+
+[[cmd]]
+name = "‘exa -1d’ displays, ‘.’, ‘..’, and ‘/’ correctly"
+shell = "exa -1d . .. /"
+stdout = { file = "outputs/dirs_oneline.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'list-dirs' ]
+
+
+# symlinks tests
+
+[[cmd]]
+name = "‘exa -1’ lists the destination of symlinks"
+shell = "exa -1 /testcases/links"
+stdout = { file = "outputs/links_lines.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline' ]
+
+[[cmd]]
+name = "‘exa -1d’ with file arguments lists the destination of symlinks"
+shell = "exa -1d /testcases/links/*"
+stdout = { file = "outputs/links_paths_lines.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'list-dirs' ]

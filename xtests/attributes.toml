@@ -1,0 +1,42 @@
+[[cmd]]
+name = "‘exa -@lT’ produces a tree view with metadata and attribute entries"
+shell = "exa -@lT /testcases/attributes"
+stdout = { file = "outputs/attributes_xattrs_long_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'xattrs', 'long', 'tree' ]
+
+[[cmd]]
+name = "‘exa -@T’ produces a tree view with attribute entries"
+shell = "exa -@T /testcases/attributes"
+stdout = { file = "outputs/attributes_xattrs_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'xattrs', 'tree' ]
+
+[[cmd]]
+name = "‘exa -@T’ with file arguments produces a tree view with attribute entries"
+shell = "exa -@T /testcases/attributes/*"
+stdout = { file = "outputs/attributes_files_xattrs_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'xattrs', 'tree' ]
+
+[[cmd]]
+name = "‘exa -@T’ produces a tree view with attribute entries of symlinks"
+shell = "exa -@T /testcases/links"
+stdout = { file = "outputs/links_xattrs_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'xattrs', 'tree' ]
+
+
+# permission errors tests
+
+[[cmd]]
+name = "‘exa -@T’ displays an inaccessible directory with errors"
+shell = "exa -@T /proc/1/root"
+stdout = { file = "outputs/proc_1_root_xattrs.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree' ]

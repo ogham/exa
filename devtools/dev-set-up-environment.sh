@@ -30,10 +30,26 @@ else
 fi
 
 
-# set up locales
+# locale generation
+
+# remove most of this file, it slows down locale-gen
+if grep -F -q "en_GB.UTF-8 UTF-8" /var/lib/locales/supported.d/en; then
+    echo "Removing existing locales"
+    echo "en_US.UTF-8 UTF-8" > /var/lib/locales/supported.d/en
+fi
 
 # uncomment these from the config file
-sudo sed -i '/fr_FR.UTF-8/s/^# //g' /etc/locale.gen
-sudo sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen
+if grep -F -q "# fr_FR.UTF-8" /etc/locale.gen; then
+    sed -i '/fr_FR.UTF-8/s/^# //g' /etc/locale.gen
+fi
+if grep -F -q "# ja_JP.UTF-8" /etc/locale.gen; then
+    sed -i '/ja_JP.UTF-8/s/^# //g' /etc/locale.gen
+fi
 
-sudo locale-gen
+# only regenerate locales if the config files are newer than the locale archive
+if [[ ( /var/lib/locales/supported.d/en -nt /usr/lib/locale/locale-archive ) || \
+      ( /etc/locale_gen                 -nt /usr/lib/locale/locale-archive ) ]]; then
+    locale-gen
+else
+    echo "Locales already generated"
+fi
