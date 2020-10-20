@@ -27,10 +27,10 @@ impl Mode {
     /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let long = || {
-            if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
+            if matches.is_strict() && matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
                 Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG))
             }
-            else if matches.has(&flags::ONE_LINE)? {
+            else if matches.is_strict() && matches.has(&flags::ONE_LINE)? {
                 Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG))
             }
             else {
@@ -46,7 +46,7 @@ impl Mode {
         let other_options_scan = || {
             if let Some(width) = TerminalWidth::deduce(vars)?.width() {
                 if matches.has(&flags::ONE_LINE)? {
-                    if matches.has(&flags::ACROSS)? {
+                    if matches.is_strict() && matches.has(&flags::ACROSS)? {
                         Err(OptionsError::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
                     }
                     else {
@@ -587,6 +587,9 @@ mod test {
         test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
         test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
 
+        // Options that do nothing with --long
+        test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
+        test!(long_oneline:  Mode <- ["--long", "--oneline"],  None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
         test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
