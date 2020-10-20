@@ -529,7 +529,7 @@ mod test {
         #[cfg(target_family = "unix")]
         test!(time_ch:   TimeTypes <- ["--time=changed"];      Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
         #[cfg(target_family = "unix")]
-        test!(t_ch:    TimeTypes <- ["-t", "ch"];            Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
+        test!(t_ch:    TimeTypes <- ["-t", "ch"];              Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
 
         // Accessed
         test!(acc:       TimeTypes <- ["--accessed"];          Both => Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false }));
@@ -544,7 +544,7 @@ mod test {
         test!(t_cr:      TimeTypes <- ["-tcr"];                Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
 
         // Multiples
-        test!(time_uu:   TimeTypes <- ["-u", "--modified"];    Both => Ok(TimeTypes { modified: true, changed: false, accessed: true,  created: false }));
+        test!(time_uu:   TimeTypes <- ["-u", "--modified"];    Both => Ok(TimeTypes { modified: true,  changed: false, accessed: true,  created: false }));
 
 
         // Errors
@@ -568,15 +568,15 @@ mod test {
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
         // Grid views
-        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
-        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
-        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
-        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
-        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { across: _, console_width: _, icons: true})));
+        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
+        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
+        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { icons: true,   .. })));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
-        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
+        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines(LineOptions { .. })));
+        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines(LineOptions { .. })));
         test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
 
         // Details views

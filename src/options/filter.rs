@@ -301,14 +301,14 @@ mod test {
         }
 
         // Various numbers of globs
-        test!(none:   IgnorePatterns <- [];                             Both => Ok(IgnorePatterns::empty()));
-        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"];     Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg") ])));
-        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"];  Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg"), pat("*.MP3") ])));
-        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"];                  Both => Ok(IgnorePatterns::from_iter(vec![ pat("*"), pat("?"), pat("."), pat("*") ])));
+        test!(none:   IgnorePatterns <- [];                                        Both => Ok(IgnorePatterns::empty()));
+        test!(one:    IgnorePatterns <- ["--ignore-glob", "*.ogg"];                Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg") ])));
+        test!(two:    IgnorePatterns <- ["--ignore-glob=*.ogg|*.MP3"];             Both => Ok(IgnorePatterns::from_iter(vec![ pat("*.ogg"), pat("*.MP3") ])));
+        test!(loads:  IgnorePatterns <- ["-I*|?|.|*"];                             Both => Ok(IgnorePatterns::from_iter(vec![ pat("*"), pat("?"), pat("."), pat("*") ])));
 
         // Overriding
-        test!(overridden:   IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.mp3") ])));
-        test!(overridden_2: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.MP3") ])));
+        test!(overridden:   IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];      Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.mp3") ])));
+        test!(overridden_2: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];          Last => Ok(IgnorePatterns::from_iter(vec![ pat("*.MP3") ])));
         test!(overridden_3: IgnorePatterns <- ["-I=*.ogg",    "-I", "*.mp3"];  Complain => Err(OptionsError::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
         test!(overridden_4: IgnorePatterns <- ["-I", "*.OGG", "-I*.MP3"];      Complain => Err(OptionsError::Duplicate(Flag::Short(b'I'), Flag::Short(b'I'))));
     }
