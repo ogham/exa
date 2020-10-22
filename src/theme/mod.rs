@@ -1,11 +1,28 @@
 use ansi_term::Style;
 
 use crate::fs::File;
-use crate::options::{flags, Vars, OptionsError};
-use crate::options::parser::MatchedFlags;
-use crate::output::file_name::{Classify, FileStyle};
-use crate::style::Colours;
+use crate::output::file_name::Colours as FileNameColours;
+use crate::output::render;
 
+mod ui_styles;
+pub use self::ui_styles::UiStyles;
+pub use self::ui_styles::Size as SizeColours;
+
+mod lsc;
+pub use self::lsc::LSColors;
+
+mod default_theme;
+
+
+#[derive(PartialEq, Debug)]
+pub struct Options {
+
+    pub use_colours: UseColours,
+
+    pub colour_scale: ColourScale,
+
+    pub definitions: Definitions,
+}
 
 /// Under what circumstances we should display coloured, rather than plain,
 /// output to the terminal.
@@ -14,8 +31,8 @@ use crate::style::Colours;
 /// Turning them on when output is going to, say, a pipe, would make programs
 /// such as `grep` or `more` not work properly. So the `Automatic` mode does
 /// this check and only displays colours when they can be truly appreciated.
-#[derive(PartialEq, Debug)]
-enum TerminalColours {
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum UseColours {
 
     /// Display them even when output isn’t going to a terminal.
     Always,
@@ -27,81 +44,39 @@ enum TerminalColours {
     Never,
 }
 
-impl Default for TerminalColours {
-    fn default() -> Self {
-        Self::Automatic
-    }
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum ColourScale {
+    Fixed,
+    Gradient,
+}
+
+#[derive(PartialEq, Debug, Default)]
+pub struct Definitions {
+    pub ls: Option<String>,
+    pub exa: Option<String>,
 }
 
 
-impl TerminalColours {
-
-    /// Determine which terminal colour conditions to use.
-    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
-            Some(w)  => w,
-            None     => return Ok(Self::default()),
-        };
-
-        if word == "always" {
-            Ok(Self::Always)
-        }
-        else if word == "auto" || word == "automatic" {
-            Ok(Self::Automatic)
-        }
-        else if word == "never" {
-            Ok(Self::Never)
-        }
-        else {
-            Err(OptionsError::BadArgument(&flags::COLOR, word.into()))
-        }
-    }
+pub struct Theme {
+    pub ui: UiStyles,
+    pub exts: Box<dyn FileColours>,
 }
 
-
-/// **Styles**, which is already an overloaded term, is a pair of view option
-/// sets that happen to both be affected by `LS_COLORS` and `EXA_COLORS`.
-/// Because it’s better to only iterate through that once, the two are deduced
-/// together.
-pub struct Styles {
-
-    /// The colours to paint user interface elements, like the date column,
-    /// and file kinds, such as directories.
-    pub colours: Colours,
-
-    /// The colours to paint the names of files that match glob patterns
-    /// (and the classify option).
-    pub style: FileStyle,
-}
-
-impl Styles {
+impl Options {
 
     #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
-    pub fn deduce<V, TW>(matches: &MatchedFlags<'_>, vars: &V, widther: TW) -> Result<Self, OptionsError>
-    where TW: Fn() -> Option<usize>, V: Vars {
+    pub fn to_theme(&self, isatty: bool) -> Theme {
         use crate::info::filetype::FileExtensions;
-        use crate::output::file_name::NoFileColours;
 
-        let classify = Classify::deduce(matches)?;
-
-        // Before we do anything else, figure out if we need to consider
-        // custom colours at all
-        let tc = TerminalColours::deduce(matches)?;
-
-        if tc == TerminalColours::Never || (tc == TerminalColours::Automatic && widther().is_none()) {
+        if self.use_colours == UseColours::Never || (self.use_colours == UseColours::Automatic && ! isatty) {
+            let ui = UiStyles::plain();
             let exts = Box::new(NoFileColours);
-
-            return Ok(Self {
-                colours: Colours::plain(),
-                style: FileStyle { classify, exts },
-            });
+            return Theme { ui, exts };
         }
 
         // Parse the environment variables into colours and extension mappings
-        let scale = matches.has_where(|f| f.matches(&flags::COLOR_SCALE) || f.matches(&flags::COLOUR_SCALE))?;
-        let mut colours = Colours::colourful(scale.is_some());
-
-        let (exts, use_default_filetypes) = parse_color_vars(vars, &mut colours);
+        let mut ui = UiStyles::default_theme(self.colour_scale);
+        let (exts, use_default_filetypes) = self.definitions.parse_color_vars(&mut ui);
 
         // Use between 0 and 2 file name highlighters
         let exts = match (exts.is_non_empty(), use_default_filetypes) {
@@ -111,67 +86,89 @@ impl Styles {
             ( true,  true)  => Box::new((exts, FileExtensions))  as Box<_>,
         };
 
-        let style = FileStyle { classify, exts };
-        Ok(Self { colours, style })
+        Theme { ui, exts }
     }
 }
 
-/// Parse the environment variables into `LS_COLORS` pairs, putting file glob
-/// colours into the `ExtensionMappings` that gets returned, and using the
-/// two-character UI codes to modify the mutable `Colours`.
-///
-/// Also returns if the `EXA_COLORS` variable should reset the existing file
-/// type mappings or not. The `reset` code needs to be the first one.
-fn parse_color_vars<V: Vars>(vars: &V, colours: &mut Colours) -> (ExtensionMappings, bool) {
-    use log::*;
+impl Definitions {
 
-    use crate::options::vars;
-    use crate::style::LSColors;
+    /// Parse the environment variables into `LS_COLORS` pairs, putting file glob
+    /// colours into the `ExtensionMappings` that gets returned, and using the
+    /// two-character UI codes to modify the mutable `Colours`.
+    ///
+    /// Also returns if the `EXA_COLORS` variable should reset the existing file
+    /// type mappings or not. The `reset` code needs to be the first one.
+    fn parse_color_vars(&self, colours: &mut UiStyles) -> (ExtensionMappings, bool) {
+        use log::*;
 
-    let mut exts = ExtensionMappings::default();
+        let mut exts = ExtensionMappings::default();
 
-    if let Some(lsc) = vars.get(vars::LS_COLORS) {
-        let lsc = lsc.to_string_lossy();
-
-        LSColors(lsc.as_ref()).each_pair(|pair| {
-            if ! colours.set_ls(&pair) {
-                match glob::Pattern::new(pair.key) {
-                    Ok(pat) => {
-                        exts.add(pat, pair.to_style());
-                    }
-                    Err(e) => {
-                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+        if let Some(lsc) = &self.ls {
+            LSColors(lsc).each_pair(|pair| {
+                if ! colours.set_ls(&pair) {
+                    match glob::Pattern::new(pair.key) {
+                        Ok(pat) => {
+                            exts.add(pat, pair.to_style());
+                        }
+                        Err(e) => {
+                            warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                        }
                     }
                 }
-            }
-        });
-    }
-
-    let mut use_default_filetypes = true;
-
-    if let Some(exa) = vars.get(vars::EXA_COLORS) {
-        let exa = exa.to_string_lossy();
-
-        // Is this hacky? Yes.
-        if exa == "reset" || exa.starts_with("reset:") {
-            use_default_filetypes = false;
+            });
         }
 
-        LSColors(exa.as_ref()).each_pair(|pair| {
-            if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
-                match glob::Pattern::new(pair.key) {
-                    Ok(pat) => {
-                        exts.add(pat, pair.to_style());
-                    }
-                    Err(e) => {
-                        warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
-                    }
-                }
-            };
-        });
-    }
+        let mut use_default_filetypes = true;
 
-    (exts, use_default_filetypes)
+        if let Some(exa) = &self.exa {
+            // Is this hacky? Yes.
+            if exa == "reset" || exa.starts_with("reset:") {
+                use_default_filetypes = false;
+            }
+
+            LSColors(exa).each_pair(|pair| {
+                if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
+                    match glob::Pattern::new(pair.key) {
+                        Ok(pat) => {
+                            exts.add(pat, pair.to_style());
+                        }
+                        Err(e) => {
+                            warn!("Couldn't parse glob pattern {:?}: {}", pair.key, e);
+                        }
+                    }
+                };
+            });
+        }
+
+        (exts, use_default_filetypes)
+    }
+}
+
+
+pub trait FileColours: std::marker::Sync {
+    fn colour_file(&self, file: &File<'_>) -> Option<Style>;
+}
+
+#[derive(PartialEq, Debug)]
+struct NoFileColours;
+impl FileColours for NoFileColours {
+    fn colour_file(&self, _file: &File<'_>) -> Option<Style> {
+        None
+    }
+}
+
+// When getting the colour of a file from a *pair* of colourisers, try the
+// first one then try the second one. This lets the user provide their own
+// file type associations, while falling back to the default set if not set
+// explicitly.
+impl<A, B> FileColours for (A, B)
+where A: FileColours,
+      B: FileColours,
+{
+    fn colour_file(&self, file: &File<'_>) -> Option<Style> {
+        self.0.colour_file(file)
+            .or_else(|| self.1.colour_file(file))
+    }
 }
 
 
@@ -183,7 +180,6 @@ struct ExtensionMappings {
 // Loop through backwards so that colours specified later in the list override
 // colours specified earlier, like we do with options and strict mode
 
-use crate::output::file_name::FileColours;
 impl FileColours for ExtensionMappings {
     fn colour_file(&self, file: &File<'_>) -> Option<Style> {
         self.mappings.iter().rev()
@@ -203,166 +199,164 @@ impl ExtensionMappings {
 }
 
 
-impl Classify {
-    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let flagged = matches.has(&flags::CLASSIFY)?;
 
-        if flagged { Ok(Self::AddFileIndicators) }
-              else { Ok(Self::JustFilenames) }
+
+impl render::BlocksColours for Theme {
+    fn block_count(&self)  -> Style { self.ui.blocks }
+    fn no_blocks(&self)    -> Style { self.ui.punctuation }
+}
+
+impl render::FiletypeColours for Theme {
+    fn normal(&self)       -> Style { self.ui.filekinds.normal }
+    fn directory(&self)    -> Style { self.ui.filekinds.directory }
+    fn pipe(&self)         -> Style { self.ui.filekinds.pipe }
+    fn symlink(&self)      -> Style { self.ui.filekinds.symlink }
+    fn block_device(&self) -> Style { self.ui.filekinds.block_device }
+    fn char_device(&self)  -> Style { self.ui.filekinds.char_device }
+    fn socket(&self)       -> Style { self.ui.filekinds.socket }
+    fn special(&self)      -> Style { self.ui.filekinds.special }
+}
+
+impl render::GitColours for Theme {
+    fn not_modified(&self)  -> Style { self.ui.punctuation }
+    #[allow(clippy::new_ret_no_self)]
+    fn new(&self)           -> Style { self.ui.git.new }
+    fn modified(&self)      -> Style { self.ui.git.modified }
+    fn deleted(&self)       -> Style { self.ui.git.deleted }
+    fn renamed(&self)       -> Style { self.ui.git.renamed }
+    fn type_change(&self)   -> Style { self.ui.git.typechange }
+    fn ignored(&self)       -> Style { self.ui.git.ignored }
+    fn conflicted(&self)    -> Style { self.ui.git.conflicted }
+}
+
+impl render::GroupColours for Theme {
+    fn yours(&self)      -> Style { self.ui.users.group_yours }
+    fn not_yours(&self)  -> Style { self.ui.users.group_not_yours }
+}
+
+impl render::LinksColours for Theme {
+    fn normal(&self)           -> Style { self.ui.links.normal }
+    fn multi_link_file(&self)  -> Style { self.ui.links.multi_link_file }
+}
+
+impl render::PermissionsColours for Theme {
+    fn dash(&self)               -> Style { self.ui.punctuation }
+    fn user_read(&self)          -> Style { self.ui.perms.user_read }
+    fn user_write(&self)         -> Style { self.ui.perms.user_write }
+    fn user_execute_file(&self)  -> Style { self.ui.perms.user_execute_file }
+    fn user_execute_other(&self) -> Style { self.ui.perms.user_execute_other }
+    fn group_read(&self)         -> Style { self.ui.perms.group_read }
+    fn group_write(&self)        -> Style { self.ui.perms.group_write }
+    fn group_execute(&self)      -> Style { self.ui.perms.group_execute }
+    fn other_read(&self)         -> Style { self.ui.perms.other_read }
+    fn other_write(&self)        -> Style { self.ui.perms.other_write }
+    fn other_execute(&self)      -> Style { self.ui.perms.other_execute }
+    fn special_user_file(&self)  -> Style { self.ui.perms.special_user_file }
+    fn special_other(&self)      -> Style { self.ui.perms.special_other }
+    fn attribute(&self)          -> Style { self.ui.perms.attribute }
+}
+
+impl render::SizeColours for Theme {
+    fn size(&self, prefix: Option<number_prefix::Prefix>) -> Style {
+        use number_prefix::Prefix::*;
+
+        match prefix {
+            None                    => self.ui.size.number_byte,
+            Some(Kilo) | Some(Kibi) => self.ui.size.number_kilo,
+            Some(Mega) | Some(Mebi) => self.ui.size.number_mega,
+            Some(Giga) | Some(Gibi) => self.ui.size.number_giga,
+            Some(_)                 => self.ui.size.number_huge,
+        }
+    }
+
+    fn unit(&self, prefix: Option<number_prefix::Prefix>) -> Style {
+        use number_prefix::Prefix::*;
+
+        match prefix {
+            None                    => self.ui.size.unit_byte,
+            Some(Kilo) | Some(Kibi) => self.ui.size.unit_kilo,
+            Some(Mega) | Some(Mebi) => self.ui.size.unit_mega,
+            Some(Giga) | Some(Gibi) => self.ui.size.unit_giga,
+            Some(_)                 => self.ui.size.unit_huge,
+        }
+    }
+
+    fn no_size(&self) -> Style { self.ui.punctuation }
+    fn major(&self)   -> Style { self.ui.size.major }
+    fn comma(&self)   -> Style { self.ui.punctuation }
+    fn minor(&self)   -> Style { self.ui.size.minor }
+}
+
+impl render::UserColours for Theme {
+    fn you(&self)           -> Style { self.ui.users.user_you }
+    fn someone_else(&self)  -> Style { self.ui.users.user_someone_else }
+}
+
+impl FileNameColours for Theme {
+    fn normal_arrow(&self)        -> Style { self.ui.punctuation }
+    fn broken_symlink(&self)      -> Style { self.ui.broken_symlink }
+    fn broken_filename(&self)     -> Style { apply_overlay(self.ui.broken_symlink, self.ui.broken_path_overlay) }
+    fn broken_control_char(&self) -> Style { apply_overlay(self.ui.control_char,   self.ui.broken_path_overlay) }
+    fn control_char(&self)        -> Style { self.ui.control_char }
+    fn symlink_path(&self)        -> Style { self.ui.symlink_path }
+    fn executable_file(&self)     -> Style { self.ui.filekinds.executable }
+
+    fn colour_file(&self, file: &File<'_>) -> Style {
+        self.exts.colour_file(file).unwrap_or(self.ui.filekinds.normal)
     }
 }
 
 
-#[cfg(test)]
-mod terminal_test {
-    use super::*;
-    use std::ffi::OsString;
-    use crate::options::flags;
-    use crate::options::parser::{Flag, Arg};
+/// Some of the styles are **overlays**: although they have the same attribute
+/// set as regular styles (foreground and background colours, bold, underline,
+/// etc), they’re intended to be used to *amend* existing styles.
+///
+/// For example, the target path of a broken symlink is displayed in a red,
+/// underlined style by default. Paths can contain control characters, so
+/// these control characters need to be underlined too, otherwise it looks
+/// weird. So instead of having four separate configurable styles for “link
+/// path”, “broken link path”, “control character” and “broken control
+/// character”, there are styles for “link path”, “control character”, and
+/// “broken link overlay”, the latter of which is just set to override the
+/// underline attribute on the other two.
+fn apply_overlay(mut base: Style, overlay: Style) -> Style {
+    if let Some(fg) = overlay.foreground { base.foreground = Some(fg); }
+    if let Some(bg) = overlay.background { base.background = Some(bg); }
 
-    use crate::options::test::parse_for_test;
-    use crate::options::test::Strictnesses::*;
+    if overlay.is_bold          { base.is_bold          = true; }
+    if overlay.is_dimmed        { base.is_dimmed        = true; }
+    if overlay.is_italic        { base.is_italic        = true; }
+    if overlay.is_underline     { base.is_underline     = true; }
+    if overlay.is_blink         { base.is_blink         = true; }
+    if overlay.is_reverse       { base.is_reverse       = true; }
+    if overlay.is_hidden        { base.is_hidden        = true; }
+    if overlay.is_strikethrough { base.is_strikethrough = true; }
 
-    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR, &flags::COLOUR ];
-
-    macro_rules! test {
-        ($name:ident:  $inputs:expr;  $stricts:expr => $result:expr) => {
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
-                    assert_eq!(result, $result);
-                }
-            }
-        };
-
-        ($name:ident:  $inputs:expr;  $stricts:expr => err $result:expr) => {
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| TerminalColours::deduce(mf)) {
-                    assert_eq!(result.unwrap_err(), $result);
-                }
-            }
-        };
-    }
-
-
-    // Default
-    test!(empty:         [];                     Both => Ok(TerminalColours::default()));
-
-    // --colour
-    test!(u_always:      ["--colour=always"];    Both => Ok(TerminalColours::Always));
-    test!(u_auto:        ["--colour", "auto"];   Both => Ok(TerminalColours::Automatic));
-    test!(u_never:       ["--colour=never"];     Both => Ok(TerminalColours::Never));
-
-    // --color
-    test!(no_u_always:   ["--color", "always"];  Both => Ok(TerminalColours::Always));
-    test!(no_u_auto:     ["--color=auto"];       Both => Ok(TerminalColours::Automatic));
-    test!(no_u_never:    ["--color", "never"];   Both => Ok(TerminalColours::Never));
-
-    // Errors
-    test!(no_u_error:    ["--color=upstream"];   Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
-    test!(u_error:       ["--colour=lovers"];    Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
-
-    // Overriding
-    test!(overridden_1:  ["--colour=auto", "--colour=never"];  Last => Ok(TerminalColours::Never));
-    test!(overridden_2:  ["--color=auto",  "--colour=never"];  Last => Ok(TerminalColours::Never));
-    test!(overridden_3:  ["--colour=auto", "--color=never"];   Last => Ok(TerminalColours::Never));
-    test!(overridden_4:  ["--color=auto",  "--color=never"];   Last => Ok(TerminalColours::Never));
-
-    test!(overridden_5:  ["--colour=auto", "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
-    test!(overridden_6:  ["--color=auto",  "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
-    test!(overridden_7:  ["--colour=auto", "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("color")));
-    test!(overridden_8:  ["--color=auto",  "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    base
 }
-
-
-#[cfg(test)]
-mod colour_test {
-    use super::*;
-    use crate::options::flags;
-    use crate::options::parser::{Flag, Arg};
-
-    use crate::options::test::parse_for_test;
-    use crate::options::test::Strictnesses::*;
-
-    static TEST_ARGS: &[&Arg] = &[ &flags::COLOR,       &flags::COLOUR,
-                                   &flags::COLOR_SCALE, &flags::COLOUR_SCALE ];
-
-    macro_rules! test {
-        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => $result:expr) => {
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
-                    assert_eq!(result, $result);
-                }
-            }
-        };
-
-        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => err $result:expr) => {
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
-                    assert_eq!(result.unwrap_err(), $result);
-                }
-            }
-        };
-
-        ($name:ident:  $inputs:expr, $widther:expr;  $stricts:expr => like $pat:pat) => {
-            #[test]
-            fn $name() {
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| Styles::deduce(mf, &None, &$widther).map(|s| s.colours)) {
-                    println!("Testing {:?}", result);
-                    match result {
-                        $pat => assert!(true),
-                        _    => assert!(false),
-                    }
-                }
-            }
-        };
-    }
-
-    test!(width_1:  ["--colour", "always"],    || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_2:  ["--colour", "always"],    || None;      Both => Ok(Colours::colourful(false)));
-    test!(width_3:  ["--colour", "never"],     || Some(80);  Both => Ok(Colours::plain()));
-    test!(width_4:  ["--colour", "never"],     || None;      Both => Ok(Colours::plain()));
-    test!(width_5:  ["--colour", "automatic"], || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_6:  ["--colour", "automatic"], || None;      Both => Ok(Colours::plain()));
-    test!(width_7:  [],                        || Some(80);  Both => Ok(Colours::colourful(false)));
-    test!(width_8:  [],                        || None;      Both => Ok(Colours::plain()));
-
-    test!(scale_1:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
-    test!(scale_2:  ["--color=always", "--color-scale",                 ], || None;   Last => Ok(Colours::colourful(true)));
-    test!(scale_3:  ["--color=always",                  "--colour-scale"], || None;   Last => Ok(Colours::colourful(true)));
-    test!(scale_4:  ["--color=always",                                  ], || None;   Last => Ok(Colours::colourful(false)));
-
-    test!(scale_5:  ["--color=always", "--color-scale", "--colour-scale"], || None;   Complain => err OptionsError::Duplicate(Flag::Long("color-scale"),  Flag::Long("colour-scale")));
-    test!(scale_6:  ["--color=always", "--color-scale",                 ], || None;   Complain => Ok(Colours::colourful(true)));
-    test!(scale_7:  ["--color=always",                  "--colour-scale"], || None;   Complain => Ok(Colours::colourful(true)));
-    test!(scale_8:  ["--color=always",                                  ], || None;   Complain => Ok(Colours::colourful(false)));
-}
+// TODO: move this function to the ansi_term crate
 
 
 #[cfg(test)]
 mod customs_test {
-    use std::ffi::OsString;
-
     use super::*;
-    use crate::options::Vars;
-
+    use crate::theme::ui_styles::UiStyles;
     use ansi_term::Colour::*;
 
     macro_rules! test {
         ($name:ident:  ls $ls:expr, exa $exa:expr  =>  colours $expected:ident -> $process_expected:expr) => {
             #[test]
-            #[allow(unused_mut)]
             fn $name() {
-                let mut $expected = Colours::colourful(false);
+                let mut $expected = UiStyles::default();
                 $process_expected();
 
-                let vars = MockVars { ls: $ls, exa: $exa };
+                let definitions = Definitions {
+                    ls:  Some($ls.into()),
+                    exa: Some($exa.into()),
+                };
 
-                let mut result = Colours::colourful(false);
-                let (_exts, _reset) = parse_color_vars(&vars, &mut result);
+                let mut result = UiStyles::default();
+                let (_exts, _reset) = definitions.parse_color_vars(&mut result);
                 assert_eq!($expected, result);
             }
         };
@@ -374,18 +368,19 @@ mod customs_test {
                                .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
                                .collect();
 
-                let vars = MockVars { ls: $ls, exa: $exa };
+                let definitions = Definitions {
+                    ls:  Some($ls.into()),
+                    exa: Some($exa.into()),
+                };
 
-                let mut meh = Colours::colourful(false);
-                let (result, _reset) = parse_color_vars(&vars, &mut meh);
+                let (result, _reset) = definitions.parse_color_vars(&mut UiStyles::default());
                 assert_eq!(ExtensionMappings { mappings }, result);
             }
         };
         ($name:ident:  ls $ls:expr, exa $exa:expr  =>  colours $expected:ident -> $process_expected:expr, exts $mappings:expr) => {
             #[test]
-            #[allow(unused_mut)]
             fn $name() {
-                let mut $expected = Colours::colourful(false);
+                let mut $expected = UiStyles::colourful(false);
                 $process_expected();
 
                 let mappings: Vec<(glob::Pattern, Style)>
@@ -393,37 +388,19 @@ mod customs_test {
                                .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
                                .collect();
 
-                let vars = MockVars { ls: $ls, exa: $exa };
+                let definitions = Definitions {
+                    ls:  Some($ls.into()),
+                    exa: Some($exa.into()),
+                };
 
-                let mut meh = Colours::colourful(false);
-                let (result, _reset) = parse_color_vars(&vars, &mut meh);
+                let mut meh = UiStyles::colourful(false);
+                let (result, _reset) = definitions.parse_color_vars(&vars, &mut meh);
                 assert_eq!(ExtensionMappings { mappings }, result);
                 assert_eq!($expected, meh);
             }
         };
     }
 
-    struct MockVars {
-        ls: &'static str,
-        exa: &'static str,
-    }
-
-    // Test impl that just returns the value it has.
-    impl Vars for MockVars {
-        fn get(&self, name: &'static str) -> Option<OsString> {
-            use crate::options::vars;
-
-            if name == vars::LS_COLORS && ! self.ls.is_empty() {
-                Some(OsString::from(self.ls.clone()))
-            }
-            else if name == vars::EXA_COLORS && ! self.exa.is_empty() {
-                Some(OsString::from(self.exa.clone()))
-            }
-            else {
-                None
-            }
-        }
-    }
 
     // LS_COLORS can affect all of these colours:
     test!(ls_di:   ls "di=31", exa ""  =>  colours c -> { c.filekinds.directory    = Red.normal();    });

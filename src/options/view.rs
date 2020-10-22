@@ -1,114 +1,34 @@
-use lazy_static::lazy_static;
-
 use crate::fs::feature::xattr;
 use crate::options::{flags, OptionsError, Vars};
 use crate::options::parser::MatchedFlags;
-use crate::output::{View, Mode, grid, details, lines};
+use crate::output::{View, Mode, TerminalWidth, grid, details, lines};
 use crate::output::grid_details::{self, RowThreshold};
+use crate::output::file_name::Options as FileStyle;
 use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
 use crate::output::time::TimeFormat;
 
 
 impl View {
-
-    /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        use crate::options::style::Styles;
-
         let mode = Mode::deduce(matches, vars)?;
-        let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
-        Ok(Self { mode, colours, style })
+        let width = TerminalWidth::deduce(vars)?;
+        let file_style = FileStyle::deduce(matches)?;
+        Ok(Self { mode, width, file_style })
     }
 }
 
 
 impl Mode {
-
-    /// Determine the mode from the command-line arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let long = || {
-            if matches.is_strict() && matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
-                Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG))
-            }
-            else if matches.is_strict() && matches.has(&flags::ONE_LINE)? {
-                Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG))
-            }
-            else {
-                Ok(details::Options {
-                    table: Some(TableOptions::deduce(matches, vars)?),
-                    header: matches.has(&flags::HEADER)?,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                })
-            }
-        };
-
-        let other_options_scan = || {
-            if let Some(width) = TerminalWidth::deduce(vars)?.width() {
-                if matches.has(&flags::ONE_LINE)? {
-                    if matches.is_strict() && matches.has(&flags::ACROSS)? {
-                        Err(OptionsError::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-                    }
-                    else {
-                        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
-                        Ok(Self::Lines(lines))
-                    }
-                }
-                else if matches.has(&flags::TREE)? {
-                    let details = details::Options {
-                        table: None,
-                        header: false,
-                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
-
-                    Ok(Self::Details(details))
-                }
-                else {
-                    let grid = grid::Options {
-                        across: matches.has(&flags::ACROSS)?,
-                        console_width: width,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
-
-                    Ok(Self::Grid(grid))
-                }
-            }
-
-            // If the terminal width couldn’t be matched for some reason, such
-            // as the program’s stdout being connected to a file, then
-            // fallback to the lines or details view.
-            else if matches.has(&flags::TREE)? {
-                let details = details::Options {
-                    table: None,
-                    header: false,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                };
-
-                Ok(Self::Details(details))
-            }
-            else if matches.has(&flags::LONG)? {
-                let details = long()?;
-                Ok(Self::Details(details))
-            } else {
-                let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
-                Ok(Self::Lines(lines))
-            }
-        };
 
         if matches.has(&flags::LONG)? {
-            let details = long()?;
+            let details = details::Options::deduce_long(matches, vars)?;
+
             if matches.has(&flags::GRID)? {
-                let other_options_mode = other_options_scan()?;
-                if let Self::Grid(grid) = other_options_mode {
-                    let row_threshold = RowThreshold::deduce(vars)?;
-                    let opts = grid_details::Options { grid, details, row_threshold };
-                    return Ok(Self::GridDetails(opts));
-                }
-                else {
-                    return Ok(other_options_mode);
-                }
+                let grid = grid::Options::deduce(matches)?;
+                let row_threshold = RowThreshold::deduce(vars)?;
+                let grid_details = grid_details::Options { grid, details, row_threshold };
+                return Ok(Self::GridDetails(grid_details));
             }
             else {
                 return Ok(Self::Details(details));
@@ -129,36 +49,79 @@ impl Mode {
                 return Err(OptionsError::Useless(&flags::GIT, false, &flags::LONG));
             }
             else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
-                // TODO: I’m not sure if the code even gets this far.
-                // There is an identical check in dir_action
                 return Err(OptionsError::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
         }
 
-        other_options_scan()
+        if matches.has(&flags::TREE)? {
+            let details = details::Options::deduce_tree(matches)?;
+            return Ok(Self::Details(details));
+        }
+
+        if matches.has(&flags::ONE_LINE)? {
+            let lines = lines::Options::deduce(matches)?;
+            return Ok(Self::Lines(lines));
+        }
+
+        let grid = grid::Options::deduce(matches)?;
+        Ok(Self::Grid(grid))
     }
 }
 
 
-/// The width of the terminal requested by the user.
-#[derive(PartialEq, Debug, Copy, Clone)]
-enum TerminalWidth {
-
-    /// The user requested this specific number of columns.
-    Set(usize),
-
-    /// The terminal was found to have this number of columns.
-    Terminal(usize),
-
-    /// The user didn’t request any particular terminal width.
-    Unset,
+impl lines::Options {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
+        Ok(lines)
+    }
 }
 
-impl TerminalWidth {
 
-    /// Determine a requested terminal width from the command-line arguments.
-    ///
-    /// Returns an error if a requested width doesn’t parse to an integer.
+impl grid::Options {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let grid = grid::Options {
+            across: matches.has(&flags::ACROSS)?,
+            icons: matches.has(&flags::ICONS)?,
+        };
+
+        Ok(grid)
+    }
+}
+
+
+impl details::Options {
+    fn deduce_tree(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let details = details::Options {
+            table: None,
+            header: false,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+            icons: matches.has(&flags::ICONS)?,
+        };
+
+        Ok(details)
+    }
+
+    fn deduce_long<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        if matches.is_strict() {
+            if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
+                return Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG));
+            }
+            else if matches.has(&flags::ONE_LINE)? {
+                return Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG));
+            }
+        }
+
+        Ok(details::Options {
+            table: Some(TableOptions::deduce(matches, vars)?),
+            header: matches.has(&flags::HEADER)?,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+            icons: matches.has(&flags::ICONS)?,
+        })
+    }
+}
+
+
+impl TerminalWidth {
     fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
         use crate::options::vars;
 
@@ -168,28 +131,14 @@ impl TerminalWidth {
                 Err(e)     => Err(OptionsError::FailedParse(e)),
             }
         }
-        else if let Some(width) = *TERM_WIDTH {
-            Ok(Self::Terminal(width))
-        }
         else {
-            Ok(Self::Unset)
-        }
-    }
-
-    fn width(self) -> Option<usize> {
-        match self {
-            Self::Set(width)       |
-            Self::Terminal(width)  => Some(width),
-            Self::Unset            => None,
+            Ok(Self::Automatic)
         }
     }
 }
 
 
 impl RowThreshold {
-
-    /// Determine whether to use a row threshold based on the given
-    /// environment variables.
     fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
         use crate::options::vars;
 
@@ -357,20 +306,6 @@ impl TimeTypes {
 }
 
 
-// Gets, then caches, the width of the terminal that exa is running in.
-// This gets used multiple times above, with no real guarantee of order,
-// so it’s easier to just cache it the first time it runs.
-lazy_static! {
-    static ref TERM_WIDTH: Option<usize> = {
-        // All of stdin, stdout, and stderr could not be connected to a
-        // terminal, but we’re only interested in stdout because it’s
-        // where the output goes.
-        use term_size::dimensions_stdout;
-        dimensions_stdout().map(|t| t.0)
-    };
-}
-
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -386,7 +321,7 @@ mod test {
                                    &flags::CREATED, &flags::ACCESSED, &flags::ICONS,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
 
     macro_rules! test {
 

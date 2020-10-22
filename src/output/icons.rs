@@ -2,7 +2,7 @@ use ansi_term::Style;
 
 use crate::fs::File;
 use crate::info::filetype::FileExtensions;
-use crate::output::file_name::FileStyle;
+use crate::theme::Theme;
 
 
 pub trait FileIcon {
@@ -28,26 +28,27 @@ impl Icons {
 }
 
 
-pub fn painted_icon(file: &File<'_>, style: &FileStyle) -> String {
+pub fn painted_icon(file: &File<'_>, theme: &Theme) -> String {
+    use crate::output::file_name::Colours;
+
     let file_icon = icon(file).to_string();
-    let painted = style.exts
-        .colour_file(file)
-        .map_or(file_icon.to_string(), |c| {
-            // Remove underline from icon
-            if c.is_underline {
-                match c.foreground {
-                    Some(color) => {
-                        Style::from(color).paint(file_icon).to_string()
-                    }
-                    None => {
-                        Style::default().paint(file_icon).to_string()
-                    }
+    let c = theme.colour_file(file);
+
+    // Remove underline from icon
+    let painted =
+        if c.is_underline {
+            match c.foreground {
+                Some(color) => {
+                    Style::from(color).paint(file_icon).to_string()
+                }
+                None => {
+                    Style::default().paint(file_icon).to_string()
                 }
             }
-            else {
-                c.paint(file_icon).to_string()
-            }
-        });
+        }
+        else {
+            c.paint(file_icon).to_string()
+        };
 
     format!("{}  ", painted)
 }

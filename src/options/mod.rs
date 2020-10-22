@@ -74,11 +74,13 @@ use std::ffi::OsStr;
 use crate::fs::dir_action::DirAction;
 use crate::fs::filter::{FileFilter, GitIgnore};
 use crate::output::{View, Mode, details, grid_details};
+use crate::theme::Options as ThemeOptions;
 
 mod dir_action;
+mod file_name;
 mod filter;
 mod flags;
-mod style;
+mod theme;
 mod view;
 
 mod error;
@@ -109,8 +111,14 @@ pub struct Options {
     /// How to sort and filter files before outputting them.
     pub filter: FileFilter,
 
-    /// The type of output to use (lines, grid, or details).
+    /// The user’s preference of view to use (lines, grid, details, or
+    /// grid-details) along with the options on how to render file names.
+    /// If the view requires the terminal to have a width, and there is no
+    /// width, then the view will be downgraded.
     pub view: View,
+
+    /// The options to make up the styles of the UI and file names.
+    pub theme: ThemeOptions,
 }
 
 impl Options {
@@ -171,8 +179,9 @@ impl Options {
         let dir_action = DirAction::deduce(matches)?;
         let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
+        let theme = ThemeOptions::deduce(matches, vars)?;
 
-        Ok(Self { dir_action, view, filter })
+        Ok(Self { dir_action, filter, view, theme })
     }
 }
 

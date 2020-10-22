@@ -15,7 +15,7 @@ use crate::fs::feature::git::GitCache;
 use crate::output::cell::TextCell;
 use crate::output::render::TimeRender;
 use crate::output::time::TimeFormat;
-use crate::style::Colours;
+use crate::theme::Theme;
 
 
 /// Options for displaying a table.
@@ -306,7 +306,7 @@ lazy_static! {
 
 pub struct Table<'a> {
     columns: Vec<Column>,
-    colours: &'a Colours,
+    theme: &'a Theme,
     env: &'a Environment,
     widths: TableWidths,
     time_format: TimeFormat,
@@ -320,13 +320,13 @@ pub struct Row {
 }
 
 impl<'a, 'f> Table<'a> {
-    pub fn new(options: &'a Options, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
+    pub fn new(options: &'a Options, git: Option<&'a GitCache>, theme: &'a Theme) -> Table<'a> {
         let columns = options.columns.collect(git.is_some());
         let widths = TableWidths::zero(columns.len());
         let env = &*ENVIRONMENT;
 
         Table {
-            colours,
+            theme,
             widths,
             columns,
             git,
@@ -342,7 +342,7 @@ impl<'a, 'f> Table<'a> {
 
     pub fn header_row(&self) -> Row {
         let cells = self.columns.iter()
-                        .map(|c| TextCell::paint_str(self.colours.header, c.header()))
+                        .map(|c| TextCell::paint_str(self.theme.ui.header, c.header()))
                         .collect();
 
         Row { cells }
@@ -377,44 +377,44 @@ impl<'a, 'f> Table<'a> {
     fn display(&self, file: &File<'_>, column: Column, xattrs: bool) -> TextCell {
         match column {
             Column::Permissions => {
-                self.permissions_plus(file, xattrs).render(self.colours)
+                self.permissions_plus(file, xattrs).render(self.theme)
             }
             Column::FileSize => {
-                file.size().render(self.colours, self.size_format, &self.env.numeric)
+                file.size().render(self.theme, self.size_format, &self.env.numeric)
             }
             Column::HardLinks => {
-                file.links().render(self.colours, &self.env.numeric)
+                file.links().render(self.theme, &self.env.numeric)
             }
             Column::Inode => {
-                file.inode().render(self.colours.inode)
+                file.inode().render(self.theme.ui.inode)
             }
             Column::Blocks => {
-                file.blocks().render(self.colours)
+                file.blocks().render(self.theme)
             }
             Column::User => {
-                file.user().render(self.colours, &*self.env.lock_users())
+                file.user().render(self.theme, &*self.env.lock_users())
             }
             Column::Group => {
-                file.group().render(self.colours, &*self.env.lock_users())
+                file.group().render(self.theme, &*self.env.lock_users())
             }
             Column::GitStatus => {
-                self.git_status(file).render(self.colours)
+                self.git_status(file).render(self.theme)
             }
             Column::Octal => {
-                self.octal_permissions(file).render(self.colours.octal)
+                self.octal_permissions(file).render(self.theme.ui.octal)
             }
 
             Column::Timestamp(TimeType::Modified)  => {
-                file.modified_time().render(self.colours.date, &self.env.tz, self.time_format)
+                file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
             Column::Timestamp(TimeType::Changed)   => {
-                file.changed_time().render(self.colours.date, &self.env.tz, self.time_format)
+                file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
             Column::Timestamp(TimeType::Created)   => {
-                file.created_time().render(self.colours.date, &self.env.tz, self.time_format)
+                file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
             Column::Timestamp(TimeType::Accessed)  => {
-                file.accessed_time().render(self.colours.date, &self.env.tz, self.time_format)
+                file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
         }
     }

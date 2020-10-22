@@ -11,12 +11,12 @@ use crate::fs::feature::xattr::FileAttributes;
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
-use crate::output::file_name::FileStyle;
+use crate::output::file_name::Options as FileStyle;
 use crate::output::grid::Options as GridOptions;
 use crate::output::icons::painted_icon;
 use crate::output::table::{Table, Row as TableRow, Options as TableOptions};
 use crate::output::tree::{TreeParams, TreeDepth};
-use crate::style::Colours;
+use crate::theme::Theme;
 
 
 #[derive(PartialEq, Debug)]
@@ -25,6 +25,13 @@ pub struct Options {
     pub details: DetailsOptions,
     pub row_threshold: RowThreshold,
 }
+
+impl Options {
+    pub fn to_details_options(&self) -> &DetailsOptions {
+        &self.details
+    }
+}
+
 
 /// The grid-details view can be configured to revert to just a details view
 /// (with one column) if it wouldn’t produce enough rows of output.
@@ -56,10 +63,10 @@ pub struct Render<'a> {
     pub files: Vec<File<'a>>,
 
     /// How to colour various pieces of text.
-    pub colours: &'a Colours,
+    pub theme: &'a Theme,
 
     /// How to format filenames.
-    pub style: &'a FileStyle,
+    pub file_style: &'a FileStyle,
 
     /// The grid part of the grid-details view.
     pub grid: &'a GridOptions,
@@ -80,6 +87,8 @@ pub struct Render<'a> {
     pub git_ignoring: bool,
 
     pub git: Option<&'a GitCache>,
+
+    pub console_width: usize,
 }
 
 impl<'a> Render<'a> {
@@ -90,12 +99,12 @@ impl<'a> Render<'a> {
     /// This includes an empty files vector because the files get added to
     /// the table in *this* file, not in details: we only want to insert every
     /// *n* files into each column’s table, not all of them.
-    pub fn details(&self) -> DetailsRender<'a> {
+    fn details_for_column(&self) -> DetailsRender<'a> {
         DetailsRender {
             dir:           self.dir,
             files:         Vec::new(),
-            colours:       self.colours,
-            style:         self.style,
+            theme:         self.theme,
+            file_style:    self.file_style,
             opts:          self.details,
             recurse:       None,
             filter:        self.filter,
@@ -105,13 +114,15 @@ impl<'a> Render<'a> {
     }
 
     /// Create a Details render for when this grid-details render doesn’t fit
-    /// in the terminal (or something has gone wrong) and we have given up.
+    /// in the terminal (or something has gone wrong) and we have given up, or
+    /// when the user asked for a grid-details view but the terminal width is
+    /// not available, so we downgrade.
     pub fn give_up(self) -> DetailsRender<'a> {
         DetailsRender {
             dir:           self.dir,
             files:         self.files,
-            colours:       self.colours,
-            style:         self.style,
+            theme:         self.theme,
+            file_style:    self.file_style,
             opts:          self.details,
             recurse:       None,
             filter:        self.filter,
@@ -135,7 +146,7 @@ impl<'a> Render<'a> {
     pub fn find_fitting_grid(&mut self) -> Option<(grid::Grid, grid::Width)> {
         let options = self.details.table.as_ref().expect("Details table options not given!");
 
-        let drender = self.details();
+        let drender = self.details_for_column();
 
         let (first_table, _) = self.make_table(options, &drender);
 
@@ -147,13 +158,13 @@ impl<'a> Render<'a> {
                              .map(|file| {
                                  if self.details.icons {
                                     let mut icon_cell = TextCell::default();
-                                    icon_cell.push(ANSIGenericString::from(painted_icon(file, self.style)), 2);
-                                    let file_cell = self.style.for_file(file, self.colours).paint().promote();
+                                    icon_cell.push(ANSIGenericString::from(painted_icon(file, self.theme)), 2);
+                                    let file_cell = self.file_style.for_file(file, self.theme).paint().promote();
                                     icon_cell.append(file_cell);
                                     icon_cell
                                  }
                                  else {
-                                     self.style.for_file(file, self.colours).paint().promote()
+                                     self.file_style.for_file(file, self.theme).paint().promote()
                                  }
                              })
                              .collect::<Vec<_>>();
@@ -167,7 +178,7 @@ impl<'a> Render<'a> {
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
-                d.is_complete() && d.width() <= self.grid.console_width
+                d.is_complete() && d.width() <= self.console_width
             };
 
             if the_grid_fits {
@@ -197,7 +208,7 @@ impl<'a> Render<'a> {
             (None,    _)        => {/* Keep Git how it is */},
         }
 
-        let mut table = Table::new(options, self.git, self.colours);
+        let mut table = Table::new(options, self.git, &self.theme);
         let mut rows = Vec::new();
 
         if self.details.header {
