@@ -256,12 +256,15 @@ impl<'a> Render<'a> {
                     }
 
                     let mut dir = None;
-
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && ! r.is_too_deep(depth.0) {
                             match file.to_dir() {
-                                Ok(d)   => { dir = Some(d); },
-                                Err(e)  => { errors.push((e, None)) },
+                                Ok(d) => {
+                                    dir = Some(d);
+                                }
+                                Err(e) => {
+                                    errors.push((e, None));
+                                }
                             }
                         }
                     };
