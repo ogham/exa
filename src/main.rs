@@ -268,14 +268,9 @@ impl<'args> Exa<'args> {
                 r.render(&mut self.writer)
             }
 
-            (Mode::Grid(ref opts), None) => {
-                let opts = &opts.to_lines_options();
-                let r = lines::Render { files, theme, file_style, opts };
-                r.render(&mut self.writer)
-            }
-
-            (Mode::Lines(ref opts), _) => {
-                let r = lines::Render { files, theme, file_style, opts };
+            (Mode::Grid(_), None) |
+            (Mode::Lines,   _)    => {
+                let r = lines::Render { files, theme, file_style };
                 r.render(&mut self.writer)
             }
 

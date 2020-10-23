@@ -6,26 +6,18 @@ use crate::fs::File;
 use crate::output::cell::DisplayWidth;
 use crate::output::file_name::Options as FileStyle;
 use crate::output::icons::painted_icon;
-use crate::output::lines;
 use crate::theme::Theme;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Options {
     pub across: bool,
-    pub icons: bool,
 }
 
 impl Options {
     pub fn direction(self) -> tg::Direction {
         if self.across { tg::Direction::LeftToRight }
                   else { tg::Direction::TopToBottom }
-    }
-
-    pub fn to_lines_options(self) -> lines::Options {
-        lines::Options {
-            icons: self.icons
-        }
     }
 }
 
@@ -48,13 +40,13 @@ impl<'a> Render<'a> {
         grid.reserve(self.files.len());
 
         for file in &self.files {
-            let icon = if self.opts.icons { Some(painted_icon(file, self.theme)) }
-                                     else { None };
+            let icon = if self.file_style.icons { Some(painted_icon(file, self.theme)) }
+                                           else { None };
 
             let filename = self.file_style.for_file(file, self.theme).paint();
 
-            let width = if self.opts.icons { DisplayWidth::from(2) + filename.width() }
-                                      else { filename.width() };
+            let width = if self.file_style.icons { DisplayWidth::from(2) + filename.width() }
+                                            else { filename.width() };
 
             grid.add(tg::Cell {
                 contents:  format!("{}{}", &icon.unwrap_or_default(), filename.strings()),
@@ -70,7 +62,7 @@ impl<'a> Render<'a> {
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
             for file in &self.files {
-                if self.opts.icons {
+                if self.file_style.icons {
                     write!(w, "{}", painted_icon(file, self.theme))?;
                 }
 

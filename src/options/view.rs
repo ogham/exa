@@ -1,7 +1,7 @@
 use crate::fs::feature::xattr;
 use crate::options::{flags, OptionsError, Vars};
 use crate::options::parser::MatchedFlags;
-use crate::output::{View, Mode, TerminalWidth, grid, details, lines};
+use crate::output::{View, Mode, TerminalWidth, grid, details};
 use crate::output::grid_details::{self, RowThreshold};
 use crate::output::file_name::Options as FileStyle;
 use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
@@ -73,8 +73,7 @@ impl Mode {
 
         if flag.matches(&flags::ONE_LINE) {
             let _ = matches.has(&flags::ONE_LINE)?;
-            let lines = lines::Options::deduce(matches)?;
-            return Ok(Self::Lines(lines));
+            return Ok(Self::Lines);
         }
 
         let grid = grid::Options::deduce(matches)?;
@@ -105,19 +104,10 @@ impl Mode {
 }
 
 
-impl lines::Options {
-    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
-        Ok(lines)
-    }
-}
-
-
 impl grid::Options {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let grid = grid::Options {
             across: matches.has(&flags::ACROSS)?,
-            icons: matches.has(&flags::ICONS)?,
         };
 
         Ok(grid)
@@ -131,7 +121,6 @@ impl details::Options {
             table: None,
             header: false,
             xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-            icons: matches.has(&flags::ICONS)?,
         };
 
         Ok(details)
@@ -151,7 +140,6 @@ impl details::Options {
             table: Some(TableOptions::deduce(matches, vars)?),
             header: matches.has(&flags::HEADER)?,
             xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-            icons: matches.has(&flags::ICONS)?,
         })
     }
 }
@@ -354,7 +342,7 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
-                                   &flags::CREATED, &flags::ACCESSED, &flags::ICONS,
+                                   &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
                                    &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
@@ -532,7 +520,6 @@ mod test {
         use super::*;
 
         use crate::output::grid::Options as GridOptions;
-        use crate::output::lines::Options as LineOptions;
 
 
         // Default
@@ -543,12 +530,10 @@ mod test {
         test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
         test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
         test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
-        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { icons: true,   .. })));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines(LineOptions { .. })));
-        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines(LineOptions { .. })));
-        test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
+        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines));
+        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines));
 
         // Details views
         test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
@@ -585,7 +570,7 @@ mod test {
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
 
         // Contradictions and combinations
-        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines(_)));
+        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines));
         test!(lgt:           Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
         test!(tgl:           Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
         test!(tlg:           Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));

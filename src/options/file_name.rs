@@ -6,8 +6,10 @@ use crate::output::file_name::{Options, Classify};
 
 impl Options {
     pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        Classify::deduce(matches)
-                 .map(|classify| Self { classify })
+        let classify = Classify::deduce(matches)?;
+        let icons = matches.has(&flags::ICONS)?;
+
+        Ok(Self { classify, icons })
     }
 }
 

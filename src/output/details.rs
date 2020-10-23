@@ -106,9 +106,6 @@ pub struct Options {
 
     /// Whether to show each file’s extended attributes.
     pub xattr: bool,
-
-    /// Whether icons mode is enabled.
-    pub icons: bool,
 }
 
 
@@ -269,8 +266,8 @@ impl<'a> Render<'a> {
                         }
                     };
 
-                    let icon = if self.opts.icons { Some(painted_icon(file, self.theme)) }
-                                             else { None };
+                    let icon = if self.file_style.icons { Some(painted_icon(file, self.theme)) }
+                                                   else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
                     unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }

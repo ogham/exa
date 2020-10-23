@@ -156,7 +156,7 @@ impl<'a> Render<'a> {
 
         let file_names = self.files.iter()
                              .map(|file| {
-                                 if self.details.icons {
+                                 if self.file_style.icons {
                                     let mut icon_cell = TextCell::default();
                                     icon_cell.push(ANSIGenericString::from(painted_icon(file, self.theme)), 2);
                                     let file_cell = self.file_style.for_file(file, self.theme).paint().promote();

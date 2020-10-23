@@ -9,24 +9,18 @@ use crate::output::icons::painted_icon;
 use crate::theme::Theme;
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
-pub struct Options {
-    pub icons: bool,
-}
-
 /// The lines view literally just displays each file, line-by-line.
 pub struct Render<'a> {
     pub files: Vec<File<'a>>,
     pub theme: &'a Theme,
     pub file_style: &'a FileStyle,
-    pub opts: &'a Options,
 }
 
 impl<'a> Render<'a> {
     pub fn render<W: Write>(&self, w: &mut W) -> io::Result<()> {
         for file in &self.files {
             let name_cell = self.render_file(file);
-            if self.opts.icons {
+            if self.file_style.icons {
                 // Create a TextCell for the icon then append the text to it
                 let mut cell = TextCell::default();
                 let icon = painted_icon(file, self.theme);

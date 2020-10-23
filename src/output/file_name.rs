@@ -16,7 +16,8 @@ pub struct Options {
     /// Whether to append file class characters to file names.
     pub classify: Classify,
 
-    // todo: put icons here
+    /// Whether to prepend icon characters before file names.
+    pub icons: bool,
 }
 
 impl Options {
@@ -142,6 +143,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                     if ! target.name.is_empty() {
                         let target_options = Options {
                             classify: Classify::JustFilenames,
+                            icons: false,
                         };
 
                         let target = FileName {
