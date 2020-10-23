@@ -176,9 +176,9 @@ impl Options {
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
     fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let dir_action = DirAction::deduce(matches)?;
-        let filter = FileFilter::deduce(matches)?;
         let view = View::deduce(matches, vars)?;
+        let dir_action = DirAction::deduce(matches, matches!(view.mode, Mode::Details(_)))?;
+        let filter = FileFilter::deduce(matches)?;
         let theme = ThemeOptions::deduce(matches, vars)?;
 
         Ok(Self { dir_action, filter, view, theme })

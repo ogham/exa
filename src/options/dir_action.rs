@@ -12,7 +12,7 @@ impl DirAction {
     /// There are three possible actions, and they overlap somewhat: the
     /// `--tree` flag is another form of recursion, so those two are allowed
     /// to both be present, but the `--list-dirs` flag is used separately.
-    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+    pub fn deduce(matches: &MatchedFlags<'_>, can_tree: bool) -> Result<Self, OptionsError> {
         let recurse = matches.has(&flags::RECURSE)?;
         let as_file = matches.has(&flags::LIST_DIRS)?;
         let tree    = matches.has(&flags::TREE)?;
@@ -30,7 +30,9 @@ impl DirAction {
             }
         }
 
-        if tree {
+        if tree && can_tree {
+            // Tree is only appropriate in details mode, so this has to
+            // examine the View, which should have already been deduced by now
             Ok(Self::Recurse(RecurseOptions::deduce(matches, true)?))
         }
         else if recurse {
@@ -83,7 +85,7 @@ mod test {
                 use crate::options::test::Strictnesses::*;
 
                 static TEST_ARGS: &[&Arg] = &[&flags::RECURSE, &flags::LIST_DIRS, &flags::TREE, &flags::LEVEL ];
-                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, true)) {
                     assert_eq!(result, $result);
                 }
             }

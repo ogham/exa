@@ -19,22 +19,69 @@ impl View {
 
 
 impl Mode {
-    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
 
-        if matches.has(&flags::LONG)? {
+    /// Determine which viewing mode to use based on the user’s options.
+    ///
+    /// As with the other options, arguments are scanned right-to-left and the
+    /// first flag found is matched, so `exa --oneline --long` will pick a
+    /// details view, and `exa --long --oneline` will pick the lines view.
+    ///
+    /// This is complicated a little by the fact that `--grid` and `--tree`
+    /// can also combine with `--long`, so care has to be taken to use the
+    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        let flag = matches.has_where_any(|f| f.matches(&flags::LONG) || f.matches(&flags::ONE_LINE)
+                                          || f.matches(&flags::GRID) || f.matches(&flags::TREE));
+
+        let flag = match flag {
+            Some(f) => f,
+            None => {
+                Self::strict_check_long_flags(matches)?;
+                let grid = grid::Options::deduce(matches)?;
+                return Ok(Self::Grid(grid));
+            }
+        };
+
+        if flag.matches(&flags::LONG)
+        || (flag.matches(&flags::TREE) && matches.has(&flags::LONG)?)
+        || (flag.matches(&flags::GRID) && matches.has(&flags::LONG)?)
+        {
+            let _ = matches.has(&flags::LONG)?;
             let details = details::Options::deduce_long(matches, vars)?;
 
-            if matches.has(&flags::GRID)? {
+            let flag = matches.has_where_any(|f| f.matches(&flags::GRID) || f.matches(&flags::TREE));
+
+            if flag.is_some() && flag.unwrap().matches(&flags::GRID) {
+                let _ = matches.has(&flags::GRID)?;
                 let grid = grid::Options::deduce(matches)?;
                 let row_threshold = RowThreshold::deduce(vars)?;
                 let grid_details = grid_details::Options { grid, details, row_threshold };
                 return Ok(Self::GridDetails(grid_details));
             }
             else {
+                // the --tree case is handled by the DirAction parser later
                 return Ok(Self::Details(details));
             }
         }
 
+        Self::strict_check_long_flags(matches)?;
+
+        if flag.matches(&flags::TREE) {
+            let _ = matches.has(&flags::TREE)?;
+            let details = details::Options::deduce_tree(matches)?;
+            return Ok(Self::Details(details));
+        }
+
+        if flag.matches(&flags::ONE_LINE) {
+            let _ = matches.has(&flags::ONE_LINE)?;
+            let lines = lines::Options::deduce(matches)?;
+            return Ok(Self::Lines(lines));
+        }
+
+        let grid = grid::Options::deduce(matches)?;
+        Ok(Self::Grid(grid))
+    }
+
+    fn strict_check_long_flags(matches: &MatchedFlags<'_>) -> Result<(), OptionsError> {
         // If --long hasn’t been passed, then check if we need to warn the
         // user about flags that won’t have any effect.
         if matches.is_strict() {
@@ -53,18 +100,7 @@ impl Mode {
             }
         }
 
-        if matches.has(&flags::TREE)? {
-            let details = details::Options::deduce_tree(matches)?;
-            return Ok(Self::Details(details));
-        }
-
-        if matches.has(&flags::ONE_LINE)? {
-            let lines = lines::Options::deduce(matches)?;
-            return Ok(Self::Lines(lines));
-        }
-
-        let grid = grid::Options::deduce(matches)?;
-        Ok(Self::Grid(grid))
+        Ok(())
     }
 }
 
@@ -524,7 +560,6 @@ mod test {
 
         // Options that do nothing with --long
         test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
-        test!(long_oneline:  Mode <- ["--long", "--oneline"],  None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
         test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
@@ -548,5 +583,14 @@ mod test {
 
         #[cfg(feature = "git")]
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
+
+        // Contradictions and combinations
+        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines(_)));
+        test!(lgt:           Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
+        test!(tgl:           Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(tlg:           Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(ot:            Mode <- ["--oneline", "--tree"],           None;  Both => like Ok(Mode::Details(_)));
+        test!(og:            Mode <- ["--oneline", "--grid"],           None;  Both => like Ok(Mode::Grid(_)));
+        test!(tg:            Mode <- ["--tree", "--grid"],              None;  Both => like Ok(Mode::Grid(_)));
     }
 }

@@ -394,11 +394,19 @@ impl<'a> MatchedFlags<'a> {
                         else { Err(OptionsError::Duplicate(all[0].0, all[1].0)) }
         }
         else {
-            let any = self.flags.iter().rev()
-                          .find(|tuple| tuple.1.is_none() && predicate(&tuple.0))
-                          .map(|tuple| &tuple.0);
-            Ok(any)
+            Ok(self.has_where_any(predicate))
         }
+    }
+
+    /// Returns the first found argument that satisfies the predicate, or
+    /// nothing if none is found, with strict mode having no effect.
+    ///
+    /// You’ll have to test the resulting flag to see which argument it was.
+    pub fn has_where_any<P>(&self, predicate: P) -> Option<&Flag>
+    where P: Fn(&Flag) -> bool {
+        self.flags.iter().rev()
+            .find(|tuple| tuple.1.is_none() && predicate(&tuple.0))
+            .map(|tuple| &tuple.0)
     }
 
     // This code could probably be better.
