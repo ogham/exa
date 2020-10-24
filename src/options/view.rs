@@ -12,7 +12,7 @@ impl View {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let mode = Mode::deduce(matches, vars)?;
         let width = TerminalWidth::deduce(vars)?;
-        let file_style = FileStyle::deduce(matches)?;
+        let file_style = FileStyle::deduce(matches, vars)?;
         Ok(Self { mode, width, file_style })
     }
 }
