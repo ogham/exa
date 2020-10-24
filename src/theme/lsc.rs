@@ -70,8 +70,9 @@ where I: Iterator<Item = &'a str>
                 }*/
 
                 if let (Some(r), Some(g), Some(b)) = (hexes.parse().ok(),
-                                                           iter.next().and_then(|s| s.parse().ok()),
-                                                           iter.next().and_then(|s| s.parse().ok())) {
+                                                      iter.next().and_then(|s| s.parse().ok()),
+                                                      iter.next().and_then(|s| s.parse().ok()))
+                {
                     return Some(RGB(r, g, b));
                 }
             }

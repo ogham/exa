@@ -35,13 +35,14 @@ use crate::fs::feature::git::GitCache;
 use crate::fs::filter::GitIgnore;
 use crate::options::{Options, Vars, vars, OptionsResult};
 use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
+use crate::theme::Theme;
 
 mod fs;
 mod info;
 mod logger;
 mod options;
 mod output;
-mod style;
+mod theme;
 
 
 fn main() {
@@ -61,7 +62,10 @@ fn main() {
 
             let git = git_options(&options, &input_paths);
             let writer = io::stdout();
-            let exa = Exa { options, writer, input_paths, git };
+
+            let console_width = options.view.width.actual_terminal_width();
+            let theme = options.theme.to_theme(console_width.is_some());
+            let exa = Exa { options, writer, input_paths, theme, console_width, git };
 
             match exa.run() {
                 Ok(exit_status) => {
@@ -113,6 +117,15 @@ pub struct Exa<'args> {
     /// List of the free command-line arguments that should correspond to file
     /// names (anything that isn’t an option).
     pub input_paths: Vec<&'args OsStr>,
+
+    /// The theme that has been configured from the command-line options and
+    /// environment variables. If colours are disabled, this is a theme with
+    /// every style set to the default.
+    pub theme: Theme,
+
+    /// The detected width of the console. This is used to determine which
+    /// view to use.
+    pub console_width: Option<usize>,
 
     /// A global Git cache, if the option was passed in.
     /// This has to last the lifetime of the program, because the user might
@@ -241,45 +254,57 @@ impl<'args> Exa<'args> {
     }
 
     /// Prints the list of files using whichever view is selected.
-    /// For various annoying logistical reasons, each one handles
-    /// printing differently...
     fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File<'_>>) -> io::Result<()> {
         if files.is_empty() {
             return Ok(());
         }
 
-        let View { ref mode, ref colours, ref style } = self.options.view;
+        let theme = &self.theme;
+        let View { ref mode, ref file_style, .. } = self.options.view;
 
-        match mode {
-            Mode::Lines(ref opts) => {
-                let r = lines::Render { files, colours, style, opts };
+        match (mode, self.console_width) {
+            (Mode::Grid(ref opts), Some(console_width)) => {
+                let r = grid::Render { files, theme, file_style, opts, console_width };
                 r.render(&mut self.writer)
             }
 
-            Mode::Grid(ref opts) => {
-                let r = grid::Render { files, colours, style, opts };
+            (Mode::Grid(_), None) |
+            (Mode::Lines,   _)    => {
+                let r = lines::Render { files, theme, file_style };
                 r.render(&mut self.writer)
             }
 
-            Mode::Details(ref opts) => {
+            (Mode::Details(ref opts), _) => {
                 let filter = &self.options.filter;
                 let recurse = self.options.dir_action.recurse_options();
 
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                 let git = self.git.as_ref();
-                let r = details::Render { dir, files, colours, style, opts, filter, recurse, git_ignoring, git };
+                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
                 r.render(&mut self.writer)
             }
 
-            Mode::GridDetails(ref opts) => {
+            (Mode::GridDetails(ref opts), Some(console_width)) => {
                 let grid = &opts.grid;
-                let filter = &self.options.filter;
                 let details = &opts.details;
                 let row_threshold = opts.row_threshold;
 
+                let filter = &self.options.filter;
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                 let git = self.git.as_ref();
-                let r = grid_details::Render { dir, files, colours, style, grid, details, filter, row_threshold, git_ignoring, git };
+
+                let r = grid_details::Render { dir, files, theme, file_style, grid, details, filter, row_threshold, git_ignoring, git, console_width };
+                r.render(&mut self.writer)
+            }
+
+            (Mode::GridDetails(ref opts), None) => {
+                let opts = &opts.to_details_options();
+                let filter = &self.options.filter;
+                let recurse = self.options.dir_action.recurse_options();
+                let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
+
+                let git = self.git.as_ref();
+                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
                 r.render(&mut self.writer)
             }
         }

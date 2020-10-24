@@ -1,120 +1,86 @@
-use lazy_static::lazy_static;
-
 use crate::fs::feature::xattr;
 use crate::options::{flags, OptionsError, Vars};
 use crate::options::parser::MatchedFlags;
-use crate::output::{View, Mode, grid, details, lines};
+use crate::output::{View, Mode, TerminalWidth, grid, details};
 use crate::output::grid_details::{self, RowThreshold};
+use crate::output::file_name::Options as FileStyle;
 use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
 use crate::output::time::TimeFormat;
 
 
 impl View {
-
-    /// Determine which view to use and all of that view’s arguments.
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        use crate::options::style::Styles;
-
         let mode = Mode::deduce(matches, vars)?;
-        let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
-        Ok(Self { mode, colours, style })
+        let width = TerminalWidth::deduce(vars)?;
+        let file_style = FileStyle::deduce(matches)?;
+        Ok(Self { mode, width, file_style })
     }
 }
 
 
 impl Mode {
 
-    /// Determine the mode from the command-line arguments.
+    /// Determine which viewing mode to use based on the user’s options.
+    ///
+    /// As with the other options, arguments are scanned right-to-left and the
+    /// first flag found is matched, so `exa --oneline --long` will pick a
+    /// details view, and `exa --long --oneline` will pick the lines view.
+    ///
+    /// This is complicated a little by the fact that `--grid` and `--tree`
+    /// can also combine with `--long`, so care has to be taken to use the
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let long = || {
-            if matches.is_strict() && matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
-                Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG))
-            }
-            else if matches.is_strict() && matches.has(&flags::ONE_LINE)? {
-                Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG))
-            }
-            else {
-                Ok(details::Options {
-                    table: Some(TableOptions::deduce(matches, vars)?),
-                    header: matches.has(&flags::HEADER)?,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                })
+        let flag = matches.has_where_any(|f| f.matches(&flags::LONG) || f.matches(&flags::ONE_LINE)
+                                          || f.matches(&flags::GRID) || f.matches(&flags::TREE));
+
+        let flag = match flag {
+            Some(f) => f,
+            None => {
+                Self::strict_check_long_flags(matches)?;
+                let grid = grid::Options::deduce(matches)?;
+                return Ok(Self::Grid(grid));
             }
         };
 
-        let other_options_scan = || {
-            if let Some(width) = TerminalWidth::deduce(vars)?.width() {
-                if matches.has(&flags::ONE_LINE)? {
-                    if matches.is_strict() && matches.has(&flags::ACROSS)? {
-                        Err(OptionsError::Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-                    }
-                    else {
-                        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
-                        Ok(Self::Lines(lines))
-                    }
-                }
-                else if matches.has(&flags::TREE)? {
-                    let details = details::Options {
-                        table: None,
-                        header: false,
-                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
+        if flag.matches(&flags::LONG)
+        || (flag.matches(&flags::TREE) && matches.has(&flags::LONG)?)
+        || (flag.matches(&flags::GRID) && matches.has(&flags::LONG)?)
+        {
+            let _ = matches.has(&flags::LONG)?;
+            let details = details::Options::deduce_long(matches, vars)?;
 
-                    Ok(Self::Details(details))
-                }
-                else {
-                    let grid = grid::Options {
-                        across: matches.has(&flags::ACROSS)?,
-                        console_width: width,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
+            let flag = matches.has_where_any(|f| f.matches(&flags::GRID) || f.matches(&flags::TREE));
 
-                    Ok(Self::Grid(grid))
-                }
-            }
-
-            // If the terminal width couldn’t be matched for some reason, such
-            // as the program’s stdout being connected to a file, then
-            // fallback to the lines or details view.
-            else if matches.has(&flags::TREE)? {
-                let details = details::Options {
-                    table: None,
-                    header: false,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                };
-
-                Ok(Self::Details(details))
-            }
-            else if matches.has(&flags::LONG)? {
-                let details = long()?;
-                Ok(Self::Details(details))
-            } else {
-                let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
-                Ok(Self::Lines(lines))
-            }
-        };
-
-        if matches.has(&flags::LONG)? {
-            let details = long()?;
-            if matches.has(&flags::GRID)? {
-                let other_options_mode = other_options_scan()?;
-                if let Self::Grid(grid) = other_options_mode {
-                    let row_threshold = RowThreshold::deduce(vars)?;
-                    let opts = grid_details::Options { grid, details, row_threshold };
-                    return Ok(Self::GridDetails(opts));
-                }
-                else {
-                    return Ok(other_options_mode);
-                }
+            if flag.is_some() && flag.unwrap().matches(&flags::GRID) {
+                let _ = matches.has(&flags::GRID)?;
+                let grid = grid::Options::deduce(matches)?;
+                let row_threshold = RowThreshold::deduce(vars)?;
+                let grid_details = grid_details::Options { grid, details, row_threshold };
+                return Ok(Self::GridDetails(grid_details));
             }
             else {
+                // the --tree case is handled by the DirAction parser later
                 return Ok(Self::Details(details));
             }
         }
 
+        Self::strict_check_long_flags(matches)?;
+
+        if flag.matches(&flags::TREE) {
+            let _ = matches.has(&flags::TREE)?;
+            let details = details::Options::deduce_tree(matches)?;
+            return Ok(Self::Details(details));
+        }
+
+        if flag.matches(&flags::ONE_LINE) {
+            let _ = matches.has(&flags::ONE_LINE)?;
+            return Ok(Self::Lines);
+        }
+
+        let grid = grid::Options::deduce(matches)?;
+        Ok(Self::Grid(grid))
+    }
+
+    fn strict_check_long_flags(matches: &MatchedFlags<'_>) -> Result<(), OptionsError> {
         // If --long hasn’t been passed, then check if we need to warn the
         // user about flags that won’t have any effect.
         if matches.is_strict() {
@@ -129,36 +95,57 @@ impl Mode {
                 return Err(OptionsError::Useless(&flags::GIT, false, &flags::LONG));
             }
             else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
-                // TODO: I’m not sure if the code even gets this far.
-                // There is an identical check in dir_action
                 return Err(OptionsError::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
         }
 
-        other_options_scan()
+        Ok(())
     }
 }
 
 
-/// The width of the terminal requested by the user.
-#[derive(PartialEq, Debug, Copy, Clone)]
-enum TerminalWidth {
+impl grid::Options {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let grid = grid::Options {
+            across: matches.has(&flags::ACROSS)?,
+        };
 
-    /// The user requested this specific number of columns.
-    Set(usize),
-
-    /// The terminal was found to have this number of columns.
-    Terminal(usize),
-
-    /// The user didn’t request any particular terminal width.
-    Unset,
+        Ok(grid)
+    }
 }
 
-impl TerminalWidth {
 
-    /// Determine a requested terminal width from the command-line arguments.
-    ///
-    /// Returns an error if a requested width doesn’t parse to an integer.
+impl details::Options {
+    fn deduce_tree(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let details = details::Options {
+            table: None,
+            header: false,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+        };
+
+        Ok(details)
+    }
+
+    fn deduce_long<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        if matches.is_strict() {
+            if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
+                return Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG));
+            }
+            else if matches.has(&flags::ONE_LINE)? {
+                return Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG));
+            }
+        }
+
+        Ok(details::Options {
+            table: Some(TableOptions::deduce(matches, vars)?),
+            header: matches.has(&flags::HEADER)?,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+        })
+    }
+}
+
+
+impl TerminalWidth {
     fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
         use crate::options::vars;
 
@@ -168,28 +155,14 @@ impl TerminalWidth {
                 Err(e)     => Err(OptionsError::FailedParse(e)),
             }
         }
-        else if let Some(width) = *TERM_WIDTH {
-            Ok(Self::Terminal(width))
-        }
         else {
-            Ok(Self::Unset)
-        }
-    }
-
-    fn width(self) -> Option<usize> {
-        match self {
-            Self::Set(width)       |
-            Self::Terminal(width)  => Some(width),
-            Self::Unset            => None,
+            Ok(Self::Automatic)
         }
     }
 }
 
 
 impl RowThreshold {
-
-    /// Determine whether to use a row threshold based on the given
-    /// environment variables.
     fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
         use crate::options::vars;
 
@@ -357,20 +330,6 @@ impl TimeTypes {
 }
 
 
-// Gets, then caches, the width of the terminal that exa is running in.
-// This gets used multiple times above, with no real guarantee of order,
-// so it’s easier to just cache it the first time it runs.
-lazy_static! {
-    static ref TERM_WIDTH: Option<usize> = {
-        // All of stdin, stdout, and stderr could not be connected to a
-        // terminal, but we’re only interested in stdout because it’s
-        // where the output goes.
-        use term_size::dimensions_stdout;
-        dimensions_stdout().map(|t| t.0)
-    };
-}
-
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -383,10 +342,10 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
-                                   &flags::CREATED, &flags::ACCESSED, &flags::ICONS,
+                                   &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
 
     macro_rules! test {
 
@@ -561,7 +520,6 @@ mod test {
         use super::*;
 
         use crate::output::grid::Options as GridOptions;
-        use crate::output::lines::Options as LineOptions;
 
 
         // Default
@@ -572,12 +530,10 @@ mod test {
         test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
         test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
         test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
-        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { icons: true,   .. })));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines(LineOptions { .. })));
-        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines(LineOptions { .. })));
-        test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
+        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines));
+        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines));
 
         // Details views
         test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
@@ -589,7 +545,6 @@ mod test {
 
         // Options that do nothing with --long
         test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
-        test!(long_oneline:  Mode <- ["--long", "--oneline"],  None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
         test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
@@ -613,5 +568,14 @@ mod test {
 
         #[cfg(feature = "git")]
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
+
+        // Contradictions and combinations
+        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines));
+        test!(lgt:           Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
+        test!(tgl:           Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(tlg:           Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(ot:            Mode <- ["--oneline", "--tree"],           None;  Both => like Ok(Mode::Details(_)));
+        test!(og:            Mode <- ["--oneline", "--grid"],           None;  Both => like Ok(Mode::Grid(_)));
+        test!(tg:            Mode <- ["--tree", "--grid"],              None;  Both => like Ok(Mode::Grid(_)));
     }
 }

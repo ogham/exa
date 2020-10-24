@@ -73,12 +73,12 @@ use crate::fs::dir_action::RecurseOptions;
 use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::{Attribute, FileAttributes};
 use crate::fs::filter::FileFilter;
-use crate::style::Colours;
 use crate::output::cell::TextCell;
 use crate::output::icons::painted_icon;
-use crate::output::file_name::FileStyle;
+use crate::output::file_name::Options as FileStyle;
 use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
 use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
+use crate::theme::Theme;
 
 
 /// With the **Details** view, the output gets formatted into columns, with
@@ -106,17 +106,14 @@ pub struct Options {
 
     /// Whether to show each file’s extended attributes.
     pub xattr: bool,
-
-    /// Whether icons mode is enabled.
-    pub icons: bool,
 }
 
 
 pub struct Render<'a> {
     pub dir: Option<&'a Dir>,
     pub files: Vec<File<'a>>,
-    pub colours: &'a Colours,
-    pub style: &'a FileStyle,
+    pub theme: &'a Theme,
+    pub file_style: &'a FileStyle,
     pub opts: &'a Options,
 
     /// Whether to recurse through directories with a tree view, and if so,
@@ -162,7 +159,7 @@ impl<'a> Render<'a> {
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
-            let mut table = Table::new(table, self.git, self.colours);
+            let mut table = Table::new(table, self.git, &self.theme);
 
             if self.opts.header {
                 let header = table.header_row();
@@ -256,18 +253,21 @@ impl<'a> Render<'a> {
                     }
 
                     let mut dir = None;
-
                     if let Some(r) = self.recurse {
                         if file.is_directory() && r.tree && ! r.is_too_deep(depth.0) {
                             match file.to_dir() {
-                                Ok(d)   => { dir = Some(d); },
-                                Err(e)  => { errors.push((e, None)) },
+                                Ok(d) => {
+                                    dir = Some(d);
+                                }
+                                Err(e) => {
+                                    errors.push((e, None));
+                                }
                             }
                         }
                     };
 
-                    let icon = if self.opts.icons { Some(painted_icon(file, self.style)) }
-                                             else { None };
+                    let icon = if self.file_style.icons { Some(painted_icon(file, self.theme)) }
+                                                   else { None };
 
                     let egg = Egg { table_row, xattrs, errors, dir, file, icon };
                     unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }
@@ -292,7 +292,7 @@ impl<'a> Render<'a> {
                 name_cell.push(ANSIGenericString::from(icon), 2)
             }
 
-            let style = self.style.for_file(egg.file, self.colours)
+            let style = self.file_style.for_file(egg.file, self.theme)
                             .with_link_paths()
                             .paint()
                             .promote();
@@ -355,7 +355,7 @@ impl<'a> Render<'a> {
         Row {
             tree:     TreeParams::new(TreeDepth::root(), false),
             cells:    Some(header),
-            name:     TextCell::paint_str(self.colours.header, "Name"),
+            name:     TextCell::paint_str(self.theme.ui.header, "Name"),
         }
     }
 
@@ -369,12 +369,12 @@ impl<'a> Render<'a> {
 
         // TODO: broken_symlink() doesn’t quite seem like the right name for
         // the style that’s being used here. Maybe split it in two?
-        let name = TextCell::paint(self.colours.broken_symlink(), error_message);
+        let name = TextCell::paint(self.theme.broken_symlink(), error_message);
         Row { cells: None, name, tree }
     }
 
     fn render_xattr(&self, xattr: &Attribute, tree: TreeParams) -> Row {
-        let name = TextCell::paint(self.colours.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
+        let name = TextCell::paint(self.theme.ui.perms.attribute, format!("{} (len {})", xattr.name, xattr.size));
         Row { cells: None, name, tree }
     }
 
@@ -388,7 +388,7 @@ impl<'a> Render<'a> {
             total_width: table.widths().total(),
             table,
             inner: rows.into_iter(),
-            tree_style: self.colours.punctuation,
+            tree_style: self.theme.ui.punctuation,
         }
     }
 
@@ -396,7 +396,7 @@ impl<'a> Render<'a> {
         Iter {
             tree_trunk: TreeTrunk::default(),
             inner: rows.into_iter(),
-            tree_style: self.colours.punctuation,
+            tree_style: self.theme.ui.punctuation,
         }
     }
 }

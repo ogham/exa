@@ -7,8 +7,8 @@
 use ansi_term::Style;
 
 use crate::fs::File;
-use crate::output::file_name::FileColours;
 use crate::output::icons::FileIcon;
+use crate::theme::FileColours;
 
 
 #[derive(Debug, Default, PartialEq)]
