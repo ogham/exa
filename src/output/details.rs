@@ -65,7 +65,7 @@ use std::mem::MaybeUninit;
 use std::path::PathBuf;
 use std::vec::IntoIter as VecIntoIter;
 
-use ansi_term::{ANSIGenericString, Style};
+use ansi_term::Style;
 use scoped_threadpool::Pool;
 
 use crate::fs::{Dir, File};
@@ -74,7 +74,6 @@ use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::{Attribute, FileAttributes};
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCell;
-use crate::output::icons::painted_icon;
 use crate::output::file_name::Options as FileStyle;
 use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
 use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
@@ -137,7 +136,6 @@ struct Egg<'a> {
     errors:    Vec<(io::Error, Option<PathBuf>)>,
     dir:       Option<Dir>,
     file:      &'a File<'a>,
-    icon:      Option<String>,
 }
 
 impl<'a> AsRef<File<'a>> for Egg<'a> {
@@ -266,10 +264,7 @@ impl<'a> Render<'a> {
                         }
                     };
 
-                    let icon = if self.file_style.icons { Some(painted_icon(file, self.theme)) }
-                                                   else { None };
-
-                    let egg = Egg { table_row, xattrs, errors, dir, file, icon };
+                    let egg = Egg { table_row, xattrs, errors, dir, file };
                     unsafe { std::ptr::write(file_eggs.lock().unwrap()[idx].as_mut_ptr(), egg) }
                 });
             }
@@ -287,22 +282,15 @@ impl<'a> Render<'a> {
                 t.add_widths(row);
             }
 
-            let mut name_cell = TextCell::default();
-            if let Some(icon) = egg.icon {
-                name_cell.push(ANSIGenericString::from(icon), 2)
-            }
-
-            let style = self.file_style.for_file(egg.file, self.theme)
-                            .with_link_paths()
-                            .paint()
-                            .promote();
-            name_cell.append(style);
-
+            let file_name = self.file_style.for_file(egg.file, self.theme)
+                                .with_link_paths()
+                                .paint()
+                                .promote();
 
             let row = Row {
                 tree:   tree_params,
                 cells:  egg.table_row,
-                name:   name_cell,
+                name:   file_name,
             };
 
             rows.push(row);

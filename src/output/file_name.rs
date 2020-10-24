@@ -6,6 +6,7 @@ use ansi_term::{ANSIString, Style};
 use crate::fs::{File, FileTarget};
 use crate::output::cell::TextCellContents;
 use crate::output::escape;
+use crate::output::icons::{icon_for_file, iconify_style};
 use crate::output::render::FiletypeColours;
 
 
@@ -110,6 +111,14 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     /// width calculated.
     pub fn paint(&self) -> TextCellContents {
         let mut bits = Vec::new();
+
+        if self.options.icons {
+            let style = iconify_style(self.colours.colour_file(self.file));
+            let file_icon = icon_for_file(self.file).to_string();
+
+            bits.push(style.paint(file_icon));
+            bits.push(Style::default().paint("  "));
+        }
 
         if self.file.parent_dir.is_none() {
             if let Some(parent) = self.file.path.parent() {

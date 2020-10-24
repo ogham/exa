@@ -2,7 +2,7 @@
 
 use std::io::{self, Write};
 
-use ansi_term::{ANSIGenericString, ANSIStrings};
+use ansi_term::ANSIStrings;
 use term_grid as grid;
 
 use crate::fs::{Dir, File};
@@ -13,7 +13,6 @@ use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
 use crate::output::file_name::Options as FileStyle;
 use crate::output::grid::Options as GridOptions;
-use crate::output::icons::painted_icon;
 use crate::output::table::{Table, Row as TableRow, Options as TableOptions};
 use crate::output::tree::{TreeParams, TreeDepth};
 use crate::theme::Theme;
@@ -155,18 +154,7 @@ impl<'a> Render<'a> {
                        .collect::<Vec<_>>();
 
         let file_names = self.files.iter()
-                             .map(|file| {
-                                 if self.file_style.icons {
-                                    let mut icon_cell = TextCell::default();
-                                    icon_cell.push(ANSIGenericString::from(painted_icon(file, self.theme)), 2);
-                                    let file_cell = self.file_style.for_file(file, self.theme).paint().promote();
-                                    icon_cell.append(file_cell);
-                                    icon_cell
-                                 }
-                                 else {
-                                     self.file_style.for_file(file, self.theme).paint().promote()
-                                 }
-                             })
+                             .map(|file| self.file_style.for_file(file, self.theme).paint().promote())
                              .collect::<Vec<_>>();
 
         let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);

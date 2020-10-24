@@ -1,11 +1,10 @@
 use std::io::{self, Write};
 
-use ansi_term::{ANSIStrings, ANSIGenericString};
+use ansi_term::ANSIStrings;
 
 use crate::fs::File;
-use crate::output::cell::{TextCell, TextCellContents};
+use crate::output::cell::TextCellContents;
 use crate::output::file_name::{Options as FileStyle};
-use crate::output::icons::painted_icon;
 use crate::theme::Theme;
 
 
@@ -20,17 +19,7 @@ impl<'a> Render<'a> {
     pub fn render<W: Write>(&self, w: &mut W) -> io::Result<()> {
         for file in &self.files {
             let name_cell = self.render_file(file);
-            if self.file_style.icons {
-                // Create a TextCell for the icon then append the text to it
-                let mut cell = TextCell::default();
-                let icon = painted_icon(file, self.theme);
-                cell.push(ANSIGenericString::from(icon), 2);
-                cell.append(name_cell.promote());
-                writeln!(w, "{}", ANSIStrings(&cell))?;
-            }
-            else {
-                writeln!(w, "{}", ANSIStrings(&name_cell))?;
-            }
+            writeln!(w, "{}", ANSIStrings(&name_cell))?;
         }
 
         Ok(())
