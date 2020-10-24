@@ -43,9 +43,15 @@ all-release: build-release test-release xtests-release
     cargo clippy
 
 # updates dependency versions, and checks for outdated ones
-@update:
+@update-deps:
     cargo update
+    command -v cargo-outdated >/dev/null || (echo "cargo-outdated not installed" && exit 1)
     cargo outdated
+
+# lists unused dependencies
+@unused-deps:
+    command -v cargo-udeps >/dev/null || (echo "cargo-udeps not installed" && exit 1)
+    cargo +nightly udeps
 
 # prints versions of the necessary build tools
 @versions:
