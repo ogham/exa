@@ -208,6 +208,12 @@ Limits the grid-details view (‘`exa --grid --long`’) so it’s only activate
 With widescreen displays, it’s possible for the grid to look very wide and sparse, on just one or two lines with none of the columns lining up.
 By specifying a minimum number of rows, you can only use the view if it’s going to be worth using.
 
+## `EXA_ICON_SPACING`
+
+Specifies the number of spaces to print between an icon (see the ‘`--icons`’ option) and its file name.
+
+Different terminals display icons differently, as they usually take up more than one character width on screen, so there’s no “standard” number of spaces that exa can use to separate an icon from text. One space may place the icon too close to the text, and two spaces may place it too far away. So the choice is left up to the user to configure depending on their terminal emulator.
+
 ## `LS_COLORS`, `EXA_COLORS`
 
 Specifies the colour scheme used to highlight files based on their name and kind, as well as highlighting metadata and parts of the UI.

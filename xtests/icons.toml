@@ -77,3 +77,38 @@ stdout = { file = "outputs/links_oneline_icons.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'oneline', 'icons' ]
+
+
+# icon spacing tests
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=0 exa -1 --icons’ puts no spaces between icons and file names"
+shell = "EXA_ICON_SPACING=0 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width0.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=1 exa -1 --icons’ puts one space between icons and file names"
+shell = "EXA_ICON_SPACING=1 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons.ansitxt" }  # same as the default
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=2 exa -1 --icons’ puts two spaces between icons and file names"
+shell = "EXA_ICON_SPACING=2 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width2.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=3 exa -1 --icons’ puts three spaces between icons and file names"
+shell = "EXA_ICON_SPACING=3 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width3.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]

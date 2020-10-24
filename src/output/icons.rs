@@ -2,7 +2,6 @@ use ansi_term::Style;
 
 use crate::fs::File;
 use crate::info::filetype::FileExtensions;
-use crate::theme::Theme;
 
 
 pub trait FileIcon {
@@ -28,33 +27,22 @@ impl Icons {
 }
 
 
-pub fn painted_icon(file: &File<'_>, theme: &Theme) -> String {
-    use crate::output::file_name::Colours;
-
-    let file_icon = icon(file).to_string();
-    let c = theme.colour_file(file);
-
-    // Remove underline from icon
-    let painted =
-        if c.is_underline {
-            match c.foreground {
-                Some(color) => {
-                    Style::from(color).paint(file_icon).to_string()
-                }
-                None => {
-                    Style::default().paint(file_icon).to_string()
-                }
-            }
-        }
-        else {
-            c.paint(file_icon).to_string()
-        };
-
-    format!("{}  ", painted)
+/// Converts the style used to paint a file name into the style that should be
+/// used to paint an icon.
+///
+/// - The background colour should be preferred to the foreground colour, as
+///   if one is set, it’s the more “obvious” colour choice.
+/// - If neither is set, just use the default style.
+/// - Attributes such as bold or underline should not be used to paint the
+///   icon, as they can make it look weird.
+pub fn iconify_style<'a>(style: Style) -> Style {
+    style.background.or(style.foreground)
+         .map(Style::from)
+         .unwrap_or_default()
 }
 
 
-fn icon(file: &File<'_>) -> char {
+pub fn icon_for_file(file: &File<'_>) -> char {
     let extensions = Box::new(FileExtensions);
 
     if file.points_to_directory() {

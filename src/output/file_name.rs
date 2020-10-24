@@ -6,6 +6,7 @@ use ansi_term::{ANSIString, Style};
 use crate::fs::{File, FileTarget};
 use crate::output::cell::TextCellContents;
 use crate::output::escape;
+use crate::output::icons::{icon_for_file, iconify_style};
 use crate::output::render::FiletypeColours;
 
 
@@ -17,7 +18,7 @@ pub struct Options {
     pub classify: Classify,
 
     /// Whether to prepend icon characters before file names.
-    pub icons: bool,
+    pub show_icons: ShowIcons,
 }
 
 impl Options {
@@ -71,6 +72,19 @@ impl Default for Classify {
 }
 
 
+/// Whether and how to show icons.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum ShowIcons {
+
+    /// Don’t show icons at all.
+    Off,
+
+    /// Show icons next to file names, with the given number of spaces between
+    /// the icon and the file name.
+    On(u32),
+}
+
+
 /// A **file name** holds all the information necessary to display the name
 /// of the given file. This is used in all of the views.
 pub struct FileName<'a, 'dir, C> {
@@ -111,6 +125,19 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     pub fn paint(&self) -> TextCellContents {
         let mut bits = Vec::new();
 
+        if let ShowIcons::On(spaces_count) = self.options.show_icons {
+            let style = iconify_style(self.style());
+            let file_icon = icon_for_file(self.file).to_string();
+
+            bits.push(style.paint(file_icon));
+
+            match spaces_count {
+                1 => bits.push(Style::default().paint(" ")),
+                2 => bits.push(Style::default().paint("  ")),
+                n => bits.push(Style::default().paint(spaces(n))),
+            }
+        }
+
         if self.file.parent_dir.is_none() {
             if let Some(parent) = self.file.path.parent() {
                 self.add_parent_bits(&mut bits, parent);
@@ -143,7 +170,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                     if ! target.name.is_empty() {
                         let target_options = Options {
                             classify: Classify::JustFilenames,
-                            icons: false,
+                            show_icons: ShowIcons::Off,
                         };
 
                         let target = FileName {
@@ -310,4 +337,10 @@ pub trait Colours: FiletypeColours {
     fn executable_file(&self) -> Style;
 
     fn colour_file(&self, file: &File<'_>) -> Style;
+}
+
+
+/// Generate a string made of `n` spaces.
+fn spaces(width: u32) -> String {
+    (0 .. width).into_iter().map(|_| ' ').collect()
 }

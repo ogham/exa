@@ -3,9 +3,7 @@ use std::io::{self, Write};
 use term_grid as tg;
 
 use crate::fs::File;
-use crate::output::cell::DisplayWidth;
 use crate::output::file_name::Options as FileStyle;
-use crate::output::icons::painted_icon;
 use crate::theme::Theme;
 
 
@@ -40,17 +38,11 @@ impl<'a> Render<'a> {
         grid.reserve(self.files.len());
 
         for file in &self.files {
-            let icon = if self.file_style.icons { Some(painted_icon(file, self.theme)) }
-                                           else { None };
-
             let filename = self.file_style.for_file(file, self.theme).paint();
 
-            let width = if self.file_style.icons { DisplayWidth::from(2) + filename.width() }
-                                            else { filename.width() };
-
             grid.add(tg::Cell {
-                contents:  format!("{}{}", &icon.unwrap_or_default(), filename.strings()),
-                width:     *width,
+                contents:  filename.strings().to_string(),
+                width:     *filename.width(),
             });
         }
 
@@ -62,10 +54,6 @@ impl<'a> Render<'a> {
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
             for file in &self.files {
-                if self.file_style.icons {
-                    write!(w, "{}", painted_icon(file, self.theme))?;
-                }
-
                 let name_cell = self.file_style.for_file(file, self.theme).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
