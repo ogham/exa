@@ -113,7 +113,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         let mut bits = Vec::new();
 
         if self.options.icons {
-            let style = iconify_style(self.colours.colour_file(self.file));
+            let style = iconify_style(self.style());
             let file_icon = icon_for_file(self.file).to_string();
 
             bits.push(style.paint(file_icon));

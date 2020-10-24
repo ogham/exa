@@ -28,19 +28,9 @@ impl Icons {
 
 
 pub fn iconify_style<'a>(style: Style) -> Style {
-    if style.is_underline {
-        match style.foreground {
-            Some(color) => {
-                Style::from(color)
-            }
-            None => {
-                Style::default()
-            }
-        }
-    }
-    else {
-        style
-    }
+    style.foreground
+         .map(Style::from)
+         .unwrap_or_default()
 }
 
 
