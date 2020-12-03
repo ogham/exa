@@ -5,7 +5,7 @@ use crate::options::flags;
 use crate::options::parser::MatchedFlags;
 
 
-static USAGE: &str = r##"Usage:
+static USAGE_PART1: &str = "Usage:
   exa [options] [files...]
 
 META OPTIONS
@@ -32,8 +32,9 @@ FILTERING AND SORTING OPTIONS
   -s, --sort SORT_FIELD      which field to sort by
   --group-directories-first  list directories before other files
   -D, --only-dirs            list only directories
-  -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore
-  --git-ignore               ignore files mentioned in '.gitignore'
+  -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore";
+
+  static USAGE_PART2: &str = "  \
   Valid sort fields:         name, Name, extension, Extension, size, type,
                              modified, accessed, created, inode, and none.
                              date, time, old, and new all refer to modified.
@@ -56,10 +57,11 @@ LONG VIEW OPTIONS
   --octal-permissions  list each file's permission in octal format
   --no-filesize        suppress the filesize field
   --no-user            suppress the user field
-  --no-time            suppress the time field"##;
+  --no-time            suppress the time field";
 
-static GIT_HELP:      &str = r##"  --git                list each file's Git status, if tracked or ignored"##;
-static EXTENDED_HELP: &str = r##"  -@, --extended       list each file's extended attributes and sizes"##;
+static GIT_FILTER_HELP: &str = "  --git-ignore               ignore files mentioned in '.gitignore'";
+static GIT_VIEW_HELP:   &str = "  --git                list each file's Git status, if tracked or ignored";
+static EXTENDED_HELP:   &str = "  -@, --extended       list each file's extended attributes and sizes";
 
 
 /// All the information needed to display the help text, which depends
@@ -92,14 +94,20 @@ impl fmt::Display for HelpString {
     /// Format this help options into an actual string of help
     /// text to be displayed to the user.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "{}", USAGE)?;
+        write!(f, "{}", USAGE_PART1)?;
 
-        if cfg!(feature="git") {
-            writeln!(f, "{}", GIT_HELP)?;
+        if cfg!(feature = "git") {
+            write!(f, "\n{}", GIT_FILTER_HELP)?;
+        }
+
+        write!(f, "\n{}", USAGE_PART2)?;
+
+        if cfg!(feature = "git") {
+            write!(f, "\n{}", GIT_VIEW_HELP)?;
         }
 
         if xattr::ENABLED {
-            writeln!(f, "{}", EXTENDED_HELP)?;
+            write!(f, "\n{}", EXTENDED_HELP)?;
         }
 
         Ok(())
