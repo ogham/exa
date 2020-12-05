@@ -38,6 +38,8 @@ term_size = "0.3"
 unicode-width = "0.1"
 users = "0.11"
 zoneinfo_compiled = "0.5"
+dirs = "3.0.1"
+shell-words = "1.0.0"
 
 [dependencies.git2]
 version = "0.13"

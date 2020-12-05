@@ -43,6 +43,7 @@ mod logger;
 mod options;
 mod output;
 mod theme;
+mod config;
 
 
 fn main() {
@@ -50,7 +51,11 @@ fn main() {
 
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
-    let args: Vec<_> = env::args_os().skip(1).collect();
+    let cli_args: Vec<_> = env::args_os().skip(1).collect();
+    let mut args = config::get_args_from_env_var()
+        .unwrap_or_else(config::get_args_from_config_file)
+        .expect("Could not parse configuration file");
+    args.extend(cli_args);
     match Options::parse(args.iter().map(|e| e.as_ref()), &LiveVars) {
         OptionsResult::Ok(options, mut input_paths) => {
 
