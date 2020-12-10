@@ -31,7 +31,11 @@ impl VersionString {
 
 impl fmt::Display for VersionString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
+        writeln!(
+            f,
+            "{} (git support: {})",
+            include!(concat!(env!("OUT_DIR"), "/version_string.txt")),
+            if cfg!(feature = "git") { "enabled" } else { "disabled" })
     }
 }
 
