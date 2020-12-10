@@ -101,7 +101,7 @@ Sort fields starting with a capital letter will sort uppercase before lowercase:
 `-I`, `--ignore-glob=GLOBS`
 : Glob patterns, pipe-separated, of files to ignore.
 
-`--git-ignore`
+`--git-ignore` [if exa was built with git support]
 : Do not list files that are ignored by Git.
 
 `--group-directories-first`
@@ -174,7 +174,7 @@ These options are available when running with `--long` (`-l`):
 `-@`, `--extended`
 : List each file’s extended attributes and sizes.
 
-`--git`
+`--git`  [if exa was built with git support]
 : List each file’s Git status, if tracked.
 
 
