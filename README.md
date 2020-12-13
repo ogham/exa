@@ -103,6 +103,12 @@ Some of the options accept parameters:
 exa is available for macOS and Linux.
 More information on how to install exa is available on [the Installation page](https://the.exa.website/install).
 
+### Alpine Linux
+
+On Alpine Linux, install the [`exa`](https://pkgs.alpinelinux.org/package/edge/community/x86_64/exa) package.
+
+    $ apk add exa
+
 ### Arch Linux
 
 On Arch, install the [`exa`](https://www.archlinux.org/packages/community/x86_64/exa/) package.
