@@ -28,7 +28,7 @@ impl FileExtensions {
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
             "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
-            "Gemfile", "Pipfile", "build.sbt", "mix.exs",
+            "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
         ])
     }
 
