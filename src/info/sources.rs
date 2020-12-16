@@ -17,7 +17,7 @@ impl<'a> File<'a> {
         if let Some(ext) = &self.ext {
             match &ext[..] {
                 "css"   => vec![self.path.with_extension("sass"), self.path.with_extension("scss"),  // SASS, SCSS
-                                self.path.with_extension("styl") self.path.with_extension("less")],  // Stylus, Less
+                                self.path.with_extension("styl"), self.path.with_extension("less")],  // Stylus, Less
                 "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
 
                 "aux" |                                          // TeX: auxiliary file
