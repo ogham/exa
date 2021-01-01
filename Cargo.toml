@@ -38,6 +38,7 @@ term_size = "0.3"
 unicode-width = "0.1"
 users = "0.11"
 zoneinfo_compiled = "0.5"
+shadow-rs = "0.5"
 
 [dependencies.git2]
 version = "0.13"
@@ -45,7 +46,7 @@ optional = true
 default-features = false
 
 [build-dependencies]
-datetime = "0.5"
+shadow-rs = "0.5"
 
 [features]
 default = [ "git" ]

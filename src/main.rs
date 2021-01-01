@@ -21,6 +21,9 @@
 #![allow(clippy::unused_self)]
 #![allow(clippy::wildcard_imports)]
 
+#[macro_use]
+extern crate shadow_rs;
+
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::io::{self, Write, ErrorKind};

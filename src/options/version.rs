@@ -2,6 +2,8 @@
 //!
 //! The code that works out which string to print is done in `build.rs`.
 
+shadow!(shadow);
+
 use std::fmt;
 
 use crate::options::flags;
@@ -13,7 +15,6 @@ pub struct VersionString;
 // There were options here once, but there aren’t anymore!
 
 impl VersionString {
-
     /// Determines how to show the version, if at all, based on the user’s
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
@@ -22,8 +23,7 @@ impl VersionString {
     pub fn deduce(matches: &MatchedFlags<'_>) -> Option<Self> {
         if matches.count(&flags::VERSION) > 0 {
             Some(Self)
-        }
-        else {
+        } else {
             None
         }
     }
@@ -31,7 +31,16 @@ impl VersionString {
 
 impl fmt::Display for VersionString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        writeln!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
+        let pkg_version = shadow::PKG_VERSION;
+        let version = if shadow_rs::is_debug() || pkg_version.ends_with("-pre") {
+            format!("exa v{} ({} built on {})",
+                    pkg_version,
+                    shadow::SHORT_COMMIT,
+                    shadow::BUILD_TIME)
+        } else {
+            format!("exa v{}", pkg_version)
+        };
+        writeln!(f, "{}", version)
     }
 }
 
@@ -43,14 +52,14 @@ mod test {
 
     #[test]
     fn version() {
-        let args = vec![ OsStr::new("--version") ];
+        let args = vec![OsStr::new("--version")];
         let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Version(_)));
     }
 
     #[test]
     fn version_with_file() {
-        let args = vec![ OsStr::new("--version"), OsStr::new("me") ];
+        let args = vec![OsStr::new("--version"), OsStr::new("me")];
         let opts = Options::parse(args, &None);
         assert!(matches!(opts, OptionsResult::Version(_)));
     }
