@@ -52,9 +52,12 @@ Vagrant.configure(2) do |config|
       else
         trap 'exit' ERR
         echo "Installing Rust"
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --component rustc,rust-std,cargo,clippy -y
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --component rustc,rust-std,cargo,clippy -y > /dev/null
         source $HOME/.cargo/env
+        echo "Installing cargo-hack"
         cargo install -q cargo-hack
+        echo "Installing specsheet"
+        cargo install -q --git https://github.com/ogham/specsheet
       fi
     EOF
 
@@ -68,11 +71,10 @@ Vagrant.configure(2) do |config|
       else
         trap 'exit' ERR
         echo "Installing just"
-        wget -q "https://github.com/casey/just/releases/download/v0.8.0/just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
-        tar -xf "just-v0.8.0-x86_64-unknown-linux-musl.tar.gz"
+        wget -q "https://github.com/casey/just/releases/download/v0.8.3/just-v0.8.3-x86_64-unknown-linux-musl.tar.gz"
+        tar -xf "just-v0.8.3-x86_64-unknown-linux-musl.tar.gz"
         cp just /usr/local/bin
       fi
-
 
       # Guarantee that the timezone is UTC — some of the tests
       # depend on this (for now).
