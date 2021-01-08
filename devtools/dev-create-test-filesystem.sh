@@ -34,6 +34,7 @@ for i in {1..13}; do
 done
 
 touch -t $FIXED_DATE "$TEST_ROOT/files/"*
+touch -t $FIXED_DATE "$TEST_ROOT/files/"
 chmod 644 "$TEST_ROOT/files/"*
 sudo chown $FIXED_USER:$FIXED_USER "$TEST_ROOT/files/"*
 
