@@ -157,7 +157,11 @@ impl<'a> Render<'a> {
                              .map(|file| self.file_style.for_file(file, self.theme).paint().promote())
                              .collect::<Vec<_>>();
 
-        let mut last_working_table = self.make_grid(1, options, &file_names, rows.clone(), &drender);
+        let mut last_working_grid = self.make_grid(1, options, &file_names, rows.clone(), &drender);
+        
+        if file_names.len() == 1 {
+            return Some((last_working_grid, 1));
+        }
 
         // If we can’t fit everything in a grid 100 columns wide, then
         // something has gone seriously awry
@@ -166,23 +170,26 @@ impl<'a> Render<'a> {
 
             let the_grid_fits = {
                 let d = grid.fit_into_columns(column_count);
-                d.is_complete() && d.width() <= self.console_width
+                d.width() <= self.console_width
             };
 
             if the_grid_fits {
-                last_working_table = grid;
-            }
-            else {
+                if column_count == file_names.len() {
+                    return Some((grid, column_count));
+                } else { 
+                    last_working_grid = grid;
+                }
+            } else {
                 // If we’ve figured out how many columns can fit in the user’s
                 // terminal, and it turns out there aren’t enough rows to
                 // make it worthwhile, then just resort to the lines view.
                 if let RowThreshold::MinimumRows(thresh) = self.row_threshold {
-                    if last_working_table.fit_into_columns(column_count - 1).row_count() < thresh {
+                    if last_working_grid.fit_into_columns(column_count - 1).row_count() < thresh {
                         return None;
                     }
                 }
 
-                return Some((last_working_table, column_count - 1));
+                return Some((last_working_grid, column_count - 1));
             }
         }
 
