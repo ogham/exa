@@ -11,8 +11,9 @@
 /// - https://crates.io/crates/vergen
 
 extern crate datetime;
-use std::io::Result as IOResult;
 use std::env;
+use std::io;
+
 
 fn git_hash() -> String {
     use std::process::Command;
@@ -45,14 +46,16 @@ fn build_date() -> String {
     format!("{}", now.date().iso())
 }
 
-fn write_statics() -> IOResult<()> {
+fn write_statics() -> io::Result<()> {
     use std::fs::File;
     use std::io::Write;
     use std::path::PathBuf;
 
-    let ver = match is_development_version() {
-        true   => format!("exa v{} ({} built on {})", cargo_version(), git_hash(), build_date()),
-        false  => format!("exa v{}", cargo_version()),
+    let ver = if is_development_version() {
+        format!("exa v{} ({} built on {})", cargo_version(), git_hash(), build_date())
+    }
+    else {
+        format!("exa v{}", cargo_version())
     };
 
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());

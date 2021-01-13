@@ -1,0 +1,45 @@
+[[cmd]]
+name = "‘exa -l’ produces a details table"
+shell = "exa -l /testcases/files"
+stdout = { file = "outputs/files_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long' ]
+
+
+# header tests
+
+[[cmd]]
+name = "‘exa -lh’ produces a details table with a header"
+shell = "exa -lh /testcases/files"
+stdout = { file = "outputs/files_long_header.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header' ]
+
+[[cmd]]
+name = "‘exa -lh’ with an empty directory skips the header"
+shell = "exa -lh /testcases/empty"
+stdout = { empty = true }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'header' ]
+
+
+# file kinds
+
+[[cmd]]
+name = "‘exa -l’ handles file kinds"
+shell = "exa -l /testcases/specials"
+stdout = { file = "outputs/specials_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long' ]
+
+[[cmd]]
+name = "‘exa -lF’ handles and classifies file kinds"
+shell = "exa -lF /testcases/specials"
+stdout = { file = "outputs/specials_long_classify.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'classify' ]

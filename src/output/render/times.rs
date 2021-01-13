@@ -1,28 +1,30 @@
+use std::time::SystemTime;
+
 use datetime::TimeZone;
 use ansi_term::Style;
 
-use output::cell::TextCell;
-use output::time::TimeFormat;
+use crate::output::cell::TextCell;
+use crate::output::time::TimeFormat;
 
 
 pub trait Render {
-    fn render(self, style: Style,
-                        tz: &Option<TimeZone>,
-                        format: &TimeFormat) -> TextCell;
+    fn render(self, style: Style, tz: &Option<TimeZone>, format: TimeFormat) -> TextCell;
 }
 
-impl Render for std::time::Duration {
-    fn render(self, style: Style,
-                        tz: &Option<TimeZone>,
-                        format: &TimeFormat) -> TextCell {
-
-        if let Some(ref tz) = *tz {
-            let datestamp = format.format_zoned(self, tz);
-            TextCell::paint(style, datestamp)
+impl Render for Option<SystemTime> {
+    fn render(self, style: Style, tz: &Option<TimeZone>, format: TimeFormat) -> TextCell {
+        let datestamp = if let Some(time) = self {
+            if let Some(ref tz) = tz {
+                format.format_zoned(time, tz)
+            }
+            else {
+                format.format_local(time)
+            }
         }
         else {
-            let datestamp = format.format_local(self);
-            TextCell::paint(style, datestamp)
-        }
+            String::from("-")
+        };
+
+        TextCell::paint(style, datestamp)
     }
 }

@@ -1,0 +1,7 @@
+[[cmd]]
+name = "‘exa -lgh’ produces a tree view with attribute entries"
+shell = "exa -lgh /testcases/passwd"
+stdout = { file = "outputs/passwd_long_group_header.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'group', 'header' ]

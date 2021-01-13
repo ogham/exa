@@ -1,0 +1,15 @@
+[[cmd]]
+name = "‘exa -lghR’ (not as the user) produces a tree view with attribute entries"
+shell = "exa -lghR /testcases/permissions"
+stdout = { file = "outputs/permissions_long_group_header.ansitxt" }
+stderr = { string = "/testcases/permissions/forbidden-directory: Permission denied (os error 13)" }
+status = 0
+tags = [ 'long', 'group', 'header', 'xattrs' ]
+
+[[cmd]]
+name = "‘exa -lghR’ (as the user) produces a tree view with attribute entries"
+shell = "sudo -u cassowary exa -lghR /testcases/permissions"
+stdout = { file = "outputs/permissions_long_group_header_sudo.ansitxt" }
+stderr = { string = "/testcases/permissions/forbidden-directory: Permission denied (os error 13)" }
+status = 0
+tags = [ 'long', 'group', 'header', 'xattrs', 'sudo' ]

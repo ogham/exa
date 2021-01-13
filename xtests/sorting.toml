@@ -1,0 +1,138 @@
+# sorting by name
+
+[[cmd]]
+name = "‘exa -1 --sort=name’ sorts by file name"
+shell = "exa -1 --sort=name /testcases/file-names-exts"
+stdout = { file = "outputs/exts_oneline_sort_name.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=Name’ sorts by file name (case-sensitively)"
+shell = "exa -1 --sort=Name /testcases/file-names-exts"
+stdout = { file = "outputs/exts_oneline_sort_namecase.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+
+# sorting by file extension
+
+[[cmd]]
+name = "‘exa -1 --sort=ext’ sorts by file extension"
+shell = "exa -1 --sort=ext /testcases/file-names-exts"
+stdout = { file = "outputs/exts_oneline_sort_ext.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=Ext’ sorts by file extension (case-sensitively)"
+shell = "exa -1 --sort=Ext /testcases/file-names-exts"
+stdout = { file = "outputs/exts_oneline_sort_extcase.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+
+# sorting by kind
+
+[[cmd]]
+name = "‘exa -1 --sort=type’ sorts by file kind (files and symlinks)"
+shell = "exa -1 --sort=type /testcases/links"
+stdout = { file = "outputs/links_oneline_sort_type.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=type’ sorts by file kind (special files)"
+shell = "exa -1 --sort=type /testcases/specials"
+stdout = { file = "outputs/specials_oneline_sort_type.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort' ]
+
+
+# sorting by inode
+
+# We can’t guarantee inode numbers, but we can at least check that they’re in
+# order. The inode column is the leftmost one, so sort works for this.
+[[cmd]]
+name = "‘exa -l --inode --sort=inode’ sorts by file inode"
+shell = "exa -l --inode --sort=inode /testcases/file-names-exts | sort --check"
+stdout = { empty = true }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'inode', 'sort' ]
+
+
+# sorting by modified date
+
+[[cmd]]
+name = "‘exa -1 --sort=modified’ sorts most recently modified at the bottom"
+shell = "exa -1 --sort=modified /testcases/dates"
+stdout = { string = "pear\npeach\nplum" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=modified -r’ sorts most recently modified at the top"
+shell = "exa -1 --sort=modified -r /testcases/dates"
+stdout = { string = "plum\npeach\npear" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates', 'reverse' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=newest’ sorts most recently modified at the bottom"
+shell = "exa -1 --sort=newest /testcases/dates"
+stdout = { string = "pear\npeach\nplum" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=newest -r’ sorts most recently modified at the top"
+shell = "exa -1 --sort=newest -r /testcases/dates"
+stdout = { string = "plum\npeach\npear" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates', 'reverse' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=oldest’ sorts most recently modified at the top"
+shell = "exa -1 --sort=oldest /testcases/dates"
+stdout = { string = "plum\npeach\npear" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=oldest -r’ sorts most recently modified at the bottom"
+shell = "exa -1 --sort=oldest -r /testcases/dates"
+stdout = { string = "pear\npeach\nplum" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates', 'reverse' ]
+
+
+# sorting by other date fields
+
+[[cmd]]
+name = "‘exa -1 --sort=created’ sorts by created date"
+shell = "exa -1 --sort=created /testcases/dates"
+stdout = { string = "peach\nplum\npear" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=accessed’ sorts by accessed date"
+shell = "exa -1 --sort=accessed /testcases/dates"
+stdout = { string = "plum\npear\npeach" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'dates' ]

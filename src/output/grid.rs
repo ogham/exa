@@ -1,23 +1,19 @@
-use std::io::{Write, Result as IOResult};
+use std::io::{self, Write};
 
 use term_grid as tg;
 
-use fs::File;
-use style::Colours;
-use output::file_name::FileStyle;
-use output::icons::painted_icon;
-use output::cell::DisplayWidth;
+use crate::fs::File;
+use crate::output::file_name::Options as FileStyle;
+use crate::theme::Theme;
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Options {
     pub across: bool,
-    pub console_width: usize,
-    pub icons: bool,
 }
 
 impl Options {
-    pub fn direction(&self) -> tg::Direction {
+    pub fn direction(self) -> tg::Direction {
         if self.across { tg::Direction::LeftToRight }
                   else { tg::Direction::TopToBottom }
     }
@@ -26,13 +22,14 @@ impl Options {
 
 pub struct Render<'a> {
     pub files: Vec<File<'a>>,
-    pub colours: &'a Colours,
-    pub style: &'a FileStyle,
+    pub theme: &'a Theme,
+    pub file_style: &'a FileStyle,
     pub opts: &'a Options,
+    pub console_width: usize,
 }
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(&self, w: &mut W) -> IOResult<()> {
+    pub fn render<W: Write>(&self, w: &mut W) -> io::Result<()> {
         let mut grid = tg::Grid::new(tg::GridOptions {
             direction:  self.opts.direction(),
             filling:    tg::Filling::Spaces(2),
@@ -41,21 +38,15 @@ impl<'a> Render<'a> {
         grid.reserve(self.files.len());
 
         for file in &self.files {
-            let icon = if self.opts.icons { Some(painted_icon(&file, &self.style)) } else { None };
-            let filename = self.style.for_file(file, self.colours).paint();
-            let width = if self.opts.icons {
-                DisplayWidth::from(2) + filename.width()
-            } else {
-                filename.width()
-            };
+            let filename = self.file_style.for_file(file, self.theme).paint();
 
             grid.add(tg::Cell {
-                contents:  format!("{icon}{filename}", icon=&icon.unwrap_or("".to_string()), filename=filename.strings().to_string()),
-                width:     *width,
+                contents:  filename.strings().to_string(),
+                width:     *filename.width(),
             });
         }
 
-        if let Some(display) = grid.fit_into_width(self.opts.console_width) {
+        if let Some(display) = grid.fit_into_width(self.console_width) {
             write!(w, "{}", display)
         }
         else {
@@ -63,9 +54,10 @@ impl<'a> Render<'a> {
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
             for file in &self.files {
-                let name_cell = self.style.for_file(file, self.colours).paint();
+                let name_cell = self.file_style.for_file(file, self.theme).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
+
             Ok(())
         }
     }

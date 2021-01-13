@@ -1,13 +1,16 @@
-use std::io::{self, Result as IOResult};
+use crate::fs::feature::git::GitCache;
+use crate::fs::fields::GitStatus;
+use std::io;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
-use fs::File;
-use fs::feature::ignore::IgnoreCache;
+use log::*;
+
+use crate::fs::File;
 
 
-/// A **Dir** provides a cached list of the file paths in a directory that's
+/// A **Dir** provides a cached list of the file paths in a directory that’s
 /// being listed.
 ///
 /// This object gets passed to the Files themselves, in order for them to
@@ -32,27 +35,26 @@ impl Dir {
     /// The `read_dir` iterator doesn’t actually yield the `.` and `..`
     /// entries, so if the user wants to see them, we’ll have to add them
     /// ourselves after the files have been read.
-    pub fn read_dir(path: PathBuf) -> IOResult<Dir> {
+    pub fn read_dir(path: PathBuf) -> io::Result<Self> {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?
-                                             .map(|result| result.map(|entry| entry.path()))
-                                             .collect::<Result<_,_>>()?;
+                          .map(|result| result.map(|entry| entry.path()))
+                          .collect::<Result<_, _>>()?;
 
-        Ok(Dir { contents, path })
+        Ok(Self { contents, path })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, ignore: Option<&'ig IgnoreCache>) -> Files<'dir, 'ig> {
-        if let Some(i) = ignore { i.discover_underneath(&self.path); }
-
+    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, git: Option<&'ig GitCache>, git_ignoring: bool) -> Files<'dir, 'ig> {
         Files {
             inner:     self.contents.iter(),
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
-            ignore,
+            git,
+            git_ignoring,
         }
     }
 
@@ -84,7 +86,9 @@ pub struct Files<'dir, 'ig> {
     /// any files have been listed.
     dots: DotsNext,
 
-    ignore: Option<&'ig IgnoreCache>,
+    git: Option<&'ig GitCache>,
+
+    git_ignoring: bool,
 }
 
 impl<'dir, 'ig> Files<'dir, 'ig> {
@@ -103,10 +107,15 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
         loop {
             if let Some(path) = self.inner.next() {
                 let filename = File::filename(path);
-                if !self.dotfiles && filename.starts_with('.') { continue }
+                if ! self.dotfiles && filename.starts_with('.') {
+                    continue;
+                }
 
-                if let Some(i) = self.ignore {
-                    if i.is_ignored(path) { continue }
+                if self.git_ignoring {
+                    let git_status = self.git.map(|g| g.get(path, false)).unwrap_or_default();
+                    if git_status.unstaged == GitStatus::Ignored {
+                         continue;
+                    }
                 }
 
                 return Some(File::from_args(path.clone(), self.dir, filename)
@@ -133,7 +142,6 @@ enum DotsNext {
     Files,
 }
 
-
 impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
     type Item = Result<File<'dir>, (PathBuf, io::Error)>;
 
@@ -143,22 +151,24 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
                 self.dots = DotsNext::DotDot;
                 Some(File::new_aa_current(self.dir)
                           .map_err(|e| (Path::new(".").to_path_buf(), e)))
-            },
+            }
+
             DotsNext::DotDot => {
                 self.dots = DotsNext::Files;
                 Some(File::new_aa_parent(self.parent(), self.dir)
                           .map_err(|e| (self.parent(), e)))
-            },
+            }
+
             DotsNext::Files => {
                 self.next_visible_file()
-            },
+            }
         }
     }
 }
 
 
 /// Usually files in Unix use a leading dot to be hidden or visible, but two
-/// entries in particular are "extra-hidden": `.` and `..`, which only become
+/// entries in particular are “extra-hidden”: `.` and `..`, which only become
 /// visible after an extra `-a` option.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum DotFilter {
@@ -174,8 +184,8 @@ pub enum DotFilter {
 }
 
 impl Default for DotFilter {
-    fn default() -> DotFilter {
-        DotFilter::JustFiles
+    fn default() -> Self {
+        Self::JustFiles
     }
 }
 
@@ -184,18 +194,18 @@ impl DotFilter {
     /// Whether this filter should show dotfiles in a listing.
     fn shows_dotfiles(self) -> bool {
         match self {
-            DotFilter::JustFiles       => false,
-            DotFilter::Dotfiles        => true,
-            DotFilter::DotfilesAndDots => true,
+            Self::JustFiles       => false,
+            Self::Dotfiles        => true,
+            Self::DotfilesAndDots => true,
         }
     }
 
     /// Whether this filter should add dot directories to a listing.
     fn dots(self) -> DotsNext {
         match self {
-            DotFilter::JustFiles       => DotsNext::Files,
-            DotFilter::Dotfiles        => DotsNext::Files,
-            DotFilter::DotfilesAndDots => DotsNext::Dot,
+            Self::JustFiles        => DotsNext::Files,
+            Self::Dotfiles         => DotsNext::Files,
+            Self::DotfilesAndDots  => DotsNext::Dot,
         }
     }
 }

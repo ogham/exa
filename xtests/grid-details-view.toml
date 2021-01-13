@@ -1,0 +1,78 @@
+# listing directory tests
+
+[[cmd]]
+name = "‘COLUMNS=40 exa -lG’ produces a grid with details of 1 column"
+shell = "exa -lG /testcases/files"
+environment = { COLUMNS = "40" }
+stdout = { file = "outputs/files_long_grid_1col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=80 exa -lG’ produces a grid with details of 1 column"
+shell = "exa -lG /testcases/files"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_long_grid_1col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=120 exa -lG’ produces a grid with details of 2 columns"
+shell = "exa -lG /testcases/files"
+environment = { COLUMNS = "120" }
+stdout = { file = "outputs/files_long_grid_2col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=160 exa -lG’ produces a grid with details of 3 columns"
+shell = "exa -lG /testcases/files"
+environment = { COLUMNS = "160" }
+stdout = { file = "outputs/files_long_grid_3col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 exa -lG’ produces a grid with details of 4 columns"
+shell = "exa -lG /testcases/files"
+environment = { COLUMNS = "200" }
+stdout = { file = "outputs/files_long_grid_4col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+
+# listing files tests
+# (these rely on bash’s glob sort order)
+# (some of the output files also have trailing whitespace)
+
+[[cmd]]
+name = "‘COLUMNS=100 exa -lG’ with file arguments produces a grid with details of 1 column, with full paths"
+shell = "exa -lG /testcases/files/*"
+environment = { COLUMNS = "100" }
+stdout = { file = "outputs/files_paths_long_grid_1col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=150 exa -lG’ with file arguments produces a grid with details of 2 columns, with full paths"
+shell = "exa -lG /testcases/files/*"
+environment = { COLUMNS = "150" }
+stdout = { file = "outputs/files_paths_long_grid_2col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 exa -lG’ with file arguments produces a grid with details of 3 columns, with full paths"
+shell = "exa -lG /testcases/files/*"
+environment = { COLUMNS = "200" }
+stdout = { file = "outputs/files_paths_long_grid_3col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]

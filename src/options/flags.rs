@@ -1,4 +1,4 @@
-use options::parser::{Arg, Args, Values, TakesValue};
+use crate::options::parser::{Arg, Args, TakesValue, Values};
 
 
 // exa options
@@ -32,8 +32,8 @@ pub static GIT_IGNORE:  Arg = Arg { short: None, long: "git-ignore",           t
 pub static DIRS_FIRST:  Arg = Arg { short: None, long: "group-directories-first",  takes_value: TakesValue::Forbidden };
 pub static ONLY_DIRS:   Arg = Arg { short: Some(b'D'), long: "only-dirs", takes_value: TakesValue::Forbidden };
 const SORTS: Values = &[ "name", "Name", "size", "extension",
-                             "Extension", "modified", "changed", "accessed",
-                             "created", "inode", "type", "none" ];
+                         "Extension", "modified", "changed", "accessed",
+                         "created", "inode", "type", "none" ];
 
 // display options
 pub static BINARY:     Arg = Arg { short: Some(b'b'), long: "binary",     takes_value: TakesValue::Forbidden };
@@ -53,9 +53,16 @@ pub static TIME_STYLE: Arg = Arg { short: None,       long: "time-style", takes_
 const TIMES: Values = &["modified", "changed", "accessed", "created"];
 const TIME_STYLES: Values = &["default", "long-iso", "full-iso", "iso"];
 
+// suppressing columns
+pub static NO_PERMISSIONS: Arg = Arg { short: None, long: "no-permissions", takes_value: TakesValue::Forbidden };
+pub static NO_FILESIZE: Arg = Arg { short: None, long: "no-filesize", takes_value: TakesValue::Forbidden };
+pub static NO_USER: Arg = Arg { short: None, long: "no-user", takes_value: TakesValue::Forbidden };
+pub static NO_TIME: Arg = Arg { short: None, long: "no-time", takes_value: TakesValue::Forbidden };
+
 // optional feature options
-pub static GIT:       Arg = Arg { short: None,       long: "git",      takes_value: TakesValue::Forbidden };
-pub static EXTENDED:  Arg = Arg { short: Some(b'@'), long: "extended", takes_value: TakesValue::Forbidden };
+pub static GIT:       Arg = Arg { short: None,       long: "git",               takes_value: TakesValue::Forbidden };
+pub static EXTENDED:  Arg = Arg { short: Some(b'@'), long: "extended",          takes_value: TakesValue::Forbidden };
+pub static OCTAL:     Arg = Arg { short: None,       long: "octal-permissions", takes_value: TakesValue::Forbidden };
 
 
 pub static ALL_ARGS: Args = Args(&[
@@ -69,6 +76,7 @@ pub static ALL_ARGS: Args = Args(&[
 
     &BINARY, &BYTES, &GROUP, &HEADER, &ICONS, &INODE, &LINKS, &MODIFIED, &CHANGED,
     &BLOCKS, &TIME, &ACCESSED, &CREATED, &TIME_STYLE,
+    &NO_PERMISSIONS, &NO_FILESIZE, &NO_USER, &NO_TIME,
 
-    &GIT, &EXTENDED,
+    &GIT, &EXTENDED, &OCTAL
 ]);

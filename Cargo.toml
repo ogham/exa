@@ -3,6 +3,7 @@ name = "exa"
 version = "0.9.0"
 authors = [ "Benjamin Sago <ogham@bsago.me>" ]
 build = "build.rs"
+edition = "2018"
 
 description = "A modern replacement for ls"
 homepage = "https://the.exa.website/"
@@ -13,45 +14,38 @@ readme = "README.md"
 categories = ["command-line-utilities"]
 keywords = ["ls", "files", "command-line"]
 license = "MIT"
-exclude = ["/devtools/*", "/Makefile", "/Vagrantfile", "/screenshots.png"]
+exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
 
 
 [[bin]]
 name = "exa"
-path = "src/bin/main.rs"
-doc = false
 
-
-[lib]
-name = "exa"
-path = "src/exa.rs"
 
 [dependencies]
-ansi_term = "0.12.0"
-datetime = "0.4.7"
-env_logger = "0.6.1"
-glob = "0.3.0"
-lazy_static = "1.3.0"
-libc = "0.2.51"
-locale = "0.2.2"
-log = "0.4.6"
-natord = "1.0.9"
-num_cpus = "1.10.0"
-number_prefix = "0.3.0"
-scoped_threadpool = "0.1.9"
-term_grid = "0.1.7"
-term_size = "0.3.1"
-unicode-width = "0.1.5"
-users = "0.9.1"
-zoneinfo_compiled = "0.4.8"
+ansi_term = "0.12"
+datetime = "0.5"
+glob = "0.3"
+lazy_static = "1.3"
+libc = "0.2"
+locale = "0.2"
+log = "0.4"
+natord = "1.0"
+num_cpus = "1.10"
+number_prefix = "0.4"
+scoped_threadpool = "0.1"
+term_grid = "0.1"
+term_size = "0.3"
+unicode-width = "0.1"
+users = "0.11"
+zoneinfo_compiled = "0.5"
 
 [dependencies.git2]
-version = "0.9.1"
+version = "0.13"
 optional = true
 default-features = false
 
 [build-dependencies]
-datetime = "0.4.7"
+datetime = "0.5"
 
 [features]
 default = [ "git" ]
@@ -63,3 +57,18 @@ opt-level = 3
 debug = false
 lto = true
 panic = "abort"
+
+
+[package.metadata.deb]
+license-file = [ "LICENCE" ]
+depends = "$auto"
+extended-description = """
+exa is a replacement for ls written in Rust.
+"""
+section = "utils"
+priority = "optional"
+assets = [
+    [ "target/release/exa", "/usr/bin/exa", "0755" ],
+    [ "contrib/man/exa.1", "/usr/share/man/man1/exa.1", "0644" ],
+    [ "contrib/completions.bash", "/etc/bash_completion.d/exa", "0644" ],
+]

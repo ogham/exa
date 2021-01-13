@@ -1,0 +1,114 @@
+# view icons tests
+
+[[cmd]]
+name = "‘exa -1 --icons’ shows icons next to file names in lines mode"
+shell = "exa -1 --icons /testcases/files"
+stdout = { file = "outputs/files_oneline_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘exa --icons’ shows icons next to file names in grid mode"
+shell = "exa --icons /testcases/files"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_grid_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'icons' ]
+
+[[cmd]]
+name = "‘exa -l --icons’ shows icons next to file names in long mode"
+shell = "exa -l --icons /testcases/files"
+stdout = { file = "outputs/files_long_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'icons' ]
+
+[[cmd]]
+name = "‘exa -lG --icons’ shows icons next to file names in long-grid mode"
+shell = "exa -lG --icons /testcases/files"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_long_grid_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid', 'icons' ]
+
+[[cmd]]
+name = "‘exa -T --icons’ shows icons next to file names in tree mode"
+shell = "exa -T --icons /testcases/files"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_tree_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree', 'icons' ]
+
+[[cmd]]
+name = "‘exa -lT --icons’ shows icons next to file names in long-tree mode"
+shell = "exa -lT --icons /testcases/files"
+stdout = { file = "outputs/files_long_tree_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'tree', 'icons' ]
+
+
+# file type icons tests
+
+[[cmd]]
+name = "‘exa -1 --icons’ produces icons based on file types"
+shell = "exa -1 --icons /testcases/file-names-exts"
+stdout = { file = "outputs/exts_oneline_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘exa -1 --icons’ produces icons based on permissions"
+shell = "exa -1 --icons /testcases/permissions"
+stdout = { file = "outputs/permissions_oneline_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘exa -1 --icons’ produces icons for links"
+shell = "exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'icons' ]
+
+
+# icon spacing tests
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=0 exa -1 --icons’ puts no spaces between icons and file names"
+shell = "EXA_ICON_SPACING=0 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width0.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=1 exa -1 --icons’ puts one space between icons and file names"
+shell = "EXA_ICON_SPACING=1 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons.ansitxt" }  # same as the default
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=2 exa -1 --icons’ puts two spaces between icons and file names"
+shell = "EXA_ICON_SPACING=2 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width2.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=3 exa -1 --icons’ puts three spaces between icons and file names"
+shell = "EXA_ICON_SPACING=3 exa -1 --icons /testcases/links"
+stdout = { file = "outputs/links_oneline_icons_width3.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'oneline', 'icons' ]

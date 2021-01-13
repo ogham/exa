@@ -1,25 +1,27 @@
 use ansi_term::Style;
 use users::{Users, Groups};
 
-use fs::fields as f;
-use output::cell::TextCell;
+use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::Group {
-    pub fn render<C: Colours, U: Users+Groups>(&self, colours: &C, users: &U) -> TextCell {
+    pub fn render<C: Colours, U: Users+Groups>(self, colours: &C, users: &U) -> TextCell {
         use users::os::unix::GroupExt;
 
         let mut style = colours.not_yours();
 
         let group = match users.get_group_by_gid(self.0) {
-            Some(g) => (*g).clone(),
-            None    => return TextCell::paint(style, self.0.to_string()),
+            Some(g)  => (*g).clone(),
+            None     => return TextCell::paint(style, self.0.to_string()),
         };
 
         let current_uid = users.get_current_uid();
         if let Some(current_user) = users.get_user_by_uid(current_uid) {
+
             if current_user.primary_group_id() == group.gid()
-            || group.members().iter().any(|u| u == current_user.name()) {
+            || group.members().iter().any(|u| u == current_user.name())
+            {
                 style = colours.yours();
             }
         }
@@ -39,8 +41,8 @@ pub trait Colours {
 #[allow(unused_results)]
 pub mod test {
     use super::Colours;
-    use fs::fields as f;
-    use output::cell::TextCell;
+    use crate::fs::fields as f;
+    use crate::output::cell::TextCell;
 
     use users::{User, Group};
     use users::mock::MockUsers;

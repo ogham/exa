@@ -1,0 +1,57 @@
+# details view (check the argument works)
+
+[[cmd]]
+name = "‘exa -l --colour=always’ always uses colours for metadata"
+shell = "exa -l --colour=always /testcases/files"
+stdout = { file = "outputs/files_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-term' ]
+
+[[cmd]]
+name = "‘exa -l --colour=never’ never uses colours for metadata"
+shell = "exa -l --colour=never /testcases/files"
+stdout = { file = "outputs/files_long_monochrome.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-term' ]
+
+[[cmd]]
+name = "‘exa -l --colour=automatic’ uses colours dependently for metadata"
+shell = "exa -l --colour=automatic /testcases/files"
+stdout = { file = "outputs/files_long_monochrome.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'colour-term' ]
+
+
+# grid view (check that all colours are turned off)
+
+[[cmd]]
+name = "‘exa --colour=never’ never uses colours for file names"
+shell = "exa --colour=never /testcases/file-names"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/files_grid_monochrome.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'grid', 'colour-term' ]
+
+[[cmd]]
+name = "‘exa --colour=never’ never uses colours for files based on their extensions"
+shell = "exa --colour=never /testcases/file-names-exts"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/exts_grid_monochrome.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'grid', 'colour-term' ]
+
+
+# tree view (check that all colours are turned off)
+
+[[cmd]]
+name = "‘exa -T --colour=never’ never uses colours for punctuation and symlink targets"
+shell = "exa -T --colour=never /testcases/file-names/links"
+stdout = { file = "outputs/links_grid_monochrome.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree', 'colour-term' ]

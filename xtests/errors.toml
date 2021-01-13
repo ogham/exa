@@ -1,0 +1,17 @@
+# Error suggestions
+
+[[cmd]]
+name = "‘exa -ltr’ offers a suggestion"
+shell = "exa -ltr"
+stdout = { empty = true }
+stderr = { string = "To sort oldest files last, try \"--sort oldest\", or just \"-sold\""}
+status = 3
+tags = [ 'error', 'long', 'sort' ]
+
+[[cmd]]
+name = "‘exa -lt’ offers a suggestion"
+shell = "exa -lt"
+stdout = { empty = true }
+stderr = { string = "To sort newest files last, try \"--sort newest\", or just \"-snew\""}
+status = 3
+tags = [ 'error', 'long', 'sort' ]

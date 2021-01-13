@@ -15,10 +15,11 @@ pub static COLUMNS: &str = "COLUMNS";
 /// Environment variable used to datetime format.
 pub static TIME_STYLE: &str = "TIME_STYLE";
 
+
 // exa-specific variables
 
 /// Environment variable used to colour exa’s interface when colours are
-/// enabled. This includes all the colours that LS_COLORS would recognise,
+/// enabled. This includes all the colours that `LS_COLORS` would recognise,
 /// overriding them if necessary. It can also contain exa-specific codes.
 pub static EXA_COLORS: &str = "EXA_COLORS";
 
@@ -38,6 +39,11 @@ pub static EXA_DEBUG: &str = "EXA_DEBUG";
 /// number of rows of output.
 pub static EXA_GRID_ROWS: &str = "EXA_GRID_ROWS";
 
+/// Environment variable used to specify how many spaces to print between an
+/// icon and its file name. Different terminals display icons differently,
+/// with 1 space bringing them too close together or 2 spaces putting them too
+/// far apart, so this may be necessary depending on how they are shown.
+pub static EXA_ICON_SPACING: &str = "EXA_ICON_SPACING";
 
 
 /// Mockable wrapper for `std::env::var_os`.

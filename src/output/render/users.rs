@@ -1,20 +1,19 @@
 use ansi_term::Style;
 use users::Users;
 
-use fs::fields as f;
-use output::cell::TextCell;
-
+use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::User {
-    pub fn render<C: Colours, U: Users>(&self, colours: &C, users: &U) -> TextCell {
+    pub fn render<C: Colours, U: Users>(self, colours: &C, users: &U) -> TextCell {
         let user_name = match users.get_user_by_uid(self.0) {
             Some(user)  => user.name().to_string_lossy().into(),
             None        => self.0.to_string(),
         };
 
-        let style =  if users.get_current_uid() == self.0 { colours.you() }
-                                                     else { colours.someone_else() };
+        let style = if users.get_current_uid() == self.0 { colours.you() }
+                                                    else { colours.someone_else() };
         TextCell::paint(style, user_name)
     }
 }
@@ -30,8 +29,8 @@ pub trait Colours {
 #[allow(unused_results)]
 pub mod test {
     use super::Colours;
-    use fs::fields as f;
-    use output::cell::TextCell;
+    use crate::fs::fields as f;
+    use crate::output::cell::TextCell;
 
     use users::User;
     use users::mock::MockUsers;

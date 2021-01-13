@@ -1,0 +1,183 @@
+# The first Git repo: additions and modifications
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column"
+shell = "exa --git -l /testcases/git"
+stdout = { file = "outputs/git1_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lR’ shows a Git status column in every table"
+shell = "exa --git -lR /testcases/git"
+stdout = { file = "outputs/git1_long_recurse.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lT’ shows a Git status column alongside the tree"
+shell = "exa --git -lT /testcases/git"
+stdout = { file = "outputs/git1_long_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ with a directory argument shows the combined Git status column"
+shell = "exa --git -l /testcases/git/moves/thither"
+stdout = { file = "outputs/git1_long_moves.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column containing new files"
+shell = "exa --git -l /testcases/git/additions"
+stdout = { file = "outputs/git1_long_additions.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column containing modified files"
+shell = "exa --git -l /testcases/git/edits"
+stdout = { file = "outputs/git1_long_edits.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column containing multiple statuses"
+shell = "exa --git -l /testcases/git/{additions,edits}"
+stdout = { file = "outputs/git1_long_multiple.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lGd’ with file arguments shows a Git status column"
+shell = "exa --git -lGd /testcases/git/**/* /testcases"
+environment = { COLUMNS = "150" }
+stdout = { file = "outputs/git1_paths_long_grid.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'grid', 'git', 'list-dirs' ]
+
+
+# The second Git repo: nested repositories and file ignoring
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column with ignored statuses"
+shell = "exa --git -l /testcases/git2"
+stdout = { file = "outputs/git2_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lR’ shows a Git status column in every table, handling ignored files and nested repositories"
+shell = "exa --git -lR /testcases/git2"
+stdout = { file = "outputs/git2_long_recurse.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lT’ shows a Git status column alongside the tree, handling ignored files and nested repositories"
+shell = "exa --git -lT /testcases/git2"
+stdout = { file = "outputs/git2_long_tree.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ with a directory argument shows ignored flags inside a directory"
+shell = "exa --git -l /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_long_ignorednested.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ with an ignored directory argument does not flag the contents as ignored"
+shell = "exa --git -l /testcases/git2/target"
+stdout = { file = "outputs/git2_long_ignoreddir.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ with a nested repository argument uses the sub-repository rules"
+shell = "exa --git -l /testcases/git2/deeply/nested/repository"
+stdout = { file = "outputs/git2_long_nested.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ with multiple directory arguments still gets the flags correct"
+shell = "exa --git -l /testcases/git2/{deeply,ignoreds,target}"
+stdout = { file = "outputs/git2_long_multiple.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+
+# The third Git repo: broken symlinks
+
+[[cmd]]
+name = "‘exa --git -l’ handles broken symlinks in Git repositories"
+shell = "exa --git -l /testcases/git3"
+stdout = { file = "outputs/git3_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+
+# Both repositories 1 and 2 at once
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column for multiple repositories"
+shell = "exa --git -l /testcases/git /testcases/git2"
+stdout = { file = "outputs/git1+2_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column for multiple repositories across multiple directories"
+shell = "exa --git -l /testcases/{git/additions,git2/deeply,git/edits,git2/deeply/nested}"
+stdout = { file = "outputs/git1+2_long_directories.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l’ shows a Git status column for multiple repositories across multiple directories"
+shell = "exa --git -l /testcases/{git2/deeply/nested/directory,git/edits,git2/target,git2/deeply,git}"
+stdout = { file = "outputs/git1+2_long_nested.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+
+# No repository present
+
+[[cmd]]
+name = "‘exa --git -l’ shows an empty status for no repository"
+shell = "exa --git -l /testcases/files"
+stdout = { file = "outputs/files_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -lG’ shows an empty status for no repository"
+shell = "exa --git -lG /testcases/files"
+environment = { COLUMNS = "40" }
+stdout = { file = "outputs/files_long_grid_1col.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid', 'git' ]

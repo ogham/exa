@@ -4,11 +4,11 @@
 
 use std::fmt;
 
-use options::flags;
-use options::parser::MatchedFlags;
+use crate::options::flags;
+use crate::options::parser::MatchedFlags;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct VersionString;
 // There were options here once, but there aren’t anymore!
 
@@ -18,39 +18,40 @@ impl VersionString {
     /// command-line arguments. This one works backwards from the other
     /// ‘deduce’ functions, returning Err if help needs to be shown.
     ///
-    /// Like --help, this doesn’t bother checking for errors.
-    pub fn deduce(matches: &MatchedFlags) -> Result<(), VersionString> {
+    /// Like --help, this doesn’t check for errors.
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Option<Self> {
         if matches.count(&flags::VERSION) > 0 {
-            Err(VersionString)
+            Some(Self)
         }
         else {
-            Ok(())  // no version needs to be shown
+            None
         }
     }
 }
 
 impl fmt::Display for VersionString {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        writeln!(f, "{}", include!(concat!(env!("OUT_DIR"), "/version_string.txt")))
     }
 }
 
 
 #[cfg(test)]
 mod test {
-    use options::Options;
-    use std::ffi::OsString;
+    use crate::options::{Options, OptionsResult};
+    use std::ffi::OsStr;
 
-    fn os(input: &'static str) -> OsString {
-        let mut os = OsString::new();
-        os.push(input);
-        os
+    #[test]
+    fn version() {
+        let args = vec![ OsStr::new("--version") ];
+        let opts = Options::parse(args, &None);
+        assert!(matches!(opts, OptionsResult::Version(_)));
     }
 
     #[test]
-    fn help() {
-        let args = [ os("--version") ];
-        let opts = Options::parse(&args, &None);
-        assert!(opts.is_err())
+    fn version_with_file() {
+        let args = vec![ OsStr::new("--version"), OsStr::new("me") ];
+        let opts = Options::parse(args, &None);
+        assert!(matches!(opts, OptionsResult::Version(_)));
     }
 }

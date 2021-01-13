@@ -1,41 +1,33 @@
 use std::cmp::max;
-use std::fmt;
+use std::env;
 use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
 use datetime::TimeZone;
 use zoneinfo_compiled::{CompiledData, Result as TZResult};
 
-use locale;
-
+use lazy_static::lazy_static;
+use log::*;
 use users::UsersCache;
 
-use style::Colours;
-use output::cell::TextCell;
-use output::render::TimeRender;
-use output::time::TimeFormat;
-use fs::{File, fields as f};
-use fs::feature::git::GitCache;
+use crate::fs::{File, fields as f};
+use crate::fs::feature::git::GitCache;
+use crate::output::cell::TextCell;
+use crate::output::render::TimeRender;
+use crate::output::time::TimeFormat;
+use crate::theme::Theme;
 
 
 /// Options for displaying a table.
+#[derive(PartialEq, Debug)]
 pub struct Options {
-    pub env: Environment,
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
-    pub extra_columns: Columns,
-}
-
-// I had to make other types derive Debug,
-// and Mutex<UsersCache> is not that!
-impl fmt::Debug for Options {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Table({:#?})", self.extra_columns)
-    }
+    pub columns: Columns,
 }
 
 /// Extra columns to display in the table.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Columns {
 
     /// At least one of these timestamps will be shown.
@@ -47,6 +39,12 @@ pub struct Columns {
     pub blocks: bool,
     pub group: bool,
     pub git: bool,
+    pub octal: bool,
+
+    // Defaults to true:
+    pub permissions: bool,
+    pub filesize: bool,
+    pub user: bool,
 }
 
 impl Columns {
@@ -57,19 +55,29 @@ impl Columns {
             columns.push(Column::Inode);
         }
 
-        columns.push(Column::Permissions);
+        if self.octal {
+            columns.push(Column::Octal);
+        }
+
+        if self.permissions {
+            columns.push(Column::Permissions);
+        }
 
         if self.links {
             columns.push(Column::HardLinks);
         }
 
-        columns.push(Column::FileSize);
+        if self.filesize {
+            columns.push(Column::FileSize);
+        }
 
         if self.blocks {
             columns.push(Column::Blocks);
         }
 
-        columns.push(Column::User);
+        if self.user {
+            columns.push(Column::User);
+        }
 
         if self.group {
             columns.push(Column::Group);
@@ -91,7 +99,7 @@ impl Columns {
             columns.push(Column::Timestamp(TimeType::Accessed));
         }
 
-        if cfg!(feature="git") && self.git && actually_enable_git {
+        if cfg!(feature = "git") && self.git && actually_enable_git {
             columns.push(Column::GitStatus);
         }
 
@@ -101,7 +109,7 @@ impl Columns {
 
 
 /// A table contains these.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Column {
     Permissions,
     FileSize,
@@ -112,42 +120,45 @@ pub enum Column {
     HardLinks,
     Inode,
     GitStatus,
+    Octal,
 }
 
 /// Each column can pick its own **Alignment**. Usually, numbers are
 /// right-aligned, and text is left-aligned.
 #[derive(Copy, Clone)]
 pub enum Alignment {
-    Left, Right,
+    Left,
+    Right,
 }
 
 impl Column {
 
     /// Get the alignment this column should use.
-    pub fn alignment(&self) -> Alignment {
-        match *self {
-            Column::FileSize
-            | Column::HardLinks
-            | Column::Inode
-            | Column::Blocks
-            | Column::GitStatus => Alignment::Right,
-            _                   => Alignment::Left,
+    pub fn alignment(self) -> Alignment {
+        match self {
+            Self::FileSize   |
+            Self::HardLinks  |
+            Self::Inode      |
+            Self::Blocks     |
+            Self::GitStatus  => Alignment::Right,
+            _                => Alignment::Left,
         }
     }
 
     /// Get the text that should be printed at the top, when the user elects
     /// to have a header row printed.
-    pub fn header(&self) -> &'static str {
-        match *self {
-            Column::Permissions   => "Permissions",
-            Column::FileSize      => "Size",
-            Column::Timestamp(t)  => t.header(),
-            Column::Blocks        => "Blocks",
-            Column::User          => "User",
-            Column::Group         => "Group",
-            Column::HardLinks     => "Links",
-            Column::Inode         => "inode",
-            Column::GitStatus     => "Git",
+    pub fn header(self) -> &'static str {
+        match self {
+            Self::Permissions   => "Permissions",
+            Self::FileSize      => "Size",
+            Self::Timestamp(t)  => t.header(),
+            Self::Blocks        => "Blocks",
+            Self::User          => "User",
+            Self::Group         => "Group",
+            Self::HardLinks     => "Links",
+            Self::Inode         => "inode",
+            Self::GitStatus     => "Git",
+            Self::Octal         => "Octal",
         }
     }
 }
@@ -170,8 +181,8 @@ pub enum SizeFormat {
 }
 
 impl Default for SizeFormat {
-    fn default() -> SizeFormat {
-        SizeFormat::DecimalBytes
+    fn default() -> Self {
+        Self::DecimalBytes
     }
 }
 
@@ -180,6 +191,7 @@ impl Default for SizeFormat {
 /// across most (all?) operating systems.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeType {
+
     /// The file’s modified time (`st_mtime`).
     Modified,
 
@@ -198,10 +210,10 @@ impl TimeType {
     /// Returns the text to use for a column’s heading in the columns output.
     pub fn header(self) -> &'static str {
         match self {
-            TimeType::Modified  => "Date Modified",
-            TimeType::Changed   => "Date Changed",
-            TimeType::Accessed  => "Date Accessed",
-            TimeType::Created   => "Date Created",
+            Self::Modified  => "Date Modified",
+            Self::Changed   => "Date Changed",
+            Self::Accessed  => "Date Accessed",
+            Self::Created   => "Date Created",
         }
     }
 }
@@ -210,9 +222,10 @@ impl TimeType {
 /// Fields for which of a file’s time fields should be displayed in the
 /// columns output.
 ///
-/// There should always be at least one of these--there's no way to disable
+/// There should always be at least one of these — there’s no way to disable
 /// the time columns entirely (yet).
 #[derive(PartialEq, Debug, Copy, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct TimeTypes {
     pub modified: bool,
     pub changed:  bool,
@@ -224,16 +237,19 @@ impl Default for TimeTypes {
 
     /// By default, display just the ‘modified’ time. This is the most
     /// common option, which is why it has this shorthand.
-    fn default() -> TimeTypes {
-        TimeTypes { modified: true, changed: false, accessed: false, created: false }
+    fn default() -> Self {
+        Self {
+            modified: true,
+            changed:  false,
+            accessed: false,
+            created:  false,
+        }
     }
 }
 
 
-
-
 /// The **environment** struct contains any data that could change between
-/// running instances of exa, depending on the user's computer's configuration.
+/// running instances of exa, depending on the user’s computer’s configuration.
 ///
 /// Any environment field should be able to be mocked up for test runs.
 pub struct Environment {
@@ -241,8 +257,8 @@ pub struct Environment {
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
 
-    /// The computer's current time zone. This gets used to determine how to
-    /// offset files' timestamps.
+    /// The computer’s current time zone. This gets used to determine how to
+    /// offset files’ timestamps.
     tz: Option<TimeZone>,
 
     /// Mapping cache of user IDs to usernames.
@@ -250,13 +266,15 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn lock_users(&self) -> MutexGuard<UsersCache> {
+    pub fn lock_users(&self) -> MutexGuard<'_, UsersCache> {
         self.users.lock().unwrap()
     }
 
-    pub fn load_all() -> Self {
+    fn load_all() -> Self {
         let tz = match determine_time_zone() {
-            Ok(t) => Some(t),
+            Ok(t) => {
+                Some(t)
+            }
             Err(ref e) => {
                 println!("Unable to determine time zone: {}", e);
                 None
@@ -264,25 +282,34 @@ impl Environment {
         };
 
         let numeric = locale::Numeric::load_user_locale()
-                          .unwrap_or_else(|_| locale::Numeric::english());
+                             .unwrap_or_else(|_| locale::Numeric::english());
 
         let users = Mutex::new(UsersCache::new());
 
-        Environment { tz, numeric, users }
+        Self { tz, numeric, users }
     }
 }
 
 fn determine_time_zone() -> TZResult<TimeZone> {
-    TimeZone::from_file("/etc/localtime")
+    if let Ok(file) = env::var("TZ") {
+        TimeZone::from_file(format!("/usr/share/zoneinfo/{}", file))
+    }
+    else {
+        TimeZone::from_file("/etc/localtime")
+    }
+}
+
+lazy_static! {
+    static ref ENVIRONMENT: Environment = Environment::load_all();
 }
 
 
 pub struct Table<'a> {
     columns: Vec<Column>,
-    colours: &'a Colours,
+    theme: &'a Theme,
     env: &'a Environment,
     widths: TableWidths,
-    time_format: &'a TimeFormat,
+    time_format: TimeFormat,
     size_format: SizeFormat,
     git: Option<&'a GitCache>,
 }
@@ -293,15 +320,19 @@ pub struct Row {
 }
 
 impl<'a, 'f> Table<'a> {
-    pub fn new(options: &'a Options, git: Option<&'a GitCache>, colours: &'a Colours) -> Table<'a> {
-        let columns = options.extra_columns.collect(git.is_some());
+    pub fn new(options: &'a Options, git: Option<&'a GitCache>, theme: &'a Theme) -> Table<'a> {
+        let columns = options.columns.collect(git.is_some());
         let widths = TableWidths::zero(columns.len());
+        let env = &*ENVIRONMENT;
 
         Table {
-            colours, widths, columns, git,
-            env:         &options.env,
-            time_format: &options.time_format,
-            size_format:  options.size_format,
+            theme,
+            widths,
+            columns,
+            git,
+            env,
+            time_format: options.time_format,
+            size_format: options.size_format,
         }
     }
 
@@ -311,15 +342,15 @@ impl<'a, 'f> Table<'a> {
 
     pub fn header_row(&self) -> Row {
         let cells = self.columns.iter()
-                        .map(|c| TextCell::paint_str(self.colours.header, c.header()))
+                        .map(|c| TextCell::paint_str(self.theme.ui.header, c.header()))
                         .collect();
 
         Row { cells }
     }
 
-    pub fn row_for_file(&self, file: &File, xattrs: bool) -> Row {
+    pub fn row_for_file(&self, file: &File<'_>, xattrs: bool) -> Row {
         let cells = self.columns.iter()
-                        .map(|c| self.display(file, c, xattrs))
+                        .map(|c| self.display(file, *c, xattrs))
                         .collect();
 
         Row { cells }
@@ -329,7 +360,7 @@ impl<'a, 'f> Table<'a> {
         self.widths.add_widths(row)
     }
 
-    fn permissions_plus(&self, file: &File, xattrs: bool) -> f::PermissionsPlus {
+    fn permissions_plus(&self, file: &File<'_>, xattrs: bool) -> f::PermissionsPlus {
         f::PermissionsPlus {
             file_type: file.type_char(),
             permissions: file.permissions(),
@@ -337,28 +368,60 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
-    fn display(&self, file: &File, column: &Column, xattrs: bool) -> TextCell {
-        use output::table::TimeType::*;
-
-        match *column {
-            Column::Permissions    => self.permissions_plus(file, xattrs).render(self.colours),
-            Column::FileSize       => file.size().render(self.colours, self.size_format, &self.env.numeric),
-            Column::HardLinks      => file.links().render(self.colours, &self.env.numeric),
-            Column::Inode          => file.inode().render(self.colours.inode),
-            Column::Blocks         => file.blocks().render(self.colours),
-            Column::User           => file.user().render(self.colours, &*self.env.lock_users()),
-            Column::Group          => file.group().render(self.colours, &*self.env.lock_users()),
-            Column::GitStatus      => self.git_status(file).render(self.colours),
-
-            Column::Timestamp(Modified)  => file.modified_time().render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Changed)   => file.changed_time() .render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Created)   => file.created_time() .render(self.colours.date, &self.env.tz, &self.time_format),
-            Column::Timestamp(Accessed)  => file.accessed_time().render(self.colours.date, &self.env.tz, &self.time_format),
+    fn octal_permissions(&self, file: &File<'_>) -> f::OctalPermissions {
+        f::OctalPermissions {
+            permissions: file.permissions(),
         }
     }
 
-    fn git_status(&self, file: &File) -> f::Git {
+    fn display(&self, file: &File<'_>, column: Column, xattrs: bool) -> TextCell {
+        match column {
+            Column::Permissions => {
+                self.permissions_plus(file, xattrs).render(self.theme)
+            }
+            Column::FileSize => {
+                file.size().render(self.theme, self.size_format, &self.env.numeric)
+            }
+            Column::HardLinks => {
+                file.links().render(self.theme, &self.env.numeric)
+            }
+            Column::Inode => {
+                file.inode().render(self.theme.ui.inode)
+            }
+            Column::Blocks => {
+                file.blocks().render(self.theme)
+            }
+            Column::User => {
+                file.user().render(self.theme, &*self.env.lock_users())
+            }
+            Column::Group => {
+                file.group().render(self.theme, &*self.env.lock_users())
+            }
+            Column::GitStatus => {
+                self.git_status(file).render(self.theme)
+            }
+            Column::Octal => {
+                self.octal_permissions(file).render(self.theme.ui.octal)
+            }
+
+            Column::Timestamp(TimeType::Modified)  => {
+                file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            }
+            Column::Timestamp(TimeType::Changed)   => {
+                file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            }
+            Column::Timestamp(TimeType::Created)   => {
+                file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            }
+            Column::Timestamp(TimeType::Accessed)  => {
+                file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            }
+        }
+    }
+
+    fn git_status(&self, file: &File<'_>) -> f::Git {
         debug!("Getting Git status for file {:?}", file.path);
+
         self.git
             .map(|g| g.get(&file.path, file.is_directory()))
             .unwrap_or_default()
@@ -367,12 +430,22 @@ impl<'a, 'f> Table<'a> {
     pub fn render(&self, row: Row) -> TextCell {
         let mut cell = TextCell::default();
 
-        for (n, (this_cell, width)) in row.cells.into_iter().zip(self.widths.iter()).enumerate() {
+        let iter = row.cells.into_iter()
+                      .zip(self.widths.iter())
+                      .enumerate();
+
+        for (n, (this_cell, width)) in iter {
             let padding = width - *this_cell.width;
 
             match self.columns[n].alignment() {
-                Alignment::Left  => { cell.append(this_cell); cell.add_spaces(padding); }
-                Alignment::Right => { cell.add_spaces(padding); cell.append(this_cell); }
+                Alignment::Left => {
+                    cell.append(this_cell);
+                    cell.add_spaces(padding);
+                }
+                Alignment::Right => {
+                    cell.add_spaces(padding);
+                    cell.append(this_cell);
+                }
             }
 
             cell.add_spaces(1);
@@ -381,7 +454,6 @@ impl<'a, 'f> Table<'a> {
         cell
     }
 }
-
 
 
 pub struct TableWidths(Vec<usize>);
@@ -395,8 +467,8 @@ impl Deref for TableWidths {
 }
 
 impl TableWidths {
-    pub fn zero(count: usize) -> TableWidths {
-        TableWidths(vec![ 0; count ])
+    pub fn zero(count: usize) -> Self {
+        Self(vec![0; count])
     }
 
     pub fn add_widths(&mut self, row: &Row) {

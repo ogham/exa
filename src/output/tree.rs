@@ -39,7 +39,7 @@
 //! each directory)
 
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TreePart {
 
     /// Rightmost column, *not* the last in the directory.
@@ -59,12 +59,12 @@ impl TreePart {
 
     /// Turn this tree part into ASCII-licious box drawing characters!
     /// (Warning: not actually ASCII)
-    pub fn ascii_art(&self) -> &'static str {
-        match *self {
-            TreePart::Edge    => "├──",
-            TreePart::Line    => "│  ",
-            TreePart::Corner  => "└──",
-            TreePart::Blank   => "   ",
+    pub fn ascii_art(self) -> &'static str {
+        match self {
+            Self::Edge    => "├──",
+            Self::Line    => "│  ",
+            Self::Corner  => "└──",
+            Self::Blank   => "   ",
         }
     }
 }
@@ -111,18 +111,21 @@ impl TreeTrunk {
         // If this isn’t our first iteration, then update the tree parts thus
         // far to account for there being another row after it.
         if let Some(last) = self.last_params {
-            self.stack[last.depth.0] = if last.last { TreePart::Blank } else { TreePart::Line };
+            self.stack[last.depth.0] = if last.last { TreePart::Blank }
+                                               else { TreePart::Line };
         }
 
         // Make sure the stack has enough space, then add or modify another
         // part into it.
         self.stack.resize(params.depth.0 + 1, TreePart::Edge);
-        self.stack[params.depth.0] = if params.last { TreePart::Corner } else { TreePart::Edge };
+        self.stack[params.depth.0] = if params.last { TreePart::Corner }
+                                               else { TreePart::Edge };
+
         self.last_params = Some(params);
 
         // Return the tree parts as a slice of the stack.
         //
-        // Ignore the first element here to prevent a 'zeroth level' from
+        // Ignore the first element here to prevent a ‘zeroth level’ from
         // appearing before the very first directory. This level would
         // join unrelated directories without connecting to anything:
         //
@@ -138,8 +141,8 @@ impl TreeTrunk {
 }
 
 impl TreeParams {
-    pub fn new(depth: TreeDepth, last: bool) -> TreeParams {
-        TreeParams { depth, last }
+    pub fn new(depth: TreeDepth, last: bool) -> Self {
+        Self { depth, last }
     }
 
     pub fn is_at_root(&self) -> bool {
@@ -148,18 +151,19 @@ impl TreeParams {
 }
 
 impl TreeDepth {
-    pub fn root() -> TreeDepth {
-        TreeDepth(0)
+    pub fn root() -> Self {
+        Self(0)
     }
 
-    pub fn deeper(self) -> TreeDepth {
-        TreeDepth(self.0 + 1)
+    pub fn deeper(self) -> Self {
+        Self(self.0 + 1)
     }
 
     /// Creates an iterator that, as well as yielding each value, yields a
     /// `TreeParams` with the current depth and last flag filled in.
     pub fn iterate_over<I, T>(self, inner: I) -> Iter<I>
-    where I: ExactSizeIterator+Iterator<Item=T> {
+    where I: ExactSizeIterator + Iterator<Item = T>
+    {
         Iter { current_depth: self, inner }
     }
 }
@@ -171,14 +175,16 @@ pub struct Iter<I> {
 }
 
 impl<I, T> Iterator for Iter<I>
-where I: ExactSizeIterator+Iterator<Item=T> {
+where I: ExactSizeIterator + Iterator<Item = T>
+{
     type Item = (TreeParams, T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|t| {
-            // use exact_size_is_empty API soon
-            (TreeParams::new(self.current_depth, self.inner.len() == 0), t)
-        })
+        let t = self.inner.next()?;
+
+        // TODO: use exact_size_is_empty API soon
+        let params = TreeParams::new(self.current_depth, self.inner.len() == 0);
+        Some((params, t))
     }
 }
 
@@ -194,20 +200,20 @@ mod trunk_test {
     #[test]
     fn empty_at_first() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(params(0, true)), &[]);
+        assert_eq!(tt.new_row(params(0, true)),  &[ ]);
     }
 
     #[test]
     fn one_child() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(params(0, true)), &[]);
-        assert_eq!(tt.new_row(params(1, true)), &[ TreePart::Corner ]);
+        assert_eq!(tt.new_row(params(0, true)),  &[ ]);
+        assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
     }
 
     #[test]
     fn two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(params(0, true)),  &[]);
+        assert_eq!(tt.new_row(params(0, true)),  &[ ]);
         assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
         assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
     }
@@ -215,11 +221,11 @@ mod trunk_test {
     #[test]
     fn two_times_two_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(params(0, false)), &[]);
+        assert_eq!(tt.new_row(params(0, false)), &[ ]);
         assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
         assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
 
-        assert_eq!(tt.new_row(params(0, true)),  &[]);
+        assert_eq!(tt.new_row(params(0, true)),  &[ ]);
         assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
         assert_eq!(tt.new_row(params(1, true)),  &[ TreePart::Corner ]);
     }
@@ -227,7 +233,7 @@ mod trunk_test {
     #[test]
     fn two_times_two_nested_children() {
         let mut tt = TreeTrunk::default();
-        assert_eq!(tt.new_row(params(0, true)), &[]);
+        assert_eq!(tt.new_row(params(0, true)),  &[ ]);
 
         assert_eq!(tt.new_row(params(1, false)), &[ TreePart::Edge ]);
         assert_eq!(tt.new_row(params(2, false)), &[ TreePart::Line, TreePart::Edge ]);
@@ -238,7 +244,6 @@ mod trunk_test {
         assert_eq!(tt.new_row(params(2, true)),  &[ TreePart::Blank, TreePart::Corner ]);
     }
 }
-
 
 
 #[cfg(test)]

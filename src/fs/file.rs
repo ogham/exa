@@ -1,18 +1,17 @@
 //! Files, and methods and fields to access their metadata.
 
-use std::fs::{self, metadata};
-use std::io::Error as IOError;
-use std::io::Result as IOResult;
-use std::os::unix::fs::{MetadataExt, PermissionsExt, FileTypeExt};
+use std::io;
+use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::time::{UNIX_EPOCH, Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use fs::dir::Dir;
-use fs::fields as f;
-use options::Misfire;
+use log::*;
+
+use crate::fs::dir::Dir;
+use crate::fs::fields as f;
 
 
-/// A **File** is a wrapper around one of Rust's Path objects, along with
+/// A **File** is a wrapper around one of Rust’s `PathBuf` values, along with
 /// associated data about the file.
 ///
 /// Each file is definitely going to have its filename displayed at least
@@ -45,8 +44,8 @@ pub struct File<'dir> {
     ///
     /// This too is queried multiple times, and is *not* cached by the OS, as
     /// it could easily change between invocations — but exa is so short-lived
-    /// it's better to just cache it.
-    pub metadata: fs::Metadata,
+    /// it’s better to just cache it.
+    pub metadata: std::fs::Metadata,
 
     /// A reference to the directory that contains this file, if any.
     ///
@@ -61,13 +60,13 @@ pub struct File<'dir> {
     /// Whether this is one of the two `--all all` directories, `.` and `..`.
     ///
     /// Unlike all other entries, these are not returned as part of the
-    /// directory's children, and are in fact added specifically by exa; this
+    /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
 }
 
 impl<'dir> File<'dir> {
-    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> IOResult<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> io::Result<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -76,31 +75,33 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
         Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
     }
 
-    pub fn new_aa_current(parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+    pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
         let path       = parent_dir.path.to_path_buf();
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
+        let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: ".".to_string(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
     }
 
-    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> IOResult<File<'dir>> {
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
+        let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir: Some(parent_dir), metadata, ext, name: "..".to_string(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -128,7 +129,9 @@ impl<'dir> File<'dir> {
     fn ext(path: &Path) -> Option<String> {
         let name = path.file_name().map(|f| f.to_string_lossy().to_string())?;
 
-        name.rfind('.').map(|p| name[p+1..].to_ascii_lowercase())
+        name.rfind('.')
+            .map(|p| name[p + 1 ..]
+            .to_ascii_lowercase())
     }
 
     /// Whether this file is a directory on the filesystem.
@@ -158,7 +161,7 @@ impl<'dir> File<'dir> {
     ///
     /// Returns an IO error upon failure, but this shouldn’t be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
-    pub fn to_dir(&self) -> IOResult<Dir> {
+    pub fn to_dir(&self) -> io::Result<Dir> {
         Dir::read_dir(self.path.clone())
     }
 
@@ -237,7 +240,7 @@ impl<'dir> File<'dir> {
         // we actually look up and turn into a `File` — which needs to be
         // absolute to be accessible from any directory.
         debug!("Reading link {:?}", &self.path);
-        let path = match fs::read_link(&self.path) {
+        let path = match std::fs::read_link(&self.path) {
             Ok(p)   => p,
             Err(e)  => return FileTarget::Err(e),
         };
@@ -246,11 +249,12 @@ impl<'dir> File<'dir> {
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.
-        match fs::metadata(&absolute_path) {
+        match std::fs::metadata(&absolute_path) {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                FileTarget::Ok(Box::new(File { parent_dir: None, path, ext, metadata, name, is_all_all: false }))
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
                 error!("Error following link {:?}: {:#?}", &path, e);
@@ -275,14 +279,14 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file's inode.
+    /// This file’s inode.
     pub fn inode(&self) -> f::Inode {
         f::Inode(self.metadata.ino())
     }
 
-    /// This file's number of filesystem blocks.
+    /// This file’s number of filesystem blocks.
     ///
-    /// (Not the size of each block, which we don't actually report on)
+    /// (Not the size of each block, which we don’t actually report on)
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
             f::Blocks::Some(self.metadata.blocks())
@@ -326,24 +330,38 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// This file’s last modified timestamp.
-    pub fn modified_time(&self) -> Duration {
-        self.metadata.modified().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    /// This file’s last modified timestamp, if available on this platform.
+    pub fn modified_time(&self) -> Option<SystemTime> {
+        self.metadata.modified().ok()
     }
 
-    /// This file’s last changed timestamp.
-    pub fn changed_time(&self) -> Duration {
-        Duration::new(self.metadata.ctime() as u64, self.metadata.ctime_nsec() as u32)
+    /// This file’s last changed timestamp, if available on this platform.
+    pub fn changed_time(&self) -> Option<SystemTime> {
+        let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
+
+        if sec < 0 {
+            if nanosec > 0 {
+                sec += 1;
+                nanosec -= 1_000_000_000;
+            }
+
+            let duration = Duration::new(sec.abs() as u64, nanosec.abs() as u32);
+            Some(UNIX_EPOCH - duration)
+        }
+        else {
+            let duration = Duration::new(sec as u64, nanosec as u32);
+            Some(UNIX_EPOCH + duration)
+        }
     }
 
-    /// This file’s last accessed timestamp.
-    pub fn accessed_time(&self) -> Duration {
-        self.metadata.accessed().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    /// This file’s last accessed timestamp, if available on this platform.
+    pub fn accessed_time(&self) -> Option<SystemTime> {
+        self.metadata.accessed().ok()
     }
 
-    /// This file’s created timestamp.
-    pub fn created_time(&self) -> Duration {
-        self.metadata.created().unwrap().duration_since(UNIX_EPOCH).unwrap()
+    /// This file’s created timestamp, if available on this platform.
+    pub fn created_time(&self) -> Option<SystemTime> {
+        self.metadata.created().ok()
     }
 
     /// This file’s ‘type’.
@@ -381,7 +399,7 @@ impl<'dir> File<'dir> {
     /// This file’s permissions, with flags for each bit.
     pub fn permissions(&self) -> f::Permissions {
         let bits = self.metadata.mode();
-        let has_bit = |bit| { bits & bit == bit };
+        let has_bit = |bit| bits & bit == bit;
 
         f::Permissions {
             user_read:      has_bit(modes::USER_READ),
@@ -406,13 +424,13 @@ impl<'dir> File<'dir> {
     ///
     /// This will always return `false` if the file has no extension.
     pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
-        match self.ext {
-            Some(ref ext)  => choices.contains(&&ext[..]),
-            None           => false,
+        match &self.ext {
+            Some(ext)  => choices.contains(&&ext[..]),
+            None       => false,
         }
     }
 
-    /// Whether this file's name, including extension, is any of the strings
+    /// Whether this file’s name, including extension, is any of the strings
     /// that get passed in.
     pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
         choices.contains(&&self.name[..])
@@ -440,11 +458,11 @@ pub enum FileTarget<'dir> {
     /// There was an IO error when following the link. This can happen if the
     /// file isn’t a link to begin with, but also if, say, we don’t have
     /// permission to follow it.
-    Err(IOError),
+    Err(io::Error),
 
     // Err is its own variant, instead of having the whole thing be inside an
-    // `IOResult`, because being unable to follow a symlink is not a serious
-    // error -- we just display the error message and move on.
+    // `io::Result`, because being unable to follow a symlink is not a serious
+    // error — we just display the error message and move on.
 }
 
 impl<'dir> FileTarget<'dir> {
@@ -452,45 +470,7 @@ impl<'dir> FileTarget<'dir> {
     /// Whether this link doesn’t lead to a file, for whatever reason. This
     /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
-        match *self {
-            FileTarget::Ok(_)                           => false,
-            FileTarget::Broken(_) | FileTarget::Err(_)  => true,
-        }
-    }
-}
-
-
-pub enum PlatformMetadata {
-    ModifiedTime,
-    ChangedTime,
-    AccessedTime,
-    CreatedTime,
-}
-
-impl PlatformMetadata {
-    pub fn check_supported(&self) -> Result<(), Misfire> {
-        use std::env::temp_dir;
-        let result = match self {
-            // Call the functions that return a Result to see if it works
-            PlatformMetadata::AccessedTime => metadata(temp_dir()).unwrap().accessed(),
-            PlatformMetadata::ModifiedTime => metadata(temp_dir()).unwrap().modified(),
-            PlatformMetadata::CreatedTime  => metadata(temp_dir()).unwrap().created(),
-            // We use the Unix API so we know it’s not available elsewhere
-            PlatformMetadata::ChangedTime => {
-                if cfg!(target_family = "unix") {
-                    return Ok(())
-                } else {
-                    return Err(Misfire::Unsupported(
-                        // for consistency, this error message similar to the one Rust
-                        // use when created time is not available
-                        "status modified time is not available on this platform currently".to_string()));
-                }
-            },
-        };
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(Misfire::Unsupported(err.to_string()))
-        }
+        matches!(self, Self::Broken(_) | Self::Err(_))
     }
 }
 
@@ -498,11 +478,10 @@ impl PlatformMetadata {
 /// More readable aliases for the permission bits exposed by libc.
 #[allow(trivial_numeric_casts)]
 mod modes {
-    use libc;
 
-    pub type Mode = u32;
     // The `libc::mode_t` type’s actual type varies, but the value returned
     // from `metadata.permissions().mode()` is always `u32`.
+    pub type Mode = u32;
 
     pub const USER_READ: Mode     = libc::S_IRUSR as Mode;
     pub const USER_WRITE: Mode    = libc::S_IWUSR as Mode;

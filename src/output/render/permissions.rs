@@ -1,8 +1,8 @@
 use ansi_term::{ANSIString, Style};
 
-use fs::fields as f;
-use output::cell::{TextCell, DisplayWidth};
-use output::render::FiletypeColours;
+use crate::fs::fields as f;
+use crate::output::cell::{TextCell, DisplayWidth};
+use crate::output::render::FiletypeColours;
 
 
 impl f::PermissionsPlus {
@@ -25,23 +25,23 @@ impl f::PermissionsPlus {
 }
 
 
-
 impl f::Permissions {
     pub fn render<C: Colours>(&self, colours: &C, is_regular_file: bool) -> Vec<ANSIString<'static>> {
 
         let bit = |bit, chr: &'static str, style: Style| {
-            if bit { style.paint(chr) } else { colours.dash().paint("-") }
+            if bit { style.paint(chr) }
+              else { colours.dash().paint("-") }
         };
 
         vec![
-            bit(self.user_read,     "r", colours.user_read()),
-            bit(self.user_write,    "w", colours.user_write()),
+            bit(self.user_read,   "r", colours.user_read()),
+            bit(self.user_write,  "w", colours.user_write()),
             self.user_execute_bit(colours, is_regular_file),
-            bit(self.group_read,    "r", colours.group_read()),
-            bit(self.group_write,   "w", colours.group_write()),
+            bit(self.group_read,  "r", colours.group_read()),
+            bit(self.group_write, "w", colours.group_write()),
             self.group_execute_bit(colours),
-            bit(self.other_read,    "r", colours.other_read()),
-            bit(self.other_write,   "w", colours.other_write()),
+            bit(self.other_read,  "r", colours.other_read()),
+            bit(self.other_write, "w", colours.other_write()),
             self.other_execute_bit(colours)
         ]
     }
@@ -104,8 +104,8 @@ pub trait Colours {
 #[allow(unused_results)]
 pub mod test {
     use super::Colours;
-    use output::cell::TextCellContents;
-    use fs::fields as f;
+    use crate::output::cell::TextCellContents;
+    use crate::fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;

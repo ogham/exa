@@ -1,0 +1,86 @@
+# Git-ignoring
+
+[[cmd]]
+name = "‘exa --git-ignore’ skips Git-ignored files"
+shell = "exa --git-ignore /testcases/git2/ignoreds"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/git2_ignoreds_grid_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'grid', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -1’ skips Git-ignored files"
+shell = "exa --git-ignore -1 /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_ignoreds_lines_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -l’ skips Git-ignored files"
+shell = "exa --git-ignore -l /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_ignoreds_long_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -lG’ skips Git-ignored files"
+shell = "exa --git-ignore -lG /testcases/git2/ignoreds"
+environment = { COLUMNS = "150" }
+stdout = { file = "outputs/git2_ignoreds_long_grid_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -lR’ skips Git-ignored files"
+shell = "exa --git-ignore -lR /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_ignoreds_long_recurse_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'recurse', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -lT’ skips Git-ignored files"
+shell = "exa --git-ignore -lT /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_ignoreds_long_tree_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'tree', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -T’ skips Git-ignored files"
+shell = "exa --git-ignore -T /testcases/git2/ignoreds"
+stdout = { file = "outputs/git2_ignoreds_tree_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree', 'git-ignore' ]
+
+
+# Recursive git-ignoring
+
+[[cmd]]
+name = "‘exa --git-ignore -lR’ skips Git-ignored files in subfolders"
+shell = "exa --git-ignore -lR /testcases/git2"
+stdout = { file = "outputs/git2_long_recurse_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'recurse', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -lT’ skips Git-ignored files in subfolders"
+shell = "exa --git-ignore -lT /testcases/git2"
+stdout = { file = "outputs/git2_long_tree_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'tree', 'git-ignore' ]
+
+[[cmd]]
+name = "‘exa --git-ignore -T’ skips Git-ignored files in subfolders"
+shell = "exa --git-ignore -T /testcases/git2"
+stdout = { file = "outputs/git2_tree_gitignore.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'tree', 'git-ignore' ]

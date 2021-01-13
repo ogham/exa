@@ -1,232 +1,210 @@
-use output::{View, Mode, grid, details, lines};
-use output::grid_details::{self, RowThreshold};
-use output::table::{TimeTypes, Environment, SizeFormat, Columns, Options as TableOptions};
-use output::time::TimeFormat;
-
-use options::{flags, Misfire, Vars};
-use options::parser::MatchedFlags;
-
-use fs::PlatformMetadata;
-use fs::feature::xattr;
+use crate::fs::feature::xattr;
+use crate::options::{flags, OptionsError, Vars};
+use crate::options::parser::MatchedFlags;
+use crate::output::{View, Mode, TerminalWidth, grid, details};
+use crate::output::grid_details::{self, RowThreshold};
+use crate::output::file_name::Options as FileStyle;
+use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
+use crate::output::time::TimeFormat;
 
 
 impl View {
-
-    /// Determine which view to use and all of that view’s arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<View, Misfire> {
-        use options::style::Styles;
-
+    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let mode = Mode::deduce(matches, vars)?;
-        let Styles { colours, style } = Styles::deduce(matches, vars, || *TERM_WIDTH)?;
-        Ok(View { mode, colours, style })
+        let width = TerminalWidth::deduce(vars)?;
+        let file_style = FileStyle::deduce(matches, vars)?;
+        Ok(Self { mode, width, file_style })
     }
 }
 
 
 impl Mode {
 
-    /// Determine the mode from the command-line arguments.
-    pub fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Mode, Misfire> {
-        use options::misfire::Misfire::*;
+    /// Determine which viewing mode to use based on the user’s options.
+    ///
+    /// As with the other options, arguments are scanned right-to-left and the
+    /// first flag found is matched, so `exa --oneline --long` will pick a
+    /// details view, and `exa --long --oneline` will pick the lines view.
+    ///
+    /// This is complicated a little by the fact that `--grid` and `--tree`
+    /// can also combine with `--long`, so care has to be taken to use the
+    pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        let flag = matches.has_where_any(|f| f.matches(&flags::LONG) || f.matches(&flags::ONE_LINE)
+                                          || f.matches(&flags::GRID) || f.matches(&flags::TREE));
 
-        let long = || {
-            if matches.has(&flags::ACROSS)? && !matches.has(&flags::GRID)? {
-                Err(Useless(&flags::ACROSS, true, &flags::LONG))
-            }
-            else if matches.has(&flags::ONE_LINE)? {
-                Err(Useless(&flags::ONE_LINE, true, &flags::LONG))
-            }
-            else {
-                Ok(details::Options {
-                    table: Some(TableOptions::deduce(matches, vars)?),
-                    header: matches.has(&flags::HEADER)?,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                })
-            }
-        };
-
-        let other_options_scan = || {
-            if let Some(width) = TerminalWidth::deduce(vars)?.width() {
-                if matches.has(&flags::ONE_LINE)? {
-                    if matches.has(&flags::ACROSS)? {
-                        Err(Useless(&flags::ACROSS, true, &flags::ONE_LINE))
-                    }
-                    else {
-                        let lines = lines::Options { icons: matches.has(&flags::ICONS)? };
-                        Ok(Mode::Lines(lines))
-                    }
-                }
-                else if matches.has(&flags::TREE)? {
-                    let details = details::Options {
-                        table: None,
-                        header: false,
-                        xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
-
-                    Ok(Mode::Details(details))
-                }
-                else {
-                    let grid = grid::Options {
-                        across: matches.has(&flags::ACROSS)?,
-                        console_width: width,
-                        icons: matches.has(&flags::ICONS)?,
-                    };
-
-                    Ok(Mode::Grid(grid))
-                }
-            }
-
-            // If the terminal width couldn’t be matched for some reason, such
-            // as the program’s stdout being connected to a file, then
-            // fallback to the lines view.
-            else if matches.has(&flags::TREE)? {
-                let details = details::Options {
-                    table: None,
-                    header: false,
-                    xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
-                    icons: matches.has(&flags::ICONS)?,
-                };
-
-                Ok(Mode::Details(details))
-            }
-            else {
-                let lines = lines::Options { icons: matches.has(&flags::ICONS)?, };
-                Ok(Mode::Lines(lines))
+        let flag = match flag {
+            Some(f) => f,
+            None => {
+                Self::strict_check_long_flags(matches)?;
+                let grid = grid::Options::deduce(matches)?;
+                return Ok(Self::Grid(grid));
             }
         };
 
-        if matches.has(&flags::LONG)? {
-            let details = long()?;
-            if matches.has(&flags::GRID)? {
-                let other_options_mode = other_options_scan()?;
-                if let Mode::Grid(grid) = other_options_mode {
-                    let row_threshold = RowThreshold::deduce(vars)?;
-                    return Ok(Mode::GridDetails(grid_details::Options { grid, details, row_threshold }));
-                }
-                else {
-                    return Ok(other_options_mode);
-                }
+        if flag.matches(&flags::LONG)
+        || (flag.matches(&flags::TREE) && matches.has(&flags::LONG)?)
+        || (flag.matches(&flags::GRID) && matches.has(&flags::LONG)?)
+        {
+            let _ = matches.has(&flags::LONG)?;
+            let details = details::Options::deduce_long(matches, vars)?;
+
+            let flag = matches.has_where_any(|f| f.matches(&flags::GRID) || f.matches(&flags::TREE));
+
+            if flag.is_some() && flag.unwrap().matches(&flags::GRID) {
+                let _ = matches.has(&flags::GRID)?;
+                let grid = grid::Options::deduce(matches)?;
+                let row_threshold = RowThreshold::deduce(vars)?;
+                let grid_details = grid_details::Options { grid, details, row_threshold };
+                return Ok(Self::GridDetails(grid_details));
             }
             else {
-                return Ok(Mode::Details(details));
+                // the --tree case is handled by the DirAction parser later
+                return Ok(Self::Details(details));
             }
         }
 
+        Self::strict_check_long_flags(matches)?;
+
+        if flag.matches(&flags::TREE) {
+            let _ = matches.has(&flags::TREE)?;
+            let details = details::Options::deduce_tree(matches)?;
+            return Ok(Self::Details(details));
+        }
+
+        if flag.matches(&flags::ONE_LINE) {
+            let _ = matches.has(&flags::ONE_LINE)?;
+            return Ok(Self::Lines);
+        }
+
+        let grid = grid::Options::deduce(matches)?;
+        Ok(Self::Grid(grid))
+    }
+
+    fn strict_check_long_flags(matches: &MatchedFlags<'_>) -> Result<(), OptionsError> {
         // If --long hasn’t been passed, then check if we need to warn the
         // user about flags that won’t have any effect.
         if matches.is_strict() {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
                              &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
                 if matches.has(option)? {
-                    return Err(Useless(*option, false, &flags::LONG));
+                    return Err(OptionsError::Useless(*option, false, &flags::LONG));
                 }
             }
 
-            if cfg!(feature="git") && matches.has(&flags::GIT)? {
-                return Err(Useless(&flags::GIT, false, &flags::LONG));
+            if cfg!(feature = "git") && matches.has(&flags::GIT)? {
+                return Err(OptionsError::Useless(&flags::GIT, false, &flags::LONG));
             }
-            else if matches.has(&flags::LEVEL)? && !matches.has(&flags::RECURSE)? && !matches.has(&flags::TREE)? {
-                // TODO: I'm not sure if the code even gets this far.
-                // There is an identical check in dir_action
-                return Err(Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
+            else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
+                return Err(OptionsError::Useless2(&flags::LEVEL, &flags::RECURSE, &flags::TREE));
             }
         }
 
-        other_options_scan()
+        Ok(())
     }
 }
 
 
-/// The width of the terminal requested by the user.
-#[derive(PartialEq, Debug)]
-enum TerminalWidth {
+impl grid::Options {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let grid = grid::Options {
+            across: matches.has(&flags::ACROSS)?,
+        };
 
-    /// The user requested this specific number of columns.
-    Set(usize),
-
-    /// The terminal was found to have this number of columns.
-    Terminal(usize),
-
-    /// The user didn’t request any particular terminal width.
-    Unset,
+        Ok(grid)
+    }
 }
 
-impl TerminalWidth {
 
-    /// Determine a requested terminal width from the command-line arguments.
-    ///
-    /// Returns an error if a requested width doesn’t parse to an integer.
-    fn deduce<V: Vars>(vars: &V) -> Result<TerminalWidth, Misfire> {
-        use options::vars;
+impl details::Options {
+    fn deduce_tree(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let details = details::Options {
+            table: None,
+            header: false,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+        };
+
+        Ok(details)
+    }
+
+    fn deduce_long<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        if matches.is_strict() {
+            if matches.has(&flags::ACROSS)? && ! matches.has(&flags::GRID)? {
+                return Err(OptionsError::Useless(&flags::ACROSS, true, &flags::LONG));
+            }
+            else if matches.has(&flags::ONE_LINE)? {
+                return Err(OptionsError::Useless(&flags::ONE_LINE, true, &flags::LONG));
+            }
+        }
+
+        Ok(details::Options {
+            table: Some(TableOptions::deduce(matches, vars)?),
+            header: matches.has(&flags::HEADER)?,
+            xattr: xattr::ENABLED && matches.has(&flags::EXTENDED)?,
+        })
+    }
+}
+
+
+impl TerminalWidth {
+    fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(width)  => Ok(TerminalWidth::Set(width)),
-                Err(e)     => Err(Misfire::FailedParse(e)),
+                Ok(width)  => Ok(Self::Set(width)),
+                Err(e)     => Err(OptionsError::FailedParse(e)),
             }
         }
-        else if let Some(width) = *TERM_WIDTH {
-            Ok(TerminalWidth::Terminal(width))
-        }
         else {
-            Ok(TerminalWidth::Unset)
-        }
-    }
-
-    fn width(&self) -> Option<usize> {
-        match *self {
-            TerminalWidth::Set(width)       |
-            TerminalWidth::Terminal(width)  => Some(width),
-            TerminalWidth::Unset            => None,
+            Ok(Self::Automatic)
         }
     }
 }
 
 
 impl RowThreshold {
-
-    /// Determine whether to use a row threshold based on the given
-    /// environment variables.
-    fn deduce<V: Vars>(vars: &V) -> Result<RowThreshold, Misfire> {
-        use options::vars;
+    fn deduce<V: Vars>(vars: &V) -> Result<Self, OptionsError> {
+        use crate::options::vars;
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(rows)  => Ok(RowThreshold::MinimumRows(rows)),
-                Err(e)    => Err(Misfire::FailedParse(e)),
+                Ok(rows)  => Ok(Self::MinimumRows(rows)),
+                Err(e)    => Err(OptionsError::FailedParse(e)),
             }
         }
         else {
-            Ok(RowThreshold::AlwaysGrid)
+            Ok(Self::AlwaysGrid)
         }
     }
 }
 
 
 impl TableOptions {
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<Self, Misfire> {
-        let env = Environment::load_all();
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
-        let extra_columns = Columns::deduce(matches)?;
-        Ok(TableOptions { env, time_format, size_format, extra_columns })
+        let columns = Columns::deduce(matches)?;
+        Ok(Self { time_format, size_format, columns })
     }
 }
 
 
 impl Columns {
-    fn deduce(matches: &MatchedFlags) -> Result<Self, Misfire> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
-        let git = cfg!(feature="git") && matches.has(&flags::GIT)?;
+        let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;
         let inode  = matches.has(&flags::INODE)?;
         let links  = matches.has(&flags::LINKS)?;
+        let octal  = matches.has(&flags::OCTAL)?;
 
-        Ok(Columns { time_types, git, blocks, group, inode, links })
+        let permissions = ! matches.has(&flags::NO_PERMISSIONS)?;
+        let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
+        let user =        ! matches.has(&flags::NO_USER)?;
+
+        Ok(Self { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 
@@ -241,13 +219,13 @@ impl SizeFormat {
     /// strings of digits in your head. Changing the format to anything else
     /// involves the `--binary` or `--bytes` flags, and these conflict with
     /// each other.
-    fn deduce(matches: &MatchedFlags) -> Result<SizeFormat, Misfire> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let flag = matches.has_where(|f| f.matches(&flags::BINARY) || f.matches(&flags::BYTES))?;
 
         Ok(match flag {
-            Some(f) if f.matches(&flags::BINARY)  => SizeFormat::BinaryBytes,
-            Some(f) if f.matches(&flags::BYTES)   => SizeFormat::JustBytes,
-            _                                     => SizeFormat::DecimalBytes,
+            Some(f) if f.matches(&flags::BINARY)  => Self::BinaryBytes,
+            Some(f) if f.matches(&flags::BYTES)   => Self::JustBytes,
+            _                                     => Self::DecimalBytes,
         })
     }
 }
@@ -256,34 +234,33 @@ impl SizeFormat {
 impl TimeFormat {
 
     /// Determine how time should be formatted in timestamp columns.
-    fn deduce<V: Vars>(matches: &MatchedFlags, vars: &V) -> Result<TimeFormat, Misfire> {
-        pub use output::time::{DefaultFormat, ISOFormat};
-
-        let word = match matches.get(&flags::TIME_STYLE)? {
-            Some(w) => w.to_os_string(),
-            None    => {
-                use options::vars;
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        let word =
+            if let Some(w) = matches.get(&flags::TIME_STYLE)? {
+                w.to_os_string()
+            }
+            else {
+                use crate::options::vars;
                 match vars.get(vars::TIME_STYLE) {
-                    Some(ref t) if !t.is_empty() => t.clone(),
-                    _                            => return Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
+                    Some(ref t) if ! t.is_empty()  => t.clone(),
+                    _                              => return Ok(Self::DefaultFormat)
                 }
-            },
-        };
+            };
 
         if &word == "default" {
-            Ok(TimeFormat::DefaultFormat(DefaultFormat::load()))
+            Ok(Self::DefaultFormat)
         }
         else if &word == "iso" {
-            Ok(TimeFormat::ISOFormat(ISOFormat::load()))
+            Ok(Self::ISOFormat)
         }
         else if &word == "long-iso" {
-            Ok(TimeFormat::LongISO)
+            Ok(Self::LongISO)
         }
         else if &word == "full-iso" {
-            Ok(TimeFormat::FullISO)
+            Ok(Self::FullISO)
         }
         else {
-            Err(Misfire::BadArgument(&flags::TIME_STYLE, word.into()))
+            Err(OptionsError::BadArgument(&flags::TIME_STYLE, word))
         }
     }
 }
@@ -301,96 +278,74 @@ impl TimeTypes {
     /// It’s valid to show more than one column by passing in more than one
     /// option, but passing *no* options means that the user just wants to
     /// see the default set.
-    fn deduce(matches: &MatchedFlags) -> Result<TimeTypes, Misfire> {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let possible_word = matches.get(&flags::TIME)?;
         let modified = matches.has(&flags::MODIFIED)?;
         let changed  = matches.has(&flags::CHANGED)?;
         let accessed = matches.has(&flags::ACCESSED)?;
         let created  = matches.has(&flags::CREATED)?;
 
-        let time_types = if let Some(word) = possible_word {
+        let no_time = matches.has(&flags::NO_TIME)?;
+
+        let time_types = if no_time {
+            Self { modified: false, changed: false, accessed: false, created: false }
+        } else if let Some(word) = possible_word {
             if modified {
-                return Err(Misfire::Useless(&flags::MODIFIED, true, &flags::TIME));
+                return Err(OptionsError::Useless(&flags::MODIFIED, true, &flags::TIME));
             }
             else if changed {
-                return Err(Misfire::Useless(&flags::CHANGED, true, &flags::TIME));
+                return Err(OptionsError::Useless(&flags::CHANGED, true, &flags::TIME));
             }
             else if accessed {
-                return Err(Misfire::Useless(&flags::ACCESSED, true, &flags::TIME));
+                return Err(OptionsError::Useless(&flags::ACCESSED, true, &flags::TIME));
             }
             else if created {
-                return Err(Misfire::Useless(&flags::CREATED, true, &flags::TIME));
+                return Err(OptionsError::Useless(&flags::CREATED, true, &flags::TIME));
             }
             else if word == "mod" || word == "modified" {
-                TimeTypes { modified: true,  changed: false, accessed: false, created: false }
+                Self { modified: true,  changed: false, accessed: false, created: false }
             }
             else if word == "ch" || word == "changed" {
-                TimeTypes { modified: false, changed: true,  accessed: false, created: false }
+                Self { modified: false, changed: true,  accessed: false, created: false }
             }
             else if word == "acc" || word == "accessed" {
-                TimeTypes { modified: false, changed: false, accessed: true,  created: false }
+                Self { modified: false, changed: false, accessed: true,  created: false }
             }
             else if word == "cr" || word == "created" {
-                TimeTypes { modified: false, changed: false, accessed: false, created: true  }
+                Self { modified: false, changed: false, accessed: false, created: true  }
             }
             else {
-                return Err(Misfire::BadArgument(&flags::TIME, word.into()));
+                return Err(OptionsError::BadArgument(&flags::TIME, word.into()));
             }
         }
         else if modified || changed || accessed || created {
-            TimeTypes { modified, changed, accessed, created }
+            Self { modified, changed, accessed, created }
         }
         else {
-            TimeTypes::default()
+            Self::default()
         };
 
-        let mut fields = vec![];
-        if time_types.modified { fields.push(PlatformMetadata::ModifiedTime); }
-        if time_types.changed  { fields.push(PlatformMetadata::ChangedTime); }
-        if time_types.accessed { fields.push(PlatformMetadata::AccessedTime); }
-        if time_types.created  { fields.push(PlatformMetadata::CreatedTime); }
-
-        for field in fields {
-            if let Err(misfire) = field.check_supported() {
-                return Err(misfire);
-            }
-        }
         Ok(time_types)
     }
 }
-
-
-// Gets, then caches, the width of the terminal that exa is running in.
-// This gets used multiple times above, with no real guarantee of order,
-// so it’s easier to just cache it the first time it runs.
-lazy_static! {
-    static ref TERM_WIDTH: Option<usize> = {
-        // All of stdin, stdout, and stderr could not be connected to a
-        // terminal, but we’re only interested in stdout because it’s
-        // where the output goes.
-        use term_size::dimensions_stdout;
-        dimensions_stdout().map(|t| t.0)
-    };
-}
-
 
 
 #[cfg(test)]
 mod test {
     use super::*;
     use std::ffi::OsString;
-    use options::flags;
-    use options::parser::{Flag, Arg};
+    use crate::options::flags;
+    use crate::options::parser::{Flag, Arg};
 
-    use options::test::parse_for_test;
-    use options::test::Strictnesses::*;
+    use crate::options::test::parse_for_test;
+    use crate::options::test::Strictnesses::*;
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
-                                   &flags::CREATED, &flags::ACCESSED, &flags::ICONS,
+                                   &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
 
     macro_rules! test {
 
@@ -474,10 +429,10 @@ mod test {
         test!(both_3:  SizeFormat <- ["--binary", "--bytes"];   Last => Ok(SizeFormat::JustBytes));
         test!(both_4:  SizeFormat <- ["--bytes",  "--bytes"];   Last => Ok(SizeFormat::JustBytes));
 
-        test!(both_5:  SizeFormat <- ["--binary", "--binary"];  Complain => err Misfire::Duplicate(Flag::Long("binary"), Flag::Long("binary")));
-        test!(both_6:  SizeFormat <- ["--bytes",  "--binary"];  Complain => err Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("binary")));
-        test!(both_7:  SizeFormat <- ["--binary", "--bytes"];   Complain => err Misfire::Duplicate(Flag::Long("binary"), Flag::Long("bytes")));
-        test!(both_8:  SizeFormat <- ["--bytes",  "--bytes"];   Complain => err Misfire::Duplicate(Flag::Long("bytes"),  Flag::Long("bytes")));
+        test!(both_5:  SizeFormat <- ["--binary", "--binary"];  Complain => err OptionsError::Duplicate(Flag::Long("binary"), Flag::Long("binary")));
+        test!(both_6:  SizeFormat <- ["--bytes",  "--binary"];  Complain => err OptionsError::Duplicate(Flag::Long("bytes"),  Flag::Long("binary")));
+        test!(both_7:  SizeFormat <- ["--binary", "--bytes"];   Complain => err OptionsError::Duplicate(Flag::Long("binary"), Flag::Long("bytes")));
+        test!(both_8:  SizeFormat <- ["--bytes",  "--bytes"];   Complain => err OptionsError::Duplicate(Flag::Long("bytes"),  Flag::Long("bytes")));
     }
 
 
@@ -488,23 +443,23 @@ mod test {
         // implement PartialEq.
 
         // Default behaviour
-        test!(empty:     TimeFormat <- [], None;                            Both => like Ok(TimeFormat::DefaultFormat(_)));
+        test!(empty:     TimeFormat <- [], None;                            Both => like Ok(TimeFormat::DefaultFormat));
 
         // Individual settings
-        test!(default:   TimeFormat <- ["--time-style=default"], None;      Both => like Ok(TimeFormat::DefaultFormat(_)));
-        test!(iso:       TimeFormat <- ["--time-style", "iso"], None;       Both => like Ok(TimeFormat::ISOFormat(_)));
+        test!(default:   TimeFormat <- ["--time-style=default"], None;      Both => like Ok(TimeFormat::DefaultFormat));
+        test!(iso:       TimeFormat <- ["--time-style", "iso"], None;       Both => like Ok(TimeFormat::ISOFormat));
         test!(long_iso:  TimeFormat <- ["--time-style=long-iso"], None;     Both => like Ok(TimeFormat::LongISO));
         test!(full_iso:  TimeFormat <- ["--time-style", "full-iso"], None;  Both => like Ok(TimeFormat::FullISO));
 
         // Overriding
-        test!(actually:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Last => like Ok(TimeFormat::ISOFormat(_)));
-        test!(actual_2:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
+        test!(actually:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Last => like Ok(TimeFormat::ISOFormat));
+        test!(actual_2:  TimeFormat <- ["--time-style=default", "--time-style", "iso"], None;  Complain => err OptionsError::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         test!(nevermind: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"], None;  Last => like Ok(TimeFormat::FullISO));
-        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"], None;  Complain => err Misfire::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
+        test!(nevermore: TimeFormat <- ["--time-style", "long-iso", "--time-style=full-iso"], None;  Complain => err OptionsError::Duplicate(Flag::Long("time-style"), Flag::Long("time-style")));
 
         // Errors
-        test!(daily:     TimeFormat <- ["--time-style=24-hour"], None;  Both => err Misfire::BadArgument(&flags::TIME_STYLE, OsString::from("24-hour")));
+        test!(daily:     TimeFormat <- ["--time-style=24-hour"], None;  Both => err OptionsError::BadArgument(&flags::TIME_STYLE, OsString::from("24-hour")));
 
         // `TIME_STYLE` environment variable is defined.
         // If the time-style argument is not given, `TIME_STYLE` is used.
@@ -533,7 +488,7 @@ mod test {
         #[cfg(target_family = "unix")]
         test!(time_ch:   TimeTypes <- ["--time=changed"];      Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
         #[cfg(target_family = "unix")]
-        test!(t_ch:    TimeTypes <- ["-t", "ch"];            Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
+        test!(t_ch:    TimeTypes <- ["-t", "ch"];              Both => Ok(TimeTypes { modified: false, changed: true,  accessed: false, created: false }));
 
         // Accessed
         test!(acc:       TimeTypes <- ["--accessed"];          Both => Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false }));
@@ -542,50 +497,43 @@ mod test {
         test!(time_a:    TimeTypes <- ["-t", "acc"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: true,  created: false }));
 
         // Created
-        #[cfg(not(target_os = "linux"))]
         test!(cr:        TimeTypes <- ["--created"];           Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(target_os = "linux")]
-        test!(cr:        TimeTypes <- ["--created"];           Both => err Misfire::Unsupported("creation time is not available on this platform currently".to_string()));
-        #[cfg(not(target_os = "linux"))]
         test!(c:         TimeTypes <- ["-U"];                  Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(time_cr:   TimeTypes <- ["--time=created"];      Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
-        #[cfg(not(target_os = "linux"))]
         test!(t_cr:      TimeTypes <- ["-tcr"];                Both => Ok(TimeTypes { modified: false, changed: false, accessed: false, created: true  }));
 
         // Multiples
-        test!(time_uu:   TimeTypes <- ["-u", "--modified"];    Both => Ok(TimeTypes { modified: true, changed: false, accessed: true,  created: false }));
+        test!(time_uu:   TimeTypes <- ["-u", "--modified"];    Both => Ok(TimeTypes { modified: true,  changed: false, accessed: true,  created: false }));
 
 
         // Errors
-        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => err Misfire::BadArgument(&flags::TIME, OsString::from("tea")));
-        test!(t_ea:      TimeTypes <- ["-tea"];                Both => err Misfire::BadArgument(&flags::TIME, OsString::from("ea")));
+        test!(time_tea:  TimeTypes <- ["--time=tea"];          Both => err OptionsError::BadArgument(&flags::TIME, OsString::from("tea")));
+        test!(t_ea:      TimeTypes <- ["-tea"];                Both => err OptionsError::BadArgument(&flags::TIME, OsString::from("ea")));
 
         // Overriding
         test!(overridden:   TimeTypes <- ["-tcr", "-tmod"];    Last => Ok(TimeTypes { modified: true,  changed: false, accessed: false, created: false }));
-        test!(overridden_2: TimeTypes <- ["-tcr", "-tmod"];    Complain => err Misfire::Duplicate(Flag::Short(b't'), Flag::Short(b't')));
+        test!(overridden_2: TimeTypes <- ["-tcr", "-tmod"];    Complain => err OptionsError::Duplicate(Flag::Short(b't'), Flag::Short(b't')));
     }
 
 
     mod views {
         use super::*;
-        use output::grid::Options as GridOptions;
-        use output::lines::Options as LineOptions;
+
+        use crate::output::grid::Options as GridOptions;
+
 
         // Default
         test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
         // Grid views
-        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
-        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, console_width: _, icons: _ })));
-        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
-        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  console_width: _, icons: _ })));
-        test!(icons:         Mode <- ["--icons"], None;   Both => like Ok(Mode::Grid(GridOptions { across: _, console_width: _, icons: true})));
+        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
+        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None; Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
-        test!(prima:         Mode <- ["-1"], None;        Both => like Ok(Mode::Lines(LineOptions{ icons: _ })));
-        test!(line_icon:     Mode <- ["-1", "--icons"], None; Both => like Ok(Mode::Lines(LineOptions { icons: true })));
+        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines));
+        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines));
 
         // Details views
         test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
@@ -595,6 +543,8 @@ mod test {
         test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
         test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
 
+        // Options that do nothing with --long
+        test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
         test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
@@ -605,18 +555,27 @@ mod test {
         test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
         test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
 
-        #[cfg(feature="git")]
+        #[cfg(feature = "git")]
         test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
 
-        test!(just_header_2: Mode <- ["--header"], None;  Complain => err Misfire::Useless(&flags::HEADER, false, &flags::LONG));
-        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err Misfire::Useless(&flags::GROUP,  false, &flags::LONG));
-        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err Misfire::Useless(&flags::INODE,  false, &flags::LONG));
-        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err Misfire::Useless(&flags::LINKS,  false, &flags::LONG));
-        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err Misfire::Useless(&flags::BLOCKS, false, &flags::LONG));
-        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err Misfire::Useless(&flags::BINARY, false, &flags::LONG));
-        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err Misfire::Useless(&flags::BYTES,  false, &flags::LONG));
+        test!(just_header_2: Mode <- ["--header"], None;  Complain => err OptionsError::Useless(&flags::HEADER, false, &flags::LONG));
+        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err OptionsError::Useless(&flags::GROUP,  false, &flags::LONG));
+        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err OptionsError::Useless(&flags::INODE,  false, &flags::LONG));
+        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err OptionsError::Useless(&flags::LINKS,  false, &flags::LONG));
+        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err OptionsError::Useless(&flags::BLOCKS, false, &flags::LONG));
+        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err OptionsError::Useless(&flags::BINARY, false, &flags::LONG));
+        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err OptionsError::Useless(&flags::BYTES,  false, &flags::LONG));
 
-        #[cfg(feature="git")]
-        test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err Misfire::Useless(&flags::GIT,    false, &flags::LONG));
+        #[cfg(feature = "git")]
+        test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
+
+        // Contradictions and combinations
+        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines));
+        test!(lgt:           Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
+        test!(tgl:           Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(tlg:           Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(ot:            Mode <- ["--oneline", "--tree"],           None;  Both => like Ok(Mode::Details(_)));
+        test!(og:            Mode <- ["--oneline", "--grid"],           None;  Both => like Ok(Mode::Grid(_)));
+        test!(tg:            Mode <- ["--tree", "--grid"],              None;  Both => like Ok(Mode::Grid(_)));
     }
 }

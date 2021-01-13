@@ -5,11 +5,8 @@ use std::iter::FromIterator;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
-use glob;
-use natord;
-
-use fs::File;
-use fs::DotFilter;
+use crate::fs::DotFilter;
+use crate::fs::File;
 
 
 /// The **file filter** processes a list of files before displaying them to
@@ -91,15 +88,14 @@ pub struct FileFilter {
     pub git_ignore: GitIgnore,
 }
 
-
 impl FileFilter {
     /// Remove every file in the given vector that does *not* pass the
     /// filter predicate for files found inside a directory.
-    pub fn filter_child_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(&f.name));
+    pub fn filter_child_files(&self, files: &mut Vec<File<'_>>) {
+        files.retain(|f| ! self.ignore_patterns.is_ignored(&f.name));
 
         if self.only_dirs {
-            files.retain(|f| f.is_directory());
+            files.retain(File::is_directory);
         }
     }
 
@@ -112,15 +108,19 @@ impl FileFilter {
     /// dotfile, because it’s been directly specified. But running
     /// `exa -I='*.ogg' music/*` should filter out the ogg files obtained
     /// from the glob, even though the globbing is done by the shell!
-    pub fn filter_argument_files(&self, files: &mut Vec<File>) {
-        files.retain(|f| !self.ignore_patterns.is_ignored(&f.name));
+    pub fn filter_argument_files(&self, files: &mut Vec<File<'_>>) {
+        files.retain(|f| {
+            ! self.ignore_patterns.is_ignored(&f.name)
+        });
     }
 
     /// Sort the files in the given vector based on the sort field option.
     pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
-    where F: AsRef<File<'a>> {
-
-        files.sort_by(|a, b| self.sort_field.compare_files(a.as_ref(), b.as_ref()));
+    where F: AsRef<File<'a>>
+    {
+        files.sort_by(|a, b| {
+            self.sort_field.compare_files(a.as_ref(), b.as_ref())
+        });
 
         if self.reverse {
             files.reverse();
@@ -129,7 +129,10 @@ impl FileFilter {
         if self.list_dirs_first {
             // This relies on the fact that `sort_by` is *stable*: it will keep
             // adjacent elements next to each other.
-            files.sort_by(|a, b| b.as_ref().is_directory().cmp(&a.as_ref().is_directory()));
+            files.sort_by(|a, b| {
+                b.as_ref().points_to_directory()
+                    .cmp(&a.as_ref().points_to_directory())
+            });
         }
     }
 }
@@ -176,13 +179,13 @@ pub enum SortField {
     /// The time the file was changed (the “ctime”).
     ///
     /// This field is used to mark the time when a file’s metadata
-    /// changed -- its permissions, owners, or link count.
+    /// changed — its permissions, owners, or link count.
     ///
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
     ChangedDate,
 
-    /// The time the file was created (the "btime" or "birthtime").
+    /// The time the file was created (the “btime” or “birthtime”).
     CreatedDate,
 
     /// The type of the file: directories, links, pipes, regular, files, etc.
@@ -237,55 +240,52 @@ impl SortField {
     /// into groups between letters and numbers, and then sorts those blocks
     /// together, so `file10` will sort after `file9`, instead of before it
     /// because of the `1`.
-    pub fn compare_files(self, a: &File, b: &File) -> Ordering {
+    pub fn compare_files(self, a: &File<'_>, b: &File<'_>) -> Ordering {
         use self::SortCase::{ABCabc, AaBbCc};
 
         match self {
-            SortField::Unsorted  => Ordering::Equal,
+            Self::Unsorted  => Ordering::Equal,
 
-            SortField::Name(ABCabc)  => natord::compare(&a.name, &b.name),
-            SortField::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
+            Self::Name(ABCabc)  => natord::compare(&a.name, &b.name),
+            Self::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
-            SortField::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            SortField::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
-            SortField::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
-            SortField::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
-            SortField::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
-            SortField::CreatedDate   => a.created_time().cmp(&b.created_time()),
-            SortField::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
+            Self::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
+            Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
+            Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
+            Self::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
+            Self::CreatedDate   => a.created_time().cmp(&b.created_time()),
+            Self::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
 
-            SortField::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
+            Self::FileType => match a.type_char().cmp(&b.type_char()) { // todo: this recomputes
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
+            Self::Extension(ABCabc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
+            Self::Extension(AaBbCc) => match a.ext.cmp(&b.ext) {
                 Ordering::Equal  => natord::compare_ignore_case(&*a.name, &*b.name),
                 order            => order,
             },
 
-            SortField::NameMixHidden(ABCabc) => natord::compare(
-                SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
+            Self::NameMixHidden(ABCabc) => natord::compare(
+                Self::strip_dot(&a.name),
+                Self::strip_dot(&b.name)
             ),
-            SortField::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
-                SortField::strip_dot(&a.name),
-                SortField::strip_dot(&b.name)
+            Self::NameMixHidden(AaBbCc) => natord::compare_ignore_case(
+                Self::strip_dot(&a.name),
+                Self::strip_dot(&b.name)
             )
         }
     }
 
     fn strip_dot(n: &str) -> &str {
-        if n.starts_with('.') {
-            &n[1..]
-        } else {
-            n
-        }
+        if n.starts_with('.') { &n[1..] }
+                         else { n }
     }
 }
 
@@ -299,16 +299,20 @@ pub struct IgnorePatterns {
 }
 
 impl FromIterator<glob::Pattern> for IgnorePatterns {
-    fn from_iter<I: IntoIterator<Item = glob::Pattern>>(iter: I) -> Self {
-        IgnorePatterns { patterns: iter.into_iter().collect() }
+
+    fn from_iter<I>(iter: I) -> Self
+    where I: IntoIterator<Item = glob::Pattern>
+    {
+        let patterns = iter.into_iter().collect();
+        Self { patterns }
     }
 }
 
 impl IgnorePatterns {
 
     /// Create a new list from the input glob strings, turning the inputs that
-    /// are valid glob patterns into an IgnorePatterns. The inputs that don’t
-    /// parse correctly are returned separately.
+    /// are valid glob patterns into an `IgnorePatterns`. The inputs that
+    /// don’t parse correctly are returned separately.
     pub fn parse_from_iter<'a, I: IntoIterator<Item = &'a str>>(iter: I) -> (Self, Vec<glob::PatternError>) {
         let iter = iter.into_iter();
 
@@ -329,12 +333,12 @@ impl IgnorePatterns {
             }
         }
 
-        (IgnorePatterns { patterns }, errors)
+        (Self { patterns }, errors)
     }
 
     /// Create a new empty set of patterns that matches nothing.
-    pub fn empty() -> IgnorePatterns {
-        IgnorePatterns { patterns: Vec::new() }
+    pub fn empty() -> Self {
+        Self { patterns: Vec::new() }
     }
 
     /// Test whether the given file should be hidden from the results.
@@ -370,7 +374,6 @@ pub enum GitIgnore {
 // > By default, all ignore files found are respected. This includes .ignore,
 // > .gitignore, .git/info/exclude and even your global gitignore globs,
 // > usually found in $XDG_CONFIG_HOME/git/ignore.
-
 
 
 #[cfg(test)]

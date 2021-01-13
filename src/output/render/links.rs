@@ -1,8 +1,8 @@
 use ansi_term::Style;
 use locale::Numeric as NumericLocale;
 
-use output::cell::TextCell;
-use fs::fields as f;
+use crate::fs::fields as f;
+use crate::output::cell::TextCell;
 
 
 impl f::Links {
@@ -24,8 +24,8 @@ pub trait Colours {
 #[cfg(test)]
 pub mod test {
     use super::Colours;
-    use output::cell::{TextCell, DisplayWidth};
-    use fs::fields as f;
+    use crate::output::cell::{TextCell, DisplayWidth};
+    use crate::fs::fields as f;
 
     use ansi_term::Colour::*;
     use ansi_term::Style;

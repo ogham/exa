@@ -1,0 +1,15 @@
+[[cmd]]
+name = "‘exa -1 -I’ ignores based on a glob"
+shell = "exa -1 -I '*.OGG' /testcases/file-names-exts/music.*"
+stdout = { string = "music.mp3" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'ignore' ]
+
+[[cmd]]
+name = "‘exa -1 -I’ ignores based on multiple globs"
+shell = "exa -1 -I '*.OGG|*.mp3' /testcases/file-names-exts/music.*"
+stdout = { empty = true }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'ignore' ]
