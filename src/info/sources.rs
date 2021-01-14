@@ -16,7 +16,8 @@ impl<'a> File<'a> {
     pub fn get_source_files(&self) -> Vec<PathBuf> {
         if let Some(ext) = &self.ext {
             match &ext[..] {
-                "css"   => vec![self.path.with_extension("sass"),   self.path.with_extension("less")],  // SASS, Less
+                "css"   => vec![self.path.with_extension("sass"), self.path.with_extension("scss"),  // SASS, SCSS
+                                self.path.with_extension("styl"), self.path.with_extension("less")],  // Stylus, Less
                 "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
 
                 "aux" |                                          // TeX: auxiliary file
