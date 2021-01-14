@@ -105,7 +105,7 @@ More information on how to install exa is available on [the Installation page](h
 
 ### Alpine Linux
 
-On Alpine Linux, install the [`exa`](https://pkgs.alpinelinux.org/package/edge/community/x86_64/exa) package.
+On Alpine Linux, [enable community repository](https://wiki.alpinelinux.org/wiki/Enable_Community_Repository) and install the [`exa`](https://pkgs.alpinelinux.org/package/edge/community/x86_64/exa) package.
 
     $ apk add exa
 
