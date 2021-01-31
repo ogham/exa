@@ -30,4 +30,10 @@ pub mod git {
             panic!("Tried to query a Git cache, but Git support is disabled")
         }
     }
+
+    impl f::SubdirGitRepo{
+        pub fn from_path(_dir : &Path) -> Self{
+            Self{status : f::SubdirGitRepoStatus::NotRepo}
+        }
+    }
 }

@@ -247,6 +247,7 @@ impl Default for Git {
 }
 
 #[derive(PartialEq, Copy, Clone)]
+#[allow(dead_code)]
 pub enum SubdirGitRepoStatus{
     NotDir,
     NotRepo,
