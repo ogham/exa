@@ -311,3 +311,27 @@ fn index_status(status: git2::Status) -> f::GitStatus {
         _                                                => f::GitStatus::NotModified,
     }
 }
+
+impl f::SubdirGitRepo{
+    pub fn from_path(dir : &Path) -> Self{
+
+        let path = &reorient(&dir);
+        let g = git2::Repository::open(path);
+        if let Ok(repo) = g{
+
+            match repo.statuses(None) {
+                Ok(es) => {
+                    if es.iter().filter(|s| s.status() != git2::Status::IGNORED).count() > 0{
+                        return Self{status : f::SubdirGitRepoStatus::GitDirty};
+                    }
+                    return Self{status : f::SubdirGitRepoStatus::GitClean};
+                }
+                Err(e) => {
+                    error!("Error looking up Git statuses: {:?}", e)
+                }
+            }
+        }
+
+        Self{status : f::SubdirGitRepoStatus::NotRepo}
+    }
+}
