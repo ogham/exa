@@ -245,3 +245,15 @@ impl Default for Git {
         }
     }
 }
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum SubdirGitRepoStatus{
+    NotDir,
+    NotRepo,
+    GitClean,
+    GitDirty
+}
+#[derive(Copy, Clone)]
+pub struct SubdirGitRepo{
+    pub status : SubdirGitRepoStatus
+}
