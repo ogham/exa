@@ -408,7 +408,7 @@ impl<'a, 'f> Table<'a> {
                 self.git_status(file).render(self.theme)
             }
             Column::SubdirGitRepoStatus => {
-                self.subdir_git_repo_status(file).render(self.theme)
+                self.subdir_git_repo_status(file).render()
             }
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)

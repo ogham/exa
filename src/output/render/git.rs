@@ -17,7 +17,7 @@ impl f::Git {
 }
 
 impl f::SubdirGitRepo {
-    pub fn render(self, colours: &dyn Colours) -> TextCell {
+    pub fn render(self) -> TextCell {
         let style = ansi_term::Style::new();
             match self.status{
                 f::SubdirGitRepoStatus::NotDir => (),
