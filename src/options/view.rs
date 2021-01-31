@@ -193,6 +193,7 @@ impl Columns {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
         let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
+        let subdir_git_repos = git;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;
@@ -204,7 +205,7 @@ impl Columns {
         let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
         let user =        ! matches.has(&flags::NO_USER)?;
 
-        Ok(Self { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
+        Ok(Self { time_types, git, subdir_git_repos, octal, blocks, group, inode, links, permissions, filesize, user })
     }
 }
 

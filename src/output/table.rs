@@ -39,6 +39,7 @@ pub struct Columns {
     pub blocks: bool,
     pub group: bool,
     pub git: bool,
+    pub subdir_git_repos: bool,
     pub octal: bool,
 
     // Defaults to true:
