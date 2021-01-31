@@ -104,6 +104,10 @@ impl Columns {
             columns.push(Column::GitStatus);
         }
 
+        if self.subdir_git_repos {
+            columns.push(Column::SubdirGitRepoStatus);
+        }
+
         columns
     }
 }
@@ -121,6 +125,7 @@ pub enum Column {
     HardLinks,
     Inode,
     GitStatus,
+    SubdirGitRepoStatus,
     Octal,
 }
 
@@ -159,6 +164,7 @@ impl Column {
             Self::HardLinks     => "Links",
             Self::Inode         => "inode",
             Self::GitStatus     => "Git",
+            Self::SubdirGitRepoStatus => "Repo",
             Self::Octal         => "Octal",
         }
     }
@@ -401,6 +407,9 @@ impl<'a, 'f> Table<'a> {
             Column::GitStatus => {
                 self.git_status(file).render(self.theme)
             }
+            Column::SubdirGitRepoStatus => {
+                self.subdir_git_repo_status(file).render(self.theme)
+            }
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)
             }
@@ -426,6 +435,15 @@ impl<'a, 'f> Table<'a> {
         self.git
             .map(|g| g.get(&file.path, file.is_directory()))
             .unwrap_or_default()
+    }
+
+    fn subdir_git_repo_status(&self, file: &File<'_>) -> f::SubdirGitRepo {
+        debug!("Getting subdir repo status for path {:?}", file.path);
+
+        if file.is_directory(){
+            return f::SubdirGitRepo::from_path(&file.path);
+        }
+        f::SubdirGitRepo {status : f::SubdirGitRepoStatus::NotDir}
     }
 
     pub fn render(&self, row: Row) -> TextCell {
