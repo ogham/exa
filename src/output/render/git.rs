@@ -16,6 +16,18 @@ impl f::Git {
     }
 }
 
+impl f::SubdirGitRepo {
+    pub fn render(self, colours: &dyn Colours) -> TextCell {
+        let style = ansi_term::Style::new();
+            match self.status{
+                f::SubdirGitRepoStatus::NotDir => (),
+                f::SubdirGitRepoStatus::NotRepo => (),
+                f::SubdirGitRepoStatus::GitClean => return TextCell::paint_str(style.bold().fg(ansi_term::Color::Green), "V"),
+                f::SubdirGitRepoStatus::GitDirty => return TextCell::paint_str(style.bold().fg(ansi_term::Color::Red), "X"),
+            }
+        TextCell::blank(style)
+        }
+}
 
 impl f::GitStatus {
     fn render(self, colours: &dyn Colours) -> ANSIString<'static> {
