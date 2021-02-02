@@ -1,4 +1,4 @@
-use ansi_term::{ANSIString, Style};
+use ansi_term::{ANSIString, Style, Color};
 
 use crate::output::cell::{TextCell, DisplayWidth};
 use crate::fs::fields as f;
@@ -18,15 +18,26 @@ impl f::Git {
 
 impl f::SubdirGitRepo {
     pub fn render(self) -> TextCell {
-        let style = ansi_term::Style::new();
-            match self.status{
-                f::SubdirGitRepoStatus::NotDir => (),
-                f::SubdirGitRepoStatus::NotRepo => (),
-                f::SubdirGitRepoStatus::GitClean => return TextCell::paint_str(style.bold().fg(ansi_term::Color::Green), "V"),
-                f::SubdirGitRepoStatus::GitDirty => return TextCell::paint_str(style.bold().fg(ansi_term::Color::Red), "X"),
-            }
-        TextCell::blank(style)
+        let style = Style::new();
+        let branch_style = match self.branch.as_deref(){
+            Some("master") => style.fg(Color::Green),
+            Some(_) => style.fg(Color::Fixed(208)),
+            _ => style,
+        };
+        
+        let branch = branch_style.paint(self.branch.unwrap_or(String::from("-")));
+
+        let s = match self.status {
+            f::SubdirGitRepoStatus::NoRepo => style.paint("- "),
+            f::SubdirGitRepoStatus::GitClean => style.bold().fg(Color::Green).paint("V "),
+            f::SubdirGitRepoStatus::GitDirty => style.bold().fg(Color::Red).paint("X "),
+        };
+
+        TextCell {
+            width: DisplayWidth::from(2 + branch.len()),
+            contents: vec![s,branch].into(),
         }
+    }
 }
 
 impl f::GitStatus {

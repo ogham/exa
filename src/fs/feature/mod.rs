@@ -33,7 +33,7 @@ pub mod git {
 
     impl f::SubdirGitRepo{
         pub fn from_path(_dir : &Path) -> Self{
-            Self{status : f::SubdirGitRepoStatus::NotRepo}
+            panic!("Tried to get subdir Git status, but Git support is disabled")
         }
     }
 }

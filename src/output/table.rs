@@ -443,7 +443,7 @@ impl<'a, 'f> Table<'a> {
         if file.is_directory(){
             return f::SubdirGitRepo::from_path(&file.path);
         }
-        f::SubdirGitRepo {status : f::SubdirGitRepoStatus::NotDir}
+        f::SubdirGitRepo::default()
     }
 
     pub fn render(&self, row: Row) -> TextCell {
