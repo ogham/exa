@@ -115,6 +115,12 @@ On Arch, install the [`exa`](https://www.archlinux.org/packages/community/x86_64
 
     $ pacman -S exa
 
+### Android / Termux
+
+On Android / Termux, install the [`exa`](https://github.com/termux/termux-packages/tree/master/packages/exa) package.
+
+    $ pkg install exa
+
 ### Debian
 
 On Debian, install the [`exa`](https://packages.debian.org/unstable/exa) package.
