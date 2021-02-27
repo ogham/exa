@@ -66,7 +66,7 @@ lazy_static! {
         m.insert("bin", '\u{e5fc}'); // 
         m.insert("config", '\u{e5fc}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
-        m.insert("dockerfile", '\u{f308}'); // 
+        m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
         m.insert("gradle", '\u{e70e}'); // 

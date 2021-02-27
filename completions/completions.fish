@@ -15,6 +15,7 @@ complete -c exa        -l 'colour'       -d "When to use terminal colours"
 complete -c exa        -l 'color-scale'  -d "Highlight levels of file sizes distinctly"
 complete -c exa        -l 'colour-scale' -d "Highlight levels of file sizes distinctly"
 complete -c exa        -l 'icons'        -d "Display icons"
+complete -c exa        -l 'no-icons'     -d "Don't display icons"
 
 # Filtering and sorting options
 complete -c exa -l 'group-directories-first' -d "Sort directories before other files"
