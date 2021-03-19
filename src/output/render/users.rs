@@ -3,13 +3,15 @@ use users::Users;
 
 use crate::fs::fields as f;
 use crate::output::cell::TextCell;
+use crate::output::table::UserFormat;
 
 
 impl f::User {
-    pub fn render<C: Colours, U: Users>(self, colours: &C, users: &U) -> TextCell {
-        let user_name = match users.get_user_by_uid(self.0) {
-            Some(user)  => user.name().to_string_lossy().into(),
-            None        => self.0.to_string(),
+    pub fn render<C: Colours, U: Users>(self, colours: &C, users: &U, format: UserFormat) -> TextCell {
+        let user_name = match (format, users.get_user_by_uid(self.0)) {
+            (_, None)                      => self.0.to_string(),
+            (UserFormat::Numeric, _)       => self.0.to_string(),
+            (UserFormat::Name, Some(user)) => user.name().to_string_lossy().into(),
         };
 
         let style = if users.get_current_uid() == self.0 { colours.you() }
@@ -31,6 +33,7 @@ pub mod test {
     use super::Colours;
     use crate::fs::fields as f;
     use crate::output::cell::TextCell;
+    use crate::output::table::UserFormat;
 
     use users::User;
     use users::mock::MockUsers;
@@ -53,7 +56,10 @@ pub mod test {
 
         let user = f::User(1000);
         let expected = TextCell::paint_str(Red.bold(), "enoch");
-        assert_eq!(expected, user.render(&TestColours, &users))
+        assert_eq!(expected, user.render(&TestColours, &users, UserFormat::Name));
+
+        let expected = TextCell::paint_str(Red.bold(), "1000");
+        assert_eq!(expected, user.render(&TestColours, &users, UserFormat::Numeric));
     }
 
     #[test]
@@ -62,7 +68,8 @@ pub mod test {
 
         let user = f::User(1000);
         let expected = TextCell::paint_str(Red.bold(), "1000");
-        assert_eq!(expected, user.render(&TestColours, &users));
+        assert_eq!(expected, user.render(&TestColours, &users, UserFormat::Name));
+        assert_eq!(expected, user.render(&TestColours, &users, UserFormat::Numeric));
     }
 
     #[test]
@@ -72,20 +79,20 @@ pub mod test {
 
         let user = f::User(1000);
         let expected = TextCell::paint_str(Blue.underline(), "enoch");
-        assert_eq!(expected, user.render(&TestColours, &users));
+        assert_eq!(expected, user.render(&TestColours, &users, UserFormat::Name));
     }
 
     #[test]
     fn different_unnamed() {
         let user = f::User(1000);
         let expected = TextCell::paint_str(Blue.underline(), "1000");
-        assert_eq!(expected, user.render(&TestColours, &MockUsers::with_current_uid(0)));
+        assert_eq!(expected, user.render(&TestColours, &MockUsers::with_current_uid(0), UserFormat::Numeric));
     }
 
     #[test]
     fn overflow() {
         let user = f::User(2_147_483_648);
         let expected = TextCell::paint_str(Blue.underline(), "2147483648");
-        assert_eq!(expected, user.render(&TestColours, &MockUsers::with_current_uid(0)));
+        assert_eq!(expected, user.render(&TestColours, &MockUsers::with_current_uid(0), UserFormat::Numeric));
     }
 }
