@@ -39,28 +39,28 @@ FILTERING AND SORTING OPTIONS
                              date, time, old, and new all refer to modified.
 
 LONG VIEW OPTIONS
-  -b, --binary         list file sizes with binary prefixes
-  -B, --bytes          list file sizes in bytes, without any prefixes
-  -g, --group          list each file's group
-  -h, --header         add a header row to each column
-  -H, --links          list each file's number of hard links
-  -i, --inode          list each file's inode number
-  -m, --modified       use the modified timestamp field
-  -n, --numeric-uid-gid list numeric user and group IDs
-  -S, --blocks         show number of file system blocks
-  -t, --time FIELD     which timestamp field to list (modified, accessed, created)
-  -u, --accessed       use the accessed timestamp field
-  -U, --created        use the created timestamp field
-  --changed            use the changed timestamp field
-  --time-style         how to format timestamps (default, iso, long-iso, full-iso)
-  --no-permissions     suppress the permissions field
-  --octal-permissions  list each file's permission in octal format
-  --no-filesize        suppress the filesize field
-  --no-user            suppress the user field
-  --no-time            suppress the time field"##;
+  -b, --binary           list file sizes with binary prefixes
+  -B, --bytes            list file sizes in bytes, without any prefixes
+  -g, --group            list each file's group
+  -h, --header           add a header row to each column
+  -H, --links            list each file's number of hard links
+  -i, --inode            list each file's inode number
+  -m, --modified         use the modified timestamp field
+  -n, --numeric-uid-gid  list numeric user and group IDs
+  -S, --blocks           show number of file system blocks
+  -t, --time FIELD       which timestamp field to list (modified, accessed, created)
+  -u, --accessed         use the accessed timestamp field
+  -U, --created          use the created timestamp field
+  --changed              use the changed timestamp field
+  --time-style           how to format timestamps (default, iso, long-iso, full-iso)
+  --no-permissions       suppress the permissions field
+  --octal-permissions    list each file's permission in octal format
+  --no-filesize          suppress the filesize field
+  --no-user              suppress the user field
+  --no-time              suppress the time field"##;
 
-static GIT_HELP:      &str = r##"  --git                list each file's Git status, if tracked or ignored"##;
-static EXTENDED_HELP: &str = r##"  -@, --extended       list each file's extended attributes and sizes"##;
+static GIT_HELP:      &str = r##"  --git                  list each file's Git status, if tracked or ignored"##;
+static EXTENDED_HELP: &str = r##"  -@, --extended         list each file's extended attributes and sizes"##;
 
 
 /// All the information needed to display the help text, which depends

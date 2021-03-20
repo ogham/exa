@@ -266,12 +266,12 @@ impl TimeFormat {
     }
 }
 
+
 impl UserFormat {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let flag = matches.has(&flags::NUM_UGID)?;
         Ok(if flag { Self::Numeric } else { Self::Name })
     }
-
 }
 
 
