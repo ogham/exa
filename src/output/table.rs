@@ -298,10 +298,9 @@ fn determine_time_zone() -> TZResult<TimeZone> {
             } else {
                 format!("/usr/share/zoneinfo/{}", {
                     if file.starts_with(":") {
-                        // Unwrap is panic-free here because we've checked if file starts with colon
-                        file.strip_prefix(":").unwrap()
+                        file.replace(":", "")
                     } else {
-                        file.as_str()
+                        file
                     }
                 })
             }
