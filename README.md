@@ -82,6 +82,7 @@ These options are available when running with `--long` (`-l`):
 - **--git**: list each file’s Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
 - **--no-permissions**: suppress the permissions field
+- **--octal-permissions**: list each file's permission in octal format
 - **--no-filesize**: suppress the filesize field
 - **--no-user**: suppress the user field
 - **--no-time**: suppress the time field
