@@ -298,7 +298,7 @@ fn determine_time_zone() -> TZResult<TimeZone> {
             } else {
                 format!("/usr/share/zoneinfo/{}", {
                     if file.starts_with(":") {
-                        file.replace(":", "")
+                        file.replacen(":", "", 1)
                     } else {
                         file
                     }
