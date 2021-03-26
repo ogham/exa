@@ -239,9 +239,11 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     fn classify_char(&self) -> Option<&'static str> {
         if self.file.is_directory() {
             Some("/")
-        } else if self.file.is_link() {
+        }
+        else if self.file.is_link() {
             Some("@")
-        } else {
+        }
+        else {
             None
         }
     }

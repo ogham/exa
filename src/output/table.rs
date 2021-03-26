@@ -468,6 +468,7 @@ impl<'a, 'f> Table<'a> {
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)
             }
+
             Column::Timestamp(TimeType::Modified)  => {
                 file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
