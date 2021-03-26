@@ -380,6 +380,7 @@ pub enum GitIgnore {
 // > .gitignore, .git/info/exclude and even your global gitignore globs,
 // > usually found in $XDG_CONFIG_HOME/git/ignore.
 
+
 #[cfg(test)]
 mod test_ignores {
     use super::*;

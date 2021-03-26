@@ -20,6 +20,7 @@ use crate::fs::fields as f;
 /// information queried at least once, so it makes sense to do all this at the
 /// start and hold on to all the information.
 pub struct File<'dir> {
+
     /// The filename portion of this file’s path, including the extension.
     ///
     /// This is used to compare against certain filenames (such as checking if
@@ -75,7 +76,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata   = std::fs::symlink_metadata(&path)?;
+        let metadata  = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
         Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
@@ -208,6 +209,7 @@ impl<'dir> File<'dir> {
     pub fn is_socket(&self) -> bool {
         self.metadata.file_type().is_socket()
     }
+
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever

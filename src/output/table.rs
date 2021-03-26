@@ -31,6 +31,7 @@ pub struct Options {
 /// Extra columns to display in the table.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Columns {
+
     /// At least one of these timestamps will be shown.
     pub time_types: TimeTypes,
 
@@ -49,7 +50,6 @@ pub struct Columns {
 }
 
 impl Columns {
-
     pub fn collect(&self, actually_enable_git: bool) -> Vec<Column> {
         let mut columns = Vec::with_capacity(4);
 
@@ -252,6 +252,7 @@ impl TimeType {
         }
     }
 }
+
 
 /// Fields for which of a file’s time fields should be displayed in the
 /// columns output.
