@@ -49,6 +49,7 @@ pub struct Columns {
 }
 
 impl Columns {
+
     pub fn collect(&self, actually_enable_git: bool) -> Vec<Column> {
         let mut columns = Vec::with_capacity(4);
 
@@ -118,6 +119,7 @@ impl Columns {
     }
 }
 
+
 /// A table contains these.
 #[derive(Debug, Copy, Clone)]
 pub enum Column {
@@ -149,6 +151,7 @@ pub enum Alignment {
 }
 
 impl Column {
+
     /// Get the alignment this column should use.
     #[cfg(unix)]
     pub fn alignment(self) -> Alignment {
@@ -195,9 +198,11 @@ impl Column {
     }
 }
 
+
 /// Formatting options for file sizes.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
+
     /// Format the file size using **decimal** prefixes, such as “kilo”,
     /// “mega”, or “giga”.
     DecimalBytes,
@@ -215,6 +220,7 @@ impl Default for SizeFormat {
         Self::DecimalBytes
     }
 }
+
 
 /// The types of a file’s time fields. These three fields are standard
 /// across most (all?) operating systems.
@@ -235,6 +241,7 @@ pub enum TimeType {
 }
 
 impl TimeType {
+
     /// Returns the text to use for a column’s heading in the columns output.
     pub fn header(self) -> &'static str {
         match self {
@@ -255,12 +262,13 @@ impl TimeType {
 #[allow(clippy::struct_excessive_bools)]
 pub struct TimeTypes {
     pub modified: bool,
-    pub changed: bool,
+    pub changed:  bool,
     pub accessed: bool,
-    pub created: bool,
+    pub created:  bool,
 }
 
 impl Default for TimeTypes {
+
     /// By default, display just the ‘modified’ time. This is the most
     /// common option, which is why it has this shorthand.
     fn default() -> Self {
@@ -273,11 +281,13 @@ impl Default for TimeTypes {
     }
 }
 
+
 /// The **environment** struct contains any data that could change between
 /// running instances of exa, depending on the user’s computer’s configuration.
 ///
 /// Any environment field should be able to be mocked up for test runs.
 pub struct Environment {
+
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
 
@@ -329,6 +339,7 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 lazy_static! {
     static ref ENVIRONMENT: Environment = Environment::load_all();
 }
+
 
 pub struct Table<'a> {
     columns: Vec<Column>,
@@ -487,6 +498,7 @@ impl<'a, 'f> Table<'a> {
         cell
     }
 }
+
 
 pub struct TableWidths(Vec<usize>);
 

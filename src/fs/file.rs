@@ -71,21 +71,14 @@ impl<'dir> File<'dir> {
           FN: Into<Option<String>>
     {
         let parent_dir = parent_dir.into();
-        let name = filename.into().unwrap_or_else(|| File::filename(&path));
-        let ext = File::ext(&path);
+        let name       = filename.into().unwrap_or_else(|| File::filename(&path));
+        let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata = std::fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
-        Ok(File {
-            path,
-            parent_dir,
-            metadata,
-            ext,
-            name,
-            is_all_all,
-        })
+        Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -93,7 +86,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata = std::fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
@@ -116,12 +109,9 @@ impl<'dir> File<'dir> {
     /// use the last component as the name.
     pub fn filename(path: &Path) -> String {
         if let Some(back) = path.components().next_back() {
-            let name = back.as_os_str().to_string_lossy().to_string();
-            #[cfg(unix)]
-            return name;
-            #[cfg(windows)]
-            return name;
-        } else {
+            back.as_os_str().to_string_lossy().to_string()
+        }
+        else {
             // use the path as fallback
             error!("Path {:?} has no last component", path);
             path.display().to_string()
@@ -225,11 +215,14 @@ impl<'dir> File<'dir> {
     fn reorient_target_path(&self, path: &Path) -> PathBuf {
         if path.is_absolute() {
             path.to_path_buf()
-        } else if let Some(dir) = self.parent_dir {
+        }
+        else if let Some(dir) = self.parent_dir {
             dir.join(&*path)
-        } else if let Some(parent) = self.path.parent() {
+        }
+        else if let Some(parent) = self.path.parent() {
             parent.join(&*path)
-        } else {
+        }
+        else {
             self.path.join(&*path)
         }
     }
@@ -245,14 +238,15 @@ impl<'dir> File<'dir> {
     /// existed. If this file cannot be read at all, returns the error that
     /// we got when we tried to read it.
     pub fn link_target(&self) -> FileTarget<'dir> {
+
         // We need to be careful to treat the path actually pointed to by
         // this file — which could be absolute or relative — to the path
         // we actually look up and turn into a `File` — which needs to be
         // absolute to be accessible from any directory.
         debug!("Reading link {:?}", &self.path);
         let path = match std::fs::read_link(&self.path) {
-            Ok(p) => p,
-            Err(e) => return FileTarget::Err(e),
+            Ok(p)   => p,
+            Err(e)  => return FileTarget::Err(e),
         };
 
         let absolute_path = self.reorient_target_path(&path);
@@ -261,7 +255,7 @@ impl<'dir> File<'dir> {
         // follow links.
         match std::fs::metadata(&absolute_path) {
             Ok(metadata) => {
-                let ext = File::ext(&path);
+                let ext  = File::ext(&path);
                 let name = File::filename(&path);
                 let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
                 FileTarget::Ok(Box::new(file))
@@ -303,7 +297,8 @@ impl<'dir> File<'dir> {
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
             f::Blocks::Some(self.metadata.blocks())
-        } else {
+        }
+        else {
             f::Blocks::None
         }
     }
@@ -330,19 +325,19 @@ impl<'dir> File<'dir> {
     /// usually just have a file size of zero.
     pub fn size(&self) -> f::Size {
         if self.is_directory() {
-            return f::Size::None;
-        };
-        #[cfg(unix)]
-        {
-            if self.is_char_device() || self.is_block_device() {
-                let dev = self.metadata.rdev();
-                return f::Size::DeviceIDs(f::DeviceIDs {
-                    major: (dev / 256) as u8,
-                    minor: (dev % 256) as u8,
-                });
-            };
+            f::Size::None
         }
-        return f::Size::Some(self.metadata.len());
+        #[cfg(unix)]
+        else if self.is_char_device() || self.is_block_device() {
+            let dev = self.metadata.rdev();
+            f::Size::DeviceIDs(f::DeviceIDs {
+                major: (dev / 256) as u8,
+                minor: (dev % 256) as u8,
+            })
+        }
+        else {
+            f::Size::Some(self.metadata.len())
+        }
     }
 
     /// This file’s last modified timestamp, if available on this platform.
@@ -389,9 +384,11 @@ impl<'dir> File<'dir> {
     pub fn type_char(&self) -> f::Type {
         if self.is_file() {
             f::Type::File
-        } else if self.is_directory() {
+        }
+        else if self.is_directory() {
             f::Type::Directory
-        } else {
+        }
+        else {
             f::Type::Special
         }
     }
@@ -399,19 +396,26 @@ impl<'dir> File<'dir> {
     pub fn type_char(&self) -> f::Type {
         if self.is_file() {
             f::Type::File
-        } else if self.is_directory() {
+        }
+        else if self.is_directory() {
             f::Type::Directory
-        } else if self.is_pipe() {
+        }
+        else if self.is_pipe() {
             f::Type::Pipe
-        } else if self.is_link() {
+        }
+        else if self.is_link() {
             f::Type::Link
-        } else if self.is_char_device() {
+        }
+        else if self.is_char_device() {
             f::Type::CharDevice
-        } else if self.is_block_device() {
+        }
+        else if self.is_block_device() {
             f::Type::BlockDevice
-        } else if self.is_socket() {
+        }
+        else if self.is_socket() {
             f::Type::Socket
-        } else {
+        }
+        else {
             f::Type::Special
         }
     }
@@ -423,21 +427,21 @@ impl<'dir> File<'dir> {
         let has_bit = |bit| bits & bit == bit;
 
         f::Permissions {
-            user_read: has_bit(modes::USER_READ),
-            user_write: has_bit(modes::USER_WRITE),
-            user_execute: has_bit(modes::USER_EXECUTE),
+            user_read:      has_bit(modes::USER_READ),
+            user_write:     has_bit(modes::USER_WRITE),
+            user_execute:   has_bit(modes::USER_EXECUTE),
 
-            group_read: has_bit(modes::GROUP_READ),
-            group_write: has_bit(modes::GROUP_WRITE),
-            group_execute: has_bit(modes::GROUP_EXECUTE),
+            group_read:     has_bit(modes::GROUP_READ),
+            group_write:    has_bit(modes::GROUP_WRITE),
+            group_execute:  has_bit(modes::GROUP_EXECUTE),
 
-            other_read: has_bit(modes::OTHER_READ),
-            other_write: has_bit(modes::OTHER_WRITE),
-            other_execute: has_bit(modes::OTHER_EXECUTE),
+            other_read:     has_bit(modes::OTHER_READ),
+            other_write:    has_bit(modes::OTHER_WRITE),
+            other_execute:  has_bit(modes::OTHER_EXECUTE),
 
-            sticky: has_bit(modes::STICKY),
-            setgid: has_bit(modes::SETGID),
-            setuid: has_bit(modes::SETUID),
+            sticky:         has_bit(modes::STICKY),
+            setgid:         has_bit(modes::SETGID),
+            setuid:         has_bit(modes::SETUID),
         }
     }
 
@@ -458,14 +462,17 @@ impl<'dir> File<'dir> {
     }
 }
 
+
 impl<'a> AsRef<File<'a>> for File<'a> {
     fn as_ref(&self) -> &File<'a> {
         self
     }
 }
 
+
 /// The result of following a symlink.
 pub enum FileTarget<'dir> {
+
     /// The symlink pointed at a file that exists.
     Ok(Box<File<'dir>>),
 
@@ -484,12 +491,14 @@ pub enum FileTarget<'dir> {
 }
 
 impl<'dir> FileTarget<'dir> {
+
     /// Whether this link doesn’t lead to a file, for whatever reason. This
     /// gets used to determine how to highlight the link in grid views.
     pub fn is_broken(&self) -> bool {
         matches!(self, Self::Broken(_) | Self::Err(_))
     }
 }
+
 
 /// More readable aliases for the permission bits exposed by libc.
 #[allow(trivial_numeric_casts)]
@@ -500,22 +509,23 @@ mod modes {
     // from `metadata.permissions().mode()` is always `u32`.
     pub type Mode = u32;
 
-    pub const USER_READ: Mode = libc::S_IRUSR as Mode;
-    pub const USER_WRITE: Mode = libc::S_IWUSR as Mode;
-    pub const USER_EXECUTE: Mode = libc::S_IXUSR as Mode;
+    pub const USER_READ: Mode     = libc::S_IRUSR as Mode;
+    pub const USER_WRITE: Mode    = libc::S_IWUSR as Mode;
+    pub const USER_EXECUTE: Mode  = libc::S_IXUSR as Mode;
 
-    pub const GROUP_READ: Mode = libc::S_IRGRP as Mode;
-    pub const GROUP_WRITE: Mode = libc::S_IWGRP as Mode;
+    pub const GROUP_READ: Mode    = libc::S_IRGRP as Mode;
+    pub const GROUP_WRITE: Mode   = libc::S_IWGRP as Mode;
     pub const GROUP_EXECUTE: Mode = libc::S_IXGRP as Mode;
 
-    pub const OTHER_READ: Mode = libc::S_IROTH as Mode;
-    pub const OTHER_WRITE: Mode = libc::S_IWOTH as Mode;
+    pub const OTHER_READ: Mode    = libc::S_IROTH as Mode;
+    pub const OTHER_WRITE: Mode   = libc::S_IWOTH as Mode;
     pub const OTHER_EXECUTE: Mode = libc::S_IXOTH as Mode;
 
-    pub const STICKY: Mode = libc::S_ISVTX as Mode;
-    pub const SETGID: Mode = libc::S_ISGID as Mode;
-    pub const SETUID: Mode = libc::S_ISUID as Mode;
+    pub const STICKY: Mode        = libc::S_ISVTX as Mode;
+    pub const SETGID: Mode        = libc::S_ISGID as Mode;
+    pub const SETUID: Mode        = libc::S_ISUID as Mode;
 }
+
 
 #[cfg(test)]
 mod ext_test {
@@ -537,6 +547,7 @@ mod ext_test {
         assert_eq!(None, File::ext(Path::new("jarlsberg")))
     }
 }
+
 
 #[cfg(test)]
 mod filename_test {
