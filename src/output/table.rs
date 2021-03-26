@@ -92,22 +92,18 @@ impl Columns {
         }
 
         if self.time_types.modified {
-            #[cfg(unix)]
             columns.push(Column::Timestamp(TimeType::Modified));
         }
 
         if self.time_types.changed {
-            #[cfg(unix)]
             columns.push(Column::Timestamp(TimeType::Changed));
         }
 
         if self.time_types.created {
-            #[cfg(unix)]
             columns.push(Column::Timestamp(TimeType::Created));
         }
 
         if self.time_types.accessed {
-            #[cfg(unix)]
             columns.push(Column::Timestamp(TimeType::Accessed));
         }
 
@@ -125,7 +121,6 @@ impl Columns {
 pub enum Column {
     Permissions,
     FileSize,
-    #[cfg(unix)]
     Timestamp(TimeType),
     #[cfg(unix)]
     Blocks,
@@ -179,7 +174,6 @@ impl Column {
         match self {
             Self::Permissions   => "Permissions",
             Self::FileSize      => "Size",
-            #[cfg(unix)]
             Self::Timestamp(t)  => t.header(),
             #[cfg(unix)]
             Self::Blocks        => "Blocks",
@@ -328,6 +322,7 @@ impl Environment {
     }
 }
 
+#[cfg(unix)]
 fn determine_time_zone() -> TZResult<TimeZone> {
     if let Ok(file) = env::var("TZ") {
         TimeZone::from_file(format!("/usr/share/zoneinfo/{}", file))
@@ -335,6 +330,31 @@ fn determine_time_zone() -> TZResult<TimeZone> {
     else {
         TimeZone::from_file("/etc/localtime")
     }
+}
+
+#[cfg(windows)]
+fn determine_time_zone() -> TZResult<TimeZone> {
+    use datetime::zone::{FixedTimespan, FixedTimespanSet, StaticTimeZone, TimeZoneSource};
+    use std::borrow::Cow;
+
+    Ok(TimeZone(TimeZoneSource::Static(&StaticTimeZone {
+        name: "Unsupported",
+        fixed_timespans: FixedTimespanSet {
+            first: FixedTimespan {
+                offset: 0,
+                is_dst: false,
+                name: Cow::Borrowed("ZONE_A"),
+            },
+            rest: &[(
+                1206838800,
+                FixedTimespan {
+                    offset: 3600,
+                    is_dst: false,
+                    name: Cow::Borrowed("ZONE_B"),
+                },
+            )],
+        },
+    })))
 }
 
 lazy_static! {
@@ -449,20 +469,15 @@ impl<'a, 'f> Table<'a> {
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)
             }
-
-            #[cfg(unix)]
             Column::Timestamp(TimeType::Modified)  => {
                 file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            #[cfg(unix)]
             Column::Timestamp(TimeType::Changed)   => {
                 file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            #[cfg(unix)]
             Column::Timestamp(TimeType::Created)   => {
                 file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            #[cfg(unix)]
             Column::Timestamp(TimeType::Accessed)  => {
                 file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
