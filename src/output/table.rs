@@ -166,7 +166,6 @@ impl Column {
             _ => Alignment::Left,
         }
     }
-    #[cfg(windows)]
 
     /// Get the text that should be printed at the top, when the user elects
     /// to have a header row printed.

@@ -41,9 +41,6 @@ zoneinfo_compiled = "0.5"
 [target.'cfg(unix)'.dependencies]
 users = "0.11"
 
-[target.'cfg(windows)'.dependencies]
-os_str_bytes = "3.0"
-
 [dependencies.git2]
 version = "0.13"
 optional = true
