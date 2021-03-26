@@ -72,6 +72,7 @@ dependencies = [
  "natord",
  "num_cpus",
  "number_prefix",
+ "os_str_bytes",
  "scoped_threadpool",
  "term_grid",
  "term_size",
@@ -267,6 +268,12 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
+
+[[package]]
+name = "os_str_bytes"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e293568965aea261bdf010db17df7030e3c9a275c415d51d6112f7cf9b7af012"
 
 [[package]]
 name = "pad"

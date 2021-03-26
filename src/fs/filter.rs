@@ -2,6 +2,7 @@
 
 use std::cmp::Ordering;
 use std::iter::FromIterator;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
@@ -25,7 +26,6 @@ use crate::fs::File;
 /// performing the comparison.
 #[derive(PartialEq, Debug, Clone)]
 pub struct FileFilter {
-
     /// Whether directories should be listed first, and other types of file
     /// second. Some users prefer it like this.
     pub list_dirs_first: bool,
@@ -137,11 +137,9 @@ impl FileFilter {
     }
 }
 
-
 /// User-supplied field to sort by.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortField {
-
     /// Don’t apply any sorting. This is usually used as an optimisation in
     /// scripts, where the order doesn’t matter.
     Unsorted,
@@ -157,6 +155,7 @@ pub enum SortField {
 
     /// The file’s inode, which usually corresponds to the order in which
     /// files were created on the filesystem, more or less.
+    #[cfg(unix)]
     FileInode,
 
     /// The time the file was modified (the “mtime”).
@@ -183,6 +182,7 @@ pub enum SortField {
     ///
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
+    #[cfg(unix)]
     ChangedDate,
 
     /// The time the file was created (the “btime” or “birthtime”).
@@ -221,7 +221,6 @@ pub enum SortField {
 /// effects they have.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SortCase {
-
     /// Sort files case-sensitively with uppercase first, with ‘A’ coming
     /// before ‘a’.
     ABCabc,
@@ -231,7 +230,6 @@ pub enum SortCase {
 }
 
 impl SortField {
-
     /// Compares two files to determine the order they should be listed in,
     /// depending on the search field.
     ///
@@ -250,9 +248,11 @@ impl SortField {
             Self::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
             Self::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            #[cfg(unix)]
             Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
             Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
             Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
+            #[cfg(unix)]
             Self::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
             Self::CreatedDate   => a.created_time().cmp(&b.created_time()),
             Self::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
@@ -289,7 +289,6 @@ impl SortField {
     }
 }
 
-
 /// The **ignore patterns** are a list of globs that are tested against
 /// each filename, and if any of them match, that file isn’t displayed.
 /// This lets a user hide, say, text files by ignoring `*.txt`.
@@ -309,7 +308,6 @@ impl FromIterator<glob::Pattern> for IgnorePatterns {
 }
 
 impl IgnorePatterns {
-
     /// Create a new list from the input glob strings, turning the inputs that
     /// are valid glob patterns into an `IgnorePatterns`. The inputs that
     /// don’t parse correctly are returned separately.
@@ -319,8 +317,8 @@ impl IgnorePatterns {
         // Almost all glob patterns are valid, so it’s worth pre-allocating
         // the vector with enough space for all of them.
         let mut patterns = match iter.size_hint() {
-            (_, Some(count))  => Vec::with_capacity(count),
-             _                => Vec::new(),
+            (_, Some(count)) => Vec::with_capacity(count),
+            _ => Vec::new(),
         };
 
         // Similarly, assume there won’t be any errors.
@@ -329,7 +327,7 @@ impl IgnorePatterns {
         for input in iter {
             match glob::Pattern::new(input) {
                 Ok(pat) => patterns.push(pat),
-                Err(e)  => errors.push(e),
+                Err(e) => errors.push(e),
             }
         }
 
@@ -355,11 +353,9 @@ impl IgnorePatterns {
     // isn’t probably means it’s in the wrong place
 }
 
-
 /// Whether to ignore or display files that are mentioned in `.gitignore` files.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum GitIgnore {
-
     /// Ignore files that Git would ignore. This means doing a check for a
     /// `.gitignore` file, possibly recursively up the filesystem tree.
     CheckAndIgnore,
@@ -375,7 +371,6 @@ pub enum GitIgnore {
 // > .gitignore, .git/info/exclude and even your global gitignore globs,
 // > usually found in $XDG_CONFIG_HOME/git/ignore.
 
-
 #[cfg(test)]
 mod test_ignores {
     use super::*;
@@ -389,23 +384,23 @@ mod test_ignores {
 
     #[test]
     fn ignores_a_glob() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "*.mp3" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["*.mp3"]);
         assert!(fails.is_empty());
         assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(true,  pats.is_ignored("test.mp3"));
+        assert_eq!(true, pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_an_exact_filename() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["nothing"]);
         assert!(fails.is_empty());
-        assert_eq!(true,  pats.is_ignored("nothing"));
+        assert_eq!(true, pats.is_ignored("nothing"));
         assert_eq!(false, pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_both() {
-        let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3" ]);
+        let (pats, fails) = IgnorePatterns::parse_from_iter(vec!["nothing", "*.mp3"]);
         assert!(fails.is_empty());
         assert_eq!(true, pats.is_ignored("nothing"));
         assert_eq!(true, pats.is_ignored("test.mp3"));

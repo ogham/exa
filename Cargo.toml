@@ -36,8 +36,13 @@ scoped_threadpool = "0.1"
 term_grid = "0.1"
 term_size = "0.3"
 unicode-width = "0.1"
-users = "0.11"
 zoneinfo_compiled = "0.5"
+
+[target.'cfg(unix)'.dependencies]
+users = "0.11"
+
+[target.'cfg(windows)'.dependencies]
+os_str_bytes = "3.0"
 
 [dependencies.git2]
 version = "0.13"

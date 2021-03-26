@@ -229,6 +229,7 @@ impl render::GitColours for Theme {
     fn conflicted(&self)    -> Style { self.ui.git.conflicted }
 }
 
+#[cfg(unix)]
 impl render::GroupColours for Theme {
     fn yours(&self)      -> Style { self.ui.users.group_yours }
     fn not_yours(&self)  -> Style { self.ui.users.group_not_yours }
@@ -287,6 +288,7 @@ impl render::SizeColours for Theme {
     fn minor(&self)   -> Style { self.ui.size.minor }
 }
 
+#[cfg(unix)]
 impl render::UserColours for Theme {
     fn you(&self)           -> Style { self.ui.users.user_you }
     fn someone_else(&self)  -> Style { self.ui.users.user_someone_else }
