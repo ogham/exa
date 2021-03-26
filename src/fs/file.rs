@@ -76,7 +76,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata  = std::fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
         Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
@@ -98,7 +98,7 @@ impl<'dir> File<'dir> {
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);
-        let metadata = std::fs::symlink_metadata(&path)?;
+        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
@@ -326,10 +326,17 @@ impl<'dir> File<'dir> {
     /// Block and character devices return their device IDs, because they
     /// usually just have a file size of zero.
     pub fn size(&self) -> f::Size {
+        #[cfg(windows)]
         if self.is_directory() {
             f::Size::None
         }
+        else {
+            f::Size::Some(self.metadata.len())
+        }
         #[cfg(unix)]
+        if self.is_directory() {
+            f::Size::None
+        }
         else if self.is_char_device() || self.is_block_device() {
             let dev = self.metadata.rdev();
             f::Size::DeviceIDs(f::DeviceIDs {

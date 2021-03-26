@@ -59,11 +59,11 @@ impl Columns {
         }
 
         if self.octal {
+            #[cfg(unix)]
             columns.push(Column::Octal);
         }
 
         if self.permissions {
-            #[cfg(unix)]
             columns.push(Column::Permissions);
         }
 
@@ -123,7 +123,6 @@ impl Columns {
 /// A table contains these.
 #[derive(Debug, Copy, Clone)]
 pub enum Column {
-    #[cfg(unix)]
     Permissions,
     FileSize,
     #[cfg(unix)]
@@ -139,6 +138,7 @@ pub enum Column {
     #[cfg(unix)]
     Inode,
     GitStatus,
+    #[cfg(unix)]
     Octal,
 }
 
@@ -177,7 +177,6 @@ impl Column {
     /// to have a header row printed.
     pub fn header(self) -> &'static str {
         match self {
-            #[cfg(unix)]
             Self::Permissions   => "Permissions",
             Self::FileSize      => "Size",
             #[cfg(unix)]
@@ -193,6 +192,7 @@ impl Column {
             #[cfg(unix)]
             Self::Inode         => "inode",
             Self::GitStatus     => "Git",
+            #[cfg(unix)]
             Self::Octal         => "Octal",
         }
     }
@@ -407,6 +407,7 @@ impl<'a, 'f> Table<'a> {
         }
     }
 
+    #[cfg(unix)]
     fn octal_permissions(&self, file: &File<'_>) -> f::OctalPermissions {
         f::OctalPermissions {
             permissions: file.permissions(),
@@ -415,7 +416,6 @@ impl<'a, 'f> Table<'a> {
 
     fn display(&self, file: &File<'_>, column: Column, xattrs: bool) -> TextCell {
         match column {
-            #[cfg(unix)]
             Column::Permissions => {
                 self.permissions_plus(file, xattrs).render(self.theme)
             }
@@ -445,19 +445,24 @@ impl<'a, 'f> Table<'a> {
             Column::GitStatus => {
                 self.git_status(file).render(self.theme)
             }
+            #[cfg(unix)]
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)
             }
 
+            #[cfg(unix)]
             Column::Timestamp(TimeType::Modified)  => {
                 file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
+            #[cfg(unix)]
             Column::Timestamp(TimeType::Changed)   => {
                 file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
+            #[cfg(unix)]
             Column::Timestamp(TimeType::Created)   => {
                 file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
+            #[cfg(unix)]
             Column::Timestamp(TimeType::Accessed)  => {
                 file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
