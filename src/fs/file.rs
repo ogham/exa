@@ -594,10 +594,8 @@ mod filename_test {
     }
 
     #[test]
+    #[cfg(unix)]
     fn topmost() {
-        #[cfg(unix)]
         assert_eq!("/", File::filename(Path::new("/")));
-        #[cfg(windows)]
-        assert_eq!("C:\\", File::filename(Path::new("C:\\")));
     }
 }

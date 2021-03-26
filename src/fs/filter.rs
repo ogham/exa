@@ -185,7 +185,6 @@ pub enum SortField {
     ///
     /// In original Unix, this was, however, meant as creation time.
     /// https://www.bell-labs.com/usr/dmr/www/cacm.html
-    #[cfg(unix)]
     ChangedDate,
 
     /// The time the file was created (the “btime” or “birthtime”).
@@ -257,7 +256,6 @@ impl SortField {
             Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
             Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
             Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
-            #[cfg(unix)]
             Self::ChangedDate   => a.changed_time().cmp(&b.changed_time()),
             Self::CreatedDate   => a.created_time().cmp(&b.created_time()),
             Self::ModifiedAge   => b.modified_time().cmp(&a.modified_time()),  // flip b and a
