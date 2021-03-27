@@ -75,6 +75,7 @@ complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "
     full-iso\t'Display full ISO timestamps, up to the nanosecond'
 "
 complete -c exa        -l 'no-permissions' -d "Suppress the permissions field"
+complete -c exa        -l 'octal-permissions' -d "List each file's permission in octal format"
 complete -c exa        -l 'no-filesize'    -d "Suppress the filesize field"
 complete -c exa        -l 'no-user'        -d "Suppress the user field"
 complete -c exa        -l 'no-time'        -d "Suppress the time field"
