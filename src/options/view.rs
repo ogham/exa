@@ -354,7 +354,8 @@ mod test {
                                    &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE,
+                                   &flags::NUM_UGID ];
 
     macro_rules! test {
 
@@ -532,59 +533,61 @@ mod test {
 
 
         // Default
-        test!(empty:         Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
+        test!(empty:          Mode <- [], None;            Both => like Ok(Mode::Grid(_)));
 
         // Grid views
-        test!(original_g:    Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
-        test!(grid:          Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
-        test!(across:        Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
-        test!(gracross:      Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
+        test!(original_g:     Mode <- ["-G"], None;        Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(grid:           Mode <- ["--grid"], None;    Both => like Ok(Mode::Grid(GridOptions { across: false, .. })));
+        test!(across:         Mode <- ["--across"], None;  Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
+        test!(gracross:       Mode <- ["-xG"], None;       Both => like Ok(Mode::Grid(GridOptions { across: true,  .. })));
 
         // Lines views
-        test!(lines:         Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines));
-        test!(prima:         Mode <- ["-1"], None;            Both => like Ok(Mode::Lines));
+        test!(lines:          Mode <- ["--oneline"], None;     Both => like Ok(Mode::Lines));
+        test!(prima:          Mode <- ["-1"], None;            Both => like Ok(Mode::Lines));
 
         // Details views
-        test!(long:          Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
-        test!(ell:           Mode <- ["-l"], None;        Both => like Ok(Mode::Details(_)));
+        test!(long:           Mode <- ["--long"], None;    Both => like Ok(Mode::Details(_)));
+        test!(ell:            Mode <- ["-l"], None;        Both => like Ok(Mode::Details(_)));
 
         // Grid-details views
-        test!(lid:           Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
-        test!(leg:           Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
+        test!(lid:            Mode <- ["--long", "--grid"], None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(leg:            Mode <- ["-lG"], None;               Both => like Ok(Mode::GridDetails(_)));
 
         // Options that do nothing with --long
-        test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
+        test!(long_across:    Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
-        test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_group:    Mode <- ["--group"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_inode:    Mode <- ["--inode"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_links:    Mode <- ["--links"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_blocks:   Mode <- ["--blocks"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_header:    Mode <- ["--header"],           None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_group:     Mode <- ["--group"],            None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_inode:     Mode <- ["--inode"],            None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_links:     Mode <- ["--links"],            None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_blocks:    Mode <- ["--blocks"],           None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_binary:    Mode <- ["--binary"],           None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_bytes:     Mode <- ["--bytes"],            None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_num_ugid:  Mode <- ["--numeric-uid-gid"],  None;  Last => like Ok(Mode::Grid(_)));
 
         #[cfg(feature = "git")]
         test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
 
-        test!(just_header_2: Mode <- ["--header"], None;  Complain => err OptionsError::Useless(&flags::HEADER, false, &flags::LONG));
-        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err OptionsError::Useless(&flags::GROUP,  false, &flags::LONG));
-        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err OptionsError::Useless(&flags::INODE,  false, &flags::LONG));
-        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err OptionsError::Useless(&flags::LINKS,  false, &flags::LONG));
-        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err OptionsError::Useless(&flags::BLOCKS, false, &flags::LONG));
-        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err OptionsError::Useless(&flags::BINARY, false, &flags::LONG));
-        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err OptionsError::Useless(&flags::BYTES,  false, &flags::LONG));
+        test!(just_header_2:  Mode <- ["--header"],           None;  Complain => err OptionsError::Useless(&flags::HEADER,   false, &flags::LONG));
+        test!(just_group_2:   Mode <- ["--group"],            None;  Complain => err OptionsError::Useless(&flags::GROUP,    false, &flags::LONG));
+        test!(just_inode_2:   Mode <- ["--inode"],            None;  Complain => err OptionsError::Useless(&flags::INODE,    false, &flags::LONG));
+        test!(just_links_2:   Mode <- ["--links"],            None;  Complain => err OptionsError::Useless(&flags::LINKS,    false, &flags::LONG));
+        test!(just_blocks_2:  Mode <- ["--blocks"],           None;  Complain => err OptionsError::Useless(&flags::BLOCKS,   false, &flags::LONG));
+        test!(just_binary_2:  Mode <- ["--binary"],           None;  Complain => err OptionsError::Useless(&flags::BINARY,   false, &flags::LONG));
+        test!(just_bytes_2:   Mode <- ["--bytes"],            None;  Complain => err OptionsError::Useless(&flags::BYTES,    false, &flags::LONG));
+        test!(just_num_ugid2: Mode <- ["--numeric-uid-gid"],  None;  Complain => err OptionsError::Useless(&flags::NUM_UGID, false, &flags::LONG));
 
         #[cfg(feature = "git")]
-        test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
+        test!(just_git_2:     Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
 
         // Contradictions and combinations
-        test!(lgo:           Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines));
-        test!(lgt:           Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
-        test!(tgl:           Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
-        test!(tlg:           Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));
-        test!(ot:            Mode <- ["--oneline", "--tree"],           None;  Both => like Ok(Mode::Details(_)));
-        test!(og:            Mode <- ["--oneline", "--grid"],           None;  Both => like Ok(Mode::Grid(_)));
-        test!(tg:            Mode <- ["--tree", "--grid"],              None;  Both => like Ok(Mode::Grid(_)));
+        test!(lgo:            Mode <- ["--long", "--grid", "--oneline"], None;  Both => like Ok(Mode::Lines));
+        test!(lgt:            Mode <- ["--long", "--grid", "--tree"],    None;  Both => like Ok(Mode::Details(_)));
+        test!(tgl:            Mode <- ["--tree", "--grid", "--long"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(tlg:            Mode <- ["--tree", "--long", "--grid"],    None;  Both => like Ok(Mode::GridDetails(_)));
+        test!(ot:             Mode <- ["--oneline", "--tree"],           None;  Both => like Ok(Mode::Details(_)));
+        test!(og:             Mode <- ["--oneline", "--grid"],           None;  Both => like Ok(Mode::Grid(_)));
+        test!(tg:             Mode <- ["--tree", "--grid"],              None;  Both => like Ok(Mode::Grid(_)));
     }
 }
