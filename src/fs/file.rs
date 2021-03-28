@@ -325,15 +325,8 @@ impl<'dir> File<'dir> {
     ///
     /// Block and character devices return their device IDs, because they
     /// usually just have a file size of zero.
+    #[cfg(unix)]
     pub fn size(&self) -> f::Size {
-        #[cfg(windows)]
-        if self.is_directory() {
-            f::Size::None
-        }
-        else {
-            f::Size::Some(self.metadata.len())
-        }
-        #[cfg(unix)]
         if self.is_directory() {
             f::Size::None
         }
@@ -343,6 +336,16 @@ impl<'dir> File<'dir> {
                 major: (dev / 256) as u8,
                 minor: (dev % 256) as u8,
             })
+        }
+        else {
+            f::Size::Some(self.metadata.len())
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn size(&self) -> f::Size {
+        if self.is_directory() {
+            f::Size::None
         }
         else {
             f::Size::Some(self.metadata.len())
@@ -394,18 +397,6 @@ impl<'dir> File<'dir> {
     /// This is used a the leftmost character of the permissions column.
     /// The file type can usually be guessed from the colour of the file, but
     /// ls puts this character there.
-    #[cfg(windows)]
-    pub fn type_char(&self) -> f::Type {
-        if self.is_file() {
-            f::Type::File
-        }
-        else if self.is_directory() {
-            f::Type::Directory
-        }
-        else {
-            f::Type::Special
-        }
-    }
     #[cfg(unix)]
     pub fn type_char(&self) -> f::Type {
         if self.is_file() {
@@ -428,6 +419,19 @@ impl<'dir> File<'dir> {
         }
         else if self.is_socket() {
             f::Type::Socket
+        }
+        else {
+            f::Type::Special
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn type_char(&self) -> f::Type {
+        if self.is_file() {
+            f::Type::File
+        }
+        else if self.is_directory() {
+            f::Type::Directory
         }
         else {
             f::Type::Special

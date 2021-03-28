@@ -78,6 +78,7 @@ impl SortField {
             "age" | "old" | "oldest" => {
                 Self::ModifiedAge
             }
+
             "ch" | "changed" => {
                 Self::ChangedDate
             }
