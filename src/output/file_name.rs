@@ -132,9 +132,9 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             bits.push(style.paint(file_icon));
 
             match spaces_count {
-                1 => bits.push(Style::default().paint(" ")),
-                2 => bits.push(Style::default().paint("  ")),
-                n => bits.push(Style::default().paint(spaces(n))),
+                1 => bits.push(style.paint(" ")),
+                2 => bits.push(style.paint("  ")),
+                n => bits.push(style.paint(spaces(n))),
             }
         }
 
