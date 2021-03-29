@@ -7,9 +7,7 @@ use std::io;
 use std::path::Path;
 
 
-pub const ENABLED: bool =
-    cfg!(feature="git") &&
-    cfg!(any(target_os = "macos", target_os = "linux"));
+pub const ENABLED: bool = cfg!(any(target_os = "macos", target_os = "linux"));
 
 
 pub trait FileAttributes {

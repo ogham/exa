@@ -91,7 +91,7 @@ impl Mode {
                 }
             }
 
-            if cfg!(feature = "git") && matches.has(&flags::GIT)? {
+            if matches.has(&flags::GIT)? {
                 return Err(OptionsError::Useless(&flags::GIT, false, &flags::LONG));
             }
             else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
@@ -192,7 +192,7 @@ impl TableOptions {
 impl Columns {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
-        let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
+        let git = matches.has(&flags::GIT)?;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;

@@ -16,7 +16,7 @@ pub enum OptionsError {
     /// The user supplied an illegal choice to an Argument.
     BadArgument(&'static Arg, OsString),
 
-    /// The user supplied a set of options
+    /// The user supplied a set of options that are unsupported
     Unsupported(String),
 
     /// An option was given twice or more in strict mode.
