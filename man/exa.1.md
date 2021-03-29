@@ -72,6 +72,9 @@ Valid settings are ‘`always`’, ‘`automatic`’, and ‘`never`’.
 `--icons`
 : Display icons next to file names.
 
+`--no-icons`
+: Don't display icons. (Always overrides --icons)
+
 
 FILTERING AND SORTING OPTIONS
 =============================
