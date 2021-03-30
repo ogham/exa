@@ -102,8 +102,7 @@ tags = [ 'env', 'grid' ]
 
 
 # columns and width tests with files
-# (these rely on bash’s glob sort order)
-# (some of the output files also have trailing whitespace)
+# (warning: some of the output files have trailing whitespace)
 
 [[cmd]]
 name = "‘COLUMNS=100 exa’ with file arguments produces a grid of 3 columns, with full paths"

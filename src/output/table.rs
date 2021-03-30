@@ -107,7 +107,7 @@ impl Columns {
             columns.push(Column::Timestamp(TimeType::Accessed));
         }
 
-        if cfg!(feature = "git") && self.git && actually_enable_git {
+        if self.git && actually_enable_git {
             columns.push(Column::GitStatus);
         }
 

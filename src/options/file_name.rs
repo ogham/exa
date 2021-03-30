@@ -25,7 +25,7 @@ impl Classify {
 
 impl ShowIcons {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        if ! matches.has(&flags::ICONS)? {
+        if matches.has(&flags::NO_ICONS)? || !matches.has(&flags::ICONS)? {
             Ok(Self::Off)
         }
         else if let Some(columns) = vars.get(vars::EXA_ICON_SPACING).and_then(|s| s.into_string().ok()) {
