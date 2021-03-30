@@ -171,7 +171,10 @@ impl Column {
     /// to have a header row printed.
     pub fn header(self) -> &'static str {
         match self {
+            #[cfg(unix)]
             Self::Permissions   => "Permissions",
+            #[cfg(windows)]
+            Self::Permissions   => "Mode",
             Self::FileSize      => "Size",
             Self::Timestamp(t)  => t.header(),
             #[cfg(unix)]
@@ -422,6 +425,8 @@ impl<'a, 'f> Table<'a> {
             file_type: file.type_char(),
             #[cfg(unix)]
             permissions: file.permissions(),
+            #[cfg(windows)]
+            attributes: file.attributes(),
             xattrs,
         }
     }

@@ -3,6 +3,8 @@
 use std::io;
 #[cfg(unix)]
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -460,6 +462,21 @@ impl<'dir> File<'dir> {
             sticky:         has_bit(modes::STICKY),
             setgid:         has_bit(modes::SETGID),
             setuid:         has_bit(modes::SETUID),
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn attributes(&self) -> f::Attributes {
+        let bits = self.metadata.file_attributes();
+        let has_bit = |bit| bits & bit == bit;
+
+        f::Attributes {
+            directory:      has_bit(0x10),
+            archive:        has_bit(0x20),
+            readonly:       has_bit(0x1),
+            hidden:         has_bit(0x2),
+            system:         has_bit(0x4),
+            reparse_point:  has_bit(0x400),
         }
     }
 
