@@ -617,6 +617,6 @@ mod filename_test {
     #[test]
     #[cfg(unix)]
     fn topmost() {
-        assert_eq!("/", File::filename(Path::new("/")));
+        assert_eq!("/", File::filename(Path::new("/")))
     }
 }

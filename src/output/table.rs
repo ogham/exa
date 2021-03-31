@@ -159,11 +159,13 @@ impl Column {
             _                => Alignment::Left,
         }
     }
+
     #[cfg(windows)]
     pub fn alignment(&self) -> Alignment {
-        match *self {
-            Column::FileSize | Column::GitStatus => Alignment::Right,
-            _ => Alignment::Left,
+        match self {
+            Self::FileSize   |
+            Self::GitStatus  => Alignment::Right,
+            _                => Alignment::Left,
         }
     }
 
