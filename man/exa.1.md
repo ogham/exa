@@ -140,7 +140,7 @@ These options are available when running with `--long` (`-l`):
 `-m`, `--modified`
 : Use the modified timestamp field.
 
-`-n`, `--numeric-uid-gid`
+`-n`, `--numeric`
 : List numeric user and group IDs.
 
 `-S`, `--blocks`
