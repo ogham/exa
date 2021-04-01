@@ -66,6 +66,7 @@ complete -c exa -s 't' -l 'time'  -x -d "Which timestamp field to list" -a "
     created\t'Display created time'
 "
 complete -c exa -s 'm' -l 'modified'      -d "Use the modified timestamp field"
+complete -c exa -s 'n' -l 'numeric'       -d "List numeric user and group IDs."
 complete -c exa        -l 'changed'       -d "Use the changed timestamp field"
 complete -c exa -s 'u' -l 'accessed'      -d "Use the accessed timestamp field"
 complete -c exa -s 'U' -l 'created'       -d "Use the created timestamp field"

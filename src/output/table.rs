@@ -23,6 +23,7 @@ use crate::theme::Theme;
 pub struct Options {
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
+    pub user_format: UserFormat,
     pub columns: Columns,
 }
 
@@ -180,6 +181,15 @@ pub enum SizeFormat {
     JustBytes,
 }
 
+/// Formatting options for user and group.
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum UserFormat {
+    /// The UID / GID
+    Numeric,
+    /// Show the name
+    Name,
+}
+
 impl Default for SizeFormat {
     fn default() -> Self {
         Self::DecimalBytes
@@ -322,6 +332,7 @@ pub struct Table<'a> {
     widths: TableWidths,
     time_format: TimeFormat,
     size_format: SizeFormat,
+    user_format: UserFormat,
     git: Option<&'a GitCache>,
 }
 
@@ -344,6 +355,7 @@ impl<'a, 'f> Table<'a> {
             env,
             time_format: options.time_format,
             size_format: options.size_format,
+            user_format: options.user_format,
         }
     }
 
@@ -403,10 +415,10 @@ impl<'a, 'f> Table<'a> {
                 file.blocks().render(self.theme)
             }
             Column::User => {
-                file.user().render(self.theme, &*self.env.lock_users())
+                file.user().render(self.theme, &*self.env.lock_users(), self.user_format)
             }
             Column::Group => {
-                file.group().render(self.theme, &*self.env.lock_users())
+                file.group().render(self.theme, &*self.env.lock_users(), self.user_format)
             }
             Column::GitStatus => {
                 self.git_status(file).render(self.theme)

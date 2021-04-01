@@ -4,7 +4,7 @@ use crate::options::parser::MatchedFlags;
 use crate::output::{View, Mode, TerminalWidth, grid, details};
 use crate::output::grid_details::{self, RowThreshold};
 use crate::output::file_name::Options as FileStyle;
-use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
+use crate::output::table::{TimeTypes, SizeFormat, UserFormat, Columns, Options as TableOptions};
 use crate::output::time::TimeFormat;
 
 
@@ -85,7 +85,7 @@ impl Mode {
         // user about flags that won’t have any effect.
         if matches.is_strict() {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
-                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
+                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP, &flags::NUMERIC ] {
                 if matches.has(option)? {
                     return Err(OptionsError::Useless(*option, false, &flags::LONG));
                 }
@@ -183,8 +183,9 @@ impl TableOptions {
     fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
+        let user_format = UserFormat::deduce(matches)?;
         let columns = Columns::deduce(matches)?;
-        Ok(Self { time_format, size_format, columns })
+        Ok(Self { time_format, size_format, columns , user_format})
     }
 }
 
@@ -262,6 +263,14 @@ impl TimeFormat {
         else {
             Err(OptionsError::BadArgument(&flags::TIME_STYLE, word))
         }
+    }
+}
+
+
+impl UserFormat {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let flag = matches.has(&flags::NUMERIC)?;
+        Ok(if flag { Self::Numeric } else { Self::Name })
     }
 }
 
@@ -345,7 +354,8 @@ mod test {
                                    &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE,
+                                   &flags::NUMERIC ];
 
     macro_rules! test {
 
@@ -547,24 +557,26 @@ mod test {
         test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
-        test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_group:    Mode <- ["--group"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_inode:    Mode <- ["--inode"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_links:    Mode <- ["--links"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_blocks:   Mode <- ["--blocks"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_header:   Mode <- ["--header"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_group:    Mode <- ["--group"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_inode:    Mode <- ["--inode"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_links:    Mode <- ["--links"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_blocks:   Mode <- ["--blocks"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_binary:   Mode <- ["--binary"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_bytes:    Mode <- ["--bytes"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_numeric:  Mode <- ["--numeric"],  None;  Last => like Ok(Mode::Grid(_)));
 
         #[cfg(feature = "git")]
         test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
 
-        test!(just_header_2: Mode <- ["--header"], None;  Complain => err OptionsError::Useless(&flags::HEADER, false, &flags::LONG));
-        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err OptionsError::Useless(&flags::GROUP,  false, &flags::LONG));
-        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err OptionsError::Useless(&flags::INODE,  false, &flags::LONG));
-        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err OptionsError::Useless(&flags::LINKS,  false, &flags::LONG));
-        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err OptionsError::Useless(&flags::BLOCKS, false, &flags::LONG));
-        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err OptionsError::Useless(&flags::BINARY, false, &flags::LONG));
-        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err OptionsError::Useless(&flags::BYTES,  false, &flags::LONG));
+        test!(just_header_2: Mode <- ["--header"],   None;  Complain => err OptionsError::Useless(&flags::HEADER,  false, &flags::LONG));
+        test!(just_group_2:  Mode <- ["--group"],    None;  Complain => err OptionsError::Useless(&flags::GROUP,   false, &flags::LONG));
+        test!(just_inode_2:  Mode <- ["--inode"],    None;  Complain => err OptionsError::Useless(&flags::INODE,   false, &flags::LONG));
+        test!(just_links_2:  Mode <- ["--links"],    None;  Complain => err OptionsError::Useless(&flags::LINKS,   false, &flags::LONG));
+        test!(just_blocks_2: Mode <- ["--blocks"],   None;  Complain => err OptionsError::Useless(&flags::BLOCKS,  false, &flags::LONG));
+        test!(just_binary_2: Mode <- ["--binary"],   None;  Complain => err OptionsError::Useless(&flags::BINARY,  false, &flags::LONG));
+        test!(just_bytes_2:  Mode <- ["--bytes"],    None;  Complain => err OptionsError::Useless(&flags::BYTES,   false, &flags::LONG));
+        test!(just_numeric2: Mode <- ["--numeric"],  None;  Complain => err OptionsError::Useless(&flags::NUMERIC, false, &flags::LONG));
 
         #[cfg(feature = "git")]
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));
