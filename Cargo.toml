@@ -52,11 +52,14 @@ default = [ "git" ]
 git = [ "git2" ]
 vendored-openssl = ["git2/vendored-openssl"]
 
-[profile.release]
-opt-level = 3
+
+# make dev builds faster by excluding debug symbols
+[profile.dev]
 debug = false
+
+# use LTO for smaller binaries (that take longer to build)
+[profile.release]
 lto = true
-panic = "abort"
 
 
 [package.metadata.deb]
