@@ -211,7 +211,7 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
             }
         }
         Err(e) => {
-            error!("Error looking up Git statuses: {:?}", e)
+            error!("Error looking up Git statuses: {:?}", e);
         }
     }
 
