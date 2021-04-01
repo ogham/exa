@@ -112,7 +112,7 @@ impl fmt::Display for HelpString {
             write!(f, "\n{}", EXTENDED_HELP)?;
         }
 
-        Ok(())
+        writeln!(f)
     }
 }
 
