@@ -48,6 +48,7 @@ LONG VIEW OPTIONS
   -H, --links          list each file's number of hard links
   -i, --inode          list each file's inode number
   -m, --modified       use the modified timestamp field
+  -n, --numeric        list numeric user and group IDs
   -S, --blocks         show number of file system blocks
   -t, --time FIELD     which timestamp field to list (modified, accessed, created)
   -u, --accessed       use the accessed timestamp field
@@ -111,7 +112,7 @@ impl fmt::Display for HelpString {
             write!(f, "\n{}", EXTENDED_HELP)?;
         }
 
-        Ok(())
+        writeln!(f)
     }
 }
 

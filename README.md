@@ -117,6 +117,12 @@ On Arch, install the [`exa`](https://www.archlinux.org/packages/community/x86_64
 
     $ pacman -S exa
 
+### Android / Termux
+
+On Android / Termux, install the [`exa`](https://github.com/termux/termux-packages/tree/master/packages/exa) package.
+
+    $ pkg install exa
+
 ### Debian
 
 On Debian, install the [`exa`](https://packages.debian.org/unstable/exa) package.
@@ -164,7 +170,7 @@ On openSUSE, install the [`exa`](https://software.opensuse.org/package/exa) pack
 
 On Ubuntu 20.10 (Groovy Gorilla) and later, install the [`exa`](https://packages.ubuntu.com/groovy/exa) package.
 
-    $ apt install exa
+    $ sudo apt install exa
 
 ### Void Linux
 

@@ -16,6 +16,7 @@ DISPLAY OPTIONS
   --colo[u]r=WHEN    when to use terminal colours (always, auto, never)
   --colo[u]r-scale   highlight levels of file sizes distinctly
   --icons            display icons
+  --no-icons         don't display icons (always overrides --icons)
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
@@ -39,6 +40,7 @@ LONG VIEW OPTIONS
   -H, --links          list each file's number of hard links
   -i, --inode          list each file's inode number
   -m, --modified       use the modified timestamp field
+  -n, --numeric        list numeric user and group IDs
   -S, --blocks         show number of file system blocks
   -t, --time FIELD     which timestamp field to list (modified, accessed, created)
   -u, --accessed       use the accessed timestamp field

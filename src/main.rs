@@ -93,7 +93,7 @@ fn main() {
         }
 
         OptionsResult::InvalidOptions(error) => {
-            eprintln!("{}", error);
+            eprintln!("exa: {}", error);
 
             if let Some(s) = error.suggestion() {
                 eprintln!("{}", s);
