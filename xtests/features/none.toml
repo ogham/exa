@@ -1,0 +1,27 @@
+# These tests are meant to be run against an exa binary compiled with
+# `--no-default-features`. They will fail otherwise.
+
+
+[[cmd]]
+name = "The missing features are documented in the version"
+shell = "exa --version"
+stdout = { string = "[-git]" }
+stderr = { empty = true }
+status = 0
+tags = [ 'features' ]
+
+[[cmd]]
+name = "The ‘--git’ option is not accepted when the feature is disabled"
+shell = "exa --git"
+stdout = { empty = true }
+stderr = { file = "outputs/disabled_git.txt" }
+status = 3
+tags = [ 'features' ]
+
+[[cmd]]
+name = "The ‘--git-ignore option is not accepted when the feature is disabled"
+shell = "exa --git-ignore"
+stdout = { empty = true }
+stderr = { file = "outputs/disabled_git.txt" }
+status = 3
+tags = [ 'features' ]
