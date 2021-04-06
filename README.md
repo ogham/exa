@@ -171,6 +171,23 @@ On openSUSE, install the [`exa`](https://software.opensuse.org/package/exa) pack
 On Ubuntu 20.10 (Groovy Gorilla) and later, install the [`exa`](https://packages.ubuntu.com/groovy/exa) package.
 
     $ sudo apt install exa
+    
+On Ubuntu 20.04 (Focal Fossa) and earlier, make and change into a temp directory 
+    $ mkdir temp && cd temp 
+
+Download the zip file and extract the files.
+    $ wget https://github.com/ogham/exa/releases/download/v0.10.0/exa-linux-x86_64-v0.10.0.zip && unzip exa-linux-x86_64-v0.10.0.zip
+
+Move the files to the required directories.
+    
+    $sudo mv  bin/exa  /usr/bin/ && sudo mv  man/exa/* /usr/share/man/man1 && sudo mv exa/exa/completions/* /etc/bash_completion.d
+    
+    $sudo mv /etc/bash_completion.d/completions.fish  /usr/share/fish/vendor_completions.d/
+    
+    $sudo mv /etc/bash_completion.d/completions.zsh  /usr/share/zsh/vendor-completions/
+
+    
+    
 
 ### Void Linux
 
