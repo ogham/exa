@@ -79,6 +79,12 @@ all-release: build-release test-release
     command -v cargo-hack >/dev/null || (echo "cargo-hack not installed" && exit 1)
     cargo hack check --feature-powerset
 
+# build exa and run extended tests with features disabled
+@feature-checks *args:
+    cargo build --no-default-features
+    specsheet xtests/features/none.toml -shide {{args}} \
+        -O cmd.target.exa="${CARGO_TARGET_DIR:-../../target}/debug/exa"
+
 # print versions of the necessary build tools
 @versions:
     rustc --version
