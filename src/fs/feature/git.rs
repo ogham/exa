@@ -252,15 +252,21 @@ impl Git {
             .unwrap_or_default()
     }
 
-    /// Get the combined status for all the files whose paths begin with the
-    /// path that gets passed in. This is used for getting the status of
-    /// directories, which don’t really have an ‘official’ status.
+    /// Get the combined, user-facing status of a file or directory.
+    /// Statuses are aggregating (for example, a directory is considered
+    /// modified if any file under it has the status modified), except
+    /// for ignored which applies to files under (for example, a file is
+    /// considered ignored if one of its parent directories is ignored)
     fn dir_status(&self, dir: &Path) -> f::Git {
         let path = reorient(dir);
 
         let s = self.statuses.iter()
-                    .filter(|p| p.0.starts_with(&path))
-                    .fold(git2::Status::empty(), |a, b| a | b.1);
+            .filter(|p| if p.1 == git2::Status::IGNORED {
+                path.starts_with(&p.0)
+            } else {
+                p.0.starts_with(&path)
+            })
+            .fold(git2::Status::empty(), |a, b| a | b.1);
 
         let staged = index_status(s);
         let unstaged = working_tree_status(s);
