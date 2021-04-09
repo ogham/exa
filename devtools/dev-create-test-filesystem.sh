@@ -300,6 +300,8 @@ touch "ignoreds/music.m4a"
 mkdir "ignoreds/nested"
 touch "ignoreds/nested/70s grove.mp3"
 touch "ignoreds/nested/funky chicken.m4a"
+mkdir "ignoreds/nested2"
+touch "ignoreds/nested2/ievan polkka.mp3"
 
 mkdir "target"
 touch "target/another ignored file"
