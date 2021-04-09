@@ -84,7 +84,7 @@ tags = [ 'env', 'long', 'grid' ]
 name = "‘COLUMNS=200 exa -lGh’ with one file don’t produce extra columns even if there place for more"
 shell = "exa -lGh /testcases/files/10_bytes"
 environment = { COLUMNS = "200" }
-stdout = { file = "outputs/files_paths_long_grid_header_1file.ansitxt" }
+stdout = { file = "outputs/files_long_grid_header_1file.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'env', 'long', 'grid' ]
@@ -93,7 +93,7 @@ tags = [ 'env', 'long', 'grid' ]
 name = "‘COLUMNS=200 exa -lGh’ with several files don’t produce extra columns even if there place for more"
 shell = "exa -lGh /testcases/files/10_{bytes,KiB}"
 environment = { COLUMNS = "200" }
-stdout = { file = "outputs/files_paths_long_grid_header_2files.ansitxt" }
+stdout = { file = "outputs/files_long_grid_header_2files.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'env', 'long', 'grid' ]
