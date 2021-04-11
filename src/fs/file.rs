@@ -319,10 +319,15 @@ impl<'dir> File<'dir> {
             f::Size::None
         }
         else if self.is_char_device() || self.is_block_device() {
-            let dev = self.metadata.rdev();
+            let device_ids = self.metadata.rdev().to_be_bytes();
+
+            // In C-land, getting the major and minor device IDs is done with
+            // preprocessor macros called `major` and `minor` that depend on
+            // the size of `dev_t`, but we just take the second-to-last and
+            // last bytes.
             f::Size::DeviceIDs(f::DeviceIDs {
-                major: (dev / 256) as u8,
-                minor: (dev % 256) as u8,
+                major: device_ids[6],
+                minor: device_ids[7],
             })
         }
         else {
