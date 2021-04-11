@@ -84,7 +84,7 @@ FILTERING AND SORTING OPTIONS
 Use this twice to also show the ‘`.`’ and ‘`..`’ directories.
 
 `-d`, `--list-dirs`
-: List directories like regular files.
+: List directories as regular files, rather than recursing and listing their contents.
 
 `-L`, `--level=DEPTH`
 : Limit the depth of recursion.

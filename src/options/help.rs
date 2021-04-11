@@ -27,7 +27,7 @@ DISPLAY OPTIONS
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
-  -d, --list-dirs            list directories like regular files
+  -d, --list-dirs            list directories as files; don't list their contents
   -L, --level DEPTH          limit the depth of recursion
   -r, --reverse              reverse the sort order
   -s, --sort SORT_FIELD      which field to sort by
