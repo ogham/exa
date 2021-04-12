@@ -1,3 +1,22 @@
+# Command-line errors
+
+[[cmd]]
+name = "‘exa --aoeu’ displays an error"
+shell = "exa --aoeu"
+stdout = { empty = true }
+stderr = { file = "outputs/error_invalid_option.ansitxt" }
+status = 3
+tags = [ 'error' ]
+
+[[cmd]]
+name = "‘exa -Taa’ displays an error"
+shell = "exa -Taa"
+stdout = { empty = true }
+stderr = { file = "outputs/error_tree_all_all.ansitxt" }
+status = 3
+tags = [ 'error' ]
+
+
 # Error suggestions
 
 [[cmd]]
