@@ -84,7 +84,7 @@ mod theme;
 mod view;
 
 mod error;
-pub use self::error::OptionsError;
+pub use self::error::{OptionsError, NumberSource};
 
 mod help;
 use self::help::HelpString;
