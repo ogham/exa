@@ -173,7 +173,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                             show_icons: ShowIcons::Off,
                         };
 
-                        let target = FileName {
+                        let target_name = FileName {
                             file: target,
                             colours: self.colours,
                             target: None,
@@ -181,8 +181,14 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                             options: target_options,
                         };
 
-                        for bit in target.coloured_file_name() {
+                        for bit in target_name.coloured_file_name() {
                             bits.push(bit);
+                        }
+
+                        if let Classify::AddFileIndicators = self.options.classify {
+                            if let Some(class) = self.classify_char(target) {
+                                bits.push(Style::default().paint(class));
+                            }
                         }
                     }
                 }
@@ -206,7 +212,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             }
         }
         else if let Classify::AddFileIndicators = self.options.classify {
-            if let Some(class) = self.classify_char() {
+            if let Some(class) = self.classify_char(self.file) {
                 bits.push(Style::default().paint(class));
             }
         }
@@ -235,20 +241,20 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
     /// The character to be displayed after a file when classifying is on, if
     /// the file’s type has one associated with it.
-    fn classify_char(&self) -> Option<&'static str> {
-        if self.file.is_executable_file() {
+    fn classify_char(&self, file: &File<'_>) -> Option<&'static str> {
+        if file.is_executable_file() {
             Some("*")
         }
-        else if self.file.is_directory() {
+        else if file.is_directory() {
             Some("/")
         }
-        else if self.file.is_pipe() {
+        else if file.is_pipe() {
             Some("|")
         }
-        else if self.file.is_link() {
+        else if file.is_link() {
             Some("@")
         }
-        else if self.file.is_socket() {
+        else if file.is_socket() {
             Some("=")
         }
         else {
