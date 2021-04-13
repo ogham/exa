@@ -174,22 +174,21 @@ impl<'a> Render<'a> {
             };
 
             if the_grid_fits {
-                if column_count == file_names.len() {
-                    return Some((grid, column_count));
-                } else { 
-                    last_working_grid = grid;
-                }
-            } else {
-                // If we’ve figured out how many columns can fit in the user’s
-                // terminal, and it turns out there aren’t enough rows to
-                // make it worthwhile, then just resort to the lines view.
+                last_working_grid = grid;
+            }
+            
+            if !the_grid_fits || column_count == file_names.len() {
+                let last_column_count = if the_grid_fits { column_count } else { column_count - 1 };
+                // If we’ve figured out how many columns can fit in the user’s terminal,
+                // and it turns out there aren’t enough rows to make it worthwhile
+                // (according to EXA_GRID_ROWS), then just resort to the lines view.
                 if let RowThreshold::MinimumRows(thresh) = self.row_threshold {
-                    if last_working_grid.fit_into_columns(column_count - 1).row_count() < thresh {
+                    if last_working_grid.fit_into_columns(last_column_count).row_count() < thresh {
                         return None;
                     }
                 }
 
-                return Some((last_working_grid, column_count - 1));
+                return Some((last_working_grid, last_column_count));
             }
         }
 

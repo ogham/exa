@@ -84,7 +84,7 @@ FILTERING AND SORTING OPTIONS
 Use this twice to also show the ‘`.`’ and ‘`..`’ directories.
 
 `-d`, `--list-dirs`
-: List directories like regular files.
+: List directories as regular files, rather than recursing and listing their contents.
 
 `-L`, `--level=DEPTH`
 : Limit the depth of recursion.
@@ -182,6 +182,10 @@ These options are available when running with `--long` (`-l`):
 
 `--git`  [if exa was built with git support]
 : List each file’s Git status, if tracked.
+
+This adds a two-character column indicating the staged and unstaged statuses respectively. The status character can be ‘`-`’ for not modified, ‘`M`’ for a modified file, ‘`N`’ for a new file, ‘`D`’ for deleted, ‘`R`’ for renamed, ‘`T`’ for type-change, ‘`I`’ for ignored, and ‘`U`’ for conflicted.
+
+Directories will be shown to have the status of their contents, which is how ‘deleted’ is possible: if a directory contains a file that has a certain status, it will be shown to have that status.
 
 
 ENVIRONMENT VARIABLES

@@ -68,7 +68,7 @@ tags = [ 'long', 'time-style' ]
 [[cmd]]
 name = "‘exa -l’ using a locale with 4-character-long month abbreviations (‘ja_JP’) sizes the date column correctly"
 shell = "exa -l /testcases/dates"
-environment = { LC_ALL = "ja_JP.UTF-8", LANG = "ja_JP.UTF-8" }
+environment = { LC_TIME = "ja_JP.UTF-8", LANG = "ja_JP.UTF-8" }
 stdout = { file = "outputs/dates_long_localejp.ansitxt" }
 stderr = { empty = true }
 status = 0
@@ -77,8 +77,17 @@ tags = [ 'long', 'locales' ]
 [[cmd]]
 name = "‘exa -l’ using a locale with 5-character-long month abbreviations (‘fr_FR’) sizes the date column correctly"
 shell = "exa -l /testcases/dates"
-environment = { LC_ALL = "fr_FR.UTF-8", LANG = "fr_FR.UTF-8" }
+environment = { LC_TIME = "fr_FR.UTF-8", LANG = "fr_FR.UTF-8" }
 stdout = { file = "outputs/dates_long_localefr.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'locales' ]
+
+[[cmd]]
+name = "‘exa -l’ using a locale (‘fr_FR’) display dates of the current year with localized month name"
+shell = "exa -l /testcases/files"
+environment = { LC_TIME = "fr_FR.UTF-8", LANG = "fr_FR.UTF-8" }
+stdout = { file = "outputs/dates_long_currentyear_localefr.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'long', 'locales' ]

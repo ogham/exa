@@ -2,7 +2,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece, Month};
+use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 
 use lazy_static::lazy_static;
@@ -75,40 +75,25 @@ impl TimeFormat {
 #[allow(trivial_numeric_casts)]
 fn default_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
-
-    if date.year() == *CURRENT_YEAR {
-        format!("{:2} {} {:02}:{:02}",
-                date.day(), month_to_abbrev(date.month()),
-                date.hour(), date.minute())
-    }
-    else {
-        let date_format = match *MAXIMUM_MONTH_WIDTH {
-            4  => &*FOUR_WIDE_DATE_TIME,
-            5  => &*FIVE_WIDE_DATE_TIME,
-            _  => &*OTHER_WIDE_DATE_TIME,
-        };
-
-        date_format.format(&date, &*LOCALE)
-    }
+    let date_format = get_dateformat(&date);
+    date_format.format(&date, &*LOCALE)
 }
 
 #[allow(trivial_numeric_casts)]
 fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
     let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
+    let date_format = get_dateformat(&date);
+    date_format.format(&date, &*LOCALE)
+}
 
-    if date.year() == *CURRENT_YEAR {
-        format!("{:2} {} {:02}:{:02}",
-                date.day(), month_to_abbrev(date.month()),
-                date.hour(), date.minute())
-    }
-    else {
-        let date_format = match *MAXIMUM_MONTH_WIDTH {
-            4  => &*FOUR_WIDE_DATE_YEAR,
-            5  => &*FIVE_WIDE_DATE_YEAR,
-            _  => &*OTHER_WIDE_DATE_YEAR,
-        };
-
-        date_format.format(&date, &*LOCALE)
+fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
+    match (is_recent(&date), *MAXIMUM_MONTH_WIDTH) {
+        (true, 4)   => &FOUR_WIDE_DATE_TIME,
+        (true, 5)   => &FIVE_WIDE_DATE_TIME,
+        (true, _)   => &OTHER_WIDE_DATE_TIME,
+        (false, 4)  => &FOUR_WIDE_DATE_YEAR,
+        (false, 5)  => &FIVE_WIDE_DATE_YEAR,
+        (false, _)  => &OTHER_WIDE_DATE_YEAR,
     }
 }
 
@@ -153,7 +138,7 @@ fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
 fn iso_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
 
-    if is_recent(date) {
+    if is_recent(&date) {
         format!("{:02}-{:02} {:02}:{:02}",
                 date.month() as usize, date.day(),
                 date.hour(), date.minute())
@@ -168,7 +153,7 @@ fn iso_local(time: SystemTime) -> String {
 fn iso_zoned(time: SystemTime, zone: &TimeZone) -> String {
     let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
 
-    if is_recent(date) {
+    if is_recent(&date) {
         format!("{:02}-{:02} {:02}:{:02}",
                 date.month() as usize, date.day(),
                 date.hour(), date.minute())
@@ -206,25 +191,8 @@ fn systemtime_nanos(time: SystemTime) -> u32 {
         })
 }
 
-fn is_recent(date: LocalDateTime) -> bool {
+fn is_recent(date: &LocalDateTime) -> bool {
     date.year() == *CURRENT_YEAR
-}
-
-fn month_to_abbrev(month: Month) -> &'static str {
-    match month {
-        Month::January    => "Jan",
-        Month::February   => "Feb",
-        Month::March      => "Mar",
-        Month::April      => "Apr",
-        Month::May        => "May",
-        Month::June       => "Jun",
-        Month::July       => "Jul",
-        Month::August     => "Aug",
-        Month::September  => "Sep",
-        Month::October    => "Oct",
-        Month::November   => "Nov",
-        Month::December   => "Dec",
-    }
 }
 
 
@@ -250,15 +218,15 @@ lazy_static! {
     };
 
     static ref FOUR_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {4<:M} {2>:h}:{02>:m}"
+        "{2>:D} {4<:M} {02>:h}:{02>:m}"
     ).unwrap();
 
     static ref FIVE_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {5<:M} {2>:h}:{02>:m}"
+        "{2>:D} {5<:M} {02>:h}:{02>:m}"
     ).unwrap();
 
     static ref OTHER_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {:M} {2>:h}:{02>:m}"
+        "{2>:D} {:M} {02>:h}:{02>:m}"
     ).unwrap();
 
     static ref FOUR_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(

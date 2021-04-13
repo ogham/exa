@@ -128,7 +128,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "class"         => '\u{e256}', // 
             "clj"           => '\u{e768}', // 
             "cljs"          => '\u{e76a}', // 
-            "cls"           => '\u{e600}', // 
+            "cls"           => '\u{f034}', // 
             "cmd"           => '\u{e70f}', // 
             "coffee"        => '\u{f0f4}', // 
             "conf"          => '\u{e615}', // 
@@ -209,7 +209,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "json"          => '\u{e60b}', // 
             "jsx"           => '\u{e7ba}', // 
             "ksh"           => '\u{f489}', // 
-            "latex"         => '\u{e600}', // 
+            "latex"         => '\u{f034}', // 
             "less"          => '\u{e758}', // 
             "lhs"           => '\u{e777}', // 
             "license"       => '\u{f718}', // 
@@ -297,7 +297,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "taz"           => '\u{f410}', // 
             "tbz"           => '\u{f410}', // 
             "tbz2"          => '\u{f410}', // 
-            "tex"           => '\u{e600}', // 
+            "tex"           => '\u{f034}', // 
             "tiff"          => '\u{f1c5}', // 
             "toml"          => '\u{e615}', // 
             "ts"            => '\u{e628}', // 

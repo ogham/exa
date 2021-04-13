@@ -43,3 +43,11 @@ stdout = { file = "outputs/specials_long_classify.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'long', 'classify' ]
+
+[[cmd]]
+name = "‘exa -lF’ handles and classifies symlink kinds"
+shell = "exa -lF --no-time /testcases/links"
+stdout = { file = "outputs/links_long_classify.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'classify' ]

@@ -1,5 +1,5 @@
 use crate::fs::feature::xattr;
-use crate::options::{flags, OptionsError, Vars};
+use crate::options::{flags, OptionsError, NumberSource, Vars};
 use crate::options::parser::MatchedFlags;
 use crate::output::{View, Mode, TerminalWidth, grid, details};
 use crate::output::grid_details::{self, RowThreshold};
@@ -151,8 +151,13 @@ impl TerminalWidth {
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(width)  => Ok(Self::Set(width)),
-                Err(e)     => Err(OptionsError::FailedParse(e)),
+                Ok(width) => {
+                    Ok(Self::Set(width))
+                }
+                Err(e) => {
+                    let source = NumberSource::Env(vars::COLUMNS);
+                    Err(OptionsError::FailedParse(columns, source, e))
+                }
             }
         }
         else {
@@ -168,8 +173,13 @@ impl RowThreshold {
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(rows)  => Ok(Self::MinimumRows(rows)),
-                Err(e)    => Err(OptionsError::FailedParse(e)),
+                Ok(rows) => {
+                    Ok(Self::MinimumRows(rows))
+                }
+                Err(e) => {
+                    let source = NumberSource::Env(vars::EXA_GRID_ROWS);
+                    Err(OptionsError::FailedParse(columns, source, e))
+                }
             }
         }
         else {

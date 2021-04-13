@@ -81,19 +81,49 @@ tags = [ 'env', 'long', 'grid' ]
 # check if exa is using the minimum number of columns with headers
 
 [[cmd]]
-name = "‘COLUMN=200 exa -lGh’ with one file don’t produce extra columns even if there place for more"
+name = "‘COLUMNS=200 exa -lGh’ with one file don’t produce extra columns even if there place for more"
 shell = "exa -lGh /testcases/files/10_bytes"
 environment = { COLUMNS = "200" }
-stdout = { file = "outputs/files_paths_long_grid_header_1file.ansitxt" }
+stdout = { file = "outputs/files_long_grid_header_1file.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'env', 'long', 'grid' ]
 
 [[cmd]]
-name = "‘COLUMN=200 exa -lGh’ with several files don’t produce extra columns even if there place for more"
+name = "‘COLUMNS=200 exa -lGh’ with several files don’t produce extra columns even if there place for more"
 shell = "exa -lGh /testcases/files/10_{bytes,KiB}"
 environment = { COLUMNS = "200" }
-stdout = { file = "outputs/files_paths_long_grid_header_2files.ansitxt" }
+stdout = { file = "outputs/files_long_grid_header_2files.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+
+# check if EXA_GRID_ROWS is working
+
+[[cmd]]
+name = "‘COLUMNS=200 EXA_GRID_ROWS=2 exa -lG’ with three files produces a grid details of 1 column"
+shell = "exa -lG /testcases/files/1_*"
+environment = { COLUMNS = "200", EXA_GRID_ROWS = "2" }
+stdout = { file = "outputs/files_long_grid_exa_grid_rows_2_3files.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 EXA_GRID_ROWS=5 exa -lG’ with 15 files produces a grid details of 3 columns"
+shell = "exa -lG /testcases/files/1*"
+environment = { COLUMNS = "200", EXA_GRID_ROWS = "5" }
+stdout = { file = "outputs/files_long_grid_exa_grid_rows_5_15files.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'env', 'long', 'grid' ]
+
+[[cmd]]
+name = "‘COLUMNS=200 EXA_GRID_ROWS=6 exa -lG’ with 15 files produces a grid details of 1 column"
+shell = "exa -lG /testcases/files/1*"
+environment = { COLUMNS = "200", EXA_GRID_ROWS = "6" }
+stdout = { file = "outputs/files_long_grid_exa_grid_rows_6_15files.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'env', 'long', 'grid' ]

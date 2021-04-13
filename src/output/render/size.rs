@@ -36,20 +36,20 @@ impl f::Size {
         };
 
         let (prefix, n) = match result {
-            NumberPrefix::Standalone(b)   => return TextCell::paint(colours.size(None), b.to_string()),
+            NumberPrefix::Standalone(b)   => return TextCell::paint(colours.size(None), numerics.format_int(b)),
             NumberPrefix::Prefixed(p, n)  => (p, n),
         };
 
         let symbol = prefix.symbol();
-        let decimal_to_diplay = if n < 10_f64 { 1 } else { 0 };
-        let number = numerics.format_float(n, decimal_to_diplay);
+        let number = if n < 10_f64 {
+            numerics.format_float(n, 1)
+        } else {
+            numerics.format_int(n.round() as isize)
+        };
         
-        // The numbers and symbols are guaranteed to be written in ASCII, so
-        // we can skip the display width calculation.
-        let width = DisplayWidth::from(number.len() + symbol.len());
-
         TextCell {
-            width,
+            // symbol is guaranteed to be ASCII since unit prefixes are hardcoded.
+            width: DisplayWidth::from(&*number) + symbol.len(),
             contents: vec![
                 colours.size(Some(prefix)).paint(number),
                 colours.unit(Some(prefix)).paint(symbol),

@@ -1,3 +1,22 @@
+# Command-line errors
+
+[[cmd]]
+name = "‘exa --aoeu’ displays an error"
+shell = "exa --aoeu"
+stdout = { empty = true }
+stderr = { file = "outputs/error_invalid_option.ansitxt" }
+status = 3
+tags = [ 'error' ]
+
+[[cmd]]
+name = "‘exa -Taa’ displays an error"
+shell = "exa -Taa"
+stdout = { empty = true }
+stderr = { file = "outputs/error_tree_all_all.ansitxt" }
+status = 3
+tags = [ 'error' ]
+
+
 # Error suggestions
 
 [[cmd]]
@@ -15,3 +34,85 @@ stdout = { empty = true }
 stderr = { string = "To sort newest files last, try \"--sort newest\", or just \"-snew\""}
 status = 3
 tags = [ 'error', 'long', 'sort' ]
+
+
+# Invalid values for $COLUMNS
+
+[[cmd]]
+name = "‘COLUMNS=999... exa’ shows an error about the number size"
+shell = "exa"
+environment = { "COLUMNS" = "99999999999999999999999" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_columns_nines.ansitxt" }
+status = 3
+tags = [ 'error', 'env' ]
+
+[[cmd]]
+name = "‘COLUMNS=abcdef exa’ shows an error about invalid digits"
+shell = "exa"
+environment = { "COLUMNS" = "abcdef" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_columns_invalid.ansitxt" }
+status = 3
+tags = [ 'error', 'env' ]
+
+
+# Invalid values for $EXA_GRID_ROWS
+
+[[cmd]]
+name = "‘EXA_GRID_ROWS=999... exa -lG’ shows an error about the number size"
+shell = "exa -lG"
+environment = { "EXA_GRID_ROWS" = "99999999999999999999999" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_grid_rows_nines.ansitxt" }
+status = 3
+tags = [ 'error', 'env' ]
+
+[[cmd]]
+name = "‘EXA_GRID_ROWS=abcdef exa -lG’ shows an error about invalid digits"
+shell = "exa -lG"
+environment = { "EXA_GRID_ROWS" = "abcdef" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_grid_rows_invalid.ansitxt" }
+status = 3
+tags = [ 'error', 'env' ]
+
+
+# Invalid values for $EXA_ICON_SPACING
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=999... exa --icons’ shows an error about the number size"
+shell = "exa --icons"
+environment = { "EXA_ICON_SPACING" = "99999999999999999999999" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_icon_spacing_nines.ansitxt" }
+status = 3
+tags = [ 'error', 'env', 'icons' ]
+
+[[cmd]]
+name = "‘EXA_ICON_SPACING=abcdef exa --icons’ shows an error about invalid digits"
+shell = "exa --icons"
+environment = { "EXA_ICON_SPACING" = "abcdef" }
+stdout = { empty = true }
+stderr = { file = "outputs/error_icon_spacing_invalid.ansitxt" }
+status = 3
+tags = [ 'error', 'env', 'icons' ]
+
+
+# Invalid values for --level (-L)
+
+[[cmd]]
+name = "‘exa -TL999...’ shows an error about the number size"
+shell = "exa -TL99999999999999999999999"
+stdout = { empty = true }
+stderr = { file = "outputs/error_level_nines.ansitxt" }
+status = 3
+tags = [ 'error', 'tree', 'level' ]
+
+[[cmd]]
+name = "‘exa -TLabcdef’ shows an error about invalid digits"
+shell = "exa -TLabcdef"
+stdout = { empty = true }
+stderr = { file = "outputs/error_level_invalid.ansitxt" }
+status = 3
+tags = [ 'error', 'tree', 'level' ]

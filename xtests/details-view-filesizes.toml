@@ -61,3 +61,14 @@ stdout = { file = "outputs/files_long_colourscale_bytes.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'long', 'colour-scale', 'bytes' ]
+
+[[cmd]]
+name = "‘exa -l’ produces a details table with major and minor device IDs"
+shell = "cd /dev; exa -l mem null port zero full random urandom --sort=none --no-time"
+stdout = { file = "outputs/dev_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'dev' ]
+
+# these particular device IDs should be fixed:
+# https://raw.githubusercontent.com/torvalds/linux/master/Documentation/admin-guide/devices.txt
