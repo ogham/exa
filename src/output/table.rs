@@ -316,7 +316,15 @@ fn determine_time_zone() -> TZResult<TimeZone> {
             }
         })
     } else {
-        TimeZone::from_file("/etc/localtime")
+        if env::consts::OS == "android" {
+            use std::process::Command;
+            let mut get_time_zone = Command::new("getprop");
+            get_time_zone.arg("persist.sys.timezone");
+            let output = get_time_zone.output().expect("fail to get time zone");
+            return CompiledData::parse(output.stdout);
+        }
+
+        return TimeZone::from_file("/etc/localtime")
     }
 }
 
