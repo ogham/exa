@@ -50,6 +50,11 @@ fn main() {
 
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
+    #[cfg(windows)]
+    if let Err(e) = ansi_term::enable_ansi_support() {
+        warn!("Failed to enable ANSI support: {}", e);
+    }
+
     let args: Vec<_> = env::args_os().skip(1).collect();
     match Options::parse(args.iter().map(|e| e.as_ref()), &LiveVars) {
         OptionsResult::Ok(options, mut input_paths) => {
