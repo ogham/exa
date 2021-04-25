@@ -35,3 +35,6 @@ pub use self::users::Colours as UserColours;
 
 mod octal;
 // octal uses just one colour
+
+mod securityctx;
+pub use self::securityctx::Colours as SecurityCtxColours;

@@ -7,12 +7,13 @@ use crate::theme::lsc::Pair;
 pub struct UiStyles {
     pub colourful: bool,
 
-    pub filekinds:  FileKinds,
-    pub perms:      Permissions,
-    pub size:       Size,
-    pub users:      Users,
-    pub links:      Links,
-    pub git:        Git,
+    pub filekinds:        FileKinds,
+    pub perms:            Permissions,
+    pub size:             Size,
+    pub users:            Users,
+    pub links:            Links,
+    pub git:              Git,
+    pub security_context: SecurityContext,
 
     pub punctuation:  Style,
     pub date:         Style,
@@ -102,6 +103,21 @@ pub struct Git {
     pub typechange: Style,
     pub ignored: Style,
     pub conflicted: Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct SELinuxContext {
+    pub colon: Style,
+    pub user:  Style,
+    pub role:  Style,
+    pub typ:   Style,
+    pub range: Style,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct SecurityContext {
+    pub none:    Style,
+    pub selinux: SELinuxContext,
 }
 
 impl UiStyles {

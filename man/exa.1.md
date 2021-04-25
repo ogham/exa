@@ -180,6 +180,9 @@ These options are available when running with `--long` (`-l`):
 `-@`, `--extended`
 : List each file’s extended attributes and sizes.
 
+`-Z`, `--context`
+: List each file's security context.
+
 `--git`  [if exa was built with git support]
 : List each file’s Git status, if tracked.
 

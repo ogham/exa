@@ -3,6 +3,7 @@
 #![allow(trivial_casts)]  // for ARM
 
 use std::cmp::Ordering;
+use std::ffi::CString;
 use std::io;
 use std::path::Path;
 
@@ -50,58 +51,98 @@ pub enum FollowSymlinks {
 #[derive(Debug, Clone)]
 pub struct Attribute {
     pub name: String,
-    pub size: usize,
+    pub value: String,
 }
 
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
-    use std::ffi::CString;
+fn get_secattr(lister: &lister::Lister, c_path: &std::ffi::CString) -> io::Result<Vec<Attribute>> {
+    const SELINUX_XATTR_NAME: &str = "security.selinux";
+    const ENODATA: i32 = 61;
 
-    let c_path = match path.to_str().and_then(|s| CString::new(s).ok()) {
-        Some(cstring) => cstring,
-        None => {
-            return Err(io::Error::new(io::ErrorKind::Other, "Error: path somehow contained a NUL?"));
-        }
+    let c_attr_name = CString::new(SELINUX_XATTR_NAME).map_err(|e| {
+        io::Error::new(io::ErrorKind::Other, e)
+    })?;
+    let size = lister.getxattr_first(c_path, &c_attr_name);
+
+    let size = match size.cmp(&0) {
+        Ordering::Less => {
+            let e = io::Error::last_os_error();
+
+            if e.kind() == io::ErrorKind::Other && e.raw_os_error() == Some(ENODATA) {
+                return Ok(Vec::new())
+            }
+
+            return Err(e)
+        },
+        Ordering::Equal => return Err(io::Error::from(io::ErrorKind::InvalidData)),
+        Ordering::Greater => size as usize,
     };
 
-    let bufsize = lister.listxattr_first(&c_path);
-    match bufsize.cmp(&0) {
-        Ordering::Less     => return Err(io::Error::last_os_error()),
-        Ordering::Equal    => return Ok(Vec::new()),
-        Ordering::Greater  => {},
+    let mut buf_value = vec![0_u8; size];
+    let size = lister.getxattr_second(c_path, &c_attr_name, &mut buf_value, size);
+
+    match size.cmp(&0) {
+        Ordering::Less => return Err(io::Error::last_os_error()),
+        Ordering::Equal => return Err(io::Error::from(io::ErrorKind::InvalidData)),
+        Ordering::Greater => (),
     }
 
-    let mut buf = vec![0_u8; bufsize as usize];
-    let err = lister.listxattr_second(&c_path, &mut buf, bufsize);
+    Ok(vec![Attribute {
+        name:  String::from(SELINUX_XATTR_NAME),
+        value: lister.translate_attribute_data(&buf_value),
+    }])
+}
 
-    match err.cmp(&0) {
+pub fn list_attrs(lister: &lister::Lister, path: &Path) -> io::Result<Vec<Attribute>> {
+    let c_path = CString::new(path.to_str().ok_or(io::Error::new(io::ErrorKind::Other, "Error: path not convertible to string"))?).map_err(|e| {
+        io::Error::new(io::ErrorKind::Other, e)
+    })?;
+
+    let bufsize = lister.listxattr_first(&c_path);
+    let bufsize = match bufsize.cmp(&0) {
+        Ordering::Less     => return Err(io::Error::last_os_error()),
+        // Some filesystems, like sysfs, return nothing on listxattr, even though the security
+        // attribute is set.
+        Ordering::Equal    => return get_secattr(lister, &c_path),
+        Ordering::Greater  => bufsize as usize,
+    };
+
+    let mut buf = vec![0_u8; bufsize];
+
+    match lister.listxattr_second(&c_path, &mut buf, bufsize).cmp(&0) {
         Ordering::Less     => return Err(io::Error::last_os_error()),
         Ordering::Equal    => return Ok(Vec::new()),
         Ordering::Greater  => {},
     }
 
     let mut names = Vec::new();
-    if err > 0 {
-        // End indices of the attribute names
-        // the buffer contains 0-terminated c-strings
-        let idx = buf.iter().enumerate().filter_map(|(i, v)|
-            if *v == 0 { Some(i) } else { None }
-        );
-        let mut start = 0;
 
-        for end in idx {
-            let c_end = end + 1; // end of the c-string (including 0)
-            let size = lister.getxattr(&c_path, &buf[start..c_end]);
+    for attr_name in buf.split(|c| c == &0) {
+        if attr_name.is_empty() {
+            continue;
+        }
 
-            if size > 0 {
-                names.push(Attribute {
-                    name: lister.translate_attribute_name(&buf[start..end]),
-                    size: size as usize,
-                });
+        let c_attr_name = CString::new(attr_name).map_err(|e| {
+            io::Error::new(io::ErrorKind::Other, e)
+        })?;
+        let size = lister.getxattr_first(&c_path, &c_attr_name);
+
+        if size > 0 {
+            let mut buf_value = vec![0_u8; size as usize];
+            if lister.getxattr_second(&c_path, &c_attr_name, &mut buf_value, size as usize) < 0 {
+                return Err(io::Error::last_os_error());
             }
 
-            start = c_end;
+            names.push(Attribute {
+                name:  lister.translate_attribute_data(attr_name),
+                value: lister.translate_attribute_data(&buf_value),
+            });
+        } else {
+            names.push(Attribute {
+                name:  lister.translate_attribute_data(attr_name),
+                value: String::new(),
+            });
         }
     }
 
@@ -148,8 +189,8 @@ mod lister {
             Self { c_flags }
         }
 
-        pub fn translate_attribute_name(&self, input: &[u8]) -> String {
-            unsafe { std::str::from_utf8_unchecked(input).into() }
+        pub fn translate_attribute_data(&self, input: &[u8]) -> String {
+            unsafe { std::str::from_utf8_unchecked(input).trim_end_matches('\0').into() }
         }
 
         pub fn listxattr_first(&self, c_path: &CString) -> ssize_t {
@@ -163,24 +204,37 @@ mod lister {
             }
         }
 
-        pub fn listxattr_second(&self, c_path: &CString, buf: &mut Vec<u8>, bufsize: ssize_t) -> ssize_t {
+        pub fn listxattr_second(&self, c_path: &CString, buf: &mut [u8], bufsize: size_t) -> ssize_t {
             unsafe {
                 listxattr(
                     c_path.as_ptr(),
-                    buf.as_mut_ptr().cast::<c_char>(),
-                    bufsize as size_t,
+                    buf.as_mut_ptr().cast(),
+                    bufsize,
                     self.c_flags,
                 )
             }
         }
 
-        pub fn getxattr(&self, c_path: &CString, buf: &[u8]) -> ssize_t {
+        pub fn getxattr_first(&self, c_path: &CString, c_name: &CString) -> ssize_t {
             unsafe {
                 getxattr(
                     c_path.as_ptr(),
-                    buf.as_ptr().cast::<c_char>(),
+                    c_name.as_ptr().cast(),
                     ptr::null_mut(),
                     0,
+                    0,
+                    self.c_flags,
+                )
+            }
+        }
+
+        pub fn getxattr_second(&self, c_path: &CString, c_name: &CString, buf: &mut [u8], bufsize: size_t) -> ssize_t {
+            unsafe {
+                getxattr(
+                    c_path.as_ptr(),
+                    c_name.as_ptr().cast(),
+                    buf.as_mut_ptr().cast::<libc::c_void>(),
+                    bufsize,
                     0,
                     self.c_flags,
                 )
@@ -234,8 +288,8 @@ mod lister {
             Lister { follow_symlinks }
         }
 
-        pub fn translate_attribute_name(&self, input: &[u8]) -> String {
-            String::from_utf8_lossy(input).into_owned()
+        pub fn translate_attribute_data(&self, input: &[u8]) -> String {
+            String::from_utf8_lossy(input).trim_end_matches('\0').into()
         }
 
         pub fn listxattr_first(&self, c_path: &CString) -> ssize_t {
@@ -246,14 +300,14 @@ mod lister {
 
             unsafe {
                 listxattr(
-                    c_path.as_ptr().cast(),
+                    c_path.as_ptr(),
                     ptr::null_mut(),
                     0,
                 )
             }
         }
 
-        pub fn listxattr_second(&self, c_path: &CString, buf: &mut Vec<u8>, bufsize: ssize_t) -> ssize_t {
+        pub fn listxattr_second(&self, c_path: &CString, buf: &mut [u8], bufsize: size_t) -> ssize_t {
             let listxattr = match self.follow_symlinks {
                 FollowSymlinks::Yes  => listxattr,
                 FollowSymlinks::No   => llistxattr,
@@ -261,25 +315,41 @@ mod lister {
 
             unsafe {
                 listxattr(
-                    c_path.as_ptr().cast(),
+                    c_path.as_ptr(),
                     buf.as_mut_ptr().cast(),
-                    bufsize as size_t,
+                    bufsize,
                 )
             }
         }
 
-        pub fn getxattr(&self, c_path: &CString, buf: &[u8]) -> ssize_t {
+        pub fn getxattr_first(&self, c_path: &CString, c_name: &CString) -> ssize_t {
             let getxattr = match self.follow_symlinks {
-                FollowSymlinks::Yes  => getxattr,
-                FollowSymlinks::No   => lgetxattr,
+                FollowSymlinks::Yes => getxattr,
+                FollowSymlinks::No  => lgetxattr,
             };
 
             unsafe {
                 getxattr(
-                    c_path.as_ptr().cast(),
-                    buf.as_ptr().cast(),
+                    c_path.as_ptr(),
+                    c_name.as_ptr().cast(),
                     ptr::null_mut(),
                     0,
+                )
+            }
+        }
+
+        pub fn getxattr_second(&self, c_path: &CString, c_name: &CString, buf: &mut [u8], bufsize: size_t) -> ssize_t {
+            let getxattr = match self.follow_symlinks {
+                FollowSymlinks::Yes => getxattr,
+                FollowSymlinks::No  => lgetxattr,
+            };
+
+            unsafe {
+                getxattr(
+                    c_path.as_ptr(),
+                    c_name.as_ptr().cast(),
+                    buf.as_mut_ptr().cast::<libc::c_void>(),
+                    bufsize,
                 )
             }
         }

@@ -89,3 +89,4 @@ complete -c exa        -l 'no-time'        -d "Suppress the time field"
 # Optional extras
 complete -c exa -l 'git' -d "List each file's Git status, if tracked"
 complete -c exa -s '@' -l 'extended' -d "List each file's extended attributes and sizes"
+complete -c exa -s 'Z' -l 'context' -d "List each file's security context"

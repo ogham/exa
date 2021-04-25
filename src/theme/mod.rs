@@ -308,6 +308,15 @@ impl FileNameColours for Theme {
     }
 }
 
+impl render::SecurityCtxColours for Theme {
+    fn none(&self)          -> Style { self.ui.security_context.none }
+    fn selinux_colon(&self) -> Style { self.ui.security_context.selinux.colon }
+    fn selinux_user(&self)  -> Style { self.ui.security_context.selinux.user }
+    fn selinux_role(&self)  -> Style { self.ui.security_context.selinux.role }
+    fn selinux_type(&self)  -> Style { self.ui.security_context.selinux.typ }
+    fn selinux_range(&self) -> Style { self.ui.security_context.selinux.range }
+}
+
 
 /// Some of the styles are **overlays**: although they have the same attribute
 /// set as regular styles (foreground and background colours, bold, underline,

@@ -11,6 +11,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use log::*;
 
 use crate::fs::dir::Dir;
+use crate::fs::feature::xattr;
+use crate::fs::feature::xattr::{FileAttributes, Attribute};
 use crate::fs::fields as f;
 
 
@@ -66,6 +68,9 @@ pub struct File<'dir> {
     /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
+
+    /// The extended attributes of this file.
+    pub extended_attributes: Vec<Attribute>,
 }
 
 impl<'dir> File<'dir> {
@@ -80,8 +85,9 @@ impl<'dir> File<'dir> {
         debug!("Statting file {:?}", &path);
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
+        let extended_attributes = File::gather_extended_attributes(&path);
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all, extended_attributes })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -92,8 +98,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let extended_attributes = File::gather_extended_attributes(&path);
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all, extended_attributes })
     }
 
     pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -103,8 +110,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let extended_attributes = File::gather_extended_attributes(&path);
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all, extended_attributes })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -135,6 +143,21 @@ impl<'dir> File<'dir> {
         name.rfind('.')
             .map(|p| name[p + 1 ..]
             .to_ascii_lowercase())
+    }
+
+    /// Read the extended attributes of a file path.
+    fn gather_extended_attributes(path: &Path) -> Vec<Attribute> {
+        if xattr::ENABLED {
+            match path.symlink_attributes() {
+                Ok(xattrs) => xattrs,
+                Err(e) => {
+                    error!("Error looking up extended attributes for {}: {}", path.display(), e);
+                    Vec::new()
+                }
+            }
+        } else {
+            Vec::new()
+        }
     }
 
     /// Whether this file is a directory on the filesystem.
@@ -261,7 +284,8 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let extended_attributes = File::gather_extended_attributes(&absolute_path);
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false, extended_attributes };
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
@@ -500,6 +524,16 @@ impl<'dir> File<'dir> {
     /// that get passed in.
     pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
         choices.contains(&&self.name[..])
+    }
+
+    /// This file’s security context field.
+    pub fn security_context(&self) -> f::SecurityContext<'_> {
+        let context = match &self.extended_attributes.iter().find(|a| a.name == "security.selinux") {
+            Some(attr) => f::SecurityContextType::SELinux(&attr.value),
+            None       => f::SecurityContextType::None
+        };
+
+        f::SecurityContext { context }
     }
 }
 

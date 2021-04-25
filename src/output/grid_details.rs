@@ -7,7 +7,6 @@ use term_grid as grid;
 
 use crate::fs::{Dir, File};
 use crate::fs::feature::git::GitCache;
-use crate::fs::feature::xattr::FileAttributes;
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
@@ -150,7 +149,7 @@ impl<'a> Render<'a> {
         let (first_table, _) = self.make_table(options, &drender);
 
         let rows = self.files.iter()
-                       .map(|file| first_table.row_for_file(file, file_has_xattrs(file)))
+                       .map(|file| first_table.row_for_file(file, drender.show_xattr_hint(file)))
                        .collect::<Vec<_>>();
 
         let file_names = self.files.iter()
@@ -298,12 +297,4 @@ fn divide_rounding_up(a: usize, b: usize) -> usize {
     }
 
     result
-}
-
-
-fn file_has_xattrs(file: &File<'_>) -> bool {
-    match file.path.attributes() {
-        Ok(attrs)  => ! attrs.is_empty(),
-        Err(_)     => false,
-    }
 }

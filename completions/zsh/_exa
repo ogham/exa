@@ -53,6 +53,7 @@ __exa() {
         {-U,--created}"[Use the created timestamp field]" \
         --git"[List each file's Git status, if tracked]" \
         {-@,--extended}"[List each file's extended attributes and sizes]" \
+        {-Z,--context}"[List each file's security context]" \
         '*:filename:_files'
 }
 
