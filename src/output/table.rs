@@ -4,7 +4,7 @@ use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
 use datetime::TimeZone;
-use zoneinfo_compiled::{CompiledData, Result as TZResult};
+use zoneinfo_compiled::CompiledData;
 
 use lazy_static::lazy_static;
 use log::*;
@@ -284,13 +284,12 @@ impl Environment {
 
     fn load_all() -> Self {
         let tz = match determine_time_zone() {
-            Ok(t) => {
-                Some(t)
-            }
-            Err(ref e) => {
-                println!("Unable to determine time zone: {}", e);
+            UserTimeZone::Tz(tz) => Some(tz),
+            UserTimeZone::Utc => None,
+            UserTimeZone::Error => {
+                debug!("Unable to determine time zone, use UTC instead.");
                 None
-            }
+            },
         };
 
         let numeric = locale::Numeric::load_user_locale()
@@ -302,23 +301,56 @@ impl Environment {
     }
 }
 
-fn determine_time_zone() -> TZResult<TimeZone> {
-    if let Ok(file) = env::var("TZ") {
-        TimeZone::from_file({
-            if file.starts_with('/') {
-                file
-            } else {
-                format!("/usr/share/zoneinfo/{}", {
-                    if file.starts_with(':') {
-                        file.replacen(":", "", 1)
-                    } else {
-                        file
-                    }
-                })
-            }
-        })
-    } else {
-        TimeZone::from_file("/etc/localtime")
+enum UserTimeZone {
+    Tz(TimeZone),
+    Utc,
+    Error,
+}
+
+/// Documentation of `TZ` and `TZDIR` is barely existent.
+/// This function rely on how glibc and musl work.
+/// - glibc: [tzset.c](https://github.com/bminor/glibc/blob/24f261f27fb8fd19ae294ff2a13bc5b7a0bafc91/time/tzset.c#L365) and [tzfile.c](https://github.com/bminor/glibc/blob/24f261f27fb8fd19ae294ff2a13bc5b7a0bafc91/time/tzfile.c#L100)
+/// - [musl](https://github.com/ifduyue/musl/blob/aad50fcd791e009961621ddfbe3d4c245fd689a3/src/time/__tz.c#L125)
+fn determine_time_zone() -> UserTimeZone {
+    let tz_env = match env::var("TZ") {
+        Err(_) => return read_timezone_file("/etc/localtime"),
+        Ok(tz_env) if tz_env.is_empty() => return UserTimeZone::Utc,
+        Ok(tz_env) => tz_env,
+    };
+
+    let tz_env = tz_env.strip_prefix(':').map(ToString::to_string).unwrap_or(tz_env);
+
+    if tz_env.starts_with('/') {
+        return read_timezone_file(&tz_env);
+    }
+
+    // For relative paths, use TZDIR like glibc; it’s used by at least NixOS.
+    if let Ok(tz_dir) = env::var("TZDIR") {
+        return read_timezone_file(&format!("{}/{}", tz_dir, tz_env));
+    }
+
+    // If TZDIR isn’t defined, try the other directories that musl is checking
+    let tz_dirs = [
+        "/usr/share/zoneinfo".to_string(),
+        "/share/zoneinfo".to_string(),
+        "/etc/zoneinfo".to_string(),
+    ];
+    for tz_dir in &tz_dirs {
+        if let UserTimeZone::Tz(tz) = read_timezone_file(&format!("{}/{}", tz_dir, tz_env)) {
+            return UserTimeZone::Tz(tz);
+        }
+    }
+
+    UserTimeZone::Error
+}
+
+fn read_timezone_file(path: &str) -> UserTimeZone {
+    match TimeZone::from_file(path) {
+        Ok(tz) => UserTimeZone::Tz(tz),
+        Err(e) => {
+            debug!("Trying zoneinfo file {}: {}", path, e);
+            UserTimeZone::Error
+        },
     }
 }
 
