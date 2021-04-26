@@ -201,8 +201,8 @@ To build without Git support, run `cargo install --no-default-features exa` is a
 <a id="development">
 <h1>Development
 
-<a href="https://blog.rust-lang.org/2020/03/12/Rust-1.45.html">
-    <img src="https://img.shields.io/badge/rustc-1.45+-lightgray.svg" alt="Rust 1.45+" />
+<a href="https://blog.rust-lang.org/2020/08/03/Rust-1.45.2.html">
+    <img src="https://img.shields.io/badge/rustc-1.45.2+-lightgray.svg" alt="Rust 1.45.2+" />
 </a>
 
 <a href="https://github.com/ogham/exa/blob/master/LICENCE">
