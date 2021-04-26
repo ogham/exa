@@ -72,7 +72,7 @@ dependencies = [
  "number_prefix",
  "scoped_threadpool",
  "term_grid",
- "term_size",
+ "terminal_size",
  "unicode-width",
  "users",
  "zoneinfo_compiled",
@@ -285,10 +285,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "term_size"
-version = "0.3.2"
+name = "terminal_size"
+version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e4129646ca0ed8f45d09b929036bafad5377103edd06e50bf574b353d2b08d9"
+checksum = "86ca8ced750734db02076f44132d802af0b33b09942331f4459dde8636fd2406"
 dependencies = [
  "libc",
  "winapi",
