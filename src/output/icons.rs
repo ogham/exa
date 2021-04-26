@@ -170,6 +170,9 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "flac"          => '\u{f001}', // 
             "flv"           => '\u{f03d}', // 
             "font"          => '\u{f031}', // 
+            "fs"            => '\u{e7a7}', // 
+            "fsi"           => '\u{e7a7}', // 
+            "fsx"           => '\u{e7a7}', // 
             "gdoc"          => '\u{f1c2}', // 
             "gem"           => '\u{e21e}', // 
             "gemfile"       => '\u{e21e}', // 
