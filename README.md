@@ -211,7 +211,7 @@ To build without Git support, run `cargo install --no-default-features exa` is a
 </h1></a>
 
 exa is written in [Rust](https://www.rust-lang.org/).
-You will need rustc version 1.45.0 or higher.
+You will need rustc version 1.45.2 or higher.
 The recommended way to install Rust for development is from the [official download page](https://www.rust-lang.org/tools/install), using rustup.
 
 Once Rust is installed, you can compile exa with Cargo:
