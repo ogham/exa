@@ -66,6 +66,19 @@ impl UiStyles {
                 conflicted:  Red.normal(),
             },
 
+            filetypes: FileTypes {
+                temp:        Fixed(244).normal(),
+                build:       Yellow.bold().underline(),
+                image:       Fixed(133).normal(),
+                video:       Fixed(135).normal(),
+                music:       Fixed(92).normal(),
+                lossless:    Fixed(93).normal(),
+                crypto:      Fixed(109).normal(),
+                document:    Fixed(105).normal(),
+                compressed:  Red.normal(),
+                compiled:    Fixed(137).normal(),
+            },
+
             punctuation:  Fixed(244).normal(),
             date:         Blue.normal(),
             inode:        Purple.normal(),

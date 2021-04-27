@@ -1,31 +1,14 @@
-use ansi_term::{ANSIString, Style};
-
-use crate::fs::fields as f;
-
-
-impl f::Type {
-    pub fn render<C: Colours>(self, colours: &C) -> ANSIString<'static> {
-        match self {
-            Self::File         => colours.normal().paint("."),
-            Self::Directory    => colours.directory().paint("d"),
-            Self::Pipe         => colours.pipe().paint("|"),
-            Self::Link         => colours.symlink().paint("l"),
-            Self::BlockDevice  => colours.block_device().paint("b"),
-            Self::CharDevice   => colours.char_device().paint("c"),
-            Self::Socket       => colours.socket().paint("s"),
-            Self::Special      => colours.special().paint("?"),
-        }
-    }
-}
-
+use ansi_term::Style;
 
 pub trait Colours {
-    fn normal(&self) -> Style;
-    fn directory(&self) -> Style;
-    fn pipe(&self) -> Style;
-    fn symlink(&self) -> Style;
-    fn block_device(&self) -> Style;
-    fn char_device(&self) -> Style;
-    fn socket(&self) -> Style;
-    fn special(&self) -> Style;
+    fn temp(&self) -> Style;
+    fn build(&self) -> Style;
+    fn image(&self) -> Style;
+    fn video(&self) -> Style;
+    fn music(&self) -> Style;
+    fn lossless(&self) -> Style;
+    fn crypto(&self) -> Style;
+    fn document(&self) -> Style;
+    fn compressed(&self) -> Style;
+    fn compiled(&self) -> Style;
 }

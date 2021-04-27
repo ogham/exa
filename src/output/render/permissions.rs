@@ -2,11 +2,11 @@ use ansi_term::{ANSIString, Style};
 
 use crate::fs::fields as f;
 use crate::output::cell::{TextCell, DisplayWidth};
-use crate::output::render::FiletypeColours;
+use crate::output::render::FilekindColours;
 
 
 impl f::PermissionsPlus {
-    pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> TextCell {
+    pub fn render<C: Colours+FilekindColours>(&self, colours: &C) -> TextCell {
         let mut chars = vec![ self.file_type.render(colours) ];
         chars.extend(self.permissions.render(colours, self.file_type.is_regular_file()));
 

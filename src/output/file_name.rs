@@ -7,7 +7,7 @@ use crate::fs::{File, FileTarget};
 use crate::output::cell::TextCellContents;
 use crate::output::escape;
 use crate::output::icons::{icon_for_file, iconify_style};
-use crate::output::render::FiletypeColours;
+use crate::output::render::FilekindColours;
 
 
 /// Basically a file name factory.
@@ -315,7 +315,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
 
 /// The set of colours that are needed to paint a file name.
-pub trait Colours: FiletypeColours {
+pub trait Colours: FilekindColours {
 
     /// The style to paint the path of a symlink’s target, up to but not
     /// including the file’s name.
