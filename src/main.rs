@@ -155,6 +155,9 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 impl<'args> Exa<'args> {
+    /// # Errors
+    ///
+    /// Will return `Err` if printing to stderr fails.
     pub fn run(mut self) -> io::Result<i32> {
         debug!("Running with options: {:#?}", self.options);
 
