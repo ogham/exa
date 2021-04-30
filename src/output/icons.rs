@@ -37,7 +37,7 @@ impl Icons {
 /// - If neither is set, just use the default style.
 /// - Attributes such as bold or underline should not be used to paint the
 ///   icon, as they can make it look weird.
-pub fn iconify_style<'a>(style: Style) -> Style {
+pub fn iconify_style(style: Style) -> Style {
     style.background.or(style.foreground)
          .map(Style::from)
          .unwrap_or_default()

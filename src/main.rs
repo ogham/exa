@@ -8,7 +8,6 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::enum_glob_use)]
-#![allow(clippy::find_map)]
 #![allow(clippy::map_unwrap_or)]
 #![allow(clippy::match_same_arms)]
 #![allow(clippy::missing_const_for_fn)]
@@ -19,6 +18,7 @@
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::unused_self)]
+#![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::wildcard_imports)]
 
 use std::env;

@@ -28,6 +28,7 @@ pub struct Options {
 }
 
 /// Extra columns to display in the table.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Columns {
 
@@ -166,6 +167,7 @@ impl Column {
 
 
 /// Formatting options for file sizes.
+#[allow(clippy::pub_enum_variant_names)]
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
 
@@ -303,11 +305,11 @@ impl Environment {
 fn determine_time_zone() -> TZResult<TimeZone> {
     if let Ok(file) = env::var("TZ") {
         TimeZone::from_file({
-            if file.starts_with("/") {
+            if file.starts_with('/') {
                 file
             } else {
                 format!("/usr/share/zoneinfo/{}", {
-                    if file.starts_with(":") {
+                    if file.starts_with(':') {
                         file.replacen(":", "", 1)
                     } else {
                         file
