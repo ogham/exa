@@ -3,7 +3,6 @@
 use std::cmp::Ordering;
 use std::iter::FromIterator;
 use std::os::unix::fs::MetadataExt;
-use std::path::Path;
 
 use crate::fs::DotFilter;
 use crate::fs::File;
@@ -321,14 +320,6 @@ impl IgnorePatterns {
     fn is_ignored(&self, file: &str) -> bool {
         self.patterns.iter().any(|p| p.matches(file))
     }
-
-    /// Test whether the given file should be hidden from the results.
-    pub fn is_ignored_path(&self, file: &Path) -> bool {
-        self.patterns.iter().any(|p| p.matches_path(file))
-    }
-
-    // TODO(ogham): The fact that `is_ignored_path` is pub while `is_ignored`
-    // isn’t probably means it’s in the wrong place
 }
 
 
