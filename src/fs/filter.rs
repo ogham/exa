@@ -50,31 +50,8 @@ pub struct FileFilter {
     ///
     /// This came about more or less by a complete historical accident,
     /// when the original `ls` tried to hide `.` and `..`:
-    /// https://plus.google.com/+RobPikeTheHuman/posts/R58WgWwN9jp
     ///
-    ///   When one typed ls, however, these files appeared, so either Ken or
-    ///   Dennis added a simple test to the program. It was in assembler then,
-    ///   but the code in question was equivalent to something like this:
-    ///      if (name[0] == '.') continue;
-    ///   This statement was a little shorter than what it should have been,
-    ///   which is:
-    ///      if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue;
-    ///   but hey, it was easy.
-    ///
-    ///   Two things resulted.
-    ///
-    ///   First, a bad precedent was set. A lot of other lazy programmers
-    ///   introduced bugs by making the same simplification. Actual files
-    ///   beginning with periods are often skipped when they should be counted.
-    ///
-    ///   Second, and much worse, the idea of a "hidden" or "dot" file was
-    ///   created. As a consequence, more lazy programmers started dropping
-    ///   files into everyone's home directory. I don't have all that much
-    ///   stuff installed on the machine I'm using to type this, but my home
-    ///   directory has about a hundred dot files and I don't even know what
-    ///   most of them are or whether they're still needed. Every file name
-    ///   evaluation that goes through my home directory is slowed down by
-    ///   this accumulated sludge.
+    /// [Linux History: How Dot Files Became Hidden Files](https://linux-audit.com/linux-history-how-dot-files-became-hidden-files/)
     pub dot_filter: DotFilter,
 
     /// Glob patterns to ignore. Any file name that matches *any* of these
