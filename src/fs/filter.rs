@@ -88,11 +88,11 @@ impl FileFilter {
     }
 
     /// Sort the files in the given vector based on the sort field option.
-    pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
+    pub fn sort_files<'a, F>(&self, files: &mut Vec<F>, maybe_different_parents: bool)
     where F: AsRef<File<'a>>
     {
         files.sort_by(|a, b| {
-            self.sort_field.compare_files(a.as_ref(), b.as_ref())
+            self.sort_field.compare_files(a.as_ref(), b.as_ref(), maybe_different_parents)
         });
 
         if self.reverse {
@@ -213,8 +213,15 @@ impl SortField {
     /// into groups between letters and numbers, and then sorts those blocks
     /// together, so `file10` will sort after `file9`, instead of before it
     /// because of the `1`.
-    pub fn compare_files(self, a: &File<'_>, b: &File<'_>) -> Ordering {
+    pub fn compare_files(self, a: &File<'_>, b: &File<'_>, maybe_different_parents: bool) -> Ordering {
         use self::SortCase::{ABCabc, AaBbCc};
+
+        if self != Self::Unsorted && maybe_different_parents {
+            match a.path.parent().cmp(&b.path.parent()) {
+                Ordering::Equal => {}
+                ord @ _ => return ord
+            }
+        }
 
         match self {
             Self::Unsorted  => Ordering::Equal,

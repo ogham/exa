@@ -31,7 +31,7 @@ pub struct Render<'a> {
 }
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
+    pub fn render<W: Write>(mut self, w: &mut W, maybe_different_parents: bool) -> io::Result<()> {
         let mut grid = tg::Grid::new(tg::GridOptions {
             direction:  self.opts.direction(),
             filling:    tg::Filling::Spaces(2),
@@ -39,7 +39,7 @@ impl<'a> Render<'a> {
 
         grid.reserve(self.files.len());
 
-        self.filter.sort_files(&mut self.files);
+        self.filter.sort_files(&mut self.files, maybe_different_parents);
         for file in &self.files {
             let filename = self.file_style.for_file(file, self.theme).paint();
 

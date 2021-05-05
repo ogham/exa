@@ -195,7 +195,7 @@ impl<'args> Exa<'args> {
         let is_only_dir = dirs.len() == 1 && no_files;
 
         self.options.filter.filter_argument_files(&mut files);
-        self.print_files(None, files)?;
+        self.print_files(None, files, true)?;
 
         self.print_dirs(dirs, no_files, is_only_dir, exit_status)
     }
@@ -204,7 +204,7 @@ impl<'args> Exa<'args> {
         for dir in dir_files {
 
             // Put a gap between directories, or between the list of files and
-            // the first directory.
+            // the first directory when recursing.
             if first {
                 first = false;
             }
@@ -226,13 +226,15 @@ impl<'args> Exa<'args> {
                     Err((path, e))  => writeln!(io::stderr(), "[{}: {}]", path.display(), e)?,
                 }
             };
-
             self.options.filter.filter_child_files(&mut children);
-            self.options.filter.sort_files(&mut children);
+            if children.is_empty() {
+                continue;
+            }
 
             if let Some(recurse_opts) = self.options.dir_action.recurse_options() {
                 let depth = dir.path.components().filter(|&c| c != Component::CurDir).count() + 1;
                 if ! recurse_opts.tree && ! recurse_opts.is_too_deep(depth) {
+                    self.options.filter.sort_files(&mut children, false);
 
                     let mut child_dirs = Vec::new();
                     for child_dir in children.iter().filter(|f| f.is_directory() && ! f.is_all_all) {
@@ -242,7 +244,7 @@ impl<'args> Exa<'args> {
                         }
                     }
 
-                    self.print_files(Some(&dir), children)?;
+                    self.print_files(Some(&dir), children, false)?;
                     match self.print_dirs(child_dirs, false, false, exit_status) {
                         Ok(_)   => (),
                         Err(e)  => return Err(e),
@@ -251,14 +253,14 @@ impl<'args> Exa<'args> {
                 }
             }
 
-            self.print_files(Some(&dir), children)?;
+            self.print_files(Some(&dir), children, false)?;
         }
 
         Ok(exit_status)
     }
 
     /// Prints the list of files using whichever view is selected.
-    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File<'_>>) -> io::Result<()> {
+    fn print_files(&mut self, dir: Option<&Dir>, files: Vec<File<'_>>, maybe_different_parents: bool) -> io::Result<()> {
         if files.is_empty() {
             return Ok(());
         }
@@ -270,14 +272,14 @@ impl<'args> Exa<'args> {
             (Mode::Grid(ref opts), Some(console_width)) => {
                 let filter = &self.options.filter;
                 let r = grid::Render { files, theme, file_style, opts, console_width, filter };
-                r.render(&mut self.writer)
+                r.render(&mut self.writer, maybe_different_parents)
             }
 
             (Mode::Grid(_), None) |
             (Mode::Lines,   _)    => {
                 let filter = &self.options.filter;
                 let r = lines::Render { files, theme, file_style, filter };
-                r.render(&mut self.writer)
+                r.render(&mut self.writer, maybe_different_parents)
             }
 
             (Mode::Details(ref opts), _) => {
@@ -287,7 +289,7 @@ impl<'args> Exa<'args> {
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                 let git = self.git.as_ref();
                 let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
-                r.render(&mut self.writer)
+                r.render(&mut self.writer, maybe_different_parents)
             }
 
             (Mode::GridDetails(ref opts), Some(console_width)) => {
@@ -300,7 +302,7 @@ impl<'args> Exa<'args> {
                 let git = self.git.as_ref();
 
                 let r = grid_details::Render { dir, files, theme, file_style, grid, details, filter, row_threshold, git_ignoring, git, console_width };
-                r.render(&mut self.writer)
+                r.render(&mut self.writer, maybe_different_parents)
             }
 
             (Mode::GridDetails(ref opts), None) => {
@@ -311,7 +313,7 @@ impl<'args> Exa<'args> {
 
                 let git = self.git.as_ref();
                 let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
-                r.render(&mut self.writer)
+                r.render(&mut self.writer, maybe_different_parents)
             }
         }
     }

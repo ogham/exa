@@ -133,12 +133,13 @@ impl<'a> Render<'a> {
     // This doesn’t take an IgnoreCache even though the details one does
     // because grid-details has no tree view.
 
-    pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
+    pub fn render<W: Write>(mut self, w: &mut W, maybe_different_parents: bool) -> io::Result<()> {
+        self.filter.sort_files(&mut self.files, maybe_different_parents);
         if let Some((grid, width)) = self.find_fitting_grid() {
             write!(w, "{}", grid.fit_into_columns(width))
         }
         else {
-            self.give_up().render(w)
+            self.give_up().render(w, maybe_different_parents)
         }
     }
 

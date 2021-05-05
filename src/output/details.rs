@@ -146,7 +146,7 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 
 impl<'a> Render<'a> {
-    pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
+    pub fn render<W: Write>(mut self, w: &mut W, first: bool) -> io::Result<()> {
         let mut pool = Pool::new(num_cpus::get() as u32);
         let mut rows = Vec::new();
 
@@ -168,14 +168,14 @@ impl<'a> Render<'a> {
             // This is weird, but I can’t find a way around it:
             // https://internals.rust-lang.org/t/should-option-mut-t-implement-copy/3715/6
             let mut table = Some(table);
-            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut table, &mut rows, &self.files, TreeDepth::root(), first);
 
             for row in self.iterate_with_table(table.unwrap(), rows) {
                 writeln!(w, "{}", row.strings())?
             }
         }
         else {
-            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, TreeDepth::root());
+            self.add_files_to_table(&mut pool, &mut None, &mut rows, &self.files, TreeDepth::root(), first);
 
             for row in self.iterate(rows) {
                 writeln!(w, "{}", row.strings())?
@@ -187,7 +187,7 @@ impl<'a> Render<'a> {
 
     /// Adds files to the table, possibly recursively. This is easily
     /// parallelisable, and uses a pool of threads.
-    fn add_files_to_table<'dir>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], depth: TreeDepth) {
+    fn add_files_to_table<'dir>(&self, pool: &mut Pool, table: &mut Option<Table<'a>>, rows: &mut Vec<Row>, src: &[File<'dir>], depth: TreeDepth, first: bool) {
         use std::sync::{Arc, Mutex};
         use log::*;
         use crate::fs::feature::xattr;
@@ -272,7 +272,8 @@ impl<'a> Render<'a> {
 
         // this is safe because all entries have been initialized above
         let mut file_eggs = unsafe { std::mem::transmute::<_, Vec<Egg<'_>>>(file_eggs) };
-        self.filter.sort_files(&mut file_eggs);
+
+        self.filter.sort_files(&mut file_eggs, first);
 
         for (tree_params, egg) in depth.iterate_over(file_eggs.into_iter()) {
             let mut files = Vec::new();
@@ -318,7 +319,7 @@ impl<'a> Render<'a> {
                         rows.push(self.render_error(&error, TreeParams::new(depth.deeper(), false), path));
                     }
 
-                    self.add_files_to_table(pool, table, rows, &files, depth.deeper());
+                    self.add_files_to_table(pool, table, rows, &files, depth.deeper(), false);
                     continue;
                 }
             }
