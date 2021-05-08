@@ -298,7 +298,7 @@ impl Environment {
 
         let users = Mutex::new(UsersCache::new());
 
-        Self { tz, numeric, users }
+        Self { numeric, tz, users }
     }
 }
 

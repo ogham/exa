@@ -32,13 +32,10 @@ impl Mode {
         let flag = matches.has_where_any(|f| f.matches(&flags::LONG) || f.matches(&flags::ONE_LINE)
                                           || f.matches(&flags::GRID) || f.matches(&flags::TREE));
 
-        let flag = match flag {
-            Some(f) => f,
-            None => {
-                Self::strict_check_long_flags(matches)?;
-                let grid = grid::Options::deduce(matches)?;
-                return Ok(Self::Grid(grid));
-            }
+        let flag = if let Some(f) = flag { f } else {
+            Self::strict_check_long_flags(matches)?;
+            let grid = grid::Options::deduce(matches)?;
+            return Ok(Self::Grid(grid));
         };
 
         if flag.matches(&flags::LONG)
@@ -194,7 +191,7 @@ impl TableOptions {
         let size_format = SizeFormat::deduce(matches)?;
         let user_format = UserFormat::deduce(matches)?;
         let columns = Columns::deduce(matches)?;
-        Ok(Self { time_format, size_format, columns , user_format})
+        Ok(Self { size_format, time_format, user_format, columns })
     }
 }
 
@@ -214,7 +211,7 @@ impl Columns {
         let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
         let user =        ! matches.has(&flags::NO_USER)?;
 
-        Ok(Self { time_types, git, octal, blocks, group, inode, links, permissions, filesize, user })
+        Ok(Self { time_types, inode, links, blocks, group, git, octal, permissions, filesize, user })
     }
 }
 
