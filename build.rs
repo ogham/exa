@@ -15,7 +15,7 @@ use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-use datetime::{LocalDateTime, ISO};
+use chrono::prelude::*;
 
 
 /// The build script entry point.
@@ -118,6 +118,6 @@ fn nonstandard_features_string() -> String {
 
 /// Formats the current date as an ISO 8601 string.
 fn build_date() -> String {
-    let now = LocalDateTime::now();
-    format!("{}", now.date().iso())
+    let now = Local::now();
+    now.date().format("%Y-%m-%d").to_string()
 }

@@ -1,10 +1,8 @@
 use std::cmp::max;
-use std::env;
 use std::ops::Deref;
 use std::sync::{Mutex, MutexGuard};
 
-use datetime::TimeZone;
-use zoneinfo_compiled::{CompiledData, Result as TZResult};
+use chrono::prelude::*;
 
 use lazy_static::lazy_static;
 use log::*;
@@ -266,12 +264,11 @@ impl Default for TimeTypes {
 /// Any environment field should be able to be mocked up for test runs.
 pub struct Environment {
 
+    /// The computer’s current time offset, determined from time zone.
+    time_offset: FixedOffset,
+
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
-
-    /// The computer’s current time zone. This gets used to determine how to
-    /// offset files’ timestamps.
-    tz: Option<TimeZone>,
 
     /// Mapping cache of user IDs to usernames.
     users: Mutex<UsersCache>,
@@ -283,42 +280,14 @@ impl Environment {
     }
 
     fn load_all() -> Self {
-        let tz = match determine_time_zone() {
-            Ok(t) => {
-                Some(t)
-            }
-            Err(ref e) => {
-                println!("Unable to determine time zone: {}", e);
-                None
-            }
-        };
+        let time_offset = *Local::now().offset();
 
         let numeric = locale::Numeric::load_user_locale()
                              .unwrap_or_else(|_| locale::Numeric::english());
 
         let users = Mutex::new(UsersCache::new());
 
-        Self { numeric, tz, users }
-    }
-}
-
-fn determine_time_zone() -> TZResult<TimeZone> {
-    if let Ok(file) = env::var("TZ") {
-        TimeZone::from_file({
-            if file.starts_with('/') {
-                file
-            } else {
-                format!("/usr/share/zoneinfo/{}", {
-                    if file.starts_with(':') {
-                        file.replacen(":", "", 1)
-                    } else {
-                        file
-                    }
-                })
-            }
-        })
-    } else {
-        TimeZone::from_file("/etc/localtime")
+        Self { time_offset, numeric, users }
     }
 }
 
@@ -430,16 +399,16 @@ impl<'a, 'f> Table<'a> {
             }
 
             Column::Timestamp(TimeType::Modified)  => {
-                file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.modified_time().render(self.theme.ui.date, self.env.time_offset, self.time_format)
             }
             Column::Timestamp(TimeType::Changed)   => {
-                file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.changed_time().render(self.theme.ui.date, self.env.time_offset, self.time_format)
             }
             Column::Timestamp(TimeType::Created)   => {
-                file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.created_time().render(self.theme.ui.date, self.env.time_offset, self.time_format)
             }
             Column::Timestamp(TimeType::Accessed)  => {
-                file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+                file.accessed_time().render(self.theme.ui.date, self.env.time_offset, self.time_format)
             }
         }
     }

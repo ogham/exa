@@ -3,7 +3,8 @@
 use std::io;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use chrono::prelude::*;
 
 use log::*;
 
@@ -336,37 +337,26 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s last modified timestamp, if available on this platform.
-    pub fn modified_time(&self) -> Option<SystemTime> {
-        self.metadata.modified().ok()
+    pub fn modified_time(&self) -> Option<NaiveDateTime> {
+        self.metadata.modified().map(|st| DateTime::<Utc>::from(st).naive_utc()).ok()
     }
 
     /// This file’s last changed timestamp, if available on this platform.
-    pub fn changed_time(&self) -> Option<SystemTime> {
-        let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
-
-        if sec < 0 {
-            if nanosec > 0 {
-                sec += 1;
-                nanosec -= 1_000_000_000;
-            }
-
-            let duration = Duration::new(sec.abs() as u64, nanosec.abs() as u32);
-            Some(UNIX_EPOCH - duration)
-        }
-        else {
-            let duration = Duration::new(sec as u64, nanosec as u32);
-            Some(UNIX_EPOCH + duration)
-        }
+    pub fn changed_time(&self) -> Option<NaiveDateTime> {
+        Some(NaiveDateTime::from_timestamp(
+            self.metadata.ctime(),
+            self.metadata.ctime_nsec() as u32,
+        ))
     }
 
     /// This file’s last accessed timestamp, if available on this platform.
-    pub fn accessed_time(&self) -> Option<SystemTime> {
-        self.metadata.accessed().ok()
+    pub fn accessed_time(&self) -> Option<NaiveDateTime> {
+        self.metadata.accessed().map(|st| DateTime::<Utc>::from(st).naive_utc()).ok()
     }
 
     /// This file’s created timestamp, if available on this platform.
-    pub fn created_time(&self) -> Option<SystemTime> {
-        self.metadata.created().ok()
+    pub fn created_time(&self) -> Option<NaiveDateTime> {
+        self.metadata.created().map(|st| DateTime::<Utc>::from(st).naive_utc()).ok()
     }
 
     /// This file’s ‘type’.

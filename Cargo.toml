@@ -18,6 +18,7 @@ name = "exa"
 
 [dependencies]
 ansi_term = "0.12"
+chrono = "0.4"
 glob = "0.3"
 lazy_static = "1.3"
 libc = "0.2"
@@ -31,21 +32,14 @@ term_grid = "0.2.0"
 terminal_size = "0.1.16"
 unicode-width = "0.1"
 users = "0.11"
-zoneinfo_compiled = "0.5.1"
-
-[dependencies.datetime]
-version = "0.5.2"
-default-features = false
-features = ["format"]
 
 [dependencies.git2]
 version = "0.13"
 optional = true
 default-features = false
 
-[build-dependencies.datetime]
-version = "0.5.2"
-default-features = false
+[build-dependencies]
+chrono = "0.4"
 
 [features]
 default = [ "git" ]

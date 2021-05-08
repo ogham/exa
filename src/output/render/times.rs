@@ -1,27 +1,19 @@
-use std::time::SystemTime;
-
-use datetime::TimeZone;
-use ansi_term::Style;
-
 use crate::output::cell::TextCell;
 use crate::output::time::TimeFormat;
 
+use ansi_term::Style;
+use chrono::prelude::*;
+
 
 pub trait Render {
-    fn render(self, style: Style, tz: &Option<TimeZone>, format: TimeFormat) -> TextCell;
+    fn render(self, style: Style, time_offset: FixedOffset, time_format: TimeFormat) -> TextCell;
 }
 
-impl Render for Option<SystemTime> {
-    fn render(self, style: Style, tz: &Option<TimeZone>, format: TimeFormat) -> TextCell {
+impl Render for Option<NaiveDateTime> {
+    fn render(self, style: Style, time_offset: FixedOffset, time_format: TimeFormat) -> TextCell {
         let datestamp = if let Some(time) = self {
-            if let Some(ref tz) = tz {
-                format.format_zoned(time, tz)
-            }
-            else {
-                format.format_local(time)
-            }
-        }
-        else {
+            time_format.format(&DateTime::<FixedOffset>::from_utc(time, time_offset))
+        } else {
             String::from("-")
         };
 

@@ -1,10 +1,6 @@
 //! Timestamp formatting.
 
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
-use datetime::fmt::DateFormat;
-
+use chrono::prelude::*;
 use lazy_static::lazy_static;
 use unicode_width::UnicodeWidthStr;
 
@@ -52,192 +48,107 @@ pub enum TimeFormat {
 // timestamps are separate types.
 
 impl TimeFormat {
-    pub fn format_local(self, time: SystemTime) -> String {
+    pub fn format(self, time: &DateTime<FixedOffset>) -> String {
         match self {
-            Self::DefaultFormat  => default_local(time),
-            Self::ISOFormat      => iso_local(time),
-            Self::LongISO        => long_local(time),
-            Self::FullISO        => full_local(time),
-        }
-    }
-
-    pub fn format_zoned(self, time: SystemTime, zone: &TimeZone) -> String {
-        match self {
-            Self::DefaultFormat  => default_zoned(time, zone),
-            Self::ISOFormat      => iso_zoned(time, zone),
-            Self::LongISO        => long_zoned(time, zone),
-            Self::FullISO        => full_zoned(time, zone),
+            Self::DefaultFormat  => default(time),
+            Self::ISOFormat      => iso(time),
+            Self::LongISO        => long(time),
+            Self::FullISO        => full(time),
         }
     }
 }
 
-
-#[allow(trivial_numeric_casts)]
-fn default_local(time: SystemTime) -> String {
-    let date = LocalDateTime::at(systemtime_epoch(time));
-    let date_format = get_dateformat(&date);
-    date_format.format(&date, &*LOCALE)
+fn default(time: &DateTime<FixedOffset>) -> String {
+    let month = &*LOCALE.short_month_name(time.month0() as usize);
+    let month_width = short_month_padding(*MAX_MONTH_WIDTH, &month);
+    let format = if time.year() == *CURRENT_YEAR {
+        format!("%_d {:<width$} %H:%M", month, width = month_width)
+    } else {
+        format!("%_d {:<width$}  %Y", month, width = month_width)
+    };
+    time.format(format.as_str()).to_string()
 }
 
-#[allow(trivial_numeric_casts)]
-fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
-    let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
-    let date_format = get_dateformat(&date);
-    date_format.format(&date, &*LOCALE)
+/// Convert between Unicode width and width in chars to use in format!.
+/// ex: in Japanese, 月 is one character, but it has the width of two.
+/// For alignement purposes, we take the real display width into account.
+/// So, MAXIMUM_MONTH_WIDTH (“12月”) = 4, but if we use `{:4}` in format!,
+/// it will add a space (“ 12月”) because format! counts characters.
+/// Conversely, a char can have a width of zero (like combining diacritics)
+fn short_month_padding(max_month_width: usize, month: &str) -> usize {
+    let shift = month.chars().count() as isize - UnicodeWidthStr::width(month) as isize;
+    (max_month_width as isize + shift) as usize
 }
 
-fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
-    match (is_recent(&date), *MAXIMUM_MONTH_WIDTH) {
-        (true, 4)   => &FOUR_WIDE_DATE_TIME,
-        (true, 5)   => &FIVE_WIDE_DATE_TIME,
-        (true, _)   => &OTHER_WIDE_DATE_TIME,
-        (false, 4)  => &FOUR_WIDE_DATE_YEAR,
-        (false, 5)  => &FIVE_WIDE_DATE_YEAR,
-        (false, _)  => &OTHER_WIDE_DATE_YEAR,
+fn iso(time: &DateTime<FixedOffset>) -> String {
+    if time.year() == *CURRENT_YEAR {
+        time.format("%m-%d %H:%M").to_string()
+    } else {
+        time.format("%Y-%m-%d").to_string()
     }
 }
 
-#[allow(trivial_numeric_casts)]
-fn long_local(time: SystemTime) -> String {
-    let date = LocalDateTime::at(systemtime_epoch(time));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute())
+fn long(time: &DateTime<FixedOffset>) -> String {
+    time.format("%Y-%m-%d %H:%M").to_string()
 }
 
-#[allow(trivial_numeric_casts)]
-fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
-    let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute())
-}
-
-#[allow(trivial_numeric_casts)]
-fn full_local(time: SystemTime) -> String {
-    let date = LocalDateTime::at(systemtime_epoch(time));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), systemtime_nanos(time))
-}
-
-#[allow(trivial_numeric_casts)]
-fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
-    use datetime::Offset;
-
-    let local = LocalDateTime::at(systemtime_epoch(time));
-    let date = zone.to_zoned(local);
-    let offset = Offset::of_seconds(zone.offset(local) as i32).expect("Offset out of range");
-    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), systemtime_nanos(time),
-            offset.hours(), offset.minutes().abs())
-}
-
-#[allow(trivial_numeric_casts)]
-fn iso_local(time: SystemTime) -> String {
-    let date = LocalDateTime::at(systemtime_epoch(time));
-
-    if is_recent(&date) {
-        format!("{:02}-{:02} {:02}:{:02}",
-                date.month() as usize, date.day(),
-                date.hour(), date.minute())
-    }
-    else {
-        format!("{:04}-{:02}-{:02}",
-                date.year(), date.month() as usize, date.day())
-    }
-}
-
-#[allow(trivial_numeric_casts)]
-fn iso_zoned(time: SystemTime, zone: &TimeZone) -> String {
-    let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
-
-    if is_recent(&date) {
-        format!("{:02}-{:02} {:02}:{:02}",
-                date.month() as usize, date.day(),
-                date.hour(), date.minute())
-    }
-    else {
-        format!("{:04}-{:02}-{:02}",
-                date.year(), date.month() as usize, date.day())
-    }
-}
-
-
-fn systemtime_epoch(time: SystemTime) -> i64 {
-    time.duration_since(UNIX_EPOCH)
-        .map(|t| t.as_secs() as i64)
-        .unwrap_or_else(|e| {
-            let diff = e.duration();
-            let mut secs = diff.as_secs();
-            if diff.subsec_nanos() > 0 {
-                secs += 1;
-            }
-            -(secs as i64)
-        })
-}
-
-fn systemtime_nanos(time: SystemTime) -> u32 {
-    time.duration_since(UNIX_EPOCH)
-        .map(|t| t.subsec_nanos())
-        .unwrap_or_else(|e| {
-            let nanos = e.duration().subsec_nanos();
-            if nanos > 0 {
-                1_000_000_000 - nanos
-            } else {
-                nanos
-            }
-        })
-}
-
-fn is_recent(date: &LocalDateTime) -> bool {
-    date.year() == *CURRENT_YEAR
+fn full(time: &DateTime<FixedOffset>) -> String {
+    time.format("%Y-%m-%d %H:%M:%S.%f %z").to_string()
 }
 
 
 lazy_static! {
 
-    static ref CURRENT_YEAR: i64 = LocalDateTime::now().year();
+    static ref CURRENT_YEAR: i32 = Local::now().year();
 
     static ref LOCALE: locale::Time = {
         locale::Time::load_user_locale()
                .unwrap_or_else(|_| locale::Time::english())
     };
 
-    static ref MAXIMUM_MONTH_WIDTH: usize = {
+    static ref MAX_MONTH_WIDTH: usize = {
         // Some locales use a three-character wide month name (Jan to Dec);
         // others vary between three to four (1月 to 12月, juil.). We check each month width
         // to detect the longest and set the output format accordingly.
-        let mut maximum_month_width = 0;
-        for i in 0..11 {
-            let current_month_width = UnicodeWidthStr::width(&*LOCALE.short_month_name(i));
-            maximum_month_width = std::cmp::max(maximum_month_width, current_month_width);
-        }
-        maximum_month_width
+        (0..11).map(|i| UnicodeWidthStr::width(&*LOCALE.short_month_name(i))).max().unwrap()
     };
+}
 
-    static ref FOUR_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {4<:M} {02>:h}:{02>:m}"
-    ).unwrap();
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    static ref FIVE_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {5<:M} {02>:h}:{02>:m}"
-    ).unwrap();
+    #[test]
+    fn short_month_width_japanese() {
+        let max_month_width = 4;
+        let month = "1\u{2F49}"; // 1月
+        let padding = short_month_padding(max_month_width, month);
+        let final_str = format!("{:<width$}", month, width = padding);
+        assert_eq!(max_month_width, UnicodeWidthStr::width(final_str.as_str()));
+    }
 
-    static ref OTHER_WIDE_DATE_TIME: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {:M} {02>:h}:{02>:m}"
-    ).unwrap();
-
-    static ref FOUR_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {4<:M} {5>:Y}"
-    ).unwrap();
-
-    static ref FIVE_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {5<:M} {5>:Y}"
-    ).unwrap();
-
-    static ref OTHER_WIDE_DATE_YEAR: DateFormat<'static> = DateFormat::parse(
-        "{2>:D} {:M} {5>:Y}"
-    ).unwrap();
+    #[test]
+    fn short_month_width_hindi() {
+        let max_month_width = 4;
+        assert_eq!(true, [
+            "\u{091C}\u{0928}\u{0970}", // जन॰
+            "\u{092B}\u{093C}\u{0930}\u{0970}", // फ़र॰
+            "\u{092E}\u{093E}\u{0930}\u{094D}\u{091A}", // मार्च
+            "\u{0905}\u{092A}\u{094D}\u{0930}\u{0948}\u{0932}", // अप्रैल
+            "\u{092E}\u{0908}", // मई
+            "\u{091C}\u{0942}\u{0928}", // जून
+            "\u{091C}\u{0941}\u{0932}\u{0970}", // जुल॰
+            "\u{0905}\u{0917}\u{0970}", // अग॰
+            "\u{0938}\u{093F}\u{0924}\u{0970}", // सित॰
+            "\u{0905}\u{0915}\u{094D}\u{0924}\u{0942}\u{0970}", // अक्तू॰
+            "\u{0928}\u{0935}\u{0970}", // नव॰
+            "\u{0926}\u{093F}\u{0938}\u{0970}", // दिस॰
+        ].iter()
+            .map(|month| format!(
+                "{:<width$}",
+                month,
+                width = short_month_padding(max_month_width, month)
+            )).all(|string| UnicodeWidthStr::width(string.as_str()) == max_month_width)
+        );
+    }
 }
