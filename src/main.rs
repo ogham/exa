@@ -7,6 +7,10 @@
 #![warn(unused)]
 
 #![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
 #![allow(clippy::enum_glob_use)]
 #![allow(clippy::map_unwrap_or)]
 #![allow(clippy::match_same_arms)]
@@ -282,7 +286,7 @@ impl<'args> Exa<'args> {
 
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                 let git = self.git.as_ref();
-                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
+                let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
                 r.render(&mut self.writer)
             }
 
@@ -306,7 +310,7 @@ impl<'args> Exa<'args> {
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
 
                 let git = self.git.as_ref();
-                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
+                let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
                 r.render(&mut self.writer)
             }
         }
