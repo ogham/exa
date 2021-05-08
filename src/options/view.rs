@@ -57,10 +57,9 @@ impl Mode {
                 let grid_details = grid_details::Options { grid, details, row_threshold };
                 return Ok(Self::GridDetails(grid_details));
             }
-            else {
-                // the --tree case is handled by the DirAction parser later
-                return Ok(Self::Details(details));
-            }
+
+            // the --tree case is handled by the DirAction parser later
+            return Ok(Self::Details(details));
         }
 
         Self::strict_check_long_flags(matches)?;

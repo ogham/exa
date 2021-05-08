@@ -8,17 +8,14 @@
 
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::enum_glob_use)]
-#![allow(clippy::find_map)]
 #![allow(clippy::map_unwrap_or)]
 #![allow(clippy::match_same_arms)]
-#![allow(clippy::missing_const_for_fn)]
-#![allow(clippy::missing_errors_doc)]
 #![allow(clippy::module_name_repetitions)]
-#![allow(clippy::must_use_candidate)]
 #![allow(clippy::non_ascii_literal)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::unused_self)]
+#![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::wildcard_imports)]
 
 use std::env;
@@ -155,6 +152,9 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 impl<'args> Exa<'args> {
+    /// # Errors
+    ///
+    /// Will return `Err` if printing to stderr fails.
     pub fn run(mut self) -> io::Result<i32> {
         debug!("Running with options: {:#?}", self.options);
 

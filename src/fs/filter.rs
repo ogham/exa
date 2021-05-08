@@ -284,8 +284,10 @@ impl SortField {
     }
 
     fn strip_dot(n: &str) -> &str {
-        if n.starts_with('.') { &n[1..] }
-                         else { n }
+        match n.strip_prefix('.') {
+            Some(s) => s,
+            None    => n,
+        }
     }
 }
 
