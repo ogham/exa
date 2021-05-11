@@ -326,8 +326,9 @@ mkdir -p "$TEST_ROOT/git3"
 cd       "$TEST_ROOT/git3"
 git init >/dev/null
 
-# Create a symbolic link pointing to a non-existing file
+# Create symbolic links pointing to non-existing files
 ln -s aaa/aaa/a b
+ln -s /aaa
 
 # This normally fails with:
 find "$TEST_ROOT/git3" -exec touch {} -h -t $FIXED_DATE \;

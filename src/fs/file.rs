@@ -205,24 +205,6 @@ impl<'dir> File<'dir> {
     }
 
 
-    /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
-    /// make it an absolute path that can be accessed from whichever
-    /// directory exa is being run from.
-    fn reorient_target_path(&self, path: &Path) -> PathBuf {
-        if path.is_absolute() {
-            path.to_path_buf()
-        }
-        else if let Some(dir) = self.parent_dir {
-            dir.join(&*path)
-        }
-        else if let Some(parent) = self.path.parent() {
-            parent.join(&*path)
-        }
-        else {
-            self.path.join(&*path)
-        }
-    }
-
     /// Again assuming this file is a symlink, follows that link and returns
     /// the result of following it.
     ///
@@ -245,7 +227,7 @@ impl<'dir> File<'dir> {
             Err(e)  => return FileTarget::Err(e),
         };
 
-        let absolute_path = self.reorient_target_path(&path);
+        let absolute_path = self.path.with_file_name(&path);
 
         // Use plain `metadata` instead of `symlink_metadata` - we *want* to
         // follow links.

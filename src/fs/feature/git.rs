@@ -289,13 +289,9 @@ impl Git {
 /// you’d ask a repo about “./README.md” but it only knows about
 /// “/vagrant/README.md”, prefixed by the workdir.
 fn reorient(path: &Path) -> PathBuf {
-    use std::env::current_dir;
-
-    // TODO: I’m not 100% on this func tbh
-    let path = match current_dir() {
-        Err(_)   => Path::new(".").join(&path),
-        Ok(dir)  => dir.join(&path),
-    };
+    let path = std::env::current_dir()
+        .unwrap()
+        .with_file_name(&path);
 
     path.canonicalize().unwrap_or(path)
 }
