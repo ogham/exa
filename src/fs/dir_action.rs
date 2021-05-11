@@ -51,7 +51,7 @@ impl DirAction {
         match self {
             Self::AsFile      => true,
             Self::Recurse(o)  => o.tree,
-            _                 => false,
+            Self::List        => false,
         }
     }
 }
