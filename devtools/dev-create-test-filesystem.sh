@@ -252,7 +252,7 @@ sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/attributes"
 
 # A sample Git repository
 # This uses cd because it's easier than telling Git where to go each time
-echo -e "\033[1m[10/13]\033[0m Creating Git testcases (1/3)"
+echo -e "\033[1m[10/13]\033[0m Creating Git testcases (1/4)"
 mkdir "$TEST_ROOT/git"
 cd    "$TEST_ROOT/git"
 git init >/dev/null
@@ -281,7 +281,7 @@ sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git"
 
 # A second Git repository
 # for testing two at once
-echo -e "\033[1m[11/13]\033[0m Creating Git testcases (2/3)"
+echo -e "\033[1m[11/13]\033[0m Creating Git testcases (2/4)"
 mkdir -p "$TEST_ROOT/git2/deeply/nested/directory"
 cd       "$TEST_ROOT/git2"
 git init >/dev/null
@@ -321,7 +321,7 @@ sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git2"
 
 # A third Git repository
 # Regression test for https://github.com/ogham/exa/issues/526
-echo -e "\033[1m[12/13]\033[0m Creating Git testcases (3/3)"
+echo -e "\033[1m[12/13]\033[0m Creating Git testcases (3/4)"
 mkdir -p "$TEST_ROOT/git3"
 cd       "$TEST_ROOT/git3"
 git init >/dev/null
@@ -332,6 +332,20 @@ ln -s aaa/aaa/a b
 # This normally fails with:
 find "$TEST_ROOT/git3" -exec touch {} -h -t $FIXED_DATE \;
 sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git3"
+
+
+# A fourth Git repository
+# Regression test for https://github.com/ogham/exa/issues/698
+echo -e "\033[1m[12/13]\033[0m Creating Git testcases (4/4)"
+mkdir -p "$TEST_ROOT/git4"
+cd       "$TEST_ROOT/git4"
+git init >/dev/null
+
+# Create a non UTF-8 file
+touch 'P'$'\b\211''UUU'
+
+find "$TEST_ROOT/git4" -exec touch {} -h -t $FIXED_DATE \;
+sudo chown $FIXED_USER:$FIXED_USER -R "$TEST_ROOT/git4"
 
 
 # Hidden and dot file testcases.

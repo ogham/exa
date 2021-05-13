@@ -144,6 +144,18 @@ status = 0
 tags = [ 'long', 'git' ]
 
 
+
+# The forth Git repo: non UTF-8 file
+
+[[cmd]]
+name = "‘exa --git -l’ handles non UTF8 file in Git repositories"
+shell = "exa --git -l /testcases/git4"
+stdout = { file = "outputs/git4_long.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+
 # Both repositories 1 and 2 at once
 
 [[cmd]]
