@@ -37,7 +37,7 @@ impl Icons {
 /// - If neither is set, just use the default style.
 /// - Attributes such as bold or underline should not be used to paint the
 ///   icon, as they can make it look weird.
-pub fn iconify_style<'a>(style: Style) -> Style {
+pub fn iconify_style(style: Style) -> Style {
     style.background.or(style.foreground)
          .map(Style::from)
          .unwrap_or_default()
@@ -170,6 +170,9 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "flac"          => '\u{f001}', // 
             "flv"           => '\u{f03d}', // 
             "font"          => '\u{f031}', // 
+            "fs"            => '\u{e7a7}', // 
+            "fsi"           => '\u{e7a7}', // 
+            "fsx"           => '\u{e7a7}', // 
             "gdoc"          => '\u{f1c2}', // 
             "gem"           => '\u{e21e}', // 
             "gemfile"       => '\u{e21e}', // 

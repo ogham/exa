@@ -81,11 +81,11 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
-        Ok(File { path, parent_dir, metadata, ext, name, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
-        let path       = parent_dir.path.to_path_buf();
+        let path       = parent_dir.path.clone();
         let ext        = File::ext(&path);
 
         debug!("Statting file {:?}", &path);

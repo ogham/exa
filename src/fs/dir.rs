@@ -128,9 +128,8 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
                 return Some(File::from_args(path.clone(), self.dir, filename)
                                  .map_err(|e| (path.clone(), e)))
             }
-            else {
-                return None
-            }
+
+            return None
         }
     }
 }

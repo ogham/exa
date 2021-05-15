@@ -4,7 +4,6 @@ use std::cmp::Ordering;
 use std::iter::FromIterator;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
-use std::path::Path;
 
 use crate::fs::DotFilter;
 use crate::fs::File;
@@ -51,31 +50,8 @@ pub struct FileFilter {
     ///
     /// This came about more or less by a complete historical accident,
     /// when the original `ls` tried to hide `.` and `..`:
-    /// https://plus.google.com/+RobPikeTheHuman/posts/R58WgWwN9jp
     ///
-    ///   When one typed ls, however, these files appeared, so either Ken or
-    ///   Dennis added a simple test to the program. It was in assembler then,
-    ///   but the code in question was equivalent to something like this:
-    ///      if (name[0] == '.') continue;
-    ///   This statement was a little shorter than what it should have been,
-    ///   which is:
-    ///      if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue;
-    ///   but hey, it was easy.
-    ///
-    ///   Two things resulted.
-    ///
-    ///   First, a bad precedent was set. A lot of other lazy programmers
-    ///   introduced bugs by making the same simplification. Actual files
-    ///   beginning with periods are often skipped when they should be counted.
-    ///
-    ///   Second, and much worse, the idea of a "hidden" or "dot" file was
-    ///   created. As a consequence, more lazy programmers started dropping
-    ///   files into everyone's home directory. I don't have all that much
-    ///   stuff installed on the machine I'm using to type this, but my home
-    ///   directory has about a hundred dot files and I don't even know what
-    ///   most of them are or whether they're still needed. Every file name
-    ///   evaluation that goes through my home directory is slowed down by
-    ///   this accumulated sludge.
+    /// [Linux History: How Dot Files Became Hidden Files](https://linux-audit.com/linux-history-how-dot-files-became-hidden-files/)
     pub dot_filter: DotFilter,
 
     /// Glob patterns to ignore. Any file name that matches *any* of these
@@ -83,9 +59,6 @@ pub struct FileFilter {
     pub ignore_patterns: IgnorePatterns,
 
     /// Whether to ignore Git-ignored patterns.
-    /// This is implemented completely separately from the actual Git
-    /// repository scanning — a `.gitignore` file will still be scanned even
-    /// if there’s no `.git` folder present.
     pub git_ignore: GitIgnore,
 }
 
@@ -287,8 +260,10 @@ impl SortField {
     }
 
     fn strip_dot(n: &str) -> &str {
-        if n.starts_with('.') { &n[1..] }
-                         else { n }
+        match n.strip_prefix('.') {
+            Some(s) => s,
+            None    => n,
+        }
     }
 }
 
@@ -348,35 +323,20 @@ impl IgnorePatterns {
     fn is_ignored(&self, file: &str) -> bool {
         self.patterns.iter().any(|p| p.matches(file))
     }
-
-    /// Test whether the given file should be hidden from the results.
-    pub fn is_ignored_path(&self, file: &Path) -> bool {
-        self.patterns.iter().any(|p| p.matches_path(file))
-    }
-
-    // TODO(ogham): The fact that `is_ignored_path` is pub while `is_ignored`
-    // isn’t probably means it’s in the wrong place
 }
 
 
-/// Whether to ignore or display files that are mentioned in `.gitignore` files.
+/// Whether to ignore or display files that Git would ignore.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum GitIgnore {
 
-    /// Ignore files that Git would ignore. This means doing a check for a
-    /// `.gitignore` file, possibly recursively up the filesystem tree.
+    /// Ignore files that Git would ignore.
     CheckAndIgnore,
 
     /// Display files, even if Git would ignore them.
     Off,
 }
 
-// This is not fully baked yet. The `ignore` crate lists a lot more files that
-// we aren’t checking:
-//
-// > By default, all ignore files found are respected. This includes .ignore,
-// > .gitignore, .git/info/exclude and even your global gitignore globs,
-// > usually found in $XDG_CONFIG_HOME/git/ignore.
 
 
 #[cfg(test)]

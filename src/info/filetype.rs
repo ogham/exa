@@ -19,6 +19,7 @@ impl FileExtensions {
     /// An “immediate” file is something that can be run or activated somehow
     /// in order to kick off the build of a project. It’s usually only present
     /// in directories full of source code.
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn is_immediate(&self, file: &File<'_>) -> bool {
         file.name.to_lowercase().starts_with("readme") ||
         file.name.ends_with(".ninja") ||
