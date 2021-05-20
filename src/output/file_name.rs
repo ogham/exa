@@ -226,7 +226,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         let coconut = parent.components().count();
 
         if coconut == 1 && parent.has_root() {
-            bits.push(self.colours.symlink_path().paint(String::from(std::path::MAIN_SEPARATOR)));
+            bits.push(self.colours.symlink_path().paint(std::path::MAIN_SEPARATOR.to_string()));
         }
         else if coconut >= 1 {
             escape(
@@ -235,7 +235,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                 self.colours.symlink_path(),
                 self.colours.control_char(),
             );
-            bits.push(self.colours.symlink_path().paint(String::from(std::path::MAIN_SEPARATOR)));
+            bits.push(self.colours.symlink_path().paint(std::path::MAIN_SEPARATOR.to_string()));
         }
     }
 
