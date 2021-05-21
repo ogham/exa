@@ -251,6 +251,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "pdf"           => '\u{f1c1}', // 
             "php"           => '\u{e73d}', // 
             "pl"            => '\u{e769}', // 
+            "pm"            => '\u{e769}', // 
             "png"           => '\u{f1c5}', // 
             "ppt"           => '\u{f1c4}', // 
             "pptx"          => '\u{f1c4}', // 
@@ -303,6 +304,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tex"           => '\u{f034}', // 
             "tiff"          => '\u{f1c5}', // 
             "toml"          => '\u{e615}', // 
+            "t"             => '\u{e769}', // 
             "ts"            => '\u{e628}', // 
             "tsv"           => '\u{f1c3}', // 
             "tsx"           => '\u{e7ba}', // 
