@@ -258,7 +258,7 @@ mod lister {
                 FollowSymlinks::Yes  => listxattr,
                 FollowSymlinks::No   => llistxattr,
             };
-
+            #[cfg(not(target_arch = "aarch64"))]            
             unsafe {
                 listxattr(
                     c_path.as_ptr().cast(),
@@ -266,6 +266,15 @@ mod lister {
                     bufsize as size_t,
                 )
             }
+            #[cfg(target_arch = "aarch64")]            
+            unsafe {
+                listxattr(
+                    c_path.as_ptr().cast(),
+                    buf.as_mut_ptr().cast::<u8>(),
+                    bufsize as size_t,
+                )
+            }
+
         }
 
         pub fn getxattr(&self, c_path: &CString, buf: &[u8]) -> ssize_t {
@@ -274,10 +283,20 @@ mod lister {
                 FollowSymlinks::No   => lgetxattr,
             };
 
+            #[cfg(not(target_arch = "aarch64"))]            
             unsafe {
                 getxattr(
                     c_path.as_ptr().cast(),
                     buf.as_ptr().cast::<i8>(),
+                    ptr::null_mut(),
+                    0,
+                )
+            }
+            #[cfg(target_arch = "aarch64")]            
+            unsafe {
+                getxattr(
+                    c_path.as_ptr().cast(),
+                    buf.as_ptr().cast::<u8>(),
                     ptr::null_mut(),
                     0,
                 )
