@@ -21,6 +21,7 @@ impl f::SubdirGitRepo {
         let style = Style::new();
         let branch_style = match self.branch.as_deref(){
             Some("master") => style.fg(Color::Green),
+            Some("main") => style.fg(Color::Green),
             Some(_) => style.fg(Color::Fixed(208)),
             _ => style,
         };
