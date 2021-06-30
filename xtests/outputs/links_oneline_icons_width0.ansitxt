@@ -1,10 +1,10 @@
-[36m[0m[36mbroken[0m [31m->[0m [4;31mnowhere[0m
-[36m[0m[36mcurrent_dir[0m [38;5;244m->[0m [1;34m.[0m
-[36m[0m[36mforbidden[0m [31m->[0m [4;31m/proc/1/root[0m
-[36m[0m[36mitself[0m [31m->[0m [4;31mitself[0m
-[36m[0m[36mparent_dir[0m [38;5;244m->[0m [1;34m..[0m
-[36m[0m[36mroot[0m [38;5;244m->[0m [1;34m/[0m
+[36mbroken[0m [31m->[0m [4;31mnowhere[0m
+[36mcurrent_dir[0m [38;5;244m->[0m [1;34m.[0m
+[36mforbidden[0m [31m->[0m [4;31m/proc/1/root[0m
+[36mitself[0m [31m->[0m [4;31mitself[0m
+[36mparent_dir[0m [38;5;244m->[0m [1;34m..[0m
+[36mroot[0m [38;5;244m->[0m [1;34m/[0m
 some_file
-[36m[0m[36msome_file_absolute[0m [38;5;244m->[0m [36m/testcases/links/[0msome_file
-[36m[0m[36msome_file_relative[0m [38;5;244m->[0m some_file
-[36m[0m[36musr[0m [38;5;244m->[0m [36m/[1;34musr[0m
+[36msome_file_absolute[0m [38;5;244m->[0m [36m/testcases/links/[0msome_file
+[36msome_file_relative[0m [38;5;244m->[0m some_file
+[36musr[0m [38;5;244m->[0m [36m/[1;34musr[0m

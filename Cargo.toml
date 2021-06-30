@@ -1,20 +1,15 @@
 [package]
 name = "exa"
-version = "0.9.0"
-authors = [ "Benjamin Sago <ogham@bsago.me>" ]
-build = "build.rs"
-edition = "2018"
-
 description = "A modern replacement for ls"
-homepage = "https://the.exa.website/"
-repository = "https://github.com/ogham/exa"
-documentation = "https://github.com/ogham/exa"
 
-readme = "README.md"
+authors = ["Benjamin Sago <ogham@bsago.me>"]
 categories = ["command-line-utilities"]
-keywords = ["ls", "files", "command-line"]
-license = "MIT"
+edition = "2018"
 exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
+homepage = "https://the.exa.website/"
+license = "MIT"
+repository = "https://github.com/ogham/exa"
+version = "0.10.1"
 
 
 [[bin]]
@@ -23,7 +18,6 @@ name = "exa"
 
 [dependencies]
 ansi_term = "0.12"
-datetime = "0.5"
 glob = "0.3"
 lazy_static = "1.3"
 libc = "0.2"
@@ -34,29 +28,38 @@ num_cpus = "1.10"
 number_prefix = "0.4"
 scoped_threadpool = "0.1"
 term_grid = "0.1"
-term_size = "0.3"
+terminal_size = "0.1.16"
 unicode-width = "0.1"
 users = "0.11"
-zoneinfo_compiled = "0.5"
+zoneinfo_compiled = "0.5.1"
+
+[dependencies.datetime]
+version = "0.5.2"
+default-features = false
+features = ["format"]
 
 [dependencies.git2]
 version = "0.13"
 optional = true
 default-features = false
 
-[build-dependencies]
-datetime = "0.5"
+[build-dependencies.datetime]
+version = "0.5.2"
+default-features = false
 
 [features]
 default = [ "git" ]
 git = [ "git2" ]
 vendored-openssl = ["git2/vendored-openssl"]
 
-[profile.release]
-opt-level = 3
+
+# make dev builds faster by excluding debug symbols
+[profile.dev]
 debug = false
+
+# use LTO for smaller binaries (that take longer to build)
+[profile.release]
 lto = true
-panic = "abort"
 
 
 [package.metadata.deb]

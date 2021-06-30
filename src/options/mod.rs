@@ -84,7 +84,7 @@ mod theme;
 mod view;
 
 mod error;
-pub use self::error::OptionsError;
+pub use self::error::{OptionsError, NumberSource};
 
 mod help;
 use self::help::HelpString;
@@ -176,6 +176,13 @@ impl Options {
     /// Determines the complete set of options based on the given command-line
     /// arguments, after they’ve been parsed.
     fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        if cfg!(not(feature = "git")) &&
+                matches.has_where_any(|f| f.matches(&flags::GIT) || f.matches(&flags::GIT_IGNORE)).is_some() {
+            return Err(OptionsError::Unsupported(String::from(
+                "Options --git and --git-ignore can't be used because `git` feature was disabled in this build of exa"
+            )));
+        }
+
         let view = View::deduce(matches, vars)?;
         let dir_action = DirAction::deduce(matches, matches!(view.mode, Mode::Details(_)))?;
         let filter = FileFilter::deduce(matches)?;

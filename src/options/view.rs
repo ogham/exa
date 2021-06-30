@@ -1,10 +1,10 @@
 use crate::fs::feature::xattr;
-use crate::options::{flags, OptionsError, Vars};
+use crate::options::{flags, OptionsError, NumberSource, Vars};
 use crate::options::parser::MatchedFlags;
 use crate::output::{View, Mode, TerminalWidth, grid, details};
 use crate::output::grid_details::{self, RowThreshold};
 use crate::output::file_name::Options as FileStyle;
-use crate::output::table::{TimeTypes, SizeFormat, Columns, Options as TableOptions};
+use crate::output::table::{TimeTypes, SizeFormat, UserFormat, Columns, Options as TableOptions};
 use crate::output::time::TimeFormat;
 
 
@@ -32,13 +32,10 @@ impl Mode {
         let flag = matches.has_where_any(|f| f.matches(&flags::LONG) || f.matches(&flags::ONE_LINE)
                                           || f.matches(&flags::GRID) || f.matches(&flags::TREE));
 
-        let flag = match flag {
-            Some(f) => f,
-            None => {
-                Self::strict_check_long_flags(matches)?;
-                let grid = grid::Options::deduce(matches)?;
-                return Ok(Self::Grid(grid));
-            }
+        let flag = if let Some(f) = flag { f } else {
+            Self::strict_check_long_flags(matches)?;
+            let grid = grid::Options::deduce(matches)?;
+            return Ok(Self::Grid(grid));
         };
 
         if flag.matches(&flags::LONG)
@@ -57,10 +54,9 @@ impl Mode {
                 let grid_details = grid_details::Options { grid, details, row_threshold };
                 return Ok(Self::GridDetails(grid_details));
             }
-            else {
-                // the --tree case is handled by the DirAction parser later
-                return Ok(Self::Details(details));
-            }
+
+            // the --tree case is handled by the DirAction parser later
+            return Ok(Self::Details(details));
         }
 
         Self::strict_check_long_flags(matches)?;
@@ -85,13 +81,13 @@ impl Mode {
         // user about flags that won’t have any effect.
         if matches.is_strict() {
             for option in &[ &flags::BINARY, &flags::BYTES, &flags::INODE, &flags::LINKS,
-                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP ] {
+                             &flags::HEADER, &flags::BLOCKS, &flags::TIME, &flags::GROUP, &flags::NUMERIC ] {
                 if matches.has(option)? {
                     return Err(OptionsError::Useless(*option, false, &flags::LONG));
                 }
             }
 
-            if cfg!(feature = "git") && matches.has(&flags::GIT)? {
+            if matches.has(&flags::GIT)? {
                 return Err(OptionsError::Useless(&flags::GIT, false, &flags::LONG));
             }
             else if matches.has(&flags::LEVEL)? && ! matches.has(&flags::RECURSE)? && ! matches.has(&flags::TREE)? {
@@ -151,8 +147,13 @@ impl TerminalWidth {
 
         if let Some(columns) = vars.get(vars::COLUMNS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(width)  => Ok(Self::Set(width)),
-                Err(e)     => Err(OptionsError::FailedParse(e)),
+                Ok(width) => {
+                    Ok(Self::Set(width))
+                }
+                Err(e) => {
+                    let source = NumberSource::Env(vars::COLUMNS);
+                    Err(OptionsError::FailedParse(columns, source, e))
+                }
             }
         }
         else {
@@ -168,8 +169,13 @@ impl RowThreshold {
 
         if let Some(columns) = vars.get(vars::EXA_GRID_ROWS).and_then(|s| s.into_string().ok()) {
             match columns.parse() {
-                Ok(rows)  => Ok(Self::MinimumRows(rows)),
-                Err(e)    => Err(OptionsError::FailedParse(e)),
+                Ok(rows) => {
+                    Ok(Self::MinimumRows(rows))
+                }
+                Err(e) => {
+                    let source = NumberSource::Env(vars::EXA_GRID_ROWS);
+                    Err(OptionsError::FailedParse(columns, source, e))
+                }
             }
         }
         else {
@@ -183,8 +189,9 @@ impl TableOptions {
     fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let time_format = TimeFormat::deduce(matches, vars)?;
         let size_format = SizeFormat::deduce(matches)?;
+        let user_format = UserFormat::deduce(matches)?;
         let columns = Columns::deduce(matches)?;
-        Ok(Self { time_format, size_format, columns })
+        Ok(Self { size_format, time_format, user_format, columns })
     }
 }
 
@@ -192,7 +199,8 @@ impl TableOptions {
 impl Columns {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
-        let git = cfg!(feature = "git") && matches.has(&flags::GIT)?;
+
+        let git = matches.has(&flags::GIT)?;
         let subdir_git_repos = git;
 
         let blocks = matches.has(&flags::BLOCKS)?;
@@ -205,7 +213,7 @@ impl Columns {
         let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
         let user =        ! matches.has(&flags::NO_USER)?;
 
-        Ok(Self { time_types, git, subdir_git_repos, octal, blocks, group, inode, links, permissions, filesize, user })
+        Ok(Self { time_types, inode, links, blocks, group, git, subdir_git_repos, octal, permissions, filesize, user })
     }
 }
 
@@ -263,6 +271,14 @@ impl TimeFormat {
         else {
             Err(OptionsError::BadArgument(&flags::TIME_STYLE, word))
         }
+    }
+}
+
+
+impl UserFormat {
+    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        let flag = matches.has(&flags::NUMERIC)?;
+        Ok(if flag { Self::Numeric } else { Self::Name })
     }
 }
 
@@ -346,7 +362,8 @@ mod test {
                                    &flags::CREATED, &flags::ACCESSED,
                                    &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
-                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE ];
+                                   &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE,
+                                   &flags::NUMERIC ];
 
     macro_rules! test {
 
@@ -548,24 +565,26 @@ mod test {
         test!(long_across:   Mode <- ["--long", "--across"],   None;  Last => like Ok(Mode::Details(_)));
 
         // Options that do nothing without --long
-        test!(just_header:   Mode <- ["--header"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_group:    Mode <- ["--group"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_inode:    Mode <- ["--inode"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_links:    Mode <- ["--links"],  None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_blocks:   Mode <- ["--blocks"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_binary:   Mode <- ["--binary"], None;  Last => like Ok(Mode::Grid(_)));
-        test!(just_bytes:    Mode <- ["--bytes"],  None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_header:   Mode <- ["--header"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_group:    Mode <- ["--group"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_inode:    Mode <- ["--inode"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_links:    Mode <- ["--links"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_blocks:   Mode <- ["--blocks"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_binary:   Mode <- ["--binary"],   None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_bytes:    Mode <- ["--bytes"],    None;  Last => like Ok(Mode::Grid(_)));
+        test!(just_numeric:  Mode <- ["--numeric"],  None;  Last => like Ok(Mode::Grid(_)));
 
         #[cfg(feature = "git")]
         test!(just_git:      Mode <- ["--git"],    None;  Last => like Ok(Mode::Grid(_)));
 
-        test!(just_header_2: Mode <- ["--header"], None;  Complain => err OptionsError::Useless(&flags::HEADER, false, &flags::LONG));
-        test!(just_group_2:  Mode <- ["--group"],  None;  Complain => err OptionsError::Useless(&flags::GROUP,  false, &flags::LONG));
-        test!(just_inode_2:  Mode <- ["--inode"],  None;  Complain => err OptionsError::Useless(&flags::INODE,  false, &flags::LONG));
-        test!(just_links_2:  Mode <- ["--links"],  None;  Complain => err OptionsError::Useless(&flags::LINKS,  false, &flags::LONG));
-        test!(just_blocks_2: Mode <- ["--blocks"], None;  Complain => err OptionsError::Useless(&flags::BLOCKS, false, &flags::LONG));
-        test!(just_binary_2: Mode <- ["--binary"], None;  Complain => err OptionsError::Useless(&flags::BINARY, false, &flags::LONG));
-        test!(just_bytes_2:  Mode <- ["--bytes"],  None;  Complain => err OptionsError::Useless(&flags::BYTES,  false, &flags::LONG));
+        test!(just_header_2: Mode <- ["--header"],   None;  Complain => err OptionsError::Useless(&flags::HEADER,  false, &flags::LONG));
+        test!(just_group_2:  Mode <- ["--group"],    None;  Complain => err OptionsError::Useless(&flags::GROUP,   false, &flags::LONG));
+        test!(just_inode_2:  Mode <- ["--inode"],    None;  Complain => err OptionsError::Useless(&flags::INODE,   false, &flags::LONG));
+        test!(just_links_2:  Mode <- ["--links"],    None;  Complain => err OptionsError::Useless(&flags::LINKS,   false, &flags::LONG));
+        test!(just_blocks_2: Mode <- ["--blocks"],   None;  Complain => err OptionsError::Useless(&flags::BLOCKS,  false, &flags::LONG));
+        test!(just_binary_2: Mode <- ["--binary"],   None;  Complain => err OptionsError::Useless(&flags::BINARY,  false, &flags::LONG));
+        test!(just_bytes_2:  Mode <- ["--bytes"],    None;  Complain => err OptionsError::Useless(&flags::BYTES,   false, &flags::LONG));
+        test!(just_numeric2: Mode <- ["--numeric"],  None;  Complain => err OptionsError::Useless(&flags::NUMERIC, false, &flags::LONG));
 
         #[cfg(feature = "git")]
         test!(just_git_2:    Mode <- ["--git"],    None;  Complain => err OptionsError::Useless(&flags::GIT,    false, &flags::LONG));

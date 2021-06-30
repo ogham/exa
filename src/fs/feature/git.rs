@@ -211,7 +211,7 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
             }
         }
         Err(e) => {
-            error!("Error looking up Git statuses: {:?}", e)
+            error!("Error looking up Git statuses: {:?}", e);
         }
     }
 
@@ -242,25 +242,40 @@ impl Git {
                     else { self.file_status(index) }
     }
 
-    /// Get the status for the file at the given path.
+    /// Get the user-facing status of a file.
+    /// We check the statuses directly applying to a file, and for the ignored
+    /// status we check if any of its parents directories is ignored by git.
     fn file_status(&self, file: &Path) -> f::Git {
         let path = reorient(file);
 
-        self.statuses.iter()
-            .find(|p| p.0.as_path() == path)
-            .map(|&(_, s)| f::Git { staged: index_status(s), unstaged: working_tree_status(s) })
-            .unwrap_or_default()
+        let s = self.statuses.iter()
+            .filter(|p| if p.1 == git2::Status::IGNORED {
+                path.starts_with(&p.0)
+            } else {
+                p.0 == path
+            })
+            .fold(git2::Status::empty(), |a, b| a | b.1);
+
+        let staged = index_status(s);
+        let unstaged = working_tree_status(s);
+        f::Git { staged, unstaged }
     }
 
-    /// Get the combined status for all the files whose paths begin with the
-    /// path that gets passed in. This is used for getting the status of
-    /// directories, which don’t really have an ‘official’ status.
+    /// Get the combined, user-facing status of a directory.
+    /// Statuses are aggregating (for example, a directory is considered
+    /// modified if any file under it has the status modified), except for
+    /// ignored status which applies to files under (for example, a directory
+    /// is considered ignored if one of its parent directories is ignored).
     fn dir_status(&self, dir: &Path) -> f::Git {
         let path = reorient(dir);
 
         let s = self.statuses.iter()
-                    .filter(|p| p.0.starts_with(&path))
-                    .fold(git2::Status::empty(), |a, b| a | b.1);
+            .filter(|p| if p.1 == git2::Status::IGNORED {
+                path.starts_with(&p.0)
+            } else {
+                p.0.starts_with(&path)
+            })
+            .fold(git2::Status::empty(), |a, b| a | b.1);
 
         let staged = index_status(s);
         let unstaged = working_tree_status(s);

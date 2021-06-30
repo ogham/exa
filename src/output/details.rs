@@ -350,9 +350,10 @@ impl<'a> Render<'a> {
     fn render_error(&self, error: &io::Error, tree: TreeParams, path: Option<PathBuf>) -> Row {
         use crate::output::file_name::Colours;
 
-        let error_message = match path {
-            Some(path) => format!("<{}: {}>", path.display(), error),
-            None       => format!("<{}>", error),
+        let error_message = if let Some(path) = path {
+            format!("<{}: {}>", path.display(), error)
+        } else {
+            format!("<{}>", error)
         };
 
         // TODO: broken_symlink() doesn’t quite seem like the right name for

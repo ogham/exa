@@ -7,18 +7,20 @@
 #![warn(unused)]
 
 #![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
 #![allow(clippy::enum_glob_use)]
-#![allow(clippy::find_map)]
 #![allow(clippy::map_unwrap_or)]
 #![allow(clippy::match_same_arms)]
-#![allow(clippy::missing_const_for_fn)]
-#![allow(clippy::missing_errors_doc)]
 #![allow(clippy::module_name_repetitions)]
-#![allow(clippy::must_use_candidate)]
 #![allow(clippy::non_ascii_literal)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::unnested_or_patterns)] // TODO: remove this when we support Rust 1.53.0
 #![allow(clippy::unused_self)]
+#![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::wildcard_imports)]
 
 use std::env;
@@ -93,7 +95,7 @@ fn main() {
         }
 
         OptionsResult::InvalidOptions(error) => {
-            eprintln!("{}", error);
+            eprintln!("exa: {}", error);
 
             if let Some(s) = error.suggestion() {
                 eprintln!("{}", s);
@@ -155,6 +157,9 @@ fn git_options(options: &Options, args: &[&OsStr]) -> Option<GitCache> {
 }
 
 impl<'args> Exa<'args> {
+    /// # Errors
+    ///
+    /// Will return `Err` if printing to stderr fails.
     pub fn run(mut self) -> io::Result<i32> {
         debug!("Running with options: {:#?}", self.options);
 
@@ -264,13 +269,15 @@ impl<'args> Exa<'args> {
 
         match (mode, self.console_width) {
             (Mode::Grid(ref opts), Some(console_width)) => {
-                let r = grid::Render { files, theme, file_style, opts, console_width };
+                let filter = &self.options.filter;
+                let r = grid::Render { files, theme, file_style, opts, console_width, filter };
                 r.render(&mut self.writer)
             }
 
             (Mode::Grid(_), None) |
             (Mode::Lines,   _)    => {
-                let r = lines::Render { files, theme, file_style };
+                let filter = &self.options.filter;
+                let r = lines::Render { files, theme, file_style, filter };
                 r.render(&mut self.writer)
             }
 
@@ -280,7 +287,7 @@ impl<'args> Exa<'args> {
 
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
                 let git = self.git.as_ref();
-                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
+                let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
                 r.render(&mut self.writer)
             }
 
@@ -304,7 +311,7 @@ impl<'args> Exa<'args> {
                 let git_ignoring = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
 
                 let git = self.git.as_ref();
-                let r = details::Render { dir, files, theme, file_style, opts, filter, recurse, git_ignoring, git };
+                let r = details::Render { dir, files, theme, file_style, opts, recurse, filter, git_ignoring, git };
                 r.render(&mut self.writer)
             }
         }

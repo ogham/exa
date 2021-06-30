@@ -4,4 +4,4 @@ shell = "exa --help"
 stdout = { file = "outputs/help.ansitxt" }
 stderr = { empty = true }
 status = 0
-tags = [ 'help ']
+tags = [ 'help' ]

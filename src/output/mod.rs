@@ -55,7 +55,7 @@ impl TerminalWidth {
 
         match self {
             Self::Set(width)  => Some(width),
-            Self::Automatic   => term_size::dimensions_stdout().map(|t| t.0),
+            Self::Automatic   => terminal_size::terminal_size().map(|(w, _)| w.0.into()),
         }
     }
 }

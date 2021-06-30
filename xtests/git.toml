@@ -101,9 +101,17 @@ status = 0
 tags = [ 'long', 'git' ]
 
 [[cmd]]
-name = "‘exa --git -l’ with an ignored directory argument does not flag the contents as ignored"
+name = "‘exa --git -l’ with an ignored directory argument flags the contents as ignored"
 shell = "exa --git -l /testcases/git2/target"
 stdout = { file = "outputs/git2_long_ignoreddir.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'git' ]
+
+[[cmd]]
+name = "‘exa --git -l --list-dirs’ with a directory argument doesn’t flag it as ignored if only the content is"
+shell = "exa --git -l --list-dirs /testcases/git2/ignoreds/nested2"
+stdout = { file = "outputs/git2_long_ignoredcontent.ansitxt" }
 stderr = { empty = true }
 status = 0
 tags = [ 'long', 'git' ]
@@ -155,7 +163,7 @@ status = 0
 tags = [ 'long', 'git' ]
 
 [[cmd]]
-name = "‘exa --git -l’ shows a Git status column for multiple repositories across multiple directories"
+name = "‘exa --git -l’ shows a Git status column for multiple repositories across multiple directories 2"
 shell = "exa --git -l /testcases/{git2/deeply/nested/directory,git/edits,git2/target,git2/deeply,git}"
 stdout = { file = "outputs/git1+2_long_nested.ansitxt" }
 stderr = { empty = true }

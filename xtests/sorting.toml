@@ -136,3 +136,22 @@ stdout = { string = "plum\npear\npeach" }
 stderr = { empty = true }
 status = 0
 tags = [ 'oneline', 'sort', 'dates' ]
+
+# sorting with arguments specified
+
+[[cmd]]
+name = "‘exa -G --sort=name -r’ with file arguments sorts by file name in reverse order"
+shell = "cd /testcases/file-names-exts; exa -G --sort=name -r *"
+environment = { COLUMNS = "80" }
+stdout = { file = "outputs/exts_grid_sort_name_reverse.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'grid', 'sort', 'reverse' ]
+
+[[cmd]]
+name = "‘exa -1 --sort=name -r’ with file arguments sorts by file name in reverse order"
+shell = "cd /testcases/file-names-exts; exa -1 --sort=name -r *"
+stdout = { file = "outputs/exts_oneline_sort_name_reverse.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'oneline', 'sort', 'reverse' ]

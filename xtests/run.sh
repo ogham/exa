@@ -7,6 +7,11 @@ case "$1" in
   *)           exa_binary="$HOME/target/debug/exa" ;;
 esac
 
+if [ ! -e /vagrant ]; then
+  echo "The extended tests must be run on the Vagrant machine."
+  exit 1
+fi
+
 if [ ! -f "$exa_binary" ]; then
   echo "exa binary ($exa_binary) does not exist"
   if [ "$1" != "--release" ]; then echo -e "create it first with \033[1;32mbuild-exa\033[0m or \033[1;32mb\033[0m"; fi

@@ -72,6 +72,9 @@ Valid settings are ‘`always`’, ‘`automatic`’, and ‘`never`’.
 `--icons`
 : Display icons next to file names.
 
+`--no-icons`
+: Don't display icons. (Always overrides --icons)
+
 
 FILTERING AND SORTING OPTIONS
 =============================
@@ -81,7 +84,7 @@ FILTERING AND SORTING OPTIONS
 Use this twice to also show the ‘`.`’ and ‘`..`’ directories.
 
 `-d`, `--list-dirs`
-: List directories like regular files.
+: List directories as regular files, rather than recursing and listing their contents.
 
 `-L`, `--level=DEPTH`
 : Limit the depth of recursion.
@@ -101,7 +104,7 @@ Sort fields starting with a capital letter will sort uppercase before lowercase:
 `-I`, `--ignore-glob=GLOBS`
 : Glob patterns, pipe-separated, of files to ignore.
 
-`--git-ignore`
+`--git-ignore` [if exa was built with git support]
 : Do not list files that are ignored by Git.
 
 `--group-directories-first`
@@ -140,6 +143,9 @@ These options are available when running with `--long` (`-l`):
 `-m`, `--modified`
 : Use the modified timestamp field.
 
+`-n`, `--numeric`
+: List numeric user and group IDs.
+
 `-S`, `--blocks`
 : List each file’s number of file system blocks.
 
@@ -174,8 +180,12 @@ These options are available when running with `--long` (`-l`):
 `-@`, `--extended`
 : List each file’s extended attributes and sizes.
 
-`--git`
+`--git`  [if exa was built with git support]
 : List each file’s Git status, if tracked.
+
+This adds a two-character column indicating the staged and unstaged statuses respectively. The status character can be ‘`-`’ for not modified, ‘`M`’ for a modified file, ‘`N`’ for a new file, ‘`D`’ for deleted, ‘`R`’ for renamed, ‘`T`’ for type-change, ‘`I`’ for ignored, and ‘`U`’ for conflicted.
+
+Directories will be shown to have the status of their contents, which is how ‘deleted’ is possible: if a directory contains a file that has a certain status, it will be shown to have that status.
 
 
 ENVIRONMENT VARIABLES

@@ -16,7 +16,7 @@ pub enum OptionsError {
     /// The user supplied an illegal choice to an Argument.
     BadArgument(&'static Arg, OsString),
 
-    /// The user supplied a set of options
+    /// The user supplied a set of options that are unsupported
     Unsupported(String),
 
     /// An option was given twice or more in strict mode.
@@ -37,15 +37,35 @@ pub enum OptionsError {
     TreeAllAll,
 
     /// A numeric option was given that failed to be parsed as a number.
-    FailedParse(ParseIntError),
+    FailedParse(String, NumberSource, ParseIntError),
 
     /// A glob ignore was given that failed to be parsed as a pattern.
     FailedGlobPattern(String),
 }
 
+/// The source of a string that failed to be parsed as a number.
+#[derive(PartialEq, Debug)]
+pub enum NumberSource {
+
+    /// It came... from a command-line argument!
+    Arg(&'static Arg),
+
+    /// It came... from the enviroment!
+    Env(&'static str),
+}
+
 impl From<glob::PatternError> for OptionsError {
     fn from(error: glob::PatternError) -> Self {
         Self::FailedGlobPattern(error.to_string())
+    }
+}
+
+impl fmt::Display for NumberSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Arg(arg) => write!(f, "option {}", arg),
+            Self::Env(env) => write!(f, "environment variable {}", env),
+        }
     }
 }
 
@@ -71,7 +91,7 @@ impl fmt::Display for OptionsError {
             Self::Useless(a, true, b)        => write!(f, "Option {} is useless given option {}", a, b),
             Self::Useless2(a, b1, b2)        => write!(f, "Option {} is useless without options {} or {}", a, b1, b2),
             Self::TreeAllAll                 => write!(f, "Option --tree is useless given --all --all"),
-            Self::FailedParse(ref e)         => write!(f, "Failed to parse number: {}", e),
+            Self::FailedParse(s, n, e)       => write!(f, "Value {:?} not valid for {}: {}", s, n, e),
             Self::FailedGlobPattern(ref e)   => write!(f, "Failed to parse glob pattern: {}", e),
         }
     }
