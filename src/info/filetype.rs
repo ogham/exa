@@ -35,10 +35,10 @@ impl FileExtensions {
 
     fn is_image(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
-            "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf",
-            "cbz", "xpm", "ico", "cr2", "orf", "nef", "heif",
+            "png", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg", "gif", "bmp",
+            "tiff", "tif", "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
+            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf", "cbz", "xpm",
+            "ico", "cr2", "orf", "nef", "heif",
         ])
     }
 

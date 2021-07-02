@@ -206,6 +206,10 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jad"           => '\u{e256}', // 
             "jar"           => '\u{e204}', // 
             "java"          => '\u{e204}', // 
+            "jfi"           => '\u{f1c5}', // 
+            "jfif"          => '\u{f1c5}', // 
+            "jif"           => '\u{f1c5}', // 
+            "jpe"           => '\u{f1c5}', // 
             "jpeg"          => '\u{f1c5}', // 
             "jpg"           => '\u{f1c5}', // 
             "js"            => '\u{e74e}', // 
