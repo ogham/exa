@@ -74,7 +74,7 @@ use crate::fs::feature::git::GitCache;
 use crate::fs::feature::xattr::{Attribute, FileAttributes};
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCell;
-use crate::output::file_name::Options as FileStyle;
+use crate::output::file_name::{LinkStyle, Options as FileStyle};
 use crate::output::table::{Table, Options as TableOptions, Row as TableRow};
 use crate::output::tree::{TreeTrunk, TreeParams, TreeDepth};
 use crate::theme::Theme;
@@ -282,8 +282,7 @@ impl<'a> Render<'a> {
                 t.add_widths(row);
             }
 
-            let file_name = self.file_style.for_file(egg.file, self.theme)
-                                .with_link_paths()
+            let file_name = self.file_style.for_file(egg.file, self.theme, LinkStyle::FullLinkPaths)
                                 .paint()
                                 .promote();
 
@@ -296,7 +295,7 @@ impl<'a> Render<'a> {
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter, self.git, self.git_ignoring) {
+                for file_to_add in dir.files(self.filter.dot_filter, self.git, self.git_ignoring, true) {
                     match file_to_add {
                         Ok(f) => {
                             files.push(f);

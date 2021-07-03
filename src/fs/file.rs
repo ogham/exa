@@ -1,5 +1,6 @@
 //! Files, and methods and fields to access their metadata.
 
+use std::fs::{FileType, Metadata};
 use std::io;
 use std::os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
@@ -40,12 +41,19 @@ pub struct File<'dir> {
     /// path (following a symlink).
     pub path: PathBuf,
 
+    /// The type of this file. None for directories `.` and `..`.
+    file_type: Option<FileType>,
+
     /// A cached `metadata` (`stat`) call for this file.
     ///
     /// This too is queried multiple times, and is *not* cached by the OS, as
     /// it could easily change between invocations — but exa is so short-lived
     /// it’s better to just cache it.
-    pub metadata: std::fs::Metadata,
+    /// It may be None if the call to symlink_metadata fails.
+    ///
+    /// In case of metadata is not needed, like simple listing without color,
+    /// it would be None.
+    metadata: Option<Metadata>,
 
     /// A reference to the directory that contains this file, if any.
     ///
@@ -66,42 +74,66 @@ pub struct File<'dir> {
 }
 
 impl<'dir> File<'dir> {
-    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> io::Result<File<'dir>>
+    pub fn from_args<PD, FN>(
+        path: PathBuf,
+        parent_dir: PD,
+        filename: FN,
+        file_type: Option<FileType>,
+        needs_metadata: bool,
+    ) -> io::Result<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
         let parent_dir = parent_dir.into();
         let name       = filename.into().unwrap_or_else(|| File::filename(&path));
         let ext        = File::ext(&path);
-
-        debug!("Statting file {:?}", &path);
-        let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        // For files other than `.` and `..`, `file_type` must be present.
+        // `file_type` is used to determine whether it is a directory when parsing command line arguments.
+        let (file_type, metadata) = match (needs_metadata, file_type) {
+            (false, Some(file_type)) => (Some(file_type), None),
+            (true, _) | (false, None) => {
+                debug!("Statting file {:?}", &path);
+                let metadata = std::fs::symlink_metadata(&path)?;
+                (Some(metadata.file_type()), Some(metadata))
+            }
+        };
+
+        Ok(File { name, ext, path, file_type, metadata, parent_dir, is_all_all })
     }
 
-    pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
+    pub fn new_aa_current(parent_dir: &'dir Dir, needs_metadata: bool) -> io::Result<File<'dir>> {
         let path       = parent_dir.path.clone();
         let ext        = File::ext(&path);
 
-        debug!("Statting file {:?}", &path);
-        let metadata   = std::fs::symlink_metadata(&path)?;
+        let (file_type, metadata) = if needs_metadata {
+            debug!("Statting file {:?}", &path);
+            let metadata = std::fs::symlink_metadata(&path)?;
+            (Some(metadata.file_type()), Some(metadata))
+        } else {
+            (None, None)
+        };
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, file_type, metadata, ext, name: ".".into(), is_all_all })
     }
 
-    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
+    pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir, needs_metadata: bool) -> io::Result<File<'dir>> {
         let ext        = File::ext(&path);
 
-        debug!("Statting file {:?}", &path);
-        let metadata   = std::fs::symlink_metadata(&path)?;
+        let (file_type, metadata) = if needs_metadata {
+            debug!("Statting file {:?}", &path);
+            let metadata = std::fs::symlink_metadata(&path)?;
+            (Some(metadata.file_type()), Some(metadata))
+        } else {
+            (None, None)
+        };
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, file_type, metadata, ext, name: "..".into(), is_all_all })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -134,9 +166,20 @@ impl<'dir> File<'dir> {
             .to_ascii_lowercase())
     }
 
+    // This method can only be called if metadata is initialized (`needs_metadata` is true for
+    // constructor), or it will panic.
+    fn metadata(&self) -> &Metadata {
+        self.metadata.as_ref().expect("metadata not initialized")
+    }
+
+    /// The file size reported by metadata.
+    pub fn file_len(&self) -> u64 {
+        self.metadata().len()
+    }
+
     /// Whether this file is a directory on the filesystem.
     pub fn is_directory(&self) -> bool {
-        self.metadata.is_dir()
+        self.file_type.map_or(true, |t| t.is_dir())
     }
 
     /// Whether this file is a directory, or a symlink pointing to a directory.
@@ -168,7 +211,7 @@ impl<'dir> File<'dir> {
     /// Whether this file is a regular file on the filesystem — that is, not a
     /// directory, a link, or anything else treated specially.
     pub fn is_file(&self) -> bool {
-        self.metadata.is_file()
+        self.file_type.map_or(false, |t| t.is_file())
     }
 
     /// Whether this file is both a regular file *and* executable for the
@@ -176,32 +219,32 @@ impl<'dir> File<'dir> {
     /// executable directory, so they should be highlighted differently.
     pub fn is_executable_file(&self) -> bool {
         let bit = modes::USER_EXECUTE;
-        self.is_file() && (self.metadata.permissions().mode() & bit) == bit
+        self.is_file() && (self.metadata().permissions().mode() & bit) == bit
     }
 
     /// Whether this file is a symlink on the filesystem.
     pub fn is_link(&self) -> bool {
-        self.metadata.file_type().is_symlink()
+        self.file_type.map_or(false, |t| t.is_symlink())
     }
 
     /// Whether this file is a named pipe on the filesystem.
     pub fn is_pipe(&self) -> bool {
-        self.metadata.file_type().is_fifo()
+        self.file_type.map_or(false, |t| t.is_fifo())
     }
 
     /// Whether this file is a char device on the filesystem.
     pub fn is_char_device(&self) -> bool {
-        self.metadata.file_type().is_char_device()
+        self.file_type.map_or(false, |t| t.is_char_device())
     }
 
     /// Whether this file is a block device on the filesystem.
     pub fn is_block_device(&self) -> bool {
-        self.metadata.file_type().is_block_device()
+        self.file_type.map_or(false, |t| t.is_block_device())
     }
 
     /// Whether this file is a socket on the filesystem.
     pub fn is_socket(&self) -> bool {
-        self.metadata.file_type().is_socket()
+        self.file_type.map_or(false, |t| t.is_socket())
     }
 
 
@@ -251,9 +294,15 @@ impl<'dir> File<'dir> {
         // follow links.
         match std::fs::metadata(&absolute_path) {
             Ok(metadata) => {
-                let ext  = File::ext(&path);
-                let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let file = File {
+                    parent_dir: None,
+                    ext: File::ext(&path),
+                    file_type: Some(metadata.file_type()),
+                    metadata: Some(metadata),
+                    name: File::filename(&path),
+                    is_all_all: false,
+                    path,
+                };
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
@@ -271,7 +320,7 @@ impl<'dir> File<'dir> {
     /// with multiple links much more often. Thus, it should get highlighted
     /// more attentively.
     pub fn links(&self) -> f::Links {
-        let count = self.metadata.nlink();
+        let count = self.metadata().nlink();
 
         f::Links {
             count,
@@ -281,7 +330,7 @@ impl<'dir> File<'dir> {
 
     /// This file’s inode.
     pub fn inode(&self) -> f::Inode {
-        f::Inode(self.metadata.ino())
+        f::Inode(self.metadata().ino())
     }
 
     /// This file’s number of filesystem blocks.
@@ -289,7 +338,7 @@ impl<'dir> File<'dir> {
     /// (Not the size of each block, which we don’t actually report on)
     pub fn blocks(&self) -> f::Blocks {
         if self.is_file() || self.is_link() {
-            f::Blocks::Some(self.metadata.blocks())
+            f::Blocks::Some(self.metadata().blocks())
         }
         else {
             f::Blocks::None
@@ -298,12 +347,12 @@ impl<'dir> File<'dir> {
 
     /// The ID of the user that own this file.
     pub fn user(&self) -> f::User {
-        f::User(self.metadata.uid())
+        f::User(self.metadata().uid())
     }
 
     /// The ID of the group that owns this file.
     pub fn group(&self) -> f::Group {
-        f::Group(self.metadata.gid())
+        f::Group(self.metadata().gid())
     }
 
     /// This file’s size, if it’s a regular file.
@@ -319,7 +368,7 @@ impl<'dir> File<'dir> {
             f::Size::None
         }
         else if self.is_char_device() || self.is_block_device() {
-            let device_ids = self.metadata.rdev().to_be_bytes();
+            let device_ids = self.metadata().rdev().to_be_bytes();
 
             // In C-land, getting the major and minor device IDs is done with
             // preprocessor macros called `major` and `minor` that depend on
@@ -331,18 +380,18 @@ impl<'dir> File<'dir> {
             })
         }
         else {
-            f::Size::Some(self.metadata.len())
+            f::Size::Some(self.file_len())
         }
     }
 
     /// This file’s last modified timestamp, if available on this platform.
     pub fn modified_time(&self) -> Option<SystemTime> {
-        self.metadata.modified().ok()
+        self.metadata().modified().ok()
     }
 
     /// This file’s last changed timestamp, if available on this platform.
     pub fn changed_time(&self) -> Option<SystemTime> {
-        let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
+        let (mut sec, mut nanosec) = (self.metadata().ctime(), self.metadata().ctime_nsec());
 
         if sec < 0 {
             if nanosec > 0 {
@@ -361,12 +410,12 @@ impl<'dir> File<'dir> {
 
     /// This file’s last accessed timestamp, if available on this platform.
     pub fn accessed_time(&self) -> Option<SystemTime> {
-        self.metadata.accessed().ok()
+        self.metadata().accessed().ok()
     }
 
     /// This file’s created timestamp, if available on this platform.
     pub fn created_time(&self) -> Option<SystemTime> {
-        self.metadata.created().ok()
+        self.metadata().created().ok()
     }
 
     /// This file’s ‘type’.
@@ -403,7 +452,7 @@ impl<'dir> File<'dir> {
 
     /// This file’s permissions, with flags for each bit.
     pub fn permissions(&self) -> f::Permissions {
-        let bits = self.metadata.mode();
+        let bits = self.metadata().mode();
         let has_bit = |bit| bits & bit == bit;
 
         f::Permissions {

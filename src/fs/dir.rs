@@ -1,7 +1,7 @@
 use crate::fs::feature::git::GitCache;
 use crate::fs::fields::GitStatus;
 use std::io;
-use std::fs;
+use std::fs::{self, FileType};
 use std::path::{Path, PathBuf};
 use std::slice::Iter as SliceIter;
 
@@ -18,8 +18,8 @@ use crate::fs::File;
 /// accordingly. (See `File#get_source_files`)
 pub struct Dir {
 
-    /// A vector of the files that have been read from this directory.
-    contents: Vec<PathBuf>,
+    /// A vector of the files with its type that have been read from this directory.
+    contents: Vec<(PathBuf, FileType)>,
 
     /// The path that was read.
     pub path: PathBuf,
@@ -39,20 +39,30 @@ impl Dir {
         info!("Reading directory {:?}", &path);
 
         let contents = fs::read_dir(&path)?
-                          .map(|result| result.map(|entry| entry.path()))
-                          .collect::<Result<_, _>>()?;
+                          .map(|result| {
+                              let entry = result?;
+                              Ok((entry.path(), entry.file_type()?))
+                          })
+                          .collect::<io::Result<_>>()?;
 
         Ok(Self { contents, path })
     }
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, git: Option<&'ig GitCache>, git_ignoring: bool) -> Files<'dir, 'ig> {
+    pub fn files<'dir, 'ig>(
+        &'dir self,
+        dots: DotFilter,
+        git: Option<&'ig GitCache>,
+        git_ignoring: bool,
+        needs_metadata: bool,
+    ) -> Files<'dir, 'ig> {
         Files {
             inner:     self.contents.iter(),
             dir:       self,
             dotfiles:  dots.shows_dotfiles(),
             dots:      dots.dots(),
+            needs_metadata,
             git,
             git_ignoring,
         }
@@ -60,7 +70,7 @@ impl Dir {
 
     /// Whether this directory contains a file with the given path.
     pub fn contains(&self, path: &Path) -> bool {
-        self.contents.iter().any(|p| p.as_path() == path)
+        self.contents.iter().any(|(p, _)| p.as_path() == path)
     }
 
     /// Append a path onto the path specified by this directory.
@@ -74,7 +84,7 @@ impl Dir {
 pub struct Files<'dir, 'ig> {
 
     /// The internal iterator over the paths that have been read already.
-    inner: SliceIter<'dir, PathBuf>,
+    inner: SliceIter<'dir, (PathBuf, FileType)>,
 
     /// The directory that begat those paths.
     dir: &'dir Dir,
@@ -85,6 +95,10 @@ pub struct Files<'dir, 'ig> {
     /// Whether the `.` or `..` directories should be produced first, before
     /// any files have been listed.
     dots: DotsNext,
+
+    /// Whether the `File` objects need to retrieve metadata information.
+    /// It is used to omit metadata syscalls in simple listing without colour.
+    needs_metadata: bool,
 
     git: Option<&'ig GitCache>,
 
@@ -105,7 +119,7 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
     /// varies depending on the dotfile visibility flag)
     fn next_visible_file(&mut self) -> Option<Result<File<'dir>, (PathBuf, io::Error)>> {
         loop {
-            if let Some(path) = self.inner.next() {
+            if let Some((path, file_type)) = self.inner.next() {
                 let filename = File::filename(path);
                 if ! self.dotfiles && filename.starts_with('.') {
                     continue;
@@ -118,7 +132,7 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
                     }
                 }
 
-                return Some(File::from_args(path.clone(), self.dir, filename)
+                return Some(File::from_args(path.clone(), self.dir, filename, Some(*file_type), self.needs_metadata)
                                  .map_err(|e| (path.clone(), e)))
             }
 
@@ -148,13 +162,13 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
         match self.dots {
             DotsNext::Dot => {
                 self.dots = DotsNext::DotDot;
-                Some(File::new_aa_current(self.dir)
+                Some(File::new_aa_current(self.dir, self.needs_metadata)
                           .map_err(|e| (Path::new(".").to_path_buf(), e)))
             }
 
             DotsNext::DotDot => {
                 self.dots = DotsNext::Files;
-                Some(File::new_aa_parent(self.parent(), self.dir)
+                Some(File::new_aa_parent(self.parent(), self.dir, self.needs_metadata)
                           .map_err(|e| (self.parent(), e)))
             }
 

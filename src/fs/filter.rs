@@ -2,7 +2,6 @@
 
 use std::cmp::Ordering;
 use std::iter::FromIterator;
-use std::os::unix::fs::MetadataExt;
 
 use crate::fs::DotFilter;
 use crate::fs::File;
@@ -222,8 +221,8 @@ impl SortField {
             Self::Name(ABCabc)  => natord::compare(&a.name, &b.name),
             Self::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
-            Self::Size          => a.metadata.len().cmp(&b.metadata.len()),
-            Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
+            Self::Size          => a.file_len().cmp(&b.file_len()),
+            Self::FileInode     => a.inode().0.cmp(&b.inode().0),
             Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
             Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
             Self::ChangedDate   => a.changed_time().cmp(&b.changed_time()),

@@ -34,9 +34,9 @@ use log::*;
 
 use crate::fs::{Dir, File};
 use crate::fs::feature::git::GitCache;
-use crate::fs::filter::GitIgnore;
+use crate::fs::filter::{GitIgnore, SortField};
 use crate::options::{Options, Vars, vars, OptionsResult};
-use crate::output::{escape, lines, grid, grid_details, details, View, Mode};
+use crate::output::{escape, lines, grid, grid_details, details, View, Mode, file_name::Classify};
 use crate::theme::Theme;
 
 mod fs;
@@ -168,7 +168,8 @@ impl<'args> Exa<'args> {
         let mut exit_status = 0;
 
         for file_path in &self.input_paths {
-            match File::from_args(PathBuf::from(file_path), None, None) {
+            // Needs metadata to determine if it is a directory.
+            match File::from_args(PathBuf::from(file_path), None, None, None, true) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(io::stderr(), "{:?}: {}", file_path, e)?;
@@ -221,7 +222,7 @@ impl<'args> Exa<'args> {
 
             let mut children = Vec::new();
             let git_ignore = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
-            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore) {
+            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore, self.needs_file_metadata()) {
                 match file {
                     Ok(file)        => children.push(file),
                     Err((path, e))  => writeln!(io::stderr(), "[{}: {}]", path.display(), e)?,
@@ -315,6 +316,23 @@ impl<'args> Exa<'args> {
                 r.render(&mut self.writer)
             }
         }
+    }
+
+    /// Whether need to invoke metadata syscall on all scanned files.
+    fn needs_file_metadata(&self) -> bool {
+        // Needs file metadata if any of:
+        // - Colourful output needs to render special color for executable files (relies on permissions).
+        // - Detail mode needs to print metadata.
+        // - Sorting with size, inode or date needs metadata. But not for name or file type.
+        self.theme.ui.colourful ||
+            matches!(self.options.view.mode, Mode::Details(_) | Mode::GridDetails(_)) ||
+            matches!(self.options.view.file_style.classify, Classify::AddFileIndicators) ||
+            matches!(
+                self.options.filter.sort_field,
+                SortField::Size | SortField::FileInode |
+                    SortField::ModifiedDate | SortField::AccessedDate | SortField::ChangedDate | SortField::CreatedDate |
+                    SortField::ModifiedAge,
+            )
     }
 }
 
