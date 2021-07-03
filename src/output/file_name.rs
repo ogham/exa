@@ -25,14 +25,19 @@ impl Options {
 
     /// Create a new `FileName` that prints the given file’s name, painting it
     /// with the remaining arguments.
-    pub fn for_file<'a, 'dir, C>(self, file: &'a File<'dir>, colours: &'a C) -> FileName<'a, 'dir, C> {
+    pub fn for_file<'a, 'dir, C: Colours>(self, file: &'a File<'dir>, colours: &'a C, link_style: LinkStyle) -> FileName<'a, 'dir, C> {
+        let target = match (file.is_link(), link_style, colours.colourful()) {
+            // If we only render file name without colour, the link target information is useless.
+            (true, LinkStyle::JustFilenames, true) |
+            (true, LinkStyle::FullLinkPaths, _   ) => Some(file.link_target()),
+            _                                      => None,
+        };
         FileName {
             file,
             colours,
-            link_style: LinkStyle::JustFilenames,
-            options:    self,
-            target:     if file.is_link() { Some(file.link_target()) }
-                                     else { None }
+            link_style,
+            options: self,
+            target,
         }
     }
 }
@@ -40,7 +45,7 @@ impl Options {
 /// When displaying a file name, there needs to be some way to handle broken
 /// links, depending on how long the resulting Cell can be.
 #[derive(PartialEq, Debug, Copy, Clone)]
-enum LinkStyle {
+pub enum LinkStyle {
 
     /// Just display the file names, but colour them differently if they’re
     /// a broken link or can’t be followed.
@@ -102,16 +107,6 @@ pub struct FileName<'a, 'dir, C> {
     link_style: LinkStyle,
 
     options: Options,
-}
-
-impl<'a, 'dir, C> FileName<'a, 'dir, C> {
-
-    /// Sets the flag on this file name to display link targets with an
-    /// arrow followed by their path.
-    pub fn with_link_paths(mut self) -> Self {
-        self.link_style = LinkStyle::FullLinkPaths;
-        self
-    }
 }
 
 impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
@@ -291,6 +286,12 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     /// class on the filesystem or from its name. (Or the broken link colour,
     /// if there’s nowhere else for that fact to be shown.)
     pub fn style(&self) -> Style {
+        // No colour needed, skip detections.
+        // So we can omit metadata syscalls (needed to determine executable file) in this case.
+        if !self.colours.colourful() {
+            return Style::default();
+        }
+
         if let LinkStyle::JustFilenames = self.link_style {
             if let Some(ref target) = self.target {
                 if target.is_broken() {
@@ -316,6 +317,10 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
 /// The set of colours that are needed to paint a file name.
 pub trait Colours: FiletypeColours {
+
+    /// Returning false if this is a plain theme without any colour,
+    /// and extra operations to determine colours will be skipped.
+    fn colourful(&self) -> bool;
 
     /// The style to paint the path of a symlink’s target, up to but not
     /// including the file’s name.

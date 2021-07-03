@@ -4,7 +4,7 @@ use term_grid as tg;
 
 use crate::fs::File;
 use crate::fs::filter::FileFilter;
-use crate::output::file_name::Options as FileStyle;
+use crate::output::file_name::{LinkStyle, Options as FileStyle};
 use crate::theme::Theme;
 
 
@@ -41,7 +41,7 @@ impl<'a> Render<'a> {
 
         self.filter.sort_files(&mut self.files);
         for file in &self.files {
-            let filename = self.file_style.for_file(file, self.theme).paint();
+            let filename = self.file_style.for_file(file, self.theme, LinkStyle::JustFilenames).paint();
 
             grid.add(tg::Cell {
                 contents:  filename.strings().to_string(),
@@ -57,7 +57,7 @@ impl<'a> Render<'a> {
             // This isn’t *quite* the same as the lines view, which also
             // displays full link paths.
             for file in &self.files {
-                let name_cell = self.file_style.for_file(file, self.theme).paint();
+                let name_cell = self.file_style.for_file(file, self.theme, LinkStyle::JustFilenames).paint();
                 writeln!(w, "{}", name_cell.strings())?;
             }
 

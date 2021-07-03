@@ -5,7 +5,7 @@ use ansi_term::ANSIStrings;
 use crate::fs::File;
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCellContents;
-use crate::output::file_name::{Options as FileStyle};
+use crate::output::file_name::{LinkStyle, Options as FileStyle};
 use crate::theme::Theme;
 
 
@@ -30,8 +30,7 @@ impl<'a> Render<'a> {
 
     fn render_file<'f>(&self, file: &'f File<'a>) -> TextCellContents {
         self.file_style
-            .for_file(file, self.theme)
-            .with_link_paths()
+            .for_file(file, self.theme, LinkStyle::FullLinkPaths)
             .paint()
     }
 }

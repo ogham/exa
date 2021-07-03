@@ -11,7 +11,7 @@ use crate::fs::feature::xattr::FileAttributes;
 use crate::fs::filter::FileFilter;
 use crate::output::cell::TextCell;
 use crate::output::details::{Options as DetailsOptions, Row as DetailsRow, Render as DetailsRender};
-use crate::output::file_name::Options as FileStyle;
+use crate::output::file_name::{LinkStyle, Options as FileStyle};
 use crate::output::grid::Options as GridOptions;
 use crate::output::table::{Table, Row as TableRow, Options as TableOptions};
 use crate::output::tree::{TreeParams, TreeDepth};
@@ -154,11 +154,11 @@ impl<'a> Render<'a> {
                        .collect::<Vec<_>>();
 
         let file_names = self.files.iter()
-                             .map(|file| self.file_style.for_file(file, self.theme).paint().promote())
+                             .map(|file| self.file_style.for_file(file, self.theme, LinkStyle::JustFilenames).paint().promote())
                              .collect::<Vec<_>>();
 
         let mut last_working_grid = self.make_grid(1, options, &file_names, rows.clone(), &drender);
-        
+
         if file_names.len() == 1 {
             return Some((last_working_grid, 1));
         }
@@ -176,7 +176,7 @@ impl<'a> Render<'a> {
             if the_grid_fits {
                 last_working_grid = grid;
             }
-            
+
             if !the_grid_fits || column_count == file_names.len() {
                 let last_column_count = if the_grid_fits { column_count } else { column_count - 1 };
                 // If we’ve figured out how many columns can fit in the user’s terminal,

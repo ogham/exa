@@ -293,6 +293,10 @@ impl render::UserColours for Theme {
 }
 
 impl FileNameColours for Theme {
+    fn colourful(&self) -> bool {
+        self.ui.colourful
+    }
+
     fn normal_arrow(&self)        -> Style { self.ui.punctuation }
     fn broken_symlink(&self)      -> Style { self.ui.broken_symlink }
     fn broken_filename(&self)     -> Style { apply_overlay(self.ui.broken_symlink, self.ui.broken_path_overlay) }
