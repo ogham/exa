@@ -303,23 +303,27 @@ impl Environment {
 }
 
 fn determine_time_zone() -> TZResult<TimeZone> {
+    // From the GNU libc manual,
+    // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html:
+    //
+    //     The third format looks like this:
+    //         :characters
+    //
+    //     If characters begins with a slash, it is an absolute file name;
+    //     otherwise the library looks for the file /usr/share/zoneinfo/characters.
     if let Ok(file) = env::var("TZ") {
-        TimeZone::from_file({
-            if file.starts_with('/') {
-                file
-            } else {
-                format!("/usr/share/zoneinfo/{}", {
-                    if file.starts_with(':') {
-                        file.replacen(":", "", 1)
-                    } else {
-                        file
-                    }
-                })
-            }
-        })
-    } else {
-        TimeZone::from_file("/etc/localtime")
+        // We don't currently handle the other formats.
+        if let Some(file) = file.strip_prefix(':') {
+            return TimeZone::from_file({
+                if file.starts_with('/') {
+                    file.to_string()
+                } else {
+                    format!("/usr/share/zoneinfo/{}", file)
+                }
+            });
+        }
     }
+    TimeZone::from_file("/etc/localtime")
 }
 
 lazy_static! {
