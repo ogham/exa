@@ -230,6 +230,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "markdown"      => '\u{f48a}', // 
             "md"            => '\u{f48a}', // 
             "mjs"           => '\u{e74e}', // 
+            "mk"            => '\u{e779}', // 
             "mkd"           => '\u{f48a}', // 
             "mkv"           => '\u{f03d}', // 
             "mobi"          => '\u{e28b}', // 
