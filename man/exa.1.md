@@ -113,6 +113,8 @@ Sort fields starting with a capital letter will sort uppercase before lowercase:
 `-D`, `--only-dirs`
 : List only directories, not files.
 
+`-E`, `--only-files`
+: List only files, not directories.
 
 LONG VIEW OPTIONS
 =================

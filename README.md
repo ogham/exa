@@ -58,6 +58,7 @@ exa’s options are almost, but not quite, entirely unlike `ls`’s.
 - **-s**, **--sort=(field)**: which field to sort by
 - **--group-directories-first**: list directories before other files
 - **-D**, **--only-dirs**: list only directories
+- **-E**, **--only-files**: list only files
 - **--git-ignore**: ignore files mentioned in `.gitignore`
 - **-I**, **--ignore-glob=(globs)**: glob patterns (pipe-separated) of files to ignore
 

@@ -33,6 +33,7 @@ FILTERING AND SORTING OPTIONS
   -s, --sort SORT_FIELD      which field to sort by
   --group-directories-first  list directories before other files
   -D, --only-dirs            list only directories
+  -E, --only-files           list only files
   -I, --ignore-glob GLOBS    glob patterns (pipe-separated) of files to ignore";
 
   static USAGE_PART2: &str = "  \
