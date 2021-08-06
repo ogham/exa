@@ -114,7 +114,7 @@ Sort fields starting with a capital letter will sort uppercase before lowercase:
 : List only directories, not files.
 
 `-E`, `--only-files`
-: List only files, not directories.
+: List only files, not directories. Recursion not available.
 
 LONG VIEW OPTIONS
 =================

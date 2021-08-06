@@ -50,7 +50,7 @@ complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
 
 complete -c exa -s 'I' -l 'ignore-glob' -d "Ignore files that match these glob patterns" -r
 complete -c exa -s 'D' -l 'only-dirs'   -d "List only directories"
-complete -c exa -s 'E' -l 'only-files'  -d "List only files"
+complete -c exa -s 'E' -l 'only-files'  -d "List only files, recursion not available"
 
 # Long view options
 complete -c exa -s 'b' -l 'binary'   -d "List file sizes with binary prefixes"
