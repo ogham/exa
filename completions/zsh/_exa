@@ -19,7 +19,7 @@ __exa() {
         {-R,--recurse}"[Recurse into directories]" \
         {-T,--tree}"[Recurse into directories as a tree]" \
         {-F,--classify}"[Display type indicator by file names]" \
-        --colo{,u}r"[When to use terminal colours]" \
+        --colo{,u}r="[When to use terminal colours]:(when):(always auto never)" \
         --colo{,u}r-scale"[Highlight levels of file sizes distinctly]" \
         --icons"[Display icons]" \
         --no-icons"[Hide icons]" \
