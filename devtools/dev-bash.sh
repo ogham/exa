@@ -37,8 +37,8 @@ strict() {
   case "$1" in
     "on")  export EXA_STRICT=1 ;;
     "off") export EXA_STRICT= ;;
-    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;
-    *) echo "Usage: strict on|off"; return 1 ;;
+    "")    [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;
+    *)     echo "Usage: strict on|off"; return 1 ;;
   esac;
 }
 
