@@ -26,7 +26,7 @@ impl FileExtensions {
         file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
+            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
             "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
             "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
