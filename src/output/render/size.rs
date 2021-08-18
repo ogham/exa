@@ -46,7 +46,7 @@ impl f::Size {
         } else {
             numerics.format_int(n.round() as isize)
         };
-        
+
         TextCell {
             // symbol is guaranteed to be ASCII since unit prefixes are hardcoded.
             width: DisplayWidth::from(&*number) + symbol.len(),
