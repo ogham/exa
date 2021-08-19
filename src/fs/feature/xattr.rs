@@ -262,7 +262,7 @@ mod lister {
             unsafe {
                 listxattr(
                     c_path.as_ptr().cast(),
-                    buf.as_mut_ptr().cast::<i8>(),
+                    buf.as_mut_ptr().cast::<std::os::raw::c_char>(),
                     bufsize as size_t,
                 )
             }
@@ -277,7 +277,7 @@ mod lister {
             unsafe {
                 getxattr(
                     c_path.as_ptr().cast(),
-                    buf.as_ptr().cast::<i8>(),
+                    buf.as_ptr().cast::<std::os::raw::c_char>(),
                     ptr::null_mut(),
                     0,
                 )
