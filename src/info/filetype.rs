@@ -80,7 +80,8 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
-            "lz", "tlz", "lzma", "deb", "rpm", "zst",
+            "lz", "tlz", "lzma", "deb", "rpm", "zst", "tar.gz",
+            "tar.xz", "tar.lz",
         ])
     }
 

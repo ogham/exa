@@ -302,6 +302,9 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "svg"           => '\u{f1c5}', // 
             "swift"         => '\u{e755}', // 
             "tar"           => '\u{f410}', // 
+            "tar.gz"        => '\u{f410}', // 
+            "tar.lz"        => '\u{f410}', // 
+            "tar.xz"        => '\u{f410}', // 
             "taz"           => '\u{f410}', // 
             "tbz"           => '\u{f410}', // 
             "tbz2"          => '\u{f410}', // 
