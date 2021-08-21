@@ -38,6 +38,7 @@ pub struct FileKinds {
     pub socket: Style,
     pub special: Style,
     pub executable: Style,
+    pub mount_point: Style,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

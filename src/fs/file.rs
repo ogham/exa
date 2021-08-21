@@ -7,6 +7,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::*;
 
+use proc_mounts::MOUNTS;
+
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
 
@@ -204,6 +206,18 @@ impl<'dir> File<'dir> {
         self.metadata.file_type().is_socket()
     }
 
+    // Whether this file is a mount point
+    pub fn is_mount_point(&self) -> bool {
+        if self.is_directory() {
+            let mounts = &MOUNTS.read().unwrap().0;
+            for mount in mounts {
+                if self.path.eq(&mount.dest) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever

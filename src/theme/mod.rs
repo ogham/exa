@@ -300,6 +300,7 @@ impl FileNameColours for Theme {
     fn control_char(&self)        -> Style { self.ui.control_char }
     fn symlink_path(&self)        -> Style { self.ui.symlink_path }
     fn executable_file(&self)     -> Style { self.ui.filekinds.executable }
+    fn mount_point(&self)         -> Style { self.ui.filekinds.mount_point }
 
     fn colour_file(&self, file: &File<'_>) -> Style {
         self.exts.colour_file(file).unwrap_or(self.ui.filekinds.normal)

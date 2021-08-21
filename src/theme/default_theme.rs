@@ -20,6 +20,7 @@ impl UiStyles {
                 socket:       Red.bold(),
                 special:      Yellow.normal(),
                 executable:   Green.bold(),
+                mount_point:  Blue.bold().underline(),
             },
 
             perms: Permissions {

@@ -300,6 +300,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
 
         match self.file {
+            f if f.is_mount_point()      => self.colours.mount_point(),
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),
             f if f.is_link()             => self.colours.symlink(),
@@ -341,6 +342,9 @@ pub trait Colours: FiletypeColours {
 
     /// The style to paint a file that has its executable bit set.
     fn executable_file(&self) -> Style;
+
+    /// The style to paint a directory that has a filesystem mounted on it.
+    fn mount_point(&self) -> Style;
 
     fn colour_file(&self, file: &File<'_>) -> Style;
 }

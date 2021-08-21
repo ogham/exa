@@ -52,6 +52,8 @@ default = [ "git" ]
 git = [ "git2" ]
 vendored-openssl = ["git2/vendored-openssl"]
 
+[target.'cfg(unix)'.dependencies]
+proc-mounts = "0.2"
 
 # make dev builds faster by excluding debug symbols
 [profile.dev]
