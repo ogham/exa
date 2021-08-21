@@ -221,6 +221,23 @@ impl<'dir> File<'dir> {
         return false;
     }
 
+    // The filesystem device and type for a mount point
+    pub fn mount_point_info(&self) -> Option<MountedFs> {
+        if self.is_mount_point() {
+            let mounts = &MOUNTS.read().unwrap().0;
+            for mount_point in mounts {
+                if self.path.eq(&mount_point.dest) {
+                    return Some(MountedFs {
+                        dest: mount_point.dest.to_string_lossy().into_owned(),
+                        fstype: mount_point.fstype.clone(),
+                        source: mount_point.source.to_string_lossy().into_owned(),
+                    })
+                }
+            }
+        }
+        None
+    }
+
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
     /// directory exa is being run from.
@@ -493,6 +510,13 @@ impl<'dir> FileTarget<'dir> {
     pub fn is_broken(&self) -> bool {
         matches!(self, Self::Broken(_) | Self::Err(_))
     }
+}
+
+/// Details of a mounted filesystem.
+pub struct MountedFs {
+    pub dest: String,
+    pub fstype: String,
+    pub source: String,
 }
 
 
