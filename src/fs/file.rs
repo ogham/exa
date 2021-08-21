@@ -208,11 +208,13 @@ impl<'dir> File<'dir> {
 
     // Whether this file is a mount point
     pub fn is_mount_point(&self) -> bool {
-        if self.is_directory() {
-            let mounts = &MOUNTS.read().unwrap().0;
-            for mount in mounts {
-                if self.path.eq(&mount.dest) {
-                    return true;
+        if cfg!(unix) {
+            if self.is_directory() {
+                let mounts = &MOUNTS.read().unwrap().0;
+                for mount in mounts {
+                    if self.path.eq(&mount.dest) {
+                        return true;
+                    }
                 }
             }
         }
