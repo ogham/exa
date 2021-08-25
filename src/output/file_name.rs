@@ -252,6 +252,10 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             bits.push(Style::default().paint(mount_details.source.clone()));
             bits.push(Style::default().paint(" ("));
             bits.push(Style::default().paint(mount_details.fstype.clone()));
+            if mount_details.fstype.eq("btrfs") {
+                bits.push(Style::default().paint(" ["));
+                bits.push(Style::default().paint(" ]"));
+            }
             bits.push(Style::default().paint(")}"));
         }
 
@@ -339,6 +343,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
         match self.file {
             f if f.is_mount_point()      => self.colours.mount_point(),
+            f if f.is_btrfs_subvolume()  => self.colours.btrfs_subvolume(),
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),
             f if f.is_link()             => self.colours.symlink(),
@@ -383,6 +388,9 @@ pub trait Colours: FiletypeColours {
 
     /// The style to paint a directory that has a filesystem mounted on it.
     fn mount_point(&self) -> Style;
+
+    /// The style to paint a directory that is the root of a btrfs subvolume.
+    fn btrfs_subvolume(&self) -> Style;
 
     fn colour_file(&self, file: &File<'_>) -> Style;
 }

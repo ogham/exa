@@ -11,16 +11,17 @@ impl UiStyles {
             colourful: true,
 
             filekinds: FileKinds {
-                normal:       Style::default(),
-                directory:    Blue.bold(),
-                symlink:      Cyan.normal(),
-                pipe:         Yellow.normal(),
-                block_device: Yellow.bold(),
-                char_device:  Yellow.bold(),
-                socket:       Red.bold(),
-                special:      Yellow.normal(),
-                executable:   Green.bold(),
-                mount_point:  Blue.bold().underline(),
+                normal:          Style::default(),
+                directory:       Blue.bold(),
+                symlink:         Cyan.normal(),
+                pipe:            Yellow.normal(),
+                block_device:    Yellow.bold(),
+                char_device:     Yellow.bold(),
+                socket:          Red.bold(),
+                special:         Yellow.normal(),
+                executable:      Green.bold(),
+                mount_point:     Blue.bold().underline(),
+                btrfs_subvolume: Blue.underline(),
             },
 
             perms: Permissions {

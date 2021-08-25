@@ -229,6 +229,32 @@ impl<'dir> File<'dir> {
         None
     }
 
+    /// Whether this file (directory) is a `btrfs` subvolume
+    pub fn is_btrfs_subvolume(&self) -> bool {
+        if cfg!(unix) {
+            if self.is_directory() &&
+                (self.metadata.ino() == 2 || self.metadata.ino() == 256) {
+                //This directory matches the characteristics of a btrfs
+                //subvolume root. Check it's actually on a btrfs fs.
+                let mut ancestors: Vec<PathBuf> = Vec::new();
+                for ancestor in self.absolute_path.ancestors() {
+                    ancestors.push(ancestor.to_path_buf());
+                }
+                ancestors.reverse();
+                let mut is_on_btrfs = false;
+                // Start at / and work downwards
+                for ancestor in ancestors {
+                    is_on_btrfs = match ALL_MOUNTS.get(&ancestor) {
+                        None => is_on_btrfs,
+                        Some(mount) => mount.fstype.eq("btrfs"),
+                    };
+                }
+                return is_on_btrfs;
+            }
+        }
+        return false;
+    }
+
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
     /// directory exa is being run from.
