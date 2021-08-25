@@ -23,16 +23,21 @@
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::wildcard_imports)]
 
+#[macro_use]
+extern crate lazy_static;
+
+use std::collections::HashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::io::{self, Write, ErrorKind};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
+use proc_mounts::MOUNTS;
 
 use log::*;
 
-use crate::fs::{Dir, File};
+use crate::fs::{Dir, File, MountedFs};
 use crate::fs::feature::git::GitCache;
 use crate::fs::filter::GitIgnore;
 use crate::options::{Options, Vars, vars, OptionsResult};
@@ -45,6 +50,23 @@ mod logger;
 mod options;
 mod output;
 mod theme;
+
+lazy_static! {
+    static ref ALL_MOUNTS: HashMap<PathBuf, MountedFs> = {
+        let mut m = HashMap::new();
+        if cfg!(unix) {
+            for mount_point in &MOUNTS.read().unwrap().0 {
+                let mount = MountedFs {
+                    dest: mount_point.dest.to_string_lossy().into_owned(),
+                    fstype: mount_point.fstype.clone(),
+                    source: mount_point.source.to_string_lossy().into_owned(),
+                };
+                m.insert(mount_point.dest.clone(), mount);
+            }
+        }
+        m
+    };
+}
 
 
 fn main() {

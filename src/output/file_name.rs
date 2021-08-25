@@ -119,7 +119,7 @@ pub struct FileName<'a, 'dir, C> {
     options: Options,
 
     /// The filesystem details for a mounted filesystem.
-    mounted_fs: Option<MountedFs>,
+    mounted_fs: Option<&'a MountedFs>,
 
     /// How to handle displaying a mounted filesystem.
     mount_style: MountStyle,

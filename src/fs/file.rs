@@ -7,8 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::*;
 
-use proc_mounts::MOUNTS;
-
+use crate::ALL_MOUNTS;
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
 
@@ -212,34 +211,20 @@ impl<'dir> File<'dir> {
         self.metadata.file_type().is_socket()
     }
 
-    // Whether this file is a mount point
+    /// Whether this file is a mount point
     pub fn is_mount_point(&self) -> bool {
         if cfg!(unix) {
             if self.is_directory() {
-                let mounts = &MOUNTS.read().unwrap().0;
-                for mount in mounts {
-                    if self.absolute_path.eq(&mount.dest) {
-                        return true;
-                    }
-                }
+                return ALL_MOUNTS.contains_key(&self.absolute_path);
             }
         }
         return false;
     }
 
-    // The filesystem device and type for a mount point
-    pub fn mount_point_info(&self) -> Option<MountedFs> {
-        if self.is_mount_point() {
-            let mounts = &MOUNTS.read().unwrap().0;
-            for mount_point in mounts {
-                if self.absolute_path.eq(&mount_point.dest) {
-                    return Some(MountedFs {
-                        dest: mount_point.dest.to_string_lossy().into_owned(),
-                        fstype: mount_point.fstype.clone(),
-                        source: mount_point.source.to_string_lossy().into_owned(),
-                    })
-                }
-            }
+    /// The filesystem device and type for a mount point
+    pub fn mount_point_info(&self) -> Option<&MountedFs> {
+        if cfg!(unix) {
+            return ALL_MOUNTS.get(&self.absolute_path);
         }
         None
     }
