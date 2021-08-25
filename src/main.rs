@@ -60,6 +60,19 @@ lazy_static! {
                     dest: mount_point.dest.to_string_lossy().into_owned(),
                     fstype: mount_point.fstype.clone(),
                     source: mount_point.source.to_string_lossy().into_owned(),
+                    subvolume: match mount_point.fstype.as_str() {
+                        "btrfs" => {
+                            let mut subvol = None;
+                            for option in &mount_point.options {
+                                if option.starts_with("subvol=") {
+                                    subvol = Some(option[7..].to_string());
+                                    break;
+                                }
+                            }
+                            subvol
+                        },
+                        _ => None,
+                    }
                 };
                 m.insert(mount_point.dest.clone(), mount);
             }

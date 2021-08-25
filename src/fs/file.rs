@@ -534,6 +534,7 @@ pub struct MountedFs {
     pub dest: String,
     pub fstype: String,
     pub source: String,
+    pub subvolume: Option<String>,
 }
 
 

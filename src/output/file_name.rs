@@ -252,9 +252,10 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             bits.push(Style::default().paint(mount_details.source.clone()));
             bits.push(Style::default().paint(" ("));
             bits.push(Style::default().paint(mount_details.fstype.clone()));
-            if mount_details.fstype.eq("btrfs") {
-                bits.push(Style::default().paint(" ["));
-                bits.push(Style::default().paint(" ]"));
+            if mount_details.fstype.eq("btrfs") && mount_details.subvolume.is_some() {
+                bits.push(Style::default().paint(" @["));
+                bits.push(Style::default().paint(mount_details.subvolume.clone().unwrap()));
+                bits.push(Style::default().paint("]"));
             }
             bits.push(Style::default().paint(")}"));
         }
