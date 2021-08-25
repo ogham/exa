@@ -65,6 +65,9 @@ pub struct File<'dir> {
     /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
+
+    /// The absolute value of this path, used to look up mount points.
+    pub absolute_path: PathBuf,
 }
 
 impl<'dir> File<'dir> {
@@ -79,8 +82,9 @@ impl<'dir> File<'dir> {
         debug!("Statting file {:?}", &path);
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all, absolute_path })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -91,8 +95,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all, absolute_path })
     }
 
     pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -102,8 +107,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all, absolute_path })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -212,7 +218,7 @@ impl<'dir> File<'dir> {
             if self.is_directory() {
                 let mounts = &MOUNTS.read().unwrap().0;
                 for mount in mounts {
-                    if self.path.eq(&mount.dest) {
+                    if self.absolute_path.eq(&mount.dest) {
                         return true;
                     }
                 }
@@ -226,7 +232,7 @@ impl<'dir> File<'dir> {
         if self.is_mount_point() {
             let mounts = &MOUNTS.read().unwrap().0;
             for mount_point in mounts {
-                if self.path.eq(&mount_point.dest) {
+                if self.absolute_path.eq(&mount_point.dest) {
                     return Some(MountedFs {
                         dest: mount_point.dest.to_string_lossy().into_owned(),
                         fstype: mount_point.fstype.clone(),
@@ -286,7 +292,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false, absolute_path };
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
