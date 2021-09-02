@@ -80,7 +80,7 @@ lazy_static! {
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
         m.insert("localized", '\u{f179}'); // 
-        m.insert("Makefile", '\u{e779}'); // 
+        m.insert("Makefile", '\u{f489}'); // 
         m.insert("node_modules", '\u{e718}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
