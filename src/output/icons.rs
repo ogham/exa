@@ -80,7 +80,7 @@ lazy_static! {
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
         m.insert("localized", '\u{f179}'); // 
-        m.insert("Makefile", '\u{e779}'); // 
+        m.insert("Makefile", '\u{f489}'); // 
         m.insert("node_modules", '\u{e718}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
@@ -234,6 +234,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "markdown"      => '\u{f48a}', // 
             "md"            => '\u{f48a}', // 
             "mjs"           => '\u{e74e}', // 
+            "mk"            => '\u{f489}', // 
             "mkd"           => '\u{f48a}', // 
             "mkv"           => '\u{f03d}', // 
             "mobi"          => '\u{e28b}', // 
