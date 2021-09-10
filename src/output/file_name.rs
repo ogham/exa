@@ -344,6 +344,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
         match self.file {
             f if f.is_mount_point()      => self.colours.mount_point(),
+            #[cfg(unix)]
             f if f.is_btrfs_subvolume()  => self.colours.btrfs_subvolume(),
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),

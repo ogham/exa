@@ -33,6 +33,7 @@ use std::io::{self, Write, ErrorKind};
 use std::path::{Component, PathBuf};
 
 use ansi_term::{ANSIStrings, Style};
+#[cfg(unix)]
 use proc_mounts::MOUNTS;
 
 use log::*;
@@ -54,28 +55,27 @@ mod theme;
 lazy_static! {
     static ref ALL_MOUNTS: HashMap<PathBuf, MountedFs> = {
         let mut m = HashMap::new();
-        if cfg!(unix) {
-            for mount_point in &MOUNTS.read().unwrap().0 {
-                let mount = MountedFs {
-                    dest: mount_point.dest.to_string_lossy().into_owned(),
-                    fstype: mount_point.fstype.clone(),
-                    source: mount_point.source.to_string_lossy().into_owned(),
-                    subvolume: match mount_point.fstype.as_str() {
-                        "btrfs" => {
-                            let mut subvol = None;
-                            for option in &mount_point.options {
-                                if option.starts_with("subvol=") {
-                                    subvol = Some(option[7..].to_string());
-                                    break;
-                                }
+        #[cfg(unix)]
+        for mount_point in &MOUNTS.read().unwrap().0 {
+            let mount = MountedFs {
+                dest: mount_point.dest.to_string_lossy().into_owned(),
+                fstype: mount_point.fstype.clone(),
+                source: mount_point.source.to_string_lossy().into_owned(),
+                subvolume: match mount_point.fstype.as_str() {
+                    "btrfs" => {
+                        let mut subvol = None;
+                        for option in &mount_point.options {
+                            if option.starts_with("subvol=") {
+                                subvol = Some(option[7..].to_string());
+                                break;
                             }
-                            subvol
-                        },
-                        _ => None,
-                    }
-                };
-                m.insert(mount_point.dest.clone(), mount);
-            }
+                        }
+                        subvol
+                    },
+                    _ => None,
+                }
+            };
+            m.insert(mount_point.dest.clone(), mount);
         }
         m
     };

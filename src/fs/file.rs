@@ -230,6 +230,7 @@ impl<'dir> File<'dir> {
     }
 
     /// Whether this file (directory) is a `btrfs` subvolume
+    #[cfg(unix)]
     pub fn is_btrfs_subvolume(&self) -> bool {
         if cfg!(unix) {
             if self.is_directory() &&
