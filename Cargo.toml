@@ -1,11 +1,11 @@
 [package]
 name = "exa"
 description = "A modern replacement for ls"
-
 authors = ["Benjamin Sago <ogham@bsago.me>"]
 categories = ["command-line-utilities"]
 edition = "2018"
 exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
+readme = "README.md"
 homepage = "https://the.exa.website/"
 license = "MIT"
 repository = "https://github.com/ogham/exa"
@@ -63,7 +63,7 @@ lto = true
 
 
 [package.metadata.deb]
-license-file = [ "LICENCE" ]
+license-file = [ "LICENCE", "4" ]
 depends = "$auto"
 extended-description = """
 exa is a replacement for ls written in Rust.
@@ -72,6 +72,9 @@ section = "utils"
 priority = "optional"
 assets = [
     [ "target/release/exa", "/usr/bin/exa", "0755" ],
-    [ "contrib/man/exa.1", "/usr/share/man/man1/exa.1", "0644" ],
-    [ "contrib/completions.bash", "/etc/bash_completion.d/exa", "0644" ],
+    [ "target/release/../man/exa.1", "/usr/share/man/man1/exa.1", "0644" ],
+    [ "target/release/../man/exa_colors.5", "/usr/share/man/man5/exa_colors.5", "0644" ],
+    [ "completions/bash/exa", "/usr/share/bash-completion/completions/exa", "0644" ],
+    [ "completions/zsh/_exa", "/usr/share/zsh/site-functions/_exa", "0644" ],
+    [ "completions/fish/exa.fish", "/usr/share/fish/vendor_completions.d/exa.fish", "0644" ],
 ]

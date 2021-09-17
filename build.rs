@@ -38,9 +38,10 @@ fn main() -> io::Result<()> {
 
     // We need to create these files in the Cargo output directory.
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let path = &out.join("version_string.txt");
 
     // Bland version text
-    let mut f = File::create(&out.join("version_string.txt"))?;
+    let mut f = File::create(path).expect(&path.to_string_lossy());
     writeln!(f, "{}", strip_codes(&ver))?;
 
     Ok(())
