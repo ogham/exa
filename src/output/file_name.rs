@@ -302,7 +302,21 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         match self.file {
             f if f.is_directory()        => self.colours.directory(),
             f if f.is_executable_file()  => self.colours.executable_file(),
-            f if f.is_link()             => self.colours.symlink(),
+            f if f.is_link()             => {
+                match self.colours.symlink() {
+                    crate::theme::LinkStyle::AnsiStyle(x) => x,
+                    _ => {
+                        if let FileTarget::Ok(file) = self.target.as_ref().unwrap() {
+                            return FileName {
+                                file: &file,
+                                target: None,
+                                ..*self
+                            }.style()
+                        }
+                        return Style::default();
+                    }
+                }
+            }
             f if f.is_pipe()             => self.colours.pipe(),
             f if f.is_block_device()     => self.colours.block_device(),
             f if f.is_char_device()      => self.colours.char_device(),
