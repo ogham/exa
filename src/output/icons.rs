@@ -307,7 +307,9 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tbz"           => '\u{f410}', // 
             "tbz2"          => '\u{f410}', // 
             "tex"           => '\u{f034}', // 
+            "tgz"           => '\u{f410}', // 
             "tiff"          => '\u{f1c5}', // 
+            "tlz"           => '\u{f410}', // 
             "toml"          => '\u{e615}', // 
             "ts"            => '\u{e628}', // 
             "tsv"           => '\u{f1c3}', // 
@@ -315,6 +317,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ttf"           => '\u{f031}', // 
             "twig"          => '\u{e61c}', // 
             "txt"           => '\u{f15c}', // 
+            "txz"           => '\u{f410}', // 
             "tz"            => '\u{f410}', // 
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 
