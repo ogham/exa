@@ -80,7 +80,7 @@ lazy_static! {
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
         m.insert("localized", '\u{f179}'); // 
-        m.insert("Makefile", '\u{e779}'); // 
+        m.insert("Makefile", '\u{f489}'); // 
         m.insert("node_modules", '\u{e718}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
@@ -110,6 +110,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "apk"           => '\u{e70e}', // 
             "apple"         => '\u{f179}', // 
             "avi"           => '\u{f03d}', // 
+            "avif"          => '\u{f1c5}', // 
             "avro"          => '\u{e60b}', // 
             "awk"           => '\u{f489}', // 
             "bash"          => '\u{f489}', // 
@@ -206,11 +207,16 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jad"           => '\u{e256}', // 
             "jar"           => '\u{e204}', // 
             "java"          => '\u{e204}', // 
+            "jfi"           => '\u{f1c5}', // 
+            "jfif"          => '\u{f1c5}', // 
+            "jif"           => '\u{f1c5}', // 
+            "jpe"           => '\u{f1c5}', // 
             "jpeg"          => '\u{f1c5}', // 
             "jpg"           => '\u{f1c5}', // 
             "js"            => '\u{e74e}', // 
             "json"          => '\u{e60b}', // 
             "jsx"           => '\u{e7ba}', // 
+            "jxl"           => '\u{f1c5}', // 
             "ksh"           => '\u{f489}', // 
             "latex"         => '\u{f034}', // 
             "less"          => '\u{e758}', // 
@@ -230,6 +236,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "markdown"      => '\u{f48a}', // 
             "md"            => '\u{f48a}', // 
             "mjs"           => '\u{e74e}', // 
+            "mk"            => '\u{f489}', // 
             "mkd"           => '\u{f48a}', // 
             "mkv"           => '\u{f03d}', // 
             "mobi"          => '\u{e28b}', // 
@@ -302,7 +309,9 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tbz"           => '\u{f410}', // 
             "tbz2"          => '\u{f410}', // 
             "tex"           => '\u{f034}', // 
+            "tgz"           => '\u{f410}', // 
             "tiff"          => '\u{f1c5}', // 
+            "tlz"           => '\u{f410}', // 
             "toml"          => '\u{e615}', // 
             "ts"            => '\u{e628}', // 
             "tsv"           => '\u{f1c3}', // 
@@ -310,6 +319,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ttf"           => '\u{f031}', // 
             "twig"          => '\u{e61c}', // 
             "txt"           => '\u{f15c}', // 
+            "txz"           => '\u{f410}', // 
             "tz"            => '\u{f410}', // 
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 

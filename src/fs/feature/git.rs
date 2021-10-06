@@ -1,5 +1,8 @@
 //! Getting the Git status of files and directories.
 
+use std::ffi::OsStr;
+#[cfg(target_family = "unix")]
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -205,6 +208,11 @@ fn repo_to_statuses(repo: &git2::Repository, workdir: &Path) -> Git {
     match repo.statuses(None) {
         Ok(es) => {
             for e in es.iter() {
+                #[cfg(target_family = "unix")]
+                let path = workdir.join(Path::new(OsStr::from_bytes(e.path_bytes())));
+                // TODO: handle non Unix systems better:
+                // https://github.com/ogham/exa/issues/698
+                #[cfg(not(target_family = "unix"))]
                 let path = workdir.join(Path::new(e.path().unwrap()));
                 let elem = (path, e.status());
                 statuses.push(elem);

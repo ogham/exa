@@ -11,17 +11,17 @@ bash /vagrant/devtools/dev-versions.sh
 # Configure the Cool Prompt™ (not actually trademarked).
 # The Cool Prompt tells you whether you’re in debug or strict mode, whether
 # you have colours configured, and whether your last command failed.
-function nonzero_return() { RETVAL=$?; [ $RETVAL -ne 0 ] && echo "$RETVAL "; }
-function debug_mode()  { [ "$EXA_DEBUG" == "trace" ] && echo -n "trace-"; [ -n "$EXA_DEBUG" ]  && echo "debug "; }
-function strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }
-function lsc_mode()    { [ -n "$LS_COLORS" ]  && echo "lsc "; }
-function exac_mode()   { [ -n "$EXA_COLORS" ] && echo "exac "; }
+nonzero_return() { RETVAL=$?; [ "$RETVAL" -ne 0 ] && echo "$RETVAL "; }
+debug_mode()  { [ "$EXA_DEBUG" == "trace" ] && echo -n "trace-"; [ -n "$EXA_DEBUG" ] && echo "debug "; }
+strict_mode() { [ -n "$EXA_STRICT" ] && echo "strict "; }
+lsc_mode()    { [ -n "$LS_COLORS" ]  && echo "lsc "; }
+exac_mode()   { [ -n "$EXA_COLORS" ] && echo "exac "; }
 export PS1="\[\e[1;36m\]\h \[\e[32m\]\w \[\e[31m\]\`nonzero_return\`\[\e[35m\]\`debug_mode\`\[\e[32m\]\`lsc_mode\`\[\e[1;32m\]\`exac_mode\`\[\e[33m\]\`strict_mode\`\[\e[36m\]\\$\[\e[0m\] "
 
 
 # The ‘debug’ function lets you switch debug mode on and off.
 # Turn it on if you need to see exa’s debugging logs.
-function debug () {
+debug() {
   case "$1" in
     ""|"on")  export EXA_DEBUG=1 ;;
     "off")    export EXA_DEBUG= ;;
@@ -33,11 +33,12 @@ function debug () {
 
 # The ‘strict’ function lets you switch strict mode on and off.
 # Turn it on if you’d like exa’s command-line arguments checked.
-function strict () {
-  case "$1" in "on") export EXA_STRICT=1 ;;
+strict() {
+  case "$1" in
+    "on")  export EXA_STRICT=1 ;;
     "off") export EXA_STRICT= ;;
-    "") [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;
-    *) echo "Usage: strict on|off"; return 1 ;;
+    "")    [ -n "$EXA_STRICT" ] && echo "strict on" || echo "strict off" ;;
+    *)     echo "Usage: strict on|off"; return 1 ;;
   esac;
 }
 
@@ -45,7 +46,7 @@ function strict () {
 # environment variables. There’s also a ‘hacker’ theme which turns everything
 # green, which is usually used for checking that all colour codes work, and
 # for looking cool while you phreak some mainframes or whatever.
-function colors () {
+colors() {
   case "$1" in
     "ls")
       export LS_COLORS="di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43"

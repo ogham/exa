@@ -1,17 +1,13 @@
 <div align="center">
-<h1>exa</h1>
+
+# exa
 
 [exa](https://the.exa.website/) is a modern replacement for _ls_.
 
 **README Sections:** [Options](#options) — [Installation](#installation) — [Development](#development)
 
-<a href="https://travis-ci.org/github/ogham/exa">
-    <img src="https://travis-ci.org/ogham/exa.svg?branch=master" alt="Build status" />
-</a>
-
-<a href="https://saythanks.io/to/ogham%40bsago.me">
-    <img src="https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg" alt="Say thanks!" />
-</a>
+[![Unit tests](https://github.com/ogham/exa/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/ogham/exa/actions/workflows/unit-tests.yml)
+[![Say thanks!](https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg)](https://saythanks.io/to/ogham%40bsago.me)
 </div>
 
 ![Screenshots of exa](screenshots.png)

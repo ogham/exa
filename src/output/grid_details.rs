@@ -158,7 +158,7 @@ impl<'a> Render<'a> {
                              .collect::<Vec<_>>();
 
         let mut last_working_grid = self.make_grid(1, options, &file_names, rows.clone(), &drender);
-        
+
         if file_names.len() == 1 {
             return Some((last_working_grid, 1));
         }
@@ -176,7 +176,7 @@ impl<'a> Render<'a> {
             if the_grid_fits {
                 last_working_grid = grid;
             }
-            
+
             if !the_grid_fits || column_count == file_names.len() {
                 let last_column_count = if the_grid_fits { column_count } else { column_count - 1 };
                 // If we’ve figured out how many columns can fit in the user’s terminal,
