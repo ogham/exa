@@ -227,6 +227,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "log"           => '\u{f18d}', // 
             "lua"           => '\u{e620}', // 
             "lz"            => '\u{f410}', // 
+            "lz4"           => '\u{f410}', // 
             "lzh"           => '\u{f410}', // 
             "lzma"          => '\u{f410}', // 
             "lzo"           => '\u{f410}', // 
