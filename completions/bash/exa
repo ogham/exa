@@ -8,6 +8,11 @@ _exa()
             return
             ;;
 
+        --colour)
+            COMPREPLY=( $( compgen -W 'always auto never' -- "$cur" ) )
+            return
+            ;;
+
         -L|--level)
             COMPREPLY=( $( compgen -W '{0..9}' -- "$cur" ) )
             return
