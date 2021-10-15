@@ -118,6 +118,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "bash_profile"  => '\u{f489}', // 
             "bashrc"        => '\u{f489}', // 
             "bat"           => '\u{f17a}', // 
+            "bats"          => '\u{f489}', // 
             "bmp"           => '\u{f1c5}', // 
             "bz"            => '\u{f410}', // 
             "bz2"           => '\u{f410}', // 
