@@ -430,7 +430,7 @@ impl<'a> MatchedFlags<'a> {
                             .filter(|tuple| tuple.1.is_some() && predicate(&tuple.0))
                             .collect::<Vec<_>>();
 
-            if those.len() < 2 { Ok(those.first().cloned().map(|t| t.1.unwrap())) }
+            if those.len() < 2 { Ok(those.first().copied().map(|t| t.1.unwrap())) }
                           else { Err(OptionsError::Duplicate(those[0].0, those[1].0)) }
         }
         else {

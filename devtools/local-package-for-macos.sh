@@ -11,7 +11,7 @@ set -e
 
 # Virtualising macOS is a legal minefield, so this script is ‘local’ instead
 # of ‘dev’: I run it from my actual machine, rather than from a VM.
-uname=`uname -s`
+uname=$(uname -s)
 if [[ "$uname" != "Darwin" ]]; then
   echo "Gotta be on Darwin to run this (detected '$uname')!"
   exit 1
@@ -36,8 +36,8 @@ fi
 
 # Weekly builds have a bit more information in their version number (see build.rs).
 if [[ "$1" == "--weekly" ]]; then
-  git_hash=`GIT_DIR=$exa_root/.git git rev-parse --short --verify HEAD`
-  date=`date +"%Y-%m-%d"`
+  git_hash=$(GIT_DIR=$exa_root/.git git rev-parse --short --verify HEAD)
+  date=$(date +"%Y-%m-%d")
   echo "Building exa weekly v$exa_version, date $date, Git hash $git_hash"
 else
   echo "Building exa v$exa_version"
@@ -65,9 +65,10 @@ echo "strip $exa_macos_binary"
 # the binaries can have consistent names, and it’s still possible to tell
 # different *downloads* apart.
 echo -e "\n\033[4mZipping binary...\033[0m"
-if [[ "$1" == "--weekly" ]]
-  then exa_macos_zip="$exa_root/exa-macos-x86_64-${exa_version}-${date}-${git_hash}.zip"
-  else exa_macos_zip="$exa_root/exa-macos-x86_64-${exa_version}.zip"
+if [[ "$1" == "--weekly" ]]; then
+  exa_macos_zip="$exa_root/exa-macos-x86_64-${exa_version}-${date}-${git_hash}.zip"
+else
+  exa_macos_zip="$exa_root/exa-macos-x86_64-${exa_version}.zip"
 fi
 rm -vf "$exa_macos_zip" | sed 's/^/removing /'
 zip -j "$exa_macos_zip" "$exa_macos_binary"

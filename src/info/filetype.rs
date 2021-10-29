@@ -26,7 +26,7 @@ impl FileExtensions {
         file.name_is_one_of( &[
             "Makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml",
+            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
             "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
             "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
@@ -35,10 +35,10 @@ impl FileExtensions {
 
     fn is_image(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif",
-            "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf",
-            "cbz", "xpm", "ico", "cr2", "orf", "nef", "heif",
+            "png", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg", "gif", "bmp",
+            "tiff", "tif", "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
+            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf", "cbz", "xpm",
+            "ico", "cr2", "orf", "nef", "heif", "avif", "jxl",
         ])
     }
 
@@ -80,14 +80,14 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
             "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
-            "lz", "tlz", "lzma", "deb", "rpm", "zst",
+            "lz", "tlz", "lzma", "deb", "rpm", "zst", "lz4",
         ])
     }
 
     fn is_temp(&self, file: &File<'_>) -> bool {
         file.name.ends_with('~')
             || (file.name.starts_with('#') && file.name.ends_with('#'))
-            || file.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak", "bk" ])
+            || file.extension_is_one_of( &[ "tmp", "swp", "swo", "swn", "bak", "bkp", "bk" ])
     }
 
     fn is_compiled(&self, file: &File<'_>) -> bool {

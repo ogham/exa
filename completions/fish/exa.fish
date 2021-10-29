@@ -10,10 +10,14 @@ complete -c exa -s 'x' -l 'across'       -d "Sort the grid across, rather than d
 complete -c exa -s 'R' -l 'recurse'      -d "Recurse into directories"
 complete -c exa -s 'T' -l 'tree'         -d "Recurse into directories as a tree"
 complete -c exa -s 'F' -l 'classify'     -d "Display type indicator by file names"
-complete -c exa        -l 'color'        -d "When to use terminal colours"
-complete -c exa        -l 'colour'       -d "When to use terminal colours"
-complete -c exa        -l 'color-scale'  -d "Highlight levels of file sizes distinctly"
-complete -c exa        -l 'colour-scale' -d "Highlight levels of file sizes distinctly"
+complete -c exa        -l 'color' \
+                       -l 'colour'       -d "When to use terminal colours" -x -a "
+    always\t'Always use colour'
+    auto\t'Use colour if standard output is a terminal'
+    never\t'Never use colour'
+"
+complete -c exa        -l 'color-scale' \
+                       -l 'colour-scale' -d "Highlight levels of file sizes distinctly"
 complete -c exa        -l 'icons'        -d "Display icons"
 complete -c exa        -l 'no-icons'     -d "Don't display icons"
 
@@ -22,9 +26,9 @@ complete -c exa -l 'group-directories-first' -d "Sort directories before other f
 complete -c exa -l 'git-ignore'           -d "Ignore files mentioned in '.gitignore'"
 complete -c exa -s 'a' -l 'all'       -d "Show hidden and 'dot' files"
 complete -c exa -s 'd' -l 'list-dirs' -d "List directories like regular files"
-complete -c exa -s 'L' -l 'level'     -d "Limit the depth of recursion" -a "1 2 3 4 5 6 7 8 9"
+complete -c exa -s 'L' -l 'level'     -d "Limit the depth of recursion" -x -a "1 2 3 4 5 6 7 8 9"
 complete -c exa -s 'r' -l 'reverse'   -d "Reverse the sort order"
-complete -c exa -s 's' -l 'sort'   -x -d "Which field to sort by" -a "
+complete -c exa -s 's' -l 'sort'      -d "Which field to sort by" -x -a "
     accessed\t'Sort by file accessed time'
     age\t'Sort by file modified time (newest first)'
     changed\t'Sort by changed time'
@@ -56,10 +60,10 @@ complete -c exa -s 'b' -l 'binary'   -d "List file sizes with binary prefixes"
 complete -c exa -s 'B' -l 'bytes'    -d "List file sizes in bytes, without any prefixes"
 complete -c exa -s 'g' -l 'group'    -d "List each file's group"
 complete -c exa -s 'h' -l 'header'   -d "Add a header row to each column"
-complete -c exa -s 'h' -l 'links'    -d "List each file's number of hard links"
+complete -c exa -s 'H' -l 'links'    -d "List each file's number of hard links"
 complete -c exa -s 'g' -l 'group'    -d "List each file's inode number"
 complete -c exa -s 'S' -l 'blocks'   -d "List each file's number of filesystem blocks"
-complete -c exa -s 't' -l 'time'  -x -d "Which timestamp field to list" -a "
+complete -c exa -s 't' -l 'time'     -d "Which timestamp field to list" -x -a "
     modified\t'Display modified time'
     changed\t'Display changed time'
     accessed\t'Display accessed time'
@@ -70,7 +74,7 @@ complete -c exa -s 'n' -l 'numeric'       -d "List numeric user and group IDs."
 complete -c exa        -l 'changed'       -d "Use the changed timestamp field"
 complete -c exa -s 'u' -l 'accessed'      -d "Use the accessed timestamp field"
 complete -c exa -s 'U' -l 'created'       -d "Use the created timestamp field"
-complete -c exa        -l 'time-style' -x -d "How to format timestamps" -a "
+complete -c exa        -l 'time-style'    -d "How to format timestamps" -x -a "
     default\t'Use the default time style'
     iso\t'Display brief ISO timestamps'
     long-iso\t'Display longer ISO timestaps, up to the minute'
