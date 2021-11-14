@@ -347,10 +347,13 @@ fn current_branch(repo: &git2::Repository) -> Option<String>{
 
     if let Some(h) = head{
         if let Some(s) = h.shorthand(){
-            return Some(s.to_owned());
+            let branch_name = s.to_owned();
+            if branch_name.len() > 10 {
+               return Some(branch_name[..8].to_string()+"..");
+            }
+            return Some(branch_name);
         }
     }
-
     None
 }
 
