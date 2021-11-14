@@ -364,7 +364,7 @@ impl f::SubdirGitRepo{
             let branch = current_branch(&repo);
             match repo.statuses(None) {
                 Ok(es) => {
-                    if es.iter().filter(|s| s.status() != git2::Status::IGNORED).count() > 0{
+                    if es.iter().filter(|s| s.status() != git2::Status::IGNORED).any(|_| true){
                         return Self{status : f::SubdirGitRepoStatus::GitDirty, branch};
                     }
                     return Self{status : f::SubdirGitRepoStatus::GitClean, branch};
