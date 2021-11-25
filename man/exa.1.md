@@ -224,6 +224,12 @@ Specifies the number of spaces to print between an icon (see the ‘`--icons`’
 
 Different terminals display icons differently, as they usually take up more than one character width on screen, so there’s no “standard” number of spaces that exa can use to separate an icon from text. One space may place the icon too close to the text, and two spaces may place it too far away. So the choice is left up to the user to configure depending on their terminal emulator.
 
+## `NO_COLOR`
+
+Disables ANSI colour in the output (regardless of its value). Can be overridden by `--color` option.
+
+See `https://no-color.org/` for details.
+
 ## `LS_COLORS`, `EXA_COLORS`
 
 Specifies the colour scheme used to highlight files based on their name and kind, as well as highlighting metadata and parts of the UI.
