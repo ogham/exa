@@ -19,3 +19,6 @@ parts
 prime
 stage
 *.snap
+
+# IntelliJ IDEA files
+.idea

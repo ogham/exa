@@ -5,7 +5,7 @@ use crate::theme::{Options, UseColours, ColourScale, Definitions};
 
 impl Options {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let use_colours = UseColours::deduce(matches)?;
+        let use_colours = UseColours::deduce(matches, vars)?;
         let colour_scale = ColourScale::deduce(matches)?;
 
         let definitions = if use_colours == UseColours::Never {
@@ -21,10 +21,15 @@ impl Options {
 
 
 impl UseColours {
-    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        let default_value = match vars.get(vars::NO_COLOR) {
+            Some(_) => Self::Never,
+            None => Self::Automatic,
+        };
+
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w)  => w,
-            None     => return Ok(Self::Automatic),
+            None => return Ok(default_value),
         };
 
         if word == "always" {

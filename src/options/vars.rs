@@ -15,6 +15,9 @@ pub static COLUMNS: &str = "COLUMNS";
 /// Environment variable used to datetime format.
 pub static TIME_STYLE: &str = "TIME_STYLE";
 
+/// Environment variable used to disable colors.
+/// See: https://no-color.org/
+pub static NO_COLOR: &str = "NO_COLOR";
 
 // exa-specific variables
 
