@@ -50,6 +50,10 @@ mod theme;
 fn main() {
     use std::process::exit;
 
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+
     logger::configure(env::var_os(vars::EXA_DEBUG));
 
     let args: Vec<_> = env::args_os().skip(1).collect();
