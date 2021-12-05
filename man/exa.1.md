@@ -226,7 +226,7 @@ Different terminals display icons differently, as they usually take up more than
 
 ## `NO_COLOR`
 
-Disables ANSI colour in the output (regardless of its value). Can be overridden by `--color` option.
+Disables colours in the output (regardless of its value). Can be overridden by `--color` option.
 
 See `https://no-color.org/` for details.
 
