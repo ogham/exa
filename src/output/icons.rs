@@ -255,6 +255,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ogg"           => '\u{f001}', // 
             "ogv"           => '\u{f03d}', // 
             "otf"           => '\u{f031}', // 
+            "part"          => '\u{f43a}', // 
             "patch"         => '\u{f440}', // 
             "pdf"           => '\u{f1c1}', // 
             "php"           => '\u{e73d}', // 
@@ -314,6 +315,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tiff"          => '\u{f1c5}', // 
             "tlz"           => '\u{f410}', // 
             "toml"          => '\u{e615}', // 
+            "torrent"       => '\u{e275}', // 
             "ts"            => '\u{e628}', // 
             "tsv"           => '\u{f1c3}', // 
             "tsx"           => '\u{e7ba}', // 
