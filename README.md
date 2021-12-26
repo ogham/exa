@@ -121,8 +121,7 @@ On Android / Termux, install the [`exa`](https://github.com/termux/termux-packag
 
 ### Debian
 
-On Debian, install the [`exa`](https://packages.debian.org/unstable/exa) package.
-For now, exa is in the _unstable_ repository.
+On Debian, install the [`exa`](https://packages.debian.org/stable/exa) package.
 
     $ apt install exa
 
