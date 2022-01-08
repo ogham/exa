@@ -57,6 +57,7 @@ lazy_static! {
         m.insert(".gitconfig", '\u{f1d3}'); // 
         m.insert(".github", '\u{f408}'); // 
         m.insert(".gitignore", '\u{f1d3}'); // 
+        m.insert(".gitignore_global", '\u{f1d3}'); // 
         m.insert(".gitmodules", '\u{f1d3}'); // 
         m.insert(".rvm", '\u{e21e}'); // 
         m.insert(".vimrc", '\u{e62b}'); // 
