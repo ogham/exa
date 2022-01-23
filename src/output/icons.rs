@@ -342,8 +342,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "xhtml"         => '\u{f13b}', // 
             "xls"           => '\u{f1c3}', // 
             "xlsx"          => '\u{f1c3}', // 
-            "xml"           => '\u{fabf}', // 謹
-            "xul"           => '\u{fabf}', // 謹
+            "xml"           => '\u{f121}', // 
+            "xul"           => '\u{f121}', // 
             "xz"            => '\u{f410}', // 
             "yaml"          => '\u{f481}', // 
             "yml"           => '\u{f481}', // 
