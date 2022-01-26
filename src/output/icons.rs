@@ -69,7 +69,7 @@ lazy_static! {
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
-        m.insert("gradle", '\u{e70e}'); // 
+        m.insert("gradle", '\u{e256}'); // 
         m.insert("gruntfile.coffee", '\u{e611}'); // 
         m.insert("gruntfile.js", '\u{e611}'); // 
         m.insert("gruntfile.ls", '\u{e611}'); // 
@@ -188,7 +188,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "gitignore"     => '\u{f1d3}', // 
             "gitmodules"    => '\u{f1d3}', // 
             "go"            => '\u{e626}', // 
-            "gradle"        => '\u{e70e}', // 
+            "gradle"        => '\u{e256}', // 
             "groovy"        => '\u{e775}', // 
             "gsheet"        => '\u{f1c3}', // 
             "gslides"       => '\u{f1c4}', // 
