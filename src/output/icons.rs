@@ -208,8 +208,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ipynb"         => '\u{e606}', // 
             "iso"           => '\u{e271}', // 
             "jad"           => '\u{e256}', // 
-            "jar"           => '\u{e204}', // 
-            "java"          => '\u{e204}', // 
+            "jar"           => '\u{e256}', // 
+            "java"          => '\u{e256}', // 
             "jfi"           => '\u{f1c5}', // 
             "jfif"          => '\u{f1c5}', // 
             "jif"           => '\u{f1c5}', // 
