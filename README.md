@@ -164,7 +164,7 @@ On openSUSE, install the [`exa`](https://software.opensuse.org/package/exa) pack
 
 ### Ubuntu
 
-On Ubuntu 20.10 (Groovy Gorilla) and later, install the [`exa`](https://packages.ubuntu.com/groovy/exa) package.
+On Ubuntu 21.04 (Hirsute Hippo), install the [`exa`](https://packages.ubuntu.com/hirsute/exa) package.
 
     $ sudo apt install exa
 
