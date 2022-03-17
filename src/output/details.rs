@@ -147,10 +147,9 @@ impl<'a> AsRef<File<'a>> for Egg<'a> {
 
 impl<'a> Render<'a> {
     pub fn render<W: Write>(mut self, w: &mut W) -> io::Result<()> {
-        let mut n_cpus = num_cpus::get() as u32;
-        n_cpus = match n_cpus {
+        let n_cpus = match num_cpus::get() as u32 {
             0 => 1,
-            _ => n_cpus,
+            n => n,
         };
         let mut pool = Pool::new(n_cpus);
         let mut rows = Vec::new();
