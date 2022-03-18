@@ -46,6 +46,7 @@ impl<'a> Render<'a> {
             grid.add(tg::Cell {
                 contents:  filename.strings().to_string(),
                 width:     *filename.width(),
+                alignment: tg::Alignment::Left,
             });
         }
 

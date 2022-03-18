@@ -18,7 +18,6 @@
 #![allow(clippy::non_ascii_literal)]
 #![allow(clippy::option_if_let_else)]
 #![allow(clippy::too_many_lines)]
-#![allow(clippy::unnested_or_patterns)] // TODO: remove this when we support Rust 1.53.0
 #![allow(clippy::unused_self)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::wildcard_imports)]
@@ -84,6 +83,10 @@ lazy_static! {
 
 fn main() {
     use std::process::exit;
+
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
 
     logger::configure(env::var_os(vars::EXA_DEBUG));
 

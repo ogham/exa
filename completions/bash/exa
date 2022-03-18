@@ -8,6 +8,11 @@ _exa()
             return
             ;;
 
+        --colour)
+            COMPREPLY=( $( compgen -W 'always auto never' -- "$cur" ) )
+            return
+            ;;
+
         -L|--level)
             COMPREPLY=( $( compgen -W '{0..9}' -- "$cur" ) )
             return
@@ -30,8 +35,17 @@ _exa()
     esac
 
     case "$cur" in
+        # _parse_help doesn’t pick up short options when they are on the same line than long options
+        --*)
+            # colo[u]r isn’t parsed correctly so we filter these options out and add them by hand
+            parse_help=$( exa --help | grep -oE ' (\-\-[[:alnum:]@-]+)' | tr -d ' ' | grep -v '\-\-colo' )
+            completions=$( echo '--color --colour --color-scale --colour-scale' $parse_help )
+            COMPREPLY=( $( compgen -W "$completions" -- "$cur" ) )
+            ;;
+
         -*)
-            COMPREPLY=( $( compgen -W '$( _parse_help "$1" )' -- "$cur" ) )
+            completions=$( exa --help | grep -oE ' (\-[[:alnum:]@])' | tr -d ' ' )
+            COMPREPLY=( $( compgen -W "$completions" -- "$cur" ) )
             ;;
 
         *)
