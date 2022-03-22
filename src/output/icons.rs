@@ -136,6 +136,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "coffee"        => '\u{f0f4}', // 
             "conf"          => '\u{e615}', // 
             "cp"            => '\u{e61d}', // 
+            "cpio"          => '\u{f410}', // 
             "cpp"           => '\u{e61d}', // 
             "cs"            => '\u{f81a}', // 
             "csh"           => '\u{f489}', // 
