@@ -207,6 +207,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ini"           => '\u{f17a}', // 
             "ipynb"         => '\u{e606}', // 
             "iso"           => '\u{e271}', // 
+            "j2c"           => '\u{f1c5}', // 
+            "j2k"           => '\u{f1c5}', // 
             "jad"           => '\u{e256}', // 
             "jar"           => '\u{e256}', // 
             "java"          => '\u{e256}', // 
@@ -215,9 +217,11 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jif"           => '\u{f1c5}', // 
             "jl"            => '\u{e624}', // 
             "jmd"           => '\u{f48a}', // 
+            "jp2"           => '\u{f1c5}', // 
             "jpe"           => '\u{f1c5}', // 
             "jpeg"          => '\u{f1c5}', // 
             "jpg"           => '\u{f1c5}', // 
+            "jpx"           => '\u{f1c5}', // 
             "js"            => '\u{e74e}', // 
             "json"          => '\u{e60b}', // 
             "jsx"           => '\u{e7ba}', // 
