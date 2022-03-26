@@ -4,6 +4,7 @@ description = "A modern replacement for ls"
 authors = ["Benjamin Sago <ogham@bsago.me>"]
 categories = ["command-line-utilities"]
 edition = "2018"
+rust-version = "1.56.1"
 exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
 readme = "README.md"
 homepage = "https://the.exa.website/"
