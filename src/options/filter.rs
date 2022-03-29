@@ -155,9 +155,13 @@ impl DotFilter {
     /// parent directory in tree mode would loop onto itself!
     pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let count = matches.count(&flags::ALL);
+        let almost_count = matches.count(&flags::ALMOST_ALL);
 
-        if count == 0 {
+        if count == 0 && almost_count == 0 {
             Ok(Self::JustFiles)
+        }
+        else if almost_count == 1 {
+            Ok(Self::Dotfiles)
         }
         else if count == 1 {
             Ok(Self::Dotfiles)
