@@ -160,10 +160,7 @@ impl DotFilter {
         if count == 0 && almost_count == 0 {
             Ok(Self::JustFiles)
         }
-        else if almost_count == 1 {
-            Ok(Self::Dotfiles)
-        }
-        else if count == 1 {
+        else if count == 1 || almost_count == 1 {
             Ok(Self::Dotfiles)
         }
         else if matches.count(&flags::TREE) > 0 {
