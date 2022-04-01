@@ -215,7 +215,7 @@ Once Rust is installed, you can compile exa with Cargo:
     cargo test
 
 - The [just](https://github.com/casey/just) command runner can be used to run some helpful development commands, in a manner similar to `make`.
-Run `just --tasks` to get an overview of what’s available.
+Run `just --list` to get an overview of what’s available.
 
 - If you are compiling a copy for yourself, be sure to run `cargo build --release` or `just build-release` to benefit from release-mode optimisations.
 Copy the resulting binary, which will be in the `target/release` directory, into a folder in your `$PATH`.
