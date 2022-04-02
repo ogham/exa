@@ -100,7 +100,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "bin"           => '\u{e5fc}', // 
             ".git"          => '\u{f1d3}', // 
             ".idea"         => '\u{e7b5}', // 
-            _               => '\u{f115}'  // 
+            _               => '\u{f413}'  // 
         }
     }
     else if let Some(icon) = extensions.icon_file(file) { icon }
