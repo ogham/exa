@@ -69,6 +69,8 @@ lazy_static! {
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
+        m.insert("go.mod", '\u{e626}'); // 
+        m.insert("go.sum", '\u{e626}'); // 
         m.insert("gradle", '\u{e256}'); // 
         m.insert("gruntfile.coffee", '\u{e611}'); // 
         m.insert("gruntfile.js", '\u{e611}'); // 
