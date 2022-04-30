@@ -122,14 +122,16 @@ fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
 
 #[allow(trivial_numeric_casts)]
 fn relative(time: SystemTime) -> String {
-    timeago::Formatter::new().convert(
-        Duration::from_secs(
-            max(0, Instant::now().seconds() - systemtime_epoch(time))
-            // this .unwrap is safe since the call above can never result in a 
-            // value < 0
-            .try_into().unwrap()
+    timeago::Formatter::new()
+        .ago("")
+        .convert(
+            Duration::from_secs(
+                max(0, Instant::now().seconds() - systemtime_epoch(time))
+                // this .unwrap is safe since the call above can never result in a 
+                // value < 0
+                .try_into().unwrap()
+            )
         )
-    )
 }
 
 #[allow(trivial_numeric_casts)]
