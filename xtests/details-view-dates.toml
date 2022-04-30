@@ -47,6 +47,14 @@ status = 0
 tags = [ 'long', 'time-style' ]
 
 [[cmd]]
+name = "‘exa -l --time-style=relative’ produces a table using the relative date format"
+shell = "exa -l --time-style=relative /testcases/dates"
+stdout = { file = "outputs/dates_long_timestyle_relative.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'time-style' ]
+
+[[cmd]]
 name = "‘exa -l --time-style=full-iso’ produces a table using the full-iso date format"
 shell = "exa -l --time-style=full-iso /testcases/dates"
 stdout = { file = "outputs/dates_long_timestyle_fulliso.ansitxt" }
