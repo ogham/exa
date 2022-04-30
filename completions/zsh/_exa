@@ -43,7 +43,7 @@ __exa() {
         {-n,--numeric}"[List numeric user and group IDs.]" \
         {-S,--blocks}"[List each file's number of filesystem blocks]" \
         {-t,--time}="[Which time field to show]:(time field):(accessed changed created modified)" \
-        --time-style="[How to format timestamps]:(time style):(default iso long-iso full-iso)" \
+        --time-style="[How to format timestamps]:(time style):(default iso long-iso full-iso relative)" \
         --no-permissions"[Suppress the permissions field]" \
         --octal-permissions"[List each file's permission in octal format]" \
         --no-filesize"[Suppress the filesize field]" \

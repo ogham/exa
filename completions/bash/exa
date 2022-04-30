@@ -29,7 +29,7 @@ _exa()
             ;;
 
         --time-style)
-            COMPREPLY=( $( compgen -W 'default iso long-iso full-iso --' -- "$cur" ) )
+            COMPREPLY=( $( compgen -W 'default iso long-iso full-iso relative --' -- "$cur" ) )
             return
             ;;
     esac

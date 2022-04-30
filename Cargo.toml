@@ -30,6 +30,7 @@ number_prefix = "0.4"
 scoped_threadpool = "0.1"
 term_grid = "0.2.0"
 terminal_size = "0.1.16"
+timeago = { version = "0.3.1", default-features = false }
 unicode-width = "0.1"
 zoneinfo_compiled = "0.5.1"
 

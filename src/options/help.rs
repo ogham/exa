@@ -54,7 +54,7 @@ LONG VIEW OPTIONS
   -u, --accessed       use the accessed timestamp field
   -U, --created        use the created timestamp field
   --changed            use the changed timestamp field
-  --time-style         how to format timestamps (default, iso, long-iso, full-iso)
+  --time-style         how to format timestamps (default, iso, long-iso, full-iso, relative)
   --no-permissions     suppress the permissions field
   --octal-permissions  list each file's permission in octal format
   --no-filesize        suppress the filesize field

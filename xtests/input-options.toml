@@ -42,7 +42,7 @@ tags = [ 'options' ]
 name = "exa displays an error for option that takes the wrong parameter"
 shell = "exa -l --time-style=24"
 stdout = { empty = true }
-stderr = { string = "Option --time-style has no \"24\" setting (choices: default, long-iso, full-iso, iso)" }
+stderr = { string = "Option --time-style has no \"24\" setting (choices: default, long-iso, full-iso, iso, relative)" }
 status = 3
 tags = [ 'options' ]
 

@@ -257,6 +257,9 @@ impl TimeFormat {
         if &word == "default" {
             Ok(Self::DefaultFormat)
         }
+        else if &word == "relative" {
+            Ok(Self::Relative)
+        }
         else if &word == "iso" {
             Ok(Self::ISOFormat)
         }
@@ -464,6 +467,7 @@ mod test {
         // Individual settings
         test!(default:   TimeFormat <- ["--time-style=default"], None;      Both => like Ok(TimeFormat::DefaultFormat));
         test!(iso:       TimeFormat <- ["--time-style", "iso"], None;       Both => like Ok(TimeFormat::ISOFormat));
+        test!(relative:  TimeFormat <- ["--time-style", "relative"], None;  Both => like Ok(TimeFormat::Relative));
         test!(long_iso:  TimeFormat <- ["--time-style=long-iso"], None;     Both => like Ok(TimeFormat::LongISO));
         test!(full_iso:  TimeFormat <- ["--time-style", "full-iso"], None;  Both => like Ok(TimeFormat::FullISO));
 
