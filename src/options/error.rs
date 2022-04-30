@@ -14,7 +14,7 @@ pub enum OptionsError {
     Parse(ParseError),
 
     /// The user supplied an illegal choice to an Argument.
-    BadArgument(&'static Arg, OsString),
+    BadArgument(&'static Arg, String),
 
     /// The user supplied a set of options that are unsupported
     Unsupported(String),

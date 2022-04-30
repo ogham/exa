@@ -254,23 +254,14 @@ impl TimeFormat {
                 }
             };
 
-        if &word == "default" {
-            Ok(Self::DefaultFormat)
-        }
-        else if &word == "relative" {
-            Ok(Self::Relative)
-        }
-        else if &word == "iso" {
-            Ok(Self::ISOFormat)
-        }
-        else if &word == "long-iso" {
-            Ok(Self::LongISO)
-        }
-        else if &word == "full-iso" {
-            Ok(Self::FullISO)
-        }
-        else {
-            Err(OptionsError::BadArgument(&flags::TIME_STYLE, word))
+        let word = word.to_string_lossy();
+        match word.as_ref() {
+            "default"  => Ok(Self::DefaultFormat),
+            "relative" => Ok(Self::Relative),
+            "iso"      => Ok(Self::ISOFormat),
+            "long-iso" => Ok(Self::LongISO),
+            "full-iso" => Ok(Self::FullISO),
+            _ => Err(OptionsError::BadArgument(&flags::TIME_STYLE, word.to_string()))
         }
     }
 }
