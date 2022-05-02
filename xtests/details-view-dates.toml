@@ -35,6 +35,13 @@ stderr = { empty = true }
 status = 0
 tags = [ 'long', 'time' ]
 
+[[cmd]]
+name = "‘exa -l --time-style=relative’ handles dates far past and future dates"
+shell = "exa -l --time-style=relative /testcases/far-dates"
+stdout = { file = "outputs/far_dates_relative.ansitxt" }
+stderr = { empty = true }
+status = 0
+tags = [ 'long', 'time' ]
 
 # alternate date formats
 
