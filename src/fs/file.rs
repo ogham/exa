@@ -475,6 +475,7 @@ impl<'dir> File<'dir> {
         let bits = self.metadata.file_attributes();
         let has_bit = |bit| bits & bit == bit;
 
+        // https://docs.microsoft.com/en-us/windows/win32/fileio/file-attribute-constants
         f::Attributes {
             directory:      has_bit(0x10),
             archive:        has_bit(0x20),
