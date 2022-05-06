@@ -49,6 +49,7 @@ mod theme;
 fn main() {
     use std::process::exit;
 
+    #[cfg(unix)]
     unsafe {
         libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
