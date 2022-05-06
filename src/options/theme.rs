@@ -5,7 +5,7 @@ use crate::theme::{Options, UseColours, ColourScale, Definitions};
 
 impl Options {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
-        let use_colours = UseColours::deduce(matches)?;
+        let use_colours = UseColours::deduce(matches, vars)?;
         let colour_scale = ColourScale::deduce(matches)?;
 
         let definitions = if use_colours == UseColours::Never {
@@ -21,10 +21,15 @@ impl Options {
 
 
 impl UseColours {
-    fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+    fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
+        let default_value = match vars.get(vars::NO_COLOR) {
+            Some(_) => Self::Never,
+            None => Self::Automatic,
+        };
+
         let word = match matches.get_where(|f| f.matches(&flags::COLOR) || f.matches(&flags::COLOUR))? {
             Some(w)  => w,
-            None     => return Ok(Self::Automatic),
+            None => return Ok(default_value),
         };
 
         if word == "always" {
@@ -87,10 +92,30 @@ mod terminal_test {
             }
         };
 
+        ($name:ident:  $type:ident <- $inputs:expr, $env:expr;  $stricts:expr => $result:expr) => {
+            #[test]
+            fn $name() {
+                let env = $env;
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &env)) {
+                    assert_eq!(result, $result);
+                }
+            }
+        };
+
         ($name:ident:  $type:ident <- $inputs:expr;  $stricts:expr => err $result:expr) => {
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
+                    assert_eq!(result.unwrap_err(), $result);
+                }
+            }
+        };
+
+        ($name:ident:  $type:ident <- $inputs:expr, $env:expr;  $stricts:expr => err $result:expr) => {
+            #[test]
+            fn $name() {
+                let env = $env;
+                for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf, &env)) {
                     assert_eq!(result.unwrap_err(), $result);
                 }
             }
@@ -100,6 +125,24 @@ mod terminal_test {
     struct MockVars {
         ls: &'static str,
         exa: &'static str,
+        no_color: &'static str,
+    }
+
+    impl MockVars {
+        fn empty() -> MockVars {
+            return MockVars {
+                ls: "",
+                exa: "",
+                no_color: "",
+            };
+        }
+        fn with_no_color() -> MockVars {
+            return MockVars {
+                ls: "",
+                exa: "",
+                no_color: "true",
+            };
+        }
     }
 
     // Test impl that just returns the value it has.
@@ -111,6 +154,9 @@ mod terminal_test {
             else if name == vars::EXA_COLORS && ! self.exa.is_empty() {
                 Some(OsString::from(self.exa.clone()))
             }
+            else if name == vars::NO_COLOR && ! self.no_color.is_empty() {
+                Some(OsString::from(self.no_color.clone()))
+            }
             else {
                 None
             }
@@ -120,32 +166,33 @@ mod terminal_test {
 
 
     // Default
-    test!(empty:         UseColours <- [];                     Both => Ok(UseColours::Automatic));
+    test!(empty:         UseColours <- [], MockVars::empty();                     Both => Ok(UseColours::Automatic));
+    test!(empty_with_no_color: UseColours <- [], MockVars::with_no_color();             Both => Ok(UseColours::Never));
 
     // --colour
-    test!(u_always:      UseColours <- ["--colour=always"];    Both => Ok(UseColours::Always));
-    test!(u_auto:        UseColours <- ["--colour", "auto"];   Both => Ok(UseColours::Automatic));
-    test!(u_never:       UseColours <- ["--colour=never"];     Both => Ok(UseColours::Never));
+    test!(u_always:      UseColours <- ["--colour=always"], MockVars::empty();    Both => Ok(UseColours::Always));
+    test!(u_auto:        UseColours <- ["--colour", "auto"], MockVars::empty();   Both => Ok(UseColours::Automatic));
+    test!(u_never:       UseColours <- ["--colour=never"], MockVars::empty();     Both => Ok(UseColours::Never));
 
     // --color
-    test!(no_u_always:   UseColours <- ["--color", "always"];  Both => Ok(UseColours::Always));
-    test!(no_u_auto:     UseColours <- ["--color=auto"];       Both => Ok(UseColours::Automatic));
-    test!(no_u_never:    UseColours <- ["--color", "never"];   Both => Ok(UseColours::Never));
+    test!(no_u_always:   UseColours <- ["--color", "always"], MockVars::empty();  Both => Ok(UseColours::Always));
+    test!(no_u_auto:     UseColours <- ["--color=auto"], MockVars::empty();       Both => Ok(UseColours::Automatic));
+    test!(no_u_never:    UseColours <- ["--color", "never"], MockVars::empty();   Both => Ok(UseColours::Never));
 
     // Errors
-    test!(no_u_error:    UseColours <- ["--color=upstream"];   Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("upstream")));  // the error is for --color
-    test!(u_error:       UseColours <- ["--colour=lovers"];    Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("lovers")));    // and so is this one!
+    test!(no_u_error:    UseColours <- ["--color=upstream"], MockVars::empty();   Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("upstream"))); // the error is for --color
+    test!(u_error:       UseColours <- ["--colour=lovers"], MockVars::empty();    Both => err OptionsError::BadArgument(&flags::COLOR, OsString::from("lovers"))); // and so is this one!
 
     // Overriding
-    test!(overridden_1:  UseColours <- ["--colour=auto", "--colour=never"];  Last => Ok(UseColours::Never));
-    test!(overridden_2:  UseColours <- ["--color=auto",  "--colour=never"];  Last => Ok(UseColours::Never));
-    test!(overridden_3:  UseColours <- ["--colour=auto", "--color=never"];   Last => Ok(UseColours::Never));
-    test!(overridden_4:  UseColours <- ["--color=auto",  "--color=never"];   Last => Ok(UseColours::Never));
+    test!(overridden_1:  UseColours <- ["--colour=auto", "--colour=never"], MockVars::empty();  Last => Ok(UseColours::Never));
+    test!(overridden_2:  UseColours <- ["--color=auto",  "--colour=never"], MockVars::empty();  Last => Ok(UseColours::Never));
+    test!(overridden_3:  UseColours <- ["--colour=auto", "--color=never"], MockVars::empty();   Last => Ok(UseColours::Never));
+    test!(overridden_4:  UseColours <- ["--color=auto",  "--color=never"], MockVars::empty();   Last => Ok(UseColours::Never));
 
-    test!(overridden_5:  UseColours <- ["--colour=auto", "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
-    test!(overridden_6:  UseColours <- ["--color=auto",  "--colour=never"];  Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
-    test!(overridden_7:  UseColours <- ["--colour=auto", "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("color")));
-    test!(overridden_8:  UseColours <- ["--color=auto",  "--color=never"];   Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("color")));
+    test!(overridden_5:  UseColours <- ["--colour=auto", "--colour=never"], MockVars::empty();  Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("colour")));
+    test!(overridden_6:  UseColours <- ["--color=auto",  "--colour=never"], MockVars::empty();  Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("colour")));
+    test!(overridden_7:  UseColours <- ["--colour=auto", "--color=never"], MockVars::empty();   Complain => err OptionsError::Duplicate(Flag::Long("colour"), Flag::Long("color")));
+    test!(overridden_8:  UseColours <- ["--color=auto",  "--color=never"], MockVars::empty();   Complain => err OptionsError::Duplicate(Flag::Long("color"),  Flag::Long("color")));
 
     test!(scale_1:  ColourScale <- ["--color-scale", "--colour-scale"];   Last => Ok(ColourScale::Gradient));
     test!(scale_2:  ColourScale <- ["--color-scale",                 ];   Last => Ok(ColourScale::Gradient));

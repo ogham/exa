@@ -3,7 +3,7 @@ target
 
 # Vagrant stuff
 .vagrant
-ubuntu-xenial-16.04-cloudimg-console.log
+*.log
 
 # Compiled artifacts
 # (see devtools/*-package-for-*.sh)
