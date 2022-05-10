@@ -149,27 +149,35 @@ impl DotFilter {
 
     /// Determines the dot filter based on how many `--all` options were
     /// given: one will show dotfiles, but two will show `.` and `..` too.
+    /// --ls-all is equivalent to --all, included for compatibility with
+    /// `ls -A`.
     ///
-    /// It also checks for the `--tree` option in strict mode, because of a
-    /// special case where `--tree --all --all` won’t work: listing the
-    /// parent directory in tree mode would loop onto itself!
+    /// It also checks for the `--tree` option, because of a special case
+    /// where `--tree --all --all` won’t work: listing the parent directory
+    /// in tree mode would loop onto itself!
     pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let count = matches.count(&flags::ALL);
+        let all_count = matches.count(&flags::ALL);
+        let ls_all_count = matches.count(&flags::LS_ALL);
 
-        if count == 0 {
-            Ok(Self::JustFiles)
-        }
-        else if count == 1 {
-            Ok(Self::Dotfiles)
-        }
-        else if matches.count(&flags::TREE) > 0 {
-            Err(OptionsError::TreeAllAll)
-        }
-        else if count >= 3 && matches.is_strict() {
-            Err(OptionsError::Conflict(&flags::ALL, &flags::ALL))
-        }
-        else {
-            Ok(Self::DotfilesAndDots)
+        match (all_count, ls_all_count) {
+            (0, 0) => Ok(Self::JustFiles),
+
+            // Only --all
+            (1, 0) => Ok(Self::Dotfiles),
+            (_, 0) if matches.count(&flags::TREE) > 0 => Err(OptionsError::TreeAllAll),
+            (c, 0) if c >= 3 && matches.is_strict() => Err(OptionsError::Conflict(&flags::ALL, &flags::ALL)),
+            (_, 0) => Ok(Self::DotfilesAndDots),
+
+            // Only --ls-all
+            (0, 1) => Ok(Self::Dotfiles),
+            (0, _) if matches.is_strict() => Err(OptionsError::Conflict(&flags::LS_ALL, &flags::LS_ALL)),
+            (0, _) => Ok(Self::Dotfiles),
+
+            // --all is actually the same as --ls-all
+            (1, 1) if matches.is_strict() => Err(OptionsError::Conflict(&flags::ALL, &flags::LS_ALL)),
+            (1, 1) => Ok(Self::Dotfiles),
+
+            (_, _) => Err(OptionsError::Conflict(&flags::ALL, &flags::LS_ALL)),
         }
     }
 }
@@ -230,7 +238,7 @@ mod test {
                 use crate::options::test::parse_for_test;
                 use crate::options::test::Strictnesses::*;
 
-                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::TREE, &flags::IGNORE_GLOB, &flags::GIT_IGNORE ];
+                static TEST_ARGS: &[&Arg] = &[ &flags::SORT, &flags::ALL, &flags::LS_ALL, &flags::TREE, &flags::IGNORE_GLOB, &flags::GIT_IGNORE ];
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
                     assert_eq!(result, $result);
                 }
@@ -274,20 +282,25 @@ mod test {
         use super::*;
 
         // Default behaviour
-        test!(empty:      DotFilter <- [];               Both => Ok(DotFilter::JustFiles));
+        test!(empty:        DotFilter <- [];               Both => Ok(DotFilter::JustFiles));
 
         // --all
-        test!(all:        DotFilter <- ["--all"];        Both => Ok(DotFilter::Dotfiles));
-        test!(all_all:    DotFilter <- ["--all", "-a"];  Both => Ok(DotFilter::DotfilesAndDots));
-        test!(all_all_2:  DotFilter <- ["-aa"];          Both => Ok(DotFilter::DotfilesAndDots));
+        test!(all:          DotFilter <- ["--all"];        Both => Ok(DotFilter::Dotfiles));
+        test!(all_all:      DotFilter <- ["--all", "-a"];  Both => Ok(DotFilter::DotfilesAndDots));
+        test!(all_all_2:    DotFilter <- ["-aa"];          Both => Ok(DotFilter::DotfilesAndDots));
 
-        test!(all_all_3:  DotFilter <- ["-aaa"];         Last => Ok(DotFilter::DotfilesAndDots));
-        test!(all_all_4:  DotFilter <- ["-aaa"];         Complain => Err(OptionsError::Conflict(&flags::ALL, &flags::ALL)));
+        test!(all_all_3:    DotFilter <- ["-aaa"];         Last => Ok(DotFilter::DotfilesAndDots));
+        test!(all_all_4:    DotFilter <- ["-aaa"];         Complain => Err(OptionsError::Conflict(&flags::ALL, &flags::ALL)));
 
         // --all and --tree
-        test!(tree_a:     DotFilter <- ["-Ta"];          Both => Ok(DotFilter::Dotfiles));
-        test!(tree_aa:    DotFilter <- ["-Taa"];         Both => Err(OptionsError::TreeAllAll));
-        test!(tree_aaa:   DotFilter <- ["-Taaa"];        Both => Err(OptionsError::TreeAllAll));
+        test!(tree_a:       DotFilter <- ["-Ta"];          Both => Ok(DotFilter::Dotfiles));
+        test!(tree_aa:      DotFilter <- ["-Taa"];         Both => Err(OptionsError::TreeAllAll));
+        test!(tree_aaa:     DotFilter <- ["-Taaa"];        Both => Err(OptionsError::TreeAllAll));
+
+        // --ls-all
+        test!(ls_all:       DotFilter <- ["--ls-all"];     Both => Ok(DotFilter::Dotfiles));
+        test!(ls_all_all:   DotFilter <- ["-Aa"];          Complain => Err(OptionsError::Conflict(&flags::ALL, &flags::LS_ALL)));
+        test!(ls_all_all_2: DotFilter <- ["-Aaa"];         Complain => Err(OptionsError::Conflict(&flags::ALL, &flags::LS_ALL)));
     }
 
 

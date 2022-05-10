@@ -23,6 +23,7 @@ pub static COLOUR_SCALE: Arg = Arg { short: None, long: "colour-scale", takes_va
 
 // filtering and sorting options
 pub static ALL:         Arg = Arg { short: Some(b'a'), long: "all",         takes_value: TakesValue::Forbidden };
+pub static LS_ALL:      Arg = Arg { short: Some(b'A'), long: "ls-all",      takes_value: TakesValue::Forbidden };
 pub static LIST_DIRS:   Arg = Arg { short: Some(b'd'), long: "list-dirs",   takes_value: TakesValue::Forbidden };
 pub static LEVEL:       Arg = Arg { short: Some(b'L'), long: "level",       takes_value: TakesValue::Necessary(None) };
 pub static REVERSE:     Arg = Arg { short: Some(b'r'), long: "reverse",     takes_value: TakesValue::Forbidden };
@@ -73,7 +74,7 @@ pub static ALL_ARGS: Args = Args(&[
     &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY,
     &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
 
-    &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
+    &ALL, &LS_ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
     &IGNORE_GLOB, &GIT_IGNORE, &ONLY_DIRS,
 
     &BINARY, &BYTES, &GROUP, &NUMERIC, &HEADER, &ICONS, &INODE, &LINKS, &MODIFIED, &CHANGED,
