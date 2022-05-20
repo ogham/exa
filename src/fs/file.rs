@@ -315,6 +315,12 @@ impl<'dir> File<'dir> {
     /// Block and character devices return their device IDs, because they
     /// usually just have a file size of zero.
     pub fn size(&self) -> f::Size {
+        if self.is_link() {
+            let target = self.link_target();
+            if let FileTarget::Ok(target) = target {
+                return target.size();
+            }
+        }
         if self.is_directory() {
             f::Size::None
         }
