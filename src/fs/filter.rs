@@ -146,7 +146,7 @@ pub enum SortField {
     /// slows the whole operation down, so many systems will only update the
     /// timestamp in certain circumstances. This has become common enough that
     /// it’s now expected behaviour!
-    /// <http://unix.stackexchange.com/a/8842>
+    /// <https://unix.stackexchange.com/a/8842>
     AccessedDate,
 
     /// The time the file was changed (the “ctime”).
