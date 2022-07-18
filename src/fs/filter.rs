@@ -40,6 +40,9 @@ pub struct FileFilter {
     /// Whether to only show directories.
     pub only_dirs: bool,
 
+    /// Whether to only show files.
+    pub only_files: bool,
+
     /// Which invisible “dot” files to include when listing a directory.
     ///
     /// Files starting with a single “.” are used to determine “system” or
@@ -69,6 +72,10 @@ impl FileFilter {
 
         if self.only_dirs {
             files.retain(File::is_directory);
+        }
+
+        if self.only_files {
+            files.retain(File::is_file);
         }
     }
 

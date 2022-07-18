@@ -28,6 +28,7 @@ __exa() {
         {-a,--all}"[Show hidden and 'dot' files]" \
         {-d,--list-dirs}"[List directories like regular files]" \
         {-D,--only-dirs}"[List only directories]" \
+        {-E,--only-files}"[List only files, recursion not available]" \
         {-L,--level}"+[Limit the depth of recursion]" \
         {-r,--reverse}"[Reverse the sort order]" \
         {-s,--sort}="[Which field to sort by]:(sort field):(accessed age changed created date extension Extension filename Filename inode modified oldest name Name newest none size time type)" \
