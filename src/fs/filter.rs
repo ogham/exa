@@ -146,7 +146,7 @@ pub enum SortField {
     /// slows the whole operation down, so many systems will only update the
     /// timestamp in certain circumstances. This has become common enough that
     /// it’s now expected behaviour!
-    /// http://unix.stackexchange.com/a/8842
+    /// <https://unix.stackexchange.com/a/8842>
     AccessedDate,
 
     /// The time the file was changed (the “ctime”).
@@ -155,7 +155,7 @@ pub enum SortField {
     /// changed — its permissions, owners, or link count.
     ///
     /// In original Unix, this was, however, meant as creation time.
-    /// https://www.bell-labs.com/usr/dmr/www/cacm.html
+    /// <https://www.bell-labs.com/usr/dmr/www/cacm.html>
     ChangedDate,
 
     /// The time the file was created (the “btime” or “birthtime”).
