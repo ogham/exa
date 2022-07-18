@@ -206,6 +206,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "hxx"           => '\u{f0fd}', // 
             "ico"           => '\u{f1c5}', // 
             "image"         => '\u{f1c5}', // 
+            "img"           => '\u{e271}', // 
             "iml"           => '\u{e7b5}', // 
             "ini"           => '\u{f17a}', // 
             "ipynb"         => '\u{e606}', // 
