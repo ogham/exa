@@ -13,7 +13,7 @@ impl UiStyles {
             filekinds: FileKinds {
                 normal:       Style::default(),
                 directory:    Blue.bold(),
-                symlink:      Cyan.normal(),
+                symlink:      LinkStyle::AnsiStyle(Cyan.normal()),
                 pipe:         Yellow.normal(),
                 block_device: Yellow.bold(),
                 char_device:  Yellow.bold(),

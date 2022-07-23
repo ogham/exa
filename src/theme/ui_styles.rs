@@ -27,11 +27,22 @@ pub struct UiStyles {
     pub broken_path_overlay:  Style,
 }
 
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum LinkStyle {
+    AnsiStyle(Style),
+    Target
+}
+
+impl Default for LinkStyle {
+    fn default() -> Self { LinkStyle::AnsiStyle(Style::default()) }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FileKinds {
     pub normal: Style,
     pub directory: Style,
-    pub symlink: Style,
+    pub symlink: LinkStyle,
     pub pipe: Style,
     pub block_device: Style,
     pub char_device: Style,
@@ -125,7 +136,12 @@ impl UiStyles {
             "so" => self.filekinds.socket       = pair.to_style(),  // SOCK
             "bd" => self.filekinds.block_device = pair.to_style(),  // BLK
             "cd" => self.filekinds.char_device  = pair.to_style(),  // CHR
-            "ln" => self.filekinds.symlink      = pair.to_style(),  // LINK
+            "ln" =>  {
+                self.filekinds.symlink = match pair.value {
+                    "target" => LinkStyle::Target,
+                    _ => LinkStyle::AnsiStyle(pair.to_style())
+                }
+            }
             "or" => self.broken_symlink         = pair.to_style(),  // ORPHAN
              _   => return false,
              // Codes we don’t do anything with:
