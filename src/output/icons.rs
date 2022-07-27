@@ -67,6 +67,7 @@ lazy_static! {
         m.insert("config", '\u{e5fc}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
         m.insert("Dockerfile", '\u{f308}'); // 
+        m.insert("Earthfile", '\u{f30d}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
         m.insert("go.mod", '\u{e626}'); // 
