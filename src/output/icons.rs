@@ -52,22 +52,43 @@ lazy_static! {
         m.insert(".atom", '\u{e764}'); // 
         m.insert(".bashprofile", '\u{e615}'); // 
         m.insert(".bashrc", '\u{f489}'); // 
-        m.insert(".git", '\u{f1d3}'); // 
+        m.insert(".git", '\u{e5fb}'); // 
         m.insert(".gitattributes", '\u{f1d3}'); // 
         m.insert(".gitconfig", '\u{f1d3}'); // 
-        m.insert(".github", '\u{f408}'); // 
+        m.insert(".github", '\u{e5fd}'); // 
         m.insert(".gitignore", '\u{f1d3}'); // 
         m.insert(".gitmodules", '\u{f1d3}'); // 
+        m.insert(".gitlab-ci.yml", '\u{f296}'); // 
+        m.insert(".htaccess", '\u{e615}'); // 
+        m.insert(".htpasswd", '\u{e615}'); // 
         m.insert(".rvm", '\u{e21e}'); // 
+        m.insert(".ssh", '\u{f023}'); // 
+        m.insert(".vim", '\u{e62b}'); // 
+        m.insert(".viminfo", '\u{e62b}'); // 
         m.insert(".vimrc", '\u{e62b}'); // 
         m.insert(".vscode", '\u{e70c}'); // 
+        m.insert(".xinitrc", '\u{e615}'); // 
+        m.insert(".Xauthority", '\u{e615}'); // 
+        m.insert(".Xresources", '\u{e615}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
+        m.insert(".zsh_history", '\u{e615}'); // 
         m.insert("Cargo.lock", '\u{e7a8}'); // 
+        m.insert("Cargo.toml", '\u{e7a8}'); // 
+        m.insert("a.out", '\u{f489}');
+        m.insert("authorized_keys", '\u{e60a}'); // 
         m.insert("bin", '\u{e5fc}'); // 
+        m.insert("bspwmrc", '\u{e615}'); // 
+        m.insert("composer.json", '\u{e608}'); // 
         m.insert("config", '\u{e5fc}'); // 
+        m.insert("config.el", '\u{e779}'); // 
+        m.insert("contributing", '\u{e60a}'); // 
+        m.insert("crontab", '\u{e615}'); // 
+        m.insert("crypttab", '\u{e615}'); // 
+        m.insert("custom.el", '\u{e779}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
+        m.insert("fstab", '\u{f1c0}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
         m.insert("go.mod", '\u{e626}'); // 
         m.insert("go.sum", '\u{e626}'); // 
@@ -79,14 +100,29 @@ lazy_static! {
         m.insert("gulpfile.js", '\u{e610}'); // 
         m.insert("gulpfile.ls", '\u{e610}'); // 
         m.insert("hidden", '\u{f023}'); // 
+        m.insert("hosts", '\u{f502}'); // 
         m.insert("include", '\u{e5fc}'); // 
+        m.insert("init.el", '\u{e779}'); // 
+        m.insert("known_hosts", '\u{e60a}'); // 
         m.insert("lib", '\u{f121}'); // 
+        m.insert("LICENSE", '\u{e60a}'); // 
+        m.insert("LICENSE.md", '\u{e60a}');
+        m.insert("LICENSE.txt", '\u{e60a}');
         m.insert("localized", '\u{f179}'); // 
         m.insert("Makefile", '\u{f489}'); // 
-        m.insert("node_modules", '\u{e718}'); // 
+        m.insert("node_modules", '\u{e5fa}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
+        m.insert("package.json", '\u{e718}'); // 
+        m.insert("package-lock.json", '\u{e718}'); // 
+        m.insert("packages.el", '\u{e779}'); // 
+        m.insert("passwd", '\u{f023}'); // 
         m.insert("PKGBUILD", '\u{f303}'); // 
+        m.insert("rc.lua", '\u{e615}'); // 
+        m.insert("robots.txt", '\u{fba7}'); // ﮧ
+        m.insert("root", '\u{f023}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
+        m.insert("sudoers", '\u{f023}'); // 
+        m.insert("Vagrantfile", '\u{e615}'); // 
         m.insert("yarn.lock", '\u{e718}'); // 
 
         m
@@ -100,7 +136,14 @@ pub fn icon_for_file(file: &File<'_>) -> char {
     else if file.points_to_directory() {
         match file.name.as_str() {
             "bin"           => '\u{e5fc}', // 
-            ".git"          => '\u{f1d3}', // 
+            ".cargo"        => '\u{e7a8}', // 
+            ".config"       => '\u{e5fc}',
+            ".doom.d"       => '\u{e779}', // 
+            ".emacs.d"      => '\u{e779}', // 
+            ".git"          => '\u{e5fb}', // 
+            ".npm"          => '\u{e5fa}', // 
+            "node_modules"  => '\u{e5fa}', // 
+            ".ssh"          => '\u{f023}', // 
             ".idea"         => '\u{e7b5}', // 
             _               => '\u{f115}'  // 
         }
