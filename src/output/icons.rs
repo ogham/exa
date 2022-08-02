@@ -64,6 +64,7 @@ lazy_static! {
         m.insert(".htpasswd", '\u{e615}'); // 
         m.insert(".node_repl_history", '\u{e718}'); // 
         m.insert(".python_history", '\u{e606}'); // 
+        m.insert(".release.toml", '\u{e7a8}'); // 
         m.insert(".rustfmt.toml", '\u{e7a8}'); // 
         m.insert(".rvm", '\u{e21e}'); // 
         m.insert(".ssh", '\u{f023}'); // 
@@ -93,6 +94,10 @@ lazy_static! {
         m.insert("configure", '\u{f489}'); // 
         m.insert("contributing", '\u{e60a}'); // 
         m.insert("cron.d", '\u{e5fc}'); // 
+        m.insert("cron.daily", '\u{e5fc}'); // 
+        m.insert("cron.hourly", '\u{e5fc}'); // 
+        m.insert("cron.monthly", '\u{e5fc}'); // 
+        m.insert("cron.weekly", '\u{e5fc}'); // 
         m.insert("crontab", '\u{e615}'); // 
         m.insert("crypttab", '\u{e615}'); // 
         m.insert("custom.el", '\u{e779}'); // 
@@ -102,6 +107,9 @@ lazy_static! {
         m.insert("Downloads", '\u{f498}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("etc", '\u{e5fc}'); // 
+        m.insert("favicon.ico", '\u{f005}'); // 
+        m.insert("favicon.png", '\u{f005}'); // 
+        m.insert("FUNDING.yml", '\u{f408}'); // 
         m.insert("fstab", '\u{f1c0}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
         m.insert("go.mod", '\u{e627}'); // 
@@ -118,6 +126,7 @@ lazy_static! {
         m.insert("hidden", '\u{f023}'); // 
         m.insert("hostname", '\u{e615}'); // 
         m.insert("hosts", '\u{f502}'); // 
+        m.insert("htoprc", '\u{e615}'); // 
         m.insert("include", '\u{e5fc}'); // 
         m.insert("init", '\u{e615}'); // 
         m.insert("init.el", '\u{e779}'); // 
@@ -129,6 +138,7 @@ lazy_static! {
         m.insert("localized", '\u{f179}'); // 
         m.insert("Makefile", '\u{e615}'); // 
         m.insert("Makefile.ac", '\u{e615}'); // 
+        m.insert("muttrc", '\u{e615}'); // 
         m.insert("node_modules", '\u{e5fa}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("package.json", '\u{e718}'); // 
@@ -138,6 +148,8 @@ lazy_static! {
         m.insert("PKGBUILD", '\u{f303}'); // 
         m.insert("profile", '\u{e615}'); // 
         m.insert("rc.lua", '\u{e615}'); // 
+        m.insert("README", '\u{f48a}'); // 
+        m.insert("README.org", '\u{f48a}'); // 
         m.insert("robots.txt", '\u{fba7}'); // ﮧ
         m.insert("root", '\u{f023}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
@@ -145,10 +157,14 @@ lazy_static! {
         m.insert("shadow", '\u{e615}'); // 
         m.insert("shells", '\u{e615}'); // 
         m.insert("sudoers", '\u{f023}'); // 
+        m.insert("sxhkdrc", '\u{e615}'); // 
+        m.insert("tigrc", '\u{e615}'); // 
         m.insert("Vagrantfile", '\u{e615}'); // 
         m.insert("videos", '\u{f03d}'); // 
         m.insert("webpack.config.js", '\u{fc29}'); // ﰩ
         m.insert("xmonad.hs", '\u{e615}'); // 
+        m.insert("xbps.d", '\u{e5fc}'); // 
+        m.insert("xorg.conf.d", '\u{e5fc}'); // 
         m.insert("yarn.lock", '\u{e718}'); // 
 
         m
@@ -172,13 +188,21 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             ".ssh"          => '\u{f023}', // 
             ".idea"         => '\u{e7b5}', // 
             "cron.d"        => '\u{e5fc}', // 
+            "cron.daily"    => '\u{e5fc}', // 
+            "cron.hourly"   => '\u{e5fc}', // 
+            "cron.monthly"  => '\u{e5fc}', // 
+            "cron.weekly"   => '\u{e5fc}', // 
             "Desktop"       => '\u{f108}', // 
             "Downloads"     => '\u{f498}', // 
             "etc"           => '\u{e5fc}', // 
+            "git"           => '\u{e5fb}', // 
             "Pictures"      => '\u{f03e}', // 
             "Mail"          => '\u{f6ef}', // 
-            "Music"         => '\u{f025}', // 
+            "Music"         => '\u{f025}', // i
+            "org"           => '\u{e779}', // 
             "Videos"        => '\u{f03d}', // 
+            "xbps.d"        => '\u{e5fc}', // 
+            "xorg.conf.d"   => '\u{e5fc}', // 
             _               => '\u{f115}'  // 
         }
     }
