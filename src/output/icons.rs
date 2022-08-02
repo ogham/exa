@@ -239,6 +239,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "bin"           => '\u{f489}', // 
             "bio"           => '\u{f910}', // 蘿
             "bmp"           => '\u{f1c5}', // 
+            "box"           => '\u{e271}', // 
             "bz"            => '\u{f410}', // 
             "bz2"           => '\u{f410}', // 
             "c"             => '\u{e61e}', // 
@@ -274,6 +275,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "diff"          => '\u{f440}', // 
             "djvu"          => '\u{f02d}', // 
             "dll"           => '\u{f17a}', // 
+            "dmg"           => '\u{e271}', // 
             "doc"           => '\u{f1c2}', // 
             "docx"          => '\u{f1c2}', // 
             "download"      => '\u{f43a}', // 
@@ -431,6 +433,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "pxm"           => '\u{f1c5}', // 
             "py"            => '\u{e606}', // 
             "pyc"           => '\u{e606}', // 
+            "qcow2"         => '\u{e271}', // 
             "r"             => '\u{fcd2}', // ﳒ
             "rakefile"      => '\u{e21e}', // 
             "rar"           => '\u{f410}', // 
@@ -499,6 +502,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "txz"           => '\u{f410}', // 
             "tz"            => '\u{f410}', // 
             "tzo"           => '\u{f410}', // 
+            "vbs"           => '\u{f17a}', // 
             "video"         => '\u{f008}', // 
             "vim"           => '\u{e62b}', // 
             "vlc"           => '\u{f910}', // 蘿
