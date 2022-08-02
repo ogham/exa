@@ -23,7 +23,7 @@ impl Icons {
         match self {
             Self::Audio  => '\u{f001}',
             Self::Image  => '\u{f1c5}',
-            Self::Video  => '\u{f03d}',
+            Self::Video  => '\u{f008}',
         }
     }
 }
@@ -106,6 +106,7 @@ lazy_static! {
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("Downloads", '\u{f498}'); // 
         m.insert("ds_store", '\u{f179}'); // 
+        m.insert("environment", '\u{e615}'); // 
         m.insert("etc", '\u{e5fc}'); // 
         m.insert("favicon.ico", '\u{f005}'); // 
         m.insert("favicon.png", '\u{f005}'); // 
@@ -130,12 +131,14 @@ lazy_static! {
         m.insert("include", '\u{e5fc}'); // 
         m.insert("init", '\u{e615}'); // 
         m.insert("init.el", '\u{e779}'); // 
+        m.insert("inputrc", '\u{e615}'); // 
         m.insert("known_hosts", '\u{e60a}'); // 
         m.insert("lib", '\u{f121}'); // 
         m.insert("LICENSE", '\u{e60a}'); // 
         m.insert("LICENSE.md", '\u{e60a}');
         m.insert("LICENSE.txt", '\u{e60a}');
         m.insert("localized", '\u{f179}'); // 
+        m.insert("localtime", '\u{f43a}'); // 
         m.insert("Makefile", '\u{e615}'); // 
         m.insert("Makefile.ac", '\u{e615}'); // 
         m.insert("muttrc", '\u{e615}'); // 
@@ -156,9 +159,12 @@ lazy_static! {
         m.insert("sha256sums", '\u{e60a}'); // 
         m.insert("shadow", '\u{e615}'); // 
         m.insert("shells", '\u{e615}'); // 
+        m.insert("subgid", '\u{e615}'); // 
+        m.insert("subuid", '\u{e615}'); // 
         m.insert("sudoers", '\u{f023}'); // 
         m.insert("sxhkdrc", '\u{e615}'); // 
         m.insert("tigrc", '\u{e615}'); // 
+        m.insert("timezone", '\u{f43a}'); // 
         m.insert("Vagrantfile", '\u{e615}'); // 
         m.insert("videos", '\u{f03d}'); // 
         m.insert("webpack.config.js", '\u{fc29}'); // ﰩ
@@ -220,7 +226,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "asc"           => '\u{f023}', // 
             "asm"           => '\u{e614}', // 
             "asp"           => '\u{f121}', // 
-            "avi"           => '\u{f03d}', // 
+            "avi"           => '\u{f008}', // 
             "avif"          => '\u{f1c5}', // 
             "avro"          => '\u{e60b}', // 
             "awk"           => '\u{f489}', // 
@@ -270,6 +276,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "dll"           => '\u{f17a}', // 
             "doc"           => '\u{f1c2}', // 
             "docx"          => '\u{f1c2}', // 
+            "download"      => '\u{f43a}', // 
             "ds_store"      => '\u{f179}', // 
             "DS_store"      => '\u{f179}', // 
             "dump"          => '\u{f1c0}', // 
@@ -291,7 +298,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "exs"           => '\u{e62d}', // 
             "fish"          => '\u{f489}', // 
             "flac"          => '\u{f001}', // 
-            "flv"           => '\u{f03d}', // 
+            "flv"           => '\u{f008}', // 
             "font"          => '\u{f031}', // 
             "fs"            => '\u{e7a7}', // 
             "fsi"           => '\u{e7a7}', // 
