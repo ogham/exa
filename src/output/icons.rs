@@ -315,6 +315,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "gitignore"     => '\u{f1d3}', // 
             "gitmodules"    => '\u{f1d3}', // 
             "go"            => '\u{e627}', // 
+            "gpg"           => '\u{e60a}', // 
             "gradle"        => '\u{e256}', // 
             "groovy"        => '\u{e775}', // 
             "gsheet"        => '\u{f1c3}', // 
@@ -357,6 +358,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "json"          => '\u{e60b}', // 
             "jsx"           => '\u{e7ba}', // 
             "jxl"           => '\u{f1c5}', // 
+            "kbx"           => '\u{e60a}', // 
             "key"           => '\u{e60a}', // 
             "ksh"           => '\u{f489}', // 
             "latex"         => '\u{f034}', // 
