@@ -10,13 +10,12 @@ use lazy_static::lazy_static;
 use log::*;
 use users::UsersCache;
 
-use crate::fs::{File, fields as f};
 use crate::fs::feature::git::GitCache;
+use crate::fs::{fields as f, File};
 use crate::output::cell::TextCell;
 use crate::output::render::TimeRender;
 use crate::output::time::TimeFormat;
 use crate::theme::Theme;
-
 
 /// Options for displaying a table.
 #[derive(PartialEq, Debug)]
@@ -31,7 +30,6 @@ pub struct Options {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Columns {
-
     /// At least one of these timestamps will be shown.
     pub time_types: TimeTypes,
 
@@ -109,7 +107,6 @@ impl Columns {
     }
 }
 
-
 /// A table contains these.
 #[derive(Debug, Copy, Clone)]
 pub enum Column {
@@ -134,16 +131,13 @@ pub enum Alignment {
 }
 
 impl Column {
-
     /// Get the alignment this column should use.
     pub fn alignment(self) -> Alignment {
         match self {
-            Self::FileSize   |
-            Self::HardLinks  |
-            Self::Inode      |
-            Self::Blocks     |
-            Self::GitStatus  => Alignment::Right,
-            _                => Alignment::Left,
+            Self::FileSize | Self::HardLinks | Self::Inode | Self::Blocks | Self::GitStatus => {
+                Alignment::Right
+            }
+            _ => Alignment::Left,
         }
     }
 
@@ -151,26 +145,24 @@ impl Column {
     /// to have a header row printed.
     pub fn header(self) -> &'static str {
         match self {
-            Self::Permissions   => "Permissions",
-            Self::FileSize      => "Size",
-            Self::Timestamp(t)  => t.header(),
-            Self::Blocks        => "Blocks",
-            Self::User          => "User",
-            Self::Group         => "Group",
-            Self::HardLinks     => "Links",
-            Self::Inode         => "inode",
-            Self::GitStatus     => "Git",
-            Self::Octal         => "Octal",
+            Self::Permissions => "Permissions",
+            Self::FileSize => "Size",
+            Self::Timestamp(t) => t.header(),
+            Self::Blocks => "Blocks",
+            Self::User => "User",
+            Self::Group => "Group",
+            Self::HardLinks => "Links",
+            Self::Inode => "inode",
+            Self::GitStatus => "Git",
+            Self::Octal => "Octal",
         }
     }
 }
 
-
 /// Formatting options for file sizes.
-#[allow(clippy::pub_enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum SizeFormat {
-
     /// Format the file size using **decimal** prefixes, such as “kilo”,
     /// “mega”, or “giga”.
     DecimalBytes,
@@ -198,12 +190,10 @@ impl Default for SizeFormat {
     }
 }
 
-
 /// The types of a file’s time fields. These three fields are standard
 /// across most (all?) operating systems.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeType {
-
     /// The file’s modified time (`st_mtime`).
     Modified,
 
@@ -218,18 +208,16 @@ pub enum TimeType {
 }
 
 impl TimeType {
-
     /// Returns the text to use for a column’s heading in the columns output.
     pub fn header(self) -> &'static str {
         match self {
-            Self::Modified  => "Date Modified",
-            Self::Changed   => "Date Changed",
-            Self::Accessed  => "Date Accessed",
-            Self::Created   => "Date Created",
+            Self::Modified => "Date Modified",
+            Self::Changed => "Date Changed",
+            Self::Accessed => "Date Accessed",
+            Self::Created => "Date Created",
         }
     }
 }
-
 
 /// Fields for which of a file’s time fields should be displayed in the
 /// columns output.
@@ -240,32 +228,29 @@ impl TimeType {
 #[allow(clippy::struct_excessive_bools)]
 pub struct TimeTypes {
     pub modified: bool,
-    pub changed:  bool,
+    pub changed: bool,
     pub accessed: bool,
-    pub created:  bool,
+    pub created: bool,
 }
 
 impl Default for TimeTypes {
-
     /// By default, display just the ‘modified’ time. This is the most
     /// common option, which is why it has this shorthand.
     fn default() -> Self {
         Self {
             modified: true,
-            changed:  false,
+            changed: false,
             accessed: false,
-            created:  false,
+            created: false,
         }
     }
 }
-
 
 /// The **environment** struct contains any data that could change between
 /// running instances of exa, depending on the user’s computer’s configuration.
 ///
 /// Any environment field should be able to be mocked up for test runs.
 pub struct Environment {
-
     /// Localisation rules for formatting numbers.
     numeric: locale::Numeric,
 
@@ -284,17 +269,15 @@ impl Environment {
 
     fn load_all() -> Self {
         let tz = match determine_time_zone() {
-            Ok(t) => {
-                Some(t)
-            }
+            Ok(t) => Some(t),
             Err(ref e) => {
                 println!("Unable to determine time zone: {}", e);
                 None
             }
         };
 
-        let numeric = locale::Numeric::load_user_locale()
-                             .unwrap_or_else(|_| locale::Numeric::english());
+        let numeric =
+            locale::Numeric::load_user_locale().unwrap_or_else(|_| locale::Numeric::english());
 
         let users = Mutex::new(UsersCache::new());
 
@@ -325,7 +308,6 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 lazy_static! {
     static ref ENVIRONMENT: Environment = Environment::load_all();
 }
-
 
 pub struct Table<'a> {
     columns: Vec<Column>,
@@ -366,23 +348,27 @@ impl<'a, 'f> Table<'a> {
     }
 
     pub fn header_row(&self) -> Row {
-        let cells = self.columns.iter()
-                        .map(|c| TextCell::paint_str(self.theme.ui.header, c.header()))
-                        .collect();
+        let cells = self
+            .columns
+            .iter()
+            .map(|c| TextCell::paint_str(self.theme.ui.header, c.header()))
+            .collect();
 
         Row { cells }
     }
 
     pub fn row_for_file(&self, file: &File<'_>, xattrs: bool) -> Row {
-        let cells = self.columns.iter()
-                        .map(|c| self.display(file, *c, xattrs))
-                        .collect();
+        let cells = self
+            .columns
+            .iter()
+            .map(|c| self.display(file, *c, xattrs))
+            .collect();
 
         Row { cells }
     }
 
     pub fn add_widths(&mut self, row: &Row) {
-        self.widths.add_widths(row)
+        self.widths.add_widths(row);
     }
 
     fn permissions_plus(&self, file: &File<'_>, xattrs: bool) -> f::PermissionsPlus {
@@ -401,45 +387,39 @@ impl<'a, 'f> Table<'a> {
 
     fn display(&self, file: &File<'_>, column: Column, xattrs: bool) -> TextCell {
         match column {
-            Column::Permissions => {
-                self.permissions_plus(file, xattrs).render(self.theme)
-            }
-            Column::FileSize => {
-                file.size().render(self.theme, self.size_format, &self.env.numeric)
-            }
-            Column::HardLinks => {
-                file.links().render(self.theme, &self.env.numeric)
-            }
-            Column::Inode => {
-                file.inode().render(self.theme.ui.inode)
-            }
-            Column::Blocks => {
-                file.blocks().render(self.theme)
-            }
+            Column::Permissions => self.permissions_plus(file, xattrs).render(self.theme),
+            Column::FileSize => file
+                .size()
+                .render(self.theme, self.size_format, &self.env.numeric),
+            Column::HardLinks => file.links().render(self.theme, &self.env.numeric),
+            Column::Inode => file.inode().render(self.theme.ui.inode),
+            Column::Blocks => file.blocks().render(self.theme),
             Column::User => {
-                file.user().render(self.theme, &*self.env.lock_users(), self.user_format)
+                file.user()
+                    .render(self.theme, &*self.env.lock_users(), self.user_format)
             }
             Column::Group => {
-                file.group().render(self.theme, &*self.env.lock_users(), self.user_format)
+                file.group()
+                    .render(self.theme, &*self.env.lock_users(), self.user_format)
             }
-            Column::GitStatus => {
-                self.git_status(file).render(self.theme)
-            }
-            Column::Octal => {
-                self.octal_permissions(file).render(self.theme.ui.octal)
-            }
+            Column::GitStatus => self.git_status(file).render(self.theme),
+            Column::Octal => self.octal_permissions(file).render(self.theme.ui.octal),
 
-            Column::Timestamp(TimeType::Modified)  => {
-                file.modified_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            Column::Timestamp(TimeType::Modified) => {
+                file.modified_time()
+                    .render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            Column::Timestamp(TimeType::Changed)   => {
-                file.changed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            Column::Timestamp(TimeType::Changed) => {
+                file.changed_time()
+                    .render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            Column::Timestamp(TimeType::Created)   => {
-                file.created_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            Column::Timestamp(TimeType::Created) => {
+                file.created_time()
+                    .render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
-            Column::Timestamp(TimeType::Accessed)  => {
-                file.accessed_time().render(self.theme.ui.date, &self.env.tz, self.time_format)
+            Column::Timestamp(TimeType::Accessed) => {
+                file.accessed_time()
+                    .render(self.theme.ui.date, &self.env.tz, self.time_format)
             }
         }
     }
@@ -455,9 +435,7 @@ impl<'a, 'f> Table<'a> {
     pub fn render(&self, row: Row) -> TextCell {
         let mut cell = TextCell::default();
 
-        let iter = row.cells.into_iter()
-                      .zip(self.widths.iter())
-                      .enumerate();
+        let iter = row.cells.into_iter().zip(self.widths.iter()).enumerate();
 
         for (n, (this_cell, width)) in iter {
             let padding = width - *this_cell.width;
@@ -479,7 +457,6 @@ impl<'a, 'f> Table<'a> {
         cell
     }
 }
-
 
 pub struct TableWidths(Vec<usize>);
 

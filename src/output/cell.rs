@@ -3,9 +3,8 @@
 use std::iter::Sum;
 use std::ops::{Add, Deref, DerefMut};
 
-use ansi_term::{Style, ANSIString, ANSIStrings};
+use ansi_term::{ANSIString, ANSIStrings, Style};
 use unicode_width::UnicodeWidthStr;
-
 
 /// An individual cell that holds text in a table, used in the details and
 /// lines views to store ANSI-terminal-formatted data before it is printed.
@@ -19,7 +18,6 @@ use unicode_width::UnicodeWidthStr;
 /// type by that name too.)
 #[derive(PartialEq, Debug, Clone, Default)]
 pub struct TextCell {
-
     /// The contents of this cell, as a vector of ANSI-styled strings.
     pub contents: TextCellContents,
 
@@ -36,14 +34,13 @@ impl Deref for TextCell {
 }
 
 impl TextCell {
-
     /// Creates a new text cell that holds the given text in the given style,
     /// computing the Unicode width of the text.
     pub fn paint(style: Style, text: String) -> Self {
         let width = DisplayWidth::from(&*text);
 
         Self {
-            contents: vec![ style.paint(text) ].into(),
+            contents: vec![style.paint(text)].into(),
             width,
         }
     }
@@ -55,7 +52,7 @@ impl TextCell {
         let width = DisplayWidth::from(text);
 
         Self {
-            contents: vec![ style.paint(text) ].into(),
+            contents: vec![style.paint(text)].into(),
             width,
         }
     }
@@ -68,8 +65,8 @@ impl TextCell {
     /// tabular data when there is *something* in each cell.
     pub fn blank(style: Style) -> Self {
         Self {
-            contents: vec![ style.paint("-") ].into(),
-            width:    DisplayWidth::from(1),
+            contents: vec![style.paint("-")].into(),
+            width: DisplayWidth::from(1),
         }
     }
 
@@ -77,11 +74,9 @@ impl TextCell {
     ///
     /// This method allocates a `String` to hold the spaces.
     pub fn add_spaces(&mut self, count: usize) {
-        use std::iter::repeat;
-
         (*self.width) += count;
 
-        let spaces: String = repeat(' ').take(count).collect();
+        let spaces: String = " ".repeat(count);
         self.contents.0.push(Style::default().paint(spaces));
     }
 
@@ -97,7 +92,6 @@ impl TextCell {
         self.contents.0.extend(other.contents.0);
     }
 }
-
 
 // I’d like to eventually abstract cells so that instead of *every* cell
 // storing a vector, only variable-length cells would, and individual cells
@@ -124,7 +118,6 @@ impl TextCell {
 // This would allow us to still hold all the data, but allocate less.
 //
 // But exa still has bugs and I need to fix those first :(
-
 
 /// The contents of a text cell, as a vector of ANSI-styled strings.
 ///
@@ -154,7 +147,6 @@ impl Deref for TextCellContents {
 // above can just access the value directly.
 
 impl TextCellContents {
-
     /// Produces an `ANSIStrings` value that can be used to print the styled
     /// values of this cell as an ANSI-terminal-formatted string.
     pub fn strings(&self) -> ANSIStrings<'_> {
@@ -164,7 +156,8 @@ impl TextCellContents {
     /// Calculates the width that a cell with these contents would take up, by
     /// counting the number of characters in each unformatted ANSI string.
     pub fn width(&self) -> DisplayWidth {
-        self.0.iter()
+        self.0
+            .iter()
             .map(|anstr| DisplayWidth::from(&**anstr))
             .sum()
     }
@@ -178,7 +171,6 @@ impl TextCellContents {
         }
     }
 }
-
 
 /// The Unicode “display width” of a string.
 ///
@@ -240,12 +232,12 @@ impl Add<usize> for DisplayWidth {
 
 impl Sum for DisplayWidth {
     fn sum<I>(iter: I) -> Self
-    where I: Iterator<Item = Self>
+    where
+        I: Iterator<Item = Self>,
     {
         iter.fold(Self(0), Add::add)
     }
 }
-
 
 #[cfg(test)]
 mod width_unit_test {

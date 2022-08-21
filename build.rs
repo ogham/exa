@@ -9,7 +9,6 @@
 ///
 /// - https://stackoverflow.com/q/43753491/3484614
 /// - https://crates.io/crates/vergen
-
 use std::env;
 use std::fs::File;
 use std::io::{self, Write};
@@ -17,31 +16,39 @@ use std::path::PathBuf;
 
 use datetime::{LocalDateTime, ISO};
 
-
 /// The build script entry point.
 fn main() -> io::Result<()> {
     #![allow(clippy::write_with_newline)]
 
     let tagline = "exa - list files on the command-line";
-    let url     = "https://the.exa.website/";
+    let url = "https://the.exa.website/";
 
-    let ver =
-        if is_debug_build() {
-            format!("{}\nv{} \\1;31m(pre-release debug build!)\\0m\n\\1;4;34m{}\\0m", tagline, version_string(), url)
-        }
-        else if is_development_version() {
-            format!("{}\nv{} [{}] built on {} \\1;31m(pre-release!)\\0m\n\\1;4;34m{}\\0m", tagline, version_string(), git_hash(), build_date(), url)
-        }
-        else {
-            format!("{}\nv{}\n\\1;4;34m{}\\0m", tagline, version_string(), url)
-        };
+    let ver = if is_debug_build() {
+        format!(
+            "{}\nv{} \\1;31m(pre-release debug build!)\\0m\n\\1;4;34m{}\\0m",
+            tagline,
+            version_string(),
+            url
+        )
+    } else if is_development_version() {
+        format!(
+            "{}\nv{} [{}] built on {} \\1;31m(pre-release!)\\0m\n\\1;4;34m{}\\0m",
+            tagline,
+            version_string(),
+            git_hash(),
+            build_date(),
+            url
+        )
+    } else {
+        format!("{}\nv{}\n\\1;4;34m{}\\0m", tagline, version_string(), url)
+    };
 
     // We need to create these files in the Cargo output directory.
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
     let path = &out.join("version_string.txt");
 
     // Bland version text
-    let mut f = File::create(path).expect(&path.to_string_lossy());
+    let mut f = File::create(path).unwrap_or_else(|_| panic!("{}", path.to_string_lossy()));
     writeln!(f, "{}", strip_codes(&ver))?;
 
     Ok(())
@@ -49,9 +56,10 @@ fn main() -> io::Result<()> {
 
 /// Removes escape codes from a string.
 fn strip_codes(input: &str) -> String {
-    input.replace("\\0m", "")
-         .replace("\\1;31m", "")
-         .replace("\\1;4;34m", "")
+    input
+        .replace("\\0m", "")
+        .replace("\\1;31m", "")
+        .replace("\\1;4;34m", "")
 }
 
 /// Retrieve the project’s current Git hash, as a string.
@@ -61,8 +69,12 @@ fn git_hash() -> String {
     String::from_utf8_lossy(
         &Command::new("git")
             .args(&["rev-parse", "--short", "HEAD"])
-            .output().unwrap()
-            .stdout).trim().to_string()
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .trim()
+    .to_string()
 }
 
 /// Whether we should show pre-release info in the version string.
@@ -88,7 +100,7 @@ fn version_string() -> String {
     let mut ver = cargo_version();
 
     let feats = nonstandard_features_string();
-    if ! feats.is_empty() {
+    if !feats.is_empty() {
         ver.push_str(&format!(" [{}]", &feats));
     }
 
@@ -98,7 +110,7 @@ fn version_string() -> String {
 /// Finds whether a feature is enabled by examining the Cargo variable.
 fn feature_enabled(name: &str) -> bool {
     env::var(&format!("CARGO_FEATURE_{}", name))
-        .map(|e| ! e.is_empty())
+        .map(|e| !e.is_empty())
         .unwrap_or(false)
 }
 
@@ -108,8 +120,7 @@ fn nonstandard_features_string() -> String {
 
     if feature_enabled("GIT") {
         s.push("+git");
-    }
-    else {
+    } else {
         s.push("-git");
     }
 

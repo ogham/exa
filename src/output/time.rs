@@ -2,12 +2,11 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
+use datetime::{DatePiece, LocalDateTime, TimePiece, TimeZone};
 
 use lazy_static::lazy_static;
 use unicode_width::UnicodeWidthStr;
-
 
 /// Every timestamp in exa needs to be rendered by a **time format**.
 /// Formatting times is tricky, because how a timestamp is rendered can
@@ -27,7 +26,6 @@ use unicode_width::UnicodeWidthStr;
 /// format string in an environment variable or something. Just these four.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum TimeFormat {
-
     /// The **default format** uses the user’s locale to print month names,
     /// and specifies the timestamp down to the minute for recent times, and
     /// day for older times.
@@ -54,23 +52,22 @@ pub enum TimeFormat {
 impl TimeFormat {
     pub fn format_local(self, time: SystemTime) -> String {
         match self {
-            Self::DefaultFormat  => default_local(time),
-            Self::ISOFormat      => iso_local(time),
-            Self::LongISO        => long_local(time),
-            Self::FullISO        => full_local(time),
+            Self::DefaultFormat => default_local(time),
+            Self::ISOFormat => iso_local(time),
+            Self::LongISO => long_local(time),
+            Self::FullISO => full_local(time),
         }
     }
 
     pub fn format_zoned(self, time: SystemTime, zone: &TimeZone) -> String {
         match self {
-            Self::DefaultFormat  => default_zoned(time, zone),
-            Self::ISOFormat      => iso_zoned(time, zone),
-            Self::LongISO        => long_zoned(time, zone),
-            Self::FullISO        => full_zoned(time, zone),
+            Self::DefaultFormat => default_zoned(time, zone),
+            Self::ISOFormat => iso_zoned(time, zone),
+            Self::LongISO => long_zoned(time, zone),
+            Self::FullISO => full_zoned(time, zone),
         }
     }
 }
-
 
 #[allow(trivial_numeric_casts)]
 fn default_local(time: SystemTime) -> String {
@@ -87,38 +84,55 @@ fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
 }
 
 fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
-    match (is_recent(&date), *MAXIMUM_MONTH_WIDTH) {
-        (true, 4)   => &FOUR_WIDE_DATE_TIME,
-        (true, 5)   => &FIVE_WIDE_DATE_TIME,
-        (true, _)   => &OTHER_WIDE_DATE_TIME,
-        (false, 4)  => &FOUR_WIDE_DATE_YEAR,
-        (false, 5)  => &FIVE_WIDE_DATE_YEAR,
-        (false, _)  => &OTHER_WIDE_DATE_YEAR,
+    match (is_recent(date), *MAXIMUM_MONTH_WIDTH) {
+        (true, 4) => &FOUR_WIDE_DATE_TIME,
+        (true, 5) => &FIVE_WIDE_DATE_TIME,
+        (true, _) => &OTHER_WIDE_DATE_TIME,
+        (false, 4) => &FOUR_WIDE_DATE_YEAR,
+        (false, 5) => &FIVE_WIDE_DATE_YEAR,
+        (false, _) => &OTHER_WIDE_DATE_YEAR,
     }
 }
 
 #[allow(trivial_numeric_casts)]
 fn long_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute())
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}",
+        date.year(),
+        date.month() as usize,
+        date.day(),
+        date.hour(),
+        date.minute()
+    )
 }
 
 #[allow(trivial_numeric_casts)]
 fn long_zoned(time: SystemTime, zone: &TimeZone) -> String {
     let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute())
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}",
+        date.year(),
+        date.month() as usize,
+        date.day(),
+        date.hour(),
+        date.minute()
+    )
 }
 
 #[allow(trivial_numeric_casts)]
 fn full_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
-    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), systemtime_nanos(time))
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09}",
+        date.year(),
+        date.month() as usize,
+        date.day(),
+        date.hour(),
+        date.minute(),
+        date.second(),
+        systemtime_nanos(time)
+    )
 }
 
 #[allow(trivial_numeric_casts)]
@@ -128,10 +142,18 @@ fn full_zoned(time: SystemTime, zone: &TimeZone) -> String {
     let local = LocalDateTime::at(systemtime_epoch(time));
     let date = zone.to_zoned(local);
     let offset = Offset::of_seconds(zone.offset(local) as i32).expect("Offset out of range");
-    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
-            date.year(), date.month() as usize, date.day(),
-            date.hour(), date.minute(), date.second(), systemtime_nanos(time),
-            offset.hours(), offset.minutes().abs())
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:09} {:+03}{:02}",
+        date.year(),
+        date.month() as usize,
+        date.day(),
+        date.hour(),
+        date.minute(),
+        date.second(),
+        systemtime_nanos(time),
+        offset.hours(),
+        offset.minutes().abs()
+    )
 }
 
 #[allow(trivial_numeric_casts)]
@@ -139,13 +161,20 @@ fn iso_local(time: SystemTime) -> String {
     let date = LocalDateTime::at(systemtime_epoch(time));
 
     if is_recent(&date) {
-        format!("{:02}-{:02} {:02}:{:02}",
-                date.month() as usize, date.day(),
-                date.hour(), date.minute())
-    }
-    else {
-        format!("{:04}-{:02}-{:02}",
-                date.year(), date.month() as usize, date.day())
+        format!(
+            "{:02}-{:02} {:02}:{:02}",
+            date.month() as usize,
+            date.day(),
+            date.hour(),
+            date.minute()
+        )
+    } else {
+        format!(
+            "{:04}-{:02}-{:02}",
+            date.year(),
+            date.month() as usize,
+            date.day()
+        )
     }
 }
 
@@ -154,16 +183,22 @@ fn iso_zoned(time: SystemTime, zone: &TimeZone) -> String {
     let date = zone.to_zoned(LocalDateTime::at(systemtime_epoch(time)));
 
     if is_recent(&date) {
-        format!("{:02}-{:02} {:02}:{:02}",
-                date.month() as usize, date.day(),
-                date.hour(), date.minute())
-    }
-    else {
-        format!("{:04}-{:02}-{:02}",
-                date.year(), date.month() as usize, date.day())
+        format!(
+            "{:02}-{:02} {:02}:{:02}",
+            date.month() as usize,
+            date.day(),
+            date.hour(),
+            date.minute()
+        )
+    } else {
+        format!(
+            "{:04}-{:02}-{:02}",
+            date.year(),
+            date.month() as usize,
+            date.day()
+        )
     }
 }
-
 
 fn systemtime_epoch(time: SystemTime) -> i64 {
     time.duration_since(UNIX_EPOCH)
@@ -194,7 +229,6 @@ fn systemtime_nanos(time: SystemTime) -> u32 {
 fn is_recent(date: &LocalDateTime) -> bool {
     date.year() == *CURRENT_YEAR
 }
-
 
 lazy_static! {
 

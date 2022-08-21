@@ -5,18 +5,16 @@ use crate::output::file_name::Colours as FileNameColours;
 use crate::output::render;
 
 mod ui_styles;
-pub use self::ui_styles::UiStyles;
 pub use self::ui_styles::Size as SizeColours;
+pub use self::ui_styles::UiStyles;
 
 mod lsc;
 pub use self::lsc::LSColors;
 
 mod default_theme;
 
-
 #[derive(PartialEq, Debug)]
 pub struct Options {
-
     pub use_colours: UseColours,
 
     pub colour_scale: ColourScale,
@@ -33,7 +31,6 @@ pub struct Options {
 /// this check and only displays colours when they can be truly appreciated.
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum UseColours {
-
     /// Display them even when output isn’t going to a terminal.
     Always,
 
@@ -56,19 +53,19 @@ pub struct Definitions {
     pub exa: Option<String>,
 }
 
-
 pub struct Theme {
     pub ui: UiStyles,
     pub exts: Box<dyn FileColours>,
 }
 
 impl Options {
-
-    #[allow(trivial_casts)]   // the `as Box<_>` stuff below warns about this for some reason
+    #[allow(trivial_casts)] // the `as Box<_>` stuff below warns about this for some reason
     pub fn to_theme(&self, isatty: bool) -> Theme {
         use crate::info::filetype::FileExtensions;
 
-        if self.use_colours == UseColours::Never || (self.use_colours == UseColours::Automatic && ! isatty) {
+        if self.use_colours == UseColours::Never
+            || (self.use_colours == UseColours::Automatic && !isatty)
+        {
             let ui = UiStyles::plain();
             let exts = Box::new(NoFileColours);
             return Theme { ui, exts };
@@ -80,10 +77,10 @@ impl Options {
 
         // Use between 0 and 2 file name highlighters
         let exts = match (exts.is_non_empty(), use_default_filetypes) {
-            (false, false)  => Box::new(NoFileColours)           as Box<_>,
-            (false,  true)  => Box::new(FileExtensions)          as Box<_>,
-            ( true, false)  => Box::new(exts)                    as Box<_>,
-            ( true,  true)  => Box::new((exts, FileExtensions))  as Box<_>,
+            (false, false) => Box::new(NoFileColours) as Box<_>,
+            (false, true) => Box::new(FileExtensions) as Box<_>,
+            (true, false) => Box::new(exts) as Box<_>,
+            (true, true) => Box::new((exts, FileExtensions)) as Box<_>,
         };
 
         Theme { ui, exts }
@@ -91,7 +88,6 @@ impl Options {
 }
 
 impl Definitions {
-
     /// Parse the environment variables into `LS_COLORS` pairs, putting file glob
     /// colours into the `ExtensionMappings` that gets returned, and using the
     /// two-character UI codes to modify the mutable `Colours`.
@@ -105,7 +101,7 @@ impl Definitions {
 
         if let Some(lsc) = &self.ls {
             LSColors(lsc).each_pair(|pair| {
-                if ! colours.set_ls(&pair) {
+                if !colours.set_ls(&pair) {
                     match glob::Pattern::new(pair.key) {
                         Ok(pat) => {
                             exts.add(pat, pair.to_style());
@@ -127,7 +123,7 @@ impl Definitions {
             }
 
             LSColors(exa).each_pair(|pair| {
-                if ! colours.set_ls(&pair) && ! colours.set_exa(&pair) {
+                if !colours.set_ls(&pair) && !colours.set_exa(&pair) {
                     match glob::Pattern::new(pair.key) {
                         Ok(pat) => {
                             exts.add(pat, pair.to_style());
@@ -143,7 +139,6 @@ impl Definitions {
         (exts, use_default_filetypes)
     }
 }
-
 
 pub trait FileColours: std::marker::Sync {
     fn colour_file(&self, file: &File<'_>) -> Option<Style>;
@@ -162,15 +157,16 @@ impl FileColours for NoFileColours {
 // file type associations, while falling back to the default set if not set
 // explicitly.
 impl<A, B> FileColours for (A, B)
-where A: FileColours,
-      B: FileColours,
+where
+    A: FileColours,
+    B: FileColours,
 {
     fn colour_file(&self, file: &File<'_>) -> Option<Style> {
-        self.0.colour_file(file)
+        self.0
+            .colour_file(file)
             .or_else(|| self.1.colour_file(file))
     }
 }
-
 
 #[derive(PartialEq, Debug, Default)]
 struct ExtensionMappings {
@@ -182,78 +178,149 @@ struct ExtensionMappings {
 
 impl FileColours for ExtensionMappings {
     fn colour_file(&self, file: &File<'_>) -> Option<Style> {
-        self.mappings.iter().rev()
+        self.mappings
+            .iter()
+            .rev()
             .find(|t| t.0.matches(&file.name))
-            .map (|t| t.1)
+            .map(|t| t.1)
     }
 }
 
 impl ExtensionMappings {
     fn is_non_empty(&self) -> bool {
-        ! self.mappings.is_empty()
+        !self.mappings.is_empty()
     }
 
     fn add(&mut self, pattern: glob::Pattern, style: Style) {
-        self.mappings.push((pattern, style))
+        self.mappings.push((pattern, style));
     }
 }
 
-
-
-
 impl render::BlocksColours for Theme {
-    fn block_count(&self)  -> Style { self.ui.blocks }
-    fn no_blocks(&self)    -> Style { self.ui.punctuation }
+    fn block_count(&self) -> Style {
+        self.ui.blocks
+    }
+    fn no_blocks(&self) -> Style {
+        self.ui.punctuation
+    }
 }
 
 impl render::FiletypeColours for Theme {
-    fn normal(&self)       -> Style { self.ui.filekinds.normal }
-    fn directory(&self)    -> Style { self.ui.filekinds.directory }
-    fn pipe(&self)         -> Style { self.ui.filekinds.pipe }
-    fn symlink(&self)      -> Style { self.ui.filekinds.symlink }
-    fn block_device(&self) -> Style { self.ui.filekinds.block_device }
-    fn char_device(&self)  -> Style { self.ui.filekinds.char_device }
-    fn socket(&self)       -> Style { self.ui.filekinds.socket }
-    fn special(&self)      -> Style { self.ui.filekinds.special }
+    fn normal(&self) -> Style {
+        self.ui.filekinds.normal
+    }
+    fn directory(&self) -> Style {
+        self.ui.filekinds.directory
+    }
+    fn pipe(&self) -> Style {
+        self.ui.filekinds.pipe
+    }
+    fn symlink(&self) -> Style {
+        self.ui.filekinds.symlink
+    }
+    fn block_device(&self) -> Style {
+        self.ui.filekinds.block_device
+    }
+    fn char_device(&self) -> Style {
+        self.ui.filekinds.char_device
+    }
+    fn socket(&self) -> Style {
+        self.ui.filekinds.socket
+    }
+    fn special(&self) -> Style {
+        self.ui.filekinds.special
+    }
 }
 
 impl render::GitColours for Theme {
-    fn not_modified(&self)  -> Style { self.ui.punctuation }
+    fn not_modified(&self) -> Style {
+        self.ui.punctuation
+    }
     #[allow(clippy::new_ret_no_self)]
-    fn new(&self)           -> Style { self.ui.git.new }
-    fn modified(&self)      -> Style { self.ui.git.modified }
-    fn deleted(&self)       -> Style { self.ui.git.deleted }
-    fn renamed(&self)       -> Style { self.ui.git.renamed }
-    fn type_change(&self)   -> Style { self.ui.git.typechange }
-    fn ignored(&self)       -> Style { self.ui.git.ignored }
-    fn conflicted(&self)    -> Style { self.ui.git.conflicted }
+    fn new(&self) -> Style {
+        self.ui.git.new
+    }
+    fn modified(&self) -> Style {
+        self.ui.git.modified
+    }
+    fn deleted(&self) -> Style {
+        self.ui.git.deleted
+    }
+    fn renamed(&self) -> Style {
+        self.ui.git.renamed
+    }
+    fn type_change(&self) -> Style {
+        self.ui.git.typechange
+    }
+    fn ignored(&self) -> Style {
+        self.ui.git.ignored
+    }
+    fn conflicted(&self) -> Style {
+        self.ui.git.conflicted
+    }
 }
 
 impl render::GroupColours for Theme {
-    fn yours(&self)      -> Style { self.ui.users.group_yours }
-    fn not_yours(&self)  -> Style { self.ui.users.group_not_yours }
+    fn yours(&self) -> Style {
+        self.ui.users.group_yours
+    }
+    fn not_yours(&self) -> Style {
+        self.ui.users.group_not_yours
+    }
 }
 
 impl render::LinksColours for Theme {
-    fn normal(&self)           -> Style { self.ui.links.normal }
-    fn multi_link_file(&self)  -> Style { self.ui.links.multi_link_file }
+    fn normal(&self) -> Style {
+        self.ui.links.normal
+    }
+    fn multi_link_file(&self) -> Style {
+        self.ui.links.multi_link_file
+    }
 }
 
 impl render::PermissionsColours for Theme {
-    fn dash(&self)               -> Style { self.ui.punctuation }
-    fn user_read(&self)          -> Style { self.ui.perms.user_read }
-    fn user_write(&self)         -> Style { self.ui.perms.user_write }
-    fn user_execute_file(&self)  -> Style { self.ui.perms.user_execute_file }
-    fn user_execute_other(&self) -> Style { self.ui.perms.user_execute_other }
-    fn group_read(&self)         -> Style { self.ui.perms.group_read }
-    fn group_write(&self)        -> Style { self.ui.perms.group_write }
-    fn group_execute(&self)      -> Style { self.ui.perms.group_execute }
-    fn other_read(&self)         -> Style { self.ui.perms.other_read }
-    fn other_write(&self)        -> Style { self.ui.perms.other_write }
-    fn other_execute(&self)      -> Style { self.ui.perms.other_execute }
-    fn special_user_file(&self)  -> Style { self.ui.perms.special_user_file }
-    fn special_other(&self)      -> Style { self.ui.perms.special_other }
-    fn attribute(&self)          -> Style { self.ui.perms.attribute }
+    fn dash(&self) -> Style {
+        self.ui.punctuation
+    }
+    fn user_read(&self) -> Style {
+        self.ui.perms.user_read
+    }
+    fn user_write(&self) -> Style {
+        self.ui.perms.user_write
+    }
+    fn user_execute_file(&self) -> Style {
+        self.ui.perms.user_execute_file
+    }
+    fn user_execute_other(&self) -> Style {
+        self.ui.perms.user_execute_other
+    }
+    fn group_read(&self) -> Style {
+        self.ui.perms.group_read
+    }
+    fn group_write(&self) -> Style {
+        self.ui.perms.group_write
+    }
+    fn group_execute(&self) -> Style {
+        self.ui.perms.group_execute
+    }
+    fn other_read(&self) -> Style {
+        self.ui.perms.other_read
+    }
+    fn other_write(&self) -> Style {
+        self.ui.perms.other_write
+    }
+    fn other_execute(&self) -> Style {
+        self.ui.perms.other_execute
+    }
+    fn special_user_file(&self) -> Style {
+        self.ui.perms.special_user_file
+    }
+    fn special_other(&self) -> Style {
+        self.ui.perms.special_other
+    }
+    fn attribute(&self) -> Style {
+        self.ui.perms.attribute
+    }
 }
 
 impl render::SizeColours for Theme {
@@ -261,11 +328,11 @@ impl render::SizeColours for Theme {
         use number_prefix::Prefix::*;
 
         match prefix {
-            None                    => self.ui.size.number_byte,
-            Some(Kilo) | Some(Kibi) => self.ui.size.number_kilo,
-            Some(Mega) | Some(Mebi) => self.ui.size.number_mega,
-            Some(Giga) | Some(Gibi) => self.ui.size.number_giga,
-            Some(_)                 => self.ui.size.number_huge,
+            None => self.ui.size.number_byte,
+            Some(Kilo | Kibi) => self.ui.size.number_kilo,
+            Some(Mega | Mebi) => self.ui.size.number_mega,
+            Some(Giga | Gibi) => self.ui.size.number_giga,
+            Some(_) => self.ui.size.number_huge,
         }
     }
 
@@ -273,39 +340,66 @@ impl render::SizeColours for Theme {
         use number_prefix::Prefix::*;
 
         match prefix {
-            None                    => self.ui.size.unit_byte,
-            Some(Kilo) | Some(Kibi) => self.ui.size.unit_kilo,
-            Some(Mega) | Some(Mebi) => self.ui.size.unit_mega,
-            Some(Giga) | Some(Gibi) => self.ui.size.unit_giga,
-            Some(_)                 => self.ui.size.unit_huge,
+            None => self.ui.size.unit_byte,
+            Some(Kilo | Kibi) => self.ui.size.unit_kilo,
+            Some(Mega | Mebi) => self.ui.size.unit_mega,
+            Some(Giga | Gibi) => self.ui.size.unit_giga,
+            Some(_) => self.ui.size.unit_huge,
         }
     }
 
-    fn no_size(&self) -> Style { self.ui.punctuation }
-    fn major(&self)   -> Style { self.ui.size.major }
-    fn comma(&self)   -> Style { self.ui.punctuation }
-    fn minor(&self)   -> Style { self.ui.size.minor }
-}
-
-impl render::UserColours for Theme {
-    fn you(&self)           -> Style { self.ui.users.user_you }
-    fn someone_else(&self)  -> Style { self.ui.users.user_someone_else }
-}
-
-impl FileNameColours for Theme {
-    fn normal_arrow(&self)        -> Style { self.ui.punctuation }
-    fn broken_symlink(&self)      -> Style { self.ui.broken_symlink }
-    fn broken_filename(&self)     -> Style { apply_overlay(self.ui.broken_symlink, self.ui.broken_path_overlay) }
-    fn broken_control_char(&self) -> Style { apply_overlay(self.ui.control_char,   self.ui.broken_path_overlay) }
-    fn control_char(&self)        -> Style { self.ui.control_char }
-    fn symlink_path(&self)        -> Style { self.ui.symlink_path }
-    fn executable_file(&self)     -> Style { self.ui.filekinds.executable }
-
-    fn colour_file(&self, file: &File<'_>) -> Style {
-        self.exts.colour_file(file).unwrap_or(self.ui.filekinds.normal)
+    fn no_size(&self) -> Style {
+        self.ui.punctuation
+    }
+    fn major(&self) -> Style {
+        self.ui.size.major
+    }
+    fn comma(&self) -> Style {
+        self.ui.punctuation
+    }
+    fn minor(&self) -> Style {
+        self.ui.size.minor
     }
 }
 
+impl render::UserColours for Theme {
+    fn you(&self) -> Style {
+        self.ui.users.user_you
+    }
+    fn someone_else(&self) -> Style {
+        self.ui.users.user_someone_else
+    }
+}
+
+impl FileNameColours for Theme {
+    fn normal_arrow(&self) -> Style {
+        self.ui.punctuation
+    }
+    fn broken_symlink(&self) -> Style {
+        self.ui.broken_symlink
+    }
+    fn broken_filename(&self) -> Style {
+        apply_overlay(self.ui.broken_symlink, self.ui.broken_path_overlay)
+    }
+    fn broken_control_char(&self) -> Style {
+        apply_overlay(self.ui.control_char, self.ui.broken_path_overlay)
+    }
+    fn control_char(&self) -> Style {
+        self.ui.control_char
+    }
+    fn symlink_path(&self) -> Style {
+        self.ui.symlink_path
+    }
+    fn executable_file(&self) -> Style {
+        self.ui.filekinds.executable
+    }
+
+    fn colour_file(&self, file: &File<'_>) -> Style {
+        self.exts
+            .colour_file(file)
+            .unwrap_or(self.ui.filekinds.normal)
+    }
+}
 
 /// Some of the styles are **overlays**: although they have the same attribute
 /// set as regular styles (foreground and background colours, bold, underline,
@@ -320,22 +414,41 @@ impl FileNameColours for Theme {
 /// “broken link overlay”, the latter of which is just set to override the
 /// underline attribute on the other two.
 fn apply_overlay(mut base: Style, overlay: Style) -> Style {
-    if let Some(fg) = overlay.foreground { base.foreground = Some(fg); }
-    if let Some(bg) = overlay.background { base.background = Some(bg); }
+    if let Some(fg) = overlay.foreground {
+        base.foreground = Some(fg);
+    }
+    if let Some(bg) = overlay.background {
+        base.background = Some(bg);
+    }
 
-    if overlay.is_bold          { base.is_bold          = true; }
-    if overlay.is_dimmed        { base.is_dimmed        = true; }
-    if overlay.is_italic        { base.is_italic        = true; }
-    if overlay.is_underline     { base.is_underline     = true; }
-    if overlay.is_blink         { base.is_blink         = true; }
-    if overlay.is_reverse       { base.is_reverse       = true; }
-    if overlay.is_hidden        { base.is_hidden        = true; }
-    if overlay.is_strikethrough { base.is_strikethrough = true; }
+    if overlay.is_bold {
+        base.is_bold = true;
+    }
+    if overlay.is_dimmed {
+        base.is_dimmed = true;
+    }
+    if overlay.is_italic {
+        base.is_italic = true;
+    }
+    if overlay.is_underline {
+        base.is_underline = true;
+    }
+    if overlay.is_blink {
+        base.is_blink = true;
+    }
+    if overlay.is_reverse {
+        base.is_reverse = true;
+    }
+    if overlay.is_hidden {
+        base.is_hidden = true;
+    }
+    if overlay.is_strikethrough {
+        base.is_strikethrough = true;
+    }
 
     base
 }
 // TODO: move this function to the ansi_term crate
-
 
 #[cfg(test)]
 mod customs_test {
@@ -351,7 +464,7 @@ mod customs_test {
                 $process_expected();
 
                 let definitions = Definitions {
-                    ls:  Some($ls.into()),
+                    ls: Some($ls.into()),
                     exa: Some($exa.into()),
                 };
 
@@ -363,13 +476,13 @@ mod customs_test {
         ($name:ident:  ls $ls:expr, exa $exa:expr  =>  exts $mappings:expr) => {
             #[test]
             fn $name() {
-                let mappings: Vec<(glob::Pattern, Style)>
-                    = $mappings.iter()
-                               .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
-                               .collect();
+                let mappings: Vec<(glob::Pattern, Style)> = $mappings
+                    .iter()
+                    .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
+                    .collect();
 
                 let definitions = Definitions {
-                    ls:  Some($ls.into()),
+                    ls: Some($ls.into()),
                     exa: Some($exa.into()),
                 };
 
@@ -383,13 +496,13 @@ mod customs_test {
                 let mut $expected = UiStyles::colourful(false);
                 $process_expected();
 
-                let mappings: Vec<(glob::Pattern, Style)>
-                    = $mappings.into_iter()
-                               .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
-                               .collect();
+                let mappings: Vec<(glob::Pattern, Style)> = $mappings
+                    .into_iter()
+                    .map(|t| (glob::Pattern::new(t.0).unwrap(), t.1))
+                    .collect();
 
                 let definitions = Definitions {
-                    ls:  Some($ls.into()),
+                    ls: Some($ls.into()),
                     exa: Some($exa.into()),
                 };
 
@@ -400,7 +513,6 @@ mod customs_test {
             }
         };
     }
-
 
     // LS_COLORS can affect all of these colours:
     test!(ls_di:   ls "di=31", exa ""  =>  colours c -> { c.filekinds.directory    = Red.normal();    });
