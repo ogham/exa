@@ -48,9 +48,8 @@ pub fn iconify_style(style: Style) -> Style {
 lazy_static! {
     static ref MAP_BY_NAME: HashMap<&'static str, char> = {
         let mut m = HashMap::new();
-        m.insert(".Trash", '\u{f1f8}'); // 
         m.insert(".atom", '\u{e764}'); // 
-        m.insert(".bashprofile", '\u{e615}'); // 
+        m.insert(".bashprofile", '\u{f489}'); // 
         m.insert(".bashrc", '\u{f489}'); // 
         m.insert(".git", '\u{f1d3}'); // 
         m.insert(".gitattributes", '\u{f1d3}'); // 
@@ -58,12 +57,16 @@ lazy_static! {
         m.insert(".github", '\u{f408}'); // 
         m.insert(".gitignore", '\u{f1d3}'); // 
         m.insert(".gitmodules", '\u{f1d3}'); // 
+        m.insert(".pam_environment", '\u{e615}'); // 
         m.insert(".rvm", '\u{e21e}'); // 
+        m.insert(".Trash", '\u{f1f8}'); // 
         m.insert(".vimrc", '\u{e62b}'); // 
         m.insert(".vscode", '\u{e70c}'); // 
+        m.insert(".xinitrc", '\u{f489}'); // 
+        m.insert(".xprofile", '\u{f489}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
-        m.insert("Cargo.lock", '\u{e7a8}'); // 
         m.insert("bin", '\u{e5fc}'); // 
+        m.insert("Cargo.lock", '\u{e7a8}'); // 
         m.insert("config", '\u{e5fc}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
         m.insert("Dockerfile", '\u{f308}'); // 
@@ -86,7 +89,11 @@ lazy_static! {
         m.insert("node_modules", '\u{e718}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("PKGBUILD", '\u{f303}'); // 
+        m.insert("requirements.txt", '\u{e615}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
+        m.insert("Trash", '\u{f1f8}'); // 
+        m.insert("xinitrc", '\u{f489}'); // 
+        m.insert("xserverrc", '\u{f489}'); // 
         m.insert("yarn.lock", '\u{e718}'); // 
 
         m
@@ -108,6 +115,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
     else if let Some(icon) = extensions.icon_file(file) { icon }
     else if let Some(ext) = file.ext.as_ref() {
         match ext.as_str() {
+            "a"             => '\u{f17c}', // 
             "ai"            => '\u{e7b4}', // 
             "android"       => '\u{e70e}', // 
             "apk"           => '\u{e70e}', // 
@@ -118,6 +126,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "awk"           => '\u{f489}', // 
             "bash"          => '\u{f489}', // 
             "bash_history"  => '\u{f489}', // 
+            "bash_logout"   => '\u{f489}', // 
             "bash_profile"  => '\u{f489}', // 
             "bashrc"        => '\u{f489}', // 
             "bat"           => '\u{f17a}', // 
@@ -249,6 +258,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "m4a"           => '\u{f001}', // 
             "markdown"      => '\u{f48a}', // 
             "md"            => '\u{f48a}', // 
+            "mdb"           => '\u{f1c0}', // 
             "mjs"           => '\u{e74e}', // 
             "mk"            => '\u{f489}', // 
             "mkd"           => '\u{f48a}', // 
