@@ -304,6 +304,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "rspec_parallel"=> '\u{e21e}', // 
             "rspec_status"  => '\u{e21e}', // 
             "rss"           => '\u{f09e}', // 
+            "rst"           => '\u{f15c}', // 
             "rtf"           => '\u{f718}', // 
             "ru"            => '\u{e21e}', // 
             "rubydoc"       => '\u{e73b}', // 
