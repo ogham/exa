@@ -26,10 +26,12 @@ impl<'a> File<'a> {
                 "blg" |                                          // BibTeX log file
                 "fdb_latexmk" |                                  // TeX latexmk file
                 "fls" |                                          // TeX -recorder file
+                "headfootlength" |                               // TeX package autofancyhdr file
                 "lof" |                                          // TeX list of figures
                 "log" |                                          // TeX log file
                 "lot" |                                          // TeX list of tables
-                "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
+                "toc" |                                          // TeX table of contents
+                "xdv" => vec![self.path.with_extension("tex")],  // XeTeX dvi
 
                 _ => vec![],  // No source files if none of the above
             }
