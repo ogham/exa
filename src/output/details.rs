@@ -300,7 +300,7 @@ impl<'a> Render<'a> {
             rows.push(row);
 
             if let Some(ref dir) = egg.dir {
-                for file_to_add in dir.files(self.filter.dot_filter, self.git, self.git_ignoring) {
+                for file_to_add in dir.files(self.filter.dot_filter, self.git, self.git_ignoring, egg.file.deref_links) {
                     match file_to_add {
                         Ok(f) => {
                             files.push(f);

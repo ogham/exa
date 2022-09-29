@@ -13,7 +13,8 @@ impl View {
         let mode = Mode::deduce(matches, vars)?;
         let width = TerminalWidth::deduce(vars)?;
         let file_style = FileStyle::deduce(matches, vars)?;
-        Ok(Self { mode, width, file_style })
+        let deref_links = matches.has(&flags::DEREF_LINKS)?;
+        Ok(Self { mode, width, file_style, deref_links })
     }
 }
 

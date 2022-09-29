@@ -47,7 +47,7 @@ impl Dir {
 
     /// Produce an iterator of IO results of trying to read all the files in
     /// this directory.
-    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, git: Option<&'ig GitCache>, git_ignoring: bool) -> Files<'dir, 'ig> {
+    pub fn files<'dir, 'ig>(&'dir self, dots: DotFilter, git: Option<&'ig GitCache>, git_ignoring: bool, deref_links: bool) -> Files<'dir, 'ig> {
         Files {
             inner:     self.contents.iter(),
             dir:       self,
@@ -55,6 +55,7 @@ impl Dir {
             dots:      dots.dots(),
             git,
             git_ignoring,
+            deref_links,
         }
     }
 
@@ -89,6 +90,9 @@ pub struct Files<'dir, 'ig> {
     git: Option<&'ig GitCache>,
 
     git_ignoring: bool,
+
+    /// Whether symbolic links should be dereferenced when querying information.
+    deref_links: bool,
 }
 
 impl<'dir, 'ig> Files<'dir, 'ig> {
@@ -118,7 +122,7 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
                     }
                 }
 
-                return Some(File::from_args(path.clone(), self.dir, filename)
+                return Some(File::from_args(path.clone(), self.dir, filename, self.deref_links)
                                  .map_err(|e| (path.clone(), e)))
             }
 

@@ -22,6 +22,7 @@ pub struct View {
     pub mode: Mode,
     pub width: TerminalWidth,
     pub file_style: file_name::Options,
+    pub deref_links: bool,
 }
 
 

@@ -6,13 +6,14 @@ pub static VERSION: Arg = Arg { short: Some(b'v'), long: "version",  takes_value
 pub static HELP:    Arg = Arg { short: Some(b'?'), long: "help",     takes_value: TakesValue::Forbidden };
 
 // display options
-pub static ONE_LINE: Arg = Arg { short: Some(b'1'), long: "oneline",  takes_value: TakesValue::Forbidden };
-pub static LONG:     Arg = Arg { short: Some(b'l'), long: "long",     takes_value: TakesValue::Forbidden };
-pub static GRID:     Arg = Arg { short: Some(b'G'), long: "grid",     takes_value: TakesValue::Forbidden };
-pub static ACROSS:   Arg = Arg { short: Some(b'x'), long: "across",   takes_value: TakesValue::Forbidden };
-pub static RECURSE:  Arg = Arg { short: Some(b'R'), long: "recurse",  takes_value: TakesValue::Forbidden };
-pub static TREE:     Arg = Arg { short: Some(b'T'), long: "tree",     takes_value: TakesValue::Forbidden };
-pub static CLASSIFY: Arg = Arg { short: Some(b'F'), long: "classify", takes_value: TakesValue::Forbidden };
+pub static ONE_LINE:    Arg = Arg { short: Some(b'1'), long: "oneline",     takes_value: TakesValue::Forbidden };
+pub static LONG:        Arg = Arg { short: Some(b'l'), long: "long",        takes_value: TakesValue::Forbidden };
+pub static GRID:        Arg = Arg { short: Some(b'G'), long: "grid",        takes_value: TakesValue::Forbidden };
+pub static ACROSS:      Arg = Arg { short: Some(b'x'), long: "across",      takes_value: TakesValue::Forbidden };
+pub static RECURSE:     Arg = Arg { short: Some(b'R'), long: "recurse",     takes_value: TakesValue::Forbidden };
+pub static TREE:        Arg = Arg { short: Some(b'T'), long: "tree",        takes_value: TakesValue::Forbidden };
+pub static CLASSIFY:    Arg = Arg { short: Some(b'F'), long: "classify",    takes_value: TakesValue::Forbidden };
+pub static DEREF_LINKS: Arg = Arg { short: Some(b'X'), long: "dereference", takes_value: TakesValue::Forbidden };
 
 pub static COLOR:  Arg = Arg { short: None, long: "color",  takes_value: TakesValue::Necessary(Some(COLOURS)) };
 pub static COLOUR: Arg = Arg { short: None, long: "colour", takes_value: TakesValue::Necessary(Some(COLOURS)) };
@@ -70,7 +71,7 @@ pub static OCTAL:     Arg = Arg { short: None,       long: "octal-permissions", 
 pub static ALL_ARGS: Args = Args(&[
     &VERSION, &HELP,
 
-    &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY,
+    &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY, &DEREF_LINKS,
     &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
 
     &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,

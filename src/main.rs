@@ -171,7 +171,7 @@ impl<'args> Exa<'args> {
         let mut exit_status = 0;
 
         for file_path in &self.input_paths {
-            match File::from_args(PathBuf::from(file_path), None, None) {
+            match File::from_args(PathBuf::from(file_path), None, None, self.options.view.deref_links) {
                 Err(e) => {
                     exit_status = 2;
                     writeln!(io::stderr(), "{:?}: {}", file_path, e)?;
@@ -224,7 +224,7 @@ impl<'args> Exa<'args> {
 
             let mut children = Vec::new();
             let git_ignore = self.options.filter.git_ignore == GitIgnore::CheckAndIgnore;
-            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore) {
+            for file in dir.files(self.options.filter.dot_filter, self.git.as_ref(), git_ignore, self.options.view.deref_links) {
                 match file {
                     Ok(file)        => children.push(file),
                     Err((path, e))  => writeln!(io::stderr(), "[{}: {}]", path.display(), e)?,

@@ -63,10 +63,17 @@ pub struct File<'dir> {
     /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
+
+    /// Whether to dereference symbolic links when querying for information.
+    ///
+    /// For instance, when querying the size of a symbolic link, if
+    /// dereferencing is enabled, the size of the target will be displayed
+    /// instead.
+    pub deref_links: bool,
 }
 
 impl<'dir> File<'dir> {
-    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> io::Result<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN, deref_links: bool) -> io::Result<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -78,7 +85,7 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all, deref_links })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -90,7 +97,7 @@ impl<'dir> File<'dir> {
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all, deref_links: false })
     }
 
     pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -101,7 +108,7 @@ impl<'dir> File<'dir> {
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all, deref_links: false })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -253,7 +260,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false, deref_links: self.deref_links};
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
@@ -261,6 +268,28 @@ impl<'dir> File<'dir> {
                 FileTarget::Broken(path)
             }
         }
+    }
+
+    /// Assuming this file is a symlink, follows that link and any further
+    /// links recursively, returning the result from following the trail.
+    ///
+    /// For a working symlink that the user is allowed to follow,
+    /// this will be the `File` object at the other end, which can then have
+    /// its name, colour, and other details read.
+    ///
+    /// For a broken symlink, returns where the file *would* be, if it
+    /// existed. If this file cannot be read at all, returns the error that
+    /// we got when we tried to read it.
+    pub fn link_target_recurse(&self) -> FileTarget<'dir> {
+        let target = self.link_target();
+        if let FileTarget::Ok(f) = target {
+            if f.is_link() {
+                return f.link_target_recurse();
+            } else {
+                return FileTarget::Ok(f);
+            }
+        } 
+        target
     }
 
     /// This file’s number of hard links.
