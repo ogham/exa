@@ -338,8 +338,14 @@ impl<'dir> File<'dir> {
     }
 
     /// The ID of the group that owns this file.
-    pub fn group(&self) -> f::Group {
-        f::Group(self.metadata.gid())
+    pub fn group(&self) -> Option<f::Group> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+               FileTarget::Ok(f) => return f.group(),
+               _ => return None,
+            }
+        }
+        Some(f::Group(self.metadata.gid()))
     }
 
     /// This file’s size, if it’s a regular file.

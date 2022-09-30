@@ -13,7 +13,7 @@ use users::UsersCache;
 use crate::fs::{File, fields as f};
 use crate::fs::feature::git::GitCache;
 use crate::output::cell::TextCell;
-use crate::output::render::{TimeRender, UserRender};
+use crate::output::render::{GroupRender, TimeRender, UserRender};
 use crate::output::time::TimeFormat;
 use crate::theme::Theme;
 

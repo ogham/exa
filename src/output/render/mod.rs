@@ -8,7 +8,7 @@ mod git;
 pub use self::git::Colours as GitColours;
 
 mod groups;
-pub use self::groups::Colours as GroupColours;
+pub use self::groups::{Colours as GroupColours, Render as GroupRender};
 
 mod inode;
 // inode uses just one colour
