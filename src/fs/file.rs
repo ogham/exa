@@ -343,6 +343,10 @@ impl<'dir> File<'dir> {
     ///
     /// Block and character devices return their device IDs, because they
     /// usually just have a file size of zero.
+    ///
+    /// Links will return the size of their target (recursively through other
+    /// links) if dereferencing is enabled, otherwise the size of the link
+    /// itself.
     pub fn size(&self) -> f::Size {
         if self.is_directory() {
             f::Size::None
@@ -359,7 +363,12 @@ impl<'dir> File<'dir> {
                 minor: device_ids[7],
             })
         }
-        else {
+        else if self.is_link() && self.deref_links {
+            match self.link_target() {
+                FileTarget::Ok(f) => f.size(),
+                _ => f::Size::None
+            }
+        } else {
             f::Size::Some(self.metadata.len())
         }
     }
