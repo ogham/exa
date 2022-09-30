@@ -388,11 +388,25 @@ impl<'dir> File<'dir> {
 
     /// This file’s last modified timestamp, if available on this platform.
     pub fn modified_time(&self) -> Option<SystemTime> {
-        self.metadata.modified().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.modified().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.modified().ok()
+        }
     }
 
     /// This file’s last changed timestamp, if available on this platform.
     pub fn changed_time(&self) -> Option<SystemTime> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => return f.changed_time(),
+                _ => return None,
+            }
+        }
+        
         let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
 
         if sec < 0 {
@@ -412,12 +426,26 @@ impl<'dir> File<'dir> {
 
     /// This file’s last accessed timestamp, if available on this platform.
     pub fn accessed_time(&self) -> Option<SystemTime> {
-        self.metadata.accessed().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.accessed().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.accessed().ok()
+        }
     }
 
     /// This file’s created timestamp, if available on this platform.
     pub fn created_time(&self) -> Option<SystemTime> {
-        self.metadata.created().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.created().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.created().ok()
+        }
     }
 
     /// This file’s ‘type’.
