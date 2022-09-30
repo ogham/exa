@@ -17,7 +17,7 @@ mod links;
 pub use self::links::Colours as LinksColours;
 
 mod permissions;
-pub use self::permissions::Colours as PermissionsColours;
+pub use self::permissions::{Colours as PermissionsColours, PermissionsPlusRender};
 
 mod size;
 pub use self::size::Colours as SizeColours;
@@ -31,4 +31,5 @@ pub use self::users::Colours as UserColours;
 pub use self::users::Render as UserRender;
 
 mod octal;
+pub use self::octal::Render as OctalPermissionsRender;
 // octal uses just one colour

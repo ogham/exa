@@ -453,11 +453,21 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s permissions, with flags for each bit.
-    pub fn permissions(&self) -> f::Permissions {
+    pub fn permissions(&self) -> Option<f::Permissions> {
+        if self.is_link() && self.deref_links {
+            // If the chain of links is broken, we instead fall through and
+            // return the permissions of the original link, as would have been
+            // done if we were not dereferencing.
+            match self.link_target_recurse() {
+                FileTarget::Ok(f)   => return f.permissions(),
+                _                   => return None,
+            }
+        }
+
         let bits = self.metadata.mode();
         let has_bit = |bit| bits & bit == bit;
 
-        f::Permissions {
+        Some(f::Permissions {
             user_read:      has_bit(modes::USER_READ),
             user_write:     has_bit(modes::USER_WRITE),
             user_execute:   has_bit(modes::USER_EXECUTE),
@@ -473,7 +483,7 @@ impl<'dir> File<'dir> {
             sticky:         has_bit(modes::STICKY),
             setgid:         has_bit(modes::SETGID),
             setuid:         has_bit(modes::SETUID),
-        }
+        })
     }
 
     /// Whether this file’s extension is any of the strings that get passed in.
