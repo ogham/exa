@@ -290,6 +290,7 @@ impl render::SizeColours for Theme {
 impl render::UserColours for Theme {
     fn you(&self)           -> Style { self.ui.users.user_you }
     fn someone_else(&self)  -> Style { self.ui.users.user_someone_else }
+    fn no_user(&self)       -> Style { self.ui.punctuation }
 }
 
 impl FileNameColours for Theme {

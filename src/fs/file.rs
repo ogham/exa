@@ -325,9 +325,16 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// The ID of the user that own this file.
-    pub fn user(&self) -> f::User {
-        f::User(self.metadata.uid())
+    /// The ID of the user that own this file. If dereferencing links, the links
+    /// may be broken, in which case `None` will be returned.
+    pub fn user(&self) -> Option<f::User> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+               FileTarget::Ok(f) => return f.user(),
+               _ => return None,
+            }
+        }
+        Some(f::User(self.metadata.uid()))
     }
 
     /// The ID of the group that owns this file.

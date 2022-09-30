@@ -28,6 +28,7 @@ pub use self::times::Render as TimeRender;
 
 mod users;
 pub use self::users::Colours as UserColours;
+pub use self::users::Render as UserRender;
 
 mod octal;
 // octal uses just one colour
