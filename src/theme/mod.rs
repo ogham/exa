@@ -263,9 +263,9 @@ impl render::SizeColours for Theme {
 
         match prefix {
             None                    => self.ui.size.number_byte,
-            Some(Kilo) | Some(Kibi) => self.ui.size.number_kilo,
-            Some(Mega) | Some(Mebi) => self.ui.size.number_mega,
-            Some(Giga) | Some(Gibi) => self.ui.size.number_giga,
+            Some(Kilo | Kibi) => self.ui.size.number_kilo,
+            Some(Mega | Mebi) => self.ui.size.number_mega,
+            Some(Giga | Gibi) => self.ui.size.number_giga,
             Some(_)                 => self.ui.size.number_huge,
         }
     }
@@ -275,9 +275,9 @@ impl render::SizeColours for Theme {
 
         match prefix {
             None                    => self.ui.size.unit_byte,
-            Some(Kilo) | Some(Kibi) => self.ui.size.unit_kilo,
-            Some(Mega) | Some(Mebi) => self.ui.size.unit_mega,
-            Some(Giga) | Some(Gibi) => self.ui.size.unit_giga,
+            Some(Kilo | Kibi) => self.ui.size.unit_kilo,
+            Some(Mega | Mebi) => self.ui.size.unit_mega,
+            Some(Giga | Gibi) => self.ui.size.unit_giga,
             Some(_)                 => self.ui.size.unit_huge,
         }
     }
