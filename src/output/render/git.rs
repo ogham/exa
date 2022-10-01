@@ -85,7 +85,7 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&TestColours).into())
+        assert_eq!(expected, stati.render(&TestColours))
     }
 
 
@@ -104,6 +104,6 @@ pub mod test {
             ].into(),
         };
 
-        assert_eq!(expected, stati.render(&TestColours).into())
+        assert_eq!(expected, stati.render(&TestColours))
     }
 }

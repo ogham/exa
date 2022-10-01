@@ -295,7 +295,7 @@ mod test {
     mod ignore_patterns {
         use super::*;
         use std::iter::FromIterator;
-        use glob;
+        
 
         fn pat(string: &'static str) -> glob::Pattern {
             glob::Pattern::new(string).unwrap()

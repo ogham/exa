@@ -52,7 +52,7 @@ pub mod test {
             contents: vec![ Blue.paint("1") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()));
     }
 
     #[test]
@@ -67,7 +67,7 @@ pub mod test {
             contents: vec![ Blue.paint("3,005") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()));
     }
 
     #[test]
@@ -82,6 +82,6 @@ pub mod test {
             contents: vec![ Blue.on(Red).paint("3,005") ].into(),
         };
 
-        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()).into());
+        assert_eq!(expected, stati.render(&TestColours, &locale::Numeric::english()));
     }
 }

@@ -253,7 +253,7 @@ mod iter_test {
     #[test]
     fn test_iteration() {
         let foos = &[ "first", "middle", "last" ];
-        let mut iter = TreeDepth::root().iterate_over(foos.into_iter());
+        let mut iter = TreeDepth::root().iterate_over(foos.iter());
 
         let next = iter.next().unwrap();
         assert_eq!(&"first", next.1);
@@ -273,7 +273,7 @@ mod iter_test {
     #[test]
     fn test_empty() {
         let nothing: &[usize] = &[];
-        let mut iter = TreeDepth::root().iterate_over(nothing.into_iter());
+        let mut iter = TreeDepth::root().iterate_over(nothing.iter());
         assert!(iter.next().is_none());
     }
 }
