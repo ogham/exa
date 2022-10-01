@@ -87,7 +87,7 @@ fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
 }
 
 fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
-    match (is_recent(&date), *MAXIMUM_MONTH_WIDTH) {
+    match (is_recent(date), *MAXIMUM_MONTH_WIDTH) {
         (true, 4)   => &FOUR_WIDE_DATE_TIME,
         (true, 5)   => &FIVE_WIDE_DATE_TIME,
         (true, _)   => &OTHER_WIDE_DATE_TIME,

@@ -161,7 +161,7 @@ impl<'a> Render<'a> {
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
-            let mut table = Table::new(table, self.git, &self.theme);
+            let mut table = Table::new(table, self.git, self.theme);
 
             if self.opts.header {
                 let header = table.header_row();

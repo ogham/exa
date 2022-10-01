@@ -221,13 +221,13 @@ impl<'dir> File<'dir> {
             path.to_path_buf()
         }
         else if let Some(dir) = self.parent_dir {
-            dir.join(&*path)
+            dir.join(path)
         }
         else if let Some(parent) = self.path.parent() {
-            parent.join(&*path)
+            parent.join(path)
         }
         else {
-            self.path.join(&*path)
+            self.path.join(path)
         }
     }
 

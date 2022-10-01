@@ -202,7 +202,7 @@ impl<'a> Render<'a> {
             (None,    _)        => {/* Keep Git how it is */},
         }
 
-        let mut table = Table::new(options, self.git, &self.theme);
+        let mut table = Table::new(options, self.git, self.theme);
         let mut rows = Vec::new();
 
         if self.details.header {
