@@ -77,11 +77,9 @@ impl TextCell {
     ///
     /// This method allocates a `String` to hold the spaces.
     pub fn add_spaces(&mut self, count: usize) {
-        use std::iter::repeat;
-
         (*self.width) += count;
 
-        let spaces: String = repeat(' ').take(count).collect();
+        let spaces: String = " ".repeat(count);
         self.contents.0.push(Style::default().paint(spaces));
     }
 
