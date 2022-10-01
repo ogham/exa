@@ -346,31 +346,31 @@ mod test_ignores {
     #[test]
     fn empty_matches_nothing() {
         let pats = IgnorePatterns::empty();
-        assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert!(!pats.is_ignored("nothing"));
+        assert!(!pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_a_glob() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "*.mp3" ]);
         assert!(fails.is_empty());
-        assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(true,  pats.is_ignored("test.mp3"));
+        assert!(!pats.is_ignored("nothing"));
+        assert!(pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_an_exact_filename() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing" ]);
         assert!(fails.is_empty());
-        assert_eq!(true,  pats.is_ignored("nothing"));
-        assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert!(pats.is_ignored("nothing"));
+        assert!(!pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_both() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3" ]);
         assert!(fails.is_empty());
-        assert_eq!(true, pats.is_ignored("nothing"));
-        assert_eq!(true, pats.is_ignored("test.mp3"));
+        assert!(pats.is_ignored("nothing"));
+        assert!(pats.is_ignored("test.mp3"));
     }
 }

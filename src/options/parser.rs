@@ -743,6 +743,6 @@ mod matches_test {
     fn no_count() {
         let flags = MatchedFlags { flags: Vec::new(), strictness: Strictness::UseLastArguments };
 
-        assert_eq!(flags.has(&COUNT).unwrap(), false);
+        assert!(!flags.has(&COUNT).unwrap());
     }
 }

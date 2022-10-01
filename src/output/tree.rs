@@ -257,15 +257,15 @@ mod iter_test {
 
         let next = iter.next().unwrap();
         assert_eq!(&"first", next.1);
-        assert_eq!(false, next.0.last);
+        assert!(!next.0.last);
 
         let next = iter.next().unwrap();
         assert_eq!(&"middle", next.1);
-        assert_eq!(false, next.0.last);
+        assert!(!next.0.last);
 
         let next = iter.next().unwrap();
         assert_eq!(&"last", next.1);
-        assert_eq!(true, next.0.last);
+        assert!(next.0.last);
 
         assert!(iter.next().is_none());
     }
