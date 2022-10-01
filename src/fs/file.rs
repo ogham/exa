@@ -375,7 +375,7 @@ impl<'dir> File<'dir> {
                 nanosec -= 1_000_000_000;
             }
 
-            let duration = Duration::new(sec.abs() as u64, nanosec.abs() as u32);
+            let duration = Duration::new(sec.unsigned_abs(), nanosec.unsigned_abs() as u32);
             Some(UNIX_EPOCH - duration)
         }
         else {
