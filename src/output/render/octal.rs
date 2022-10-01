@@ -6,7 +6,7 @@ use crate::output::cell::TextCell;
 
 impl f::OctalPermissions {
     fn bits_to_octal(r: bool, w: bool, x: bool) -> u8 {
-        (r as u8) * 4 + (w as u8) * 2 + (x as u8)
+        u8::from(r) * 4 + u8::from(w) * 2 + u8::from(x)
     }
 
     pub fn render(&self, style: Style) -> TextCell {
