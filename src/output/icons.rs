@@ -65,6 +65,7 @@ lazy_static! {
         m.insert(".xinitrc", '\u{f489}'); // 
         m.insert(".xprofile", '\u{f489}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
+        m.insert("AUTHORS", '\u{f718}'); // 
         m.insert("bin", '\u{e5fc}'); // 
         m.insert("Cargo.lock", '\u{e7a8}'); // 
         m.insert("config", '\u{e5fc}'); // 
@@ -84,6 +85,7 @@ lazy_static! {
         m.insert("hidden", '\u{f023}'); // 
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
+        m.insert("LICENSE", '\u{f718}'); // 
         m.insert("localized", '\u{f179}'); // 
         m.insert("Makefile", '\u{f489}'); // 
         m.insert("node_modules", '\u{e718}'); // 
