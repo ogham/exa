@@ -176,7 +176,7 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
 /// Usually files in Unix use a leading dot to be hidden or visible, but two
 /// entries in particular are “extra-hidden”: `.` and `..`, which only become
 /// visible after an extra `-a` option.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum DotFilter {
 
     /// Shows files, dotfiles, and `.` and `..`.

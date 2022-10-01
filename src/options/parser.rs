@@ -52,7 +52,7 @@ pub type Values = &'static [&'static str];
 
 /// A **flag** is either of the two argument types, because they have to
 /// be in the same array together.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Flag {
     Short(ShortArg),
     Long(LongArg),
@@ -77,7 +77,7 @@ impl fmt::Display for Flag {
 }
 
 /// Whether redundant arguments should be considered a problem.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Strictness {
 
     /// Throw an error when an argument doesn’t do anything, either because
@@ -91,7 +91,7 @@ pub enum Strictness {
 
 /// Whether a flag takes a value. This is applicable to both long and short
 /// arguments.
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TakesValue {
 
     /// This flag has to be followed by a value.
@@ -108,7 +108,7 @@ pub enum TakesValue {
 
 
 /// An **argument** can be matched by one of the user’s input strings.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Arg {
 
     /// The short argument that matches it, if any.
@@ -136,7 +136,7 @@ impl fmt::Display for Arg {
 
 
 /// Literally just several args.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Args(pub &'static [&'static Arg]);
 
 impl Args {
@@ -340,7 +340,7 @@ impl Args {
 
 
 /// The **matches** are the result of parsing the user’s command-line strings.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Matches<'args> {
 
     /// The flags that were parsed from the user’s input.
@@ -351,7 +351,7 @@ pub struct Matches<'args> {
     pub frees: Vec<&'args OsStr>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct MatchedFlags<'args> {
 
     /// The individual flags from the user’s input, in the order they were
@@ -462,7 +462,7 @@ impl<'a> MatchedFlags<'a> {
 
 /// A problem with the user’s input that meant it couldn’t be parsed into a
 /// coherent list of arguments.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum ParseError {
 
     /// A flag that has to take a value was not given one.

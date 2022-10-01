@@ -39,7 +39,7 @@
 //! each directory)
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TreePart {
 
     /// Rightmost column, *not* the last in the directory.

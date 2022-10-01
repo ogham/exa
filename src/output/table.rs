@@ -21,7 +21,7 @@ use crate::theme::Theme;
 
 
 /// Options for displaying a table.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Options {
     pub size_format: SizeFormat,
     pub time_format: TimeFormat,
@@ -31,7 +31,7 @@ pub struct Options {
 
 /// Extra columns to display in the table.
 #[allow(clippy::struct_excessive_bools)]
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Columns {
 
     /// At least one of these timestamps will be shown.
@@ -201,7 +201,7 @@ impl Column {
 
 /// Formatting options for file sizes.
 #[allow(clippy::pub_enum_variant_names)]
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum SizeFormat {
 
     /// Format the file size using **decimal** prefixes, such as “kilo”,
@@ -217,7 +217,7 @@ pub enum SizeFormat {
 }
 
 /// Formatting options for user and group.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum UserFormat {
     /// The UID / GID
     Numeric,
@@ -234,7 +234,7 @@ impl Default for SizeFormat {
 
 /// The types of a file’s time fields. These three fields are standard
 /// across most (all?) operating systems.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TimeType {
 
     /// The file’s modified time (`st_mtime`).
@@ -269,7 +269,7 @@ impl TimeType {
 ///
 /// There should always be at least one of these — there’s no way to disable
 /// the time columns entirely (yet).
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct TimeTypes {
     pub modified: bool,

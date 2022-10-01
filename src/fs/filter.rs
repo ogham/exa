@@ -23,7 +23,7 @@ use crate::fs::File;
 /// The filter also governs sorting the list. After being filtered, pairs of
 /// files are compared and sorted based on the result, with the sort field
 /// performing the comparison.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct FileFilter {
 
     /// Whether directories should be listed first, and other types of file
@@ -113,7 +113,7 @@ impl FileFilter {
 
 
 /// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum SortField {
 
     /// Don’t apply any sorting. This is usually used as an optimisation in
@@ -194,7 +194,7 @@ pub enum SortField {
 /// lowercase letters because it takes the difference between the two cases
 /// into account? I gave up and just named these two variants after the
 /// effects they have.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum SortCase {
 
     /// Sort files case-sensitively with uppercase first, with ‘A’ coming
@@ -271,7 +271,7 @@ impl SortField {
 /// The **ignore patterns** are a list of globs that are tested against
 /// each filename, and if any of them match, that file isn’t displayed.
 /// This lets a user hide, say, text files by ignoring `*.txt`.
-#[derive(PartialEq, Default, Debug, Clone)]
+#[derive(PartialEq, Eq, Default, Debug, Clone)]
 pub struct IgnorePatterns {
     patterns: Vec<glob::Pattern>,
 }
@@ -327,7 +327,7 @@ impl IgnorePatterns {
 
 
 /// Whether to ignore or display files that Git would ignore.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum GitIgnore {
 
     /// Ignore files that Git would ignore.

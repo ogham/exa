@@ -91,7 +91,7 @@ use crate::theme::Theme;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Options {
 
     /// Options specific to drawing a table.

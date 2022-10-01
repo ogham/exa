@@ -216,7 +216,7 @@ pub mod test {
     use crate::options::parser::{Arg, MatchedFlags};
     use std::ffi::OsStr;
 
-    #[derive(PartialEq, Debug)]
+    #[derive(PartialEq, Eq, Debug)]
     pub enum Strictnesses {
         Last,
         Complain,

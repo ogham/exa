@@ -14,7 +14,7 @@ pub use self::lsc::LSColors;
 mod default_theme;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Options {
 
     pub use_colours: UseColours,
@@ -31,7 +31,7 @@ pub struct Options {
 /// Turning them on when output is going to, say, a pipe, would make programs
 /// such as `grep` or `more` not work properly. So the `Automatic` mode does
 /// this check and only displays colours when they can be truly appreciated.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum UseColours {
 
     /// Display them even when output isn’t going to a terminal.
@@ -44,13 +44,13 @@ pub enum UseColours {
     Never,
 }
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum ColourScale {
     Fixed,
     Gradient,
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Eq, Debug, Default)]
 pub struct Definitions {
     pub ls: Option<String>,
     pub exa: Option<String>,
