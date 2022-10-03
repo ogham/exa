@@ -194,8 +194,8 @@ pub enum Size {
 /// - <http://www.lanana.org/docs/device-list/devices-2.6+.txt>
 #[derive(Copy, Clone)]
 pub struct DeviceIDs {
-    pub major: u8,
-    pub minor: u8,
+    pub major: u32,
+    pub minor: u32,
 }
 
 
