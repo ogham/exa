@@ -69,6 +69,8 @@ lazy_static! {
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
+        m.insert("go.mod", '\u{e626}'); // 
+        m.insert("go.sum", '\u{e626}'); // 
         m.insert("gradle", '\u{e256}'); // 
         m.insert("gruntfile.coffee", '\u{e611}'); // 
         m.insert("gruntfile.js", '\u{e611}'); // 
@@ -136,6 +138,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "coffee"        => '\u{f0f4}', // 
             "conf"          => '\u{e615}', // 
             "cp"            => '\u{e61d}', // 
+            "cpio"          => '\u{f410}', // 
             "cpp"           => '\u{e61d}', // 
             "cs"            => '\u{f81a}', // 
             "csh"           => '\u{f489}', // 
@@ -203,10 +206,13 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "hxx"           => '\u{f0fd}', // 
             "ico"           => '\u{f1c5}', // 
             "image"         => '\u{f1c5}', // 
+            "img"           => '\u{e271}', // 
             "iml"           => '\u{e7b5}', // 
             "ini"           => '\u{f17a}', // 
             "ipynb"         => '\u{e606}', // 
             "iso"           => '\u{e271}', // 
+            "j2c"           => '\u{f1c5}', // 
+            "j2k"           => '\u{f1c5}', // 
             "jad"           => '\u{e256}', // 
             "jar"           => '\u{e256}', // 
             "java"          => '\u{e256}', // 
@@ -215,9 +221,11 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jif"           => '\u{f1c5}', // 
             "jl"            => '\u{e624}', // 
             "jmd"           => '\u{f48a}', // 
+            "jp2"           => '\u{f1c5}', // 
             "jpe"           => '\u{f1c5}', // 
             "jpeg"          => '\u{f1c5}', // 
             "jpg"           => '\u{f1c5}', // 
+            "jpx"           => '\u{f1c5}', // 
             "js"            => '\u{e74e}', // 
             "json"          => '\u{e60b}', // 
             "jsx"           => '\u{e7ba}', // 
@@ -265,7 +273,10 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "pdf"           => '\u{f1c1}', // 
             "php"           => '\u{e73d}', // 
             "pl"            => '\u{e769}', // 
+            "plx"           => '\u{e769}', // 
+            "pm"            => '\u{e769}', // 
             "png"           => '\u{f1c5}', // 
+            "pod"           => '\u{e769}', // 
             "ppt"           => '\u{f1c4}', // 
             "pptx"          => '\u{f1c4}', // 
             "procfile"      => '\u{e21e}', // 
@@ -311,6 +322,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "stylus"        => '\u{e600}', // 
             "svg"           => '\u{f1c5}', // 
             "swift"         => '\u{e755}', // 
+            "t"             => '\u{e769}', // 
             "tar"           => '\u{f410}', // 
             "taz"           => '\u{f410}', // 
             "tbz"           => '\u{f410}', // 

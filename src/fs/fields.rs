@@ -162,7 +162,7 @@ pub enum Size {
     /// data is rarely useful — I can’t think of a time when I’ve seen it and
     /// learnt something. So we discard it and just output “-” instead.
     ///
-    /// See this answer for more: http://unix.stackexchange.com/a/68266
+    /// See this answer for more: <https://unix.stackexchange.com/a/68266>
     None,
 
     /// This file is a block or character device, so instead of a size, print
