@@ -201,7 +201,8 @@ impl Columns {
         let time_types = TimeTypes::deduce(matches)?;
 
         let git = matches.has(&flags::GIT)?;
-        let subdir_git_repos = git;
+        let subdir_git_repos = matches.has(&flags::GIT_REPOS)?;
+        let subdir_git_repos_no_stat = !subdir_git_repos && matches.has(&flags::GIT_REPOS_NO_STAT)?;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;
@@ -213,7 +214,7 @@ impl Columns {
         let filesize =    ! matches.has(&flags::NO_FILESIZE)?;
         let user =        ! matches.has(&flags::NO_USER)?;
 
-        Ok(Self { time_types, inode, links, blocks, group, git, subdir_git_repos, octal, permissions, filesize, user })
+        Ok(Self { time_types, inode, links, blocks, group, git, subdir_git_repos, subdir_git_repos_no_stat,octal, permissions, filesize, user })
     }
 }
 

@@ -32,6 +32,7 @@ impl f::SubdirGitRepo {
             f::SubdirGitRepoStatus::NoRepo => style.paint("- "),
             f::SubdirGitRepoStatus::GitClean => style.fg(Color::Green).paint("| "),
             f::SubdirGitRepoStatus::GitDirty => style.bold().fg(Color::Red).paint("- "),
+            f::SubdirGitRepoStatus::GitUnknown => style.paint("- "),
         };
 
         TextCell {

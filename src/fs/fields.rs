@@ -251,7 +251,8 @@ impl Default for Git {
 pub enum SubdirGitRepoStatus{
     NoRepo,
     GitClean,
-    GitDirty
+    GitDirty,
+    GitUnknown
 }
 
 #[derive(Clone)]

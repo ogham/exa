@@ -42,6 +42,7 @@ pub struct Columns {
     pub group: bool,
     pub git: bool,
     pub subdir_git_repos: bool,
+    pub subdir_git_repos_no_stat: bool,
     pub octal: bool,
 
     // Defaults to true:
@@ -110,6 +111,10 @@ impl Columns {
             columns.push(Column::SubdirGitRepoStatus);
         }
 
+        if self.subdir_git_repos_no_stat {
+            columns.push(Column::SubdirGitRepoNoStatus);
+        }
+
         columns
     }
 }
@@ -128,6 +133,7 @@ pub enum Column {
     Inode,
     GitStatus,
     SubdirGitRepoStatus,
+    SubdirGitRepoNoStatus,
     Octal,
 }
 
@@ -167,6 +173,7 @@ impl Column {
             Self::Inode         => "inode",
             Self::GitStatus     => "Git",
             Self::SubdirGitRepoStatus => "Repo",
+            Self::SubdirGitRepoNoStatus => "Repo",
             Self::Octal         => "Octal",
         }
     }
@@ -433,7 +440,10 @@ impl<'a, 'f> Table<'a> {
                 self.git_status(file).render(self.theme)
             }
             Column::SubdirGitRepoStatus => {
-                self.subdir_git_repo_status(file).render()
+                self.subdir_git_repo(file, true).render()
+            }
+            Column::SubdirGitRepoNoStatus => {
+                self.subdir_git_repo(file, false).render()
             }
             Column::Octal => {
                 self.octal_permissions(file).render(self.theme.ui.octal)
@@ -462,11 +472,11 @@ impl<'a, 'f> Table<'a> {
             .unwrap_or_default()
     }
 
-    fn subdir_git_repo_status(&self, file: &File<'_>) -> f::SubdirGitRepo {
+    fn subdir_git_repo(&self, file: &File<'_>, status : bool) -> f::SubdirGitRepo {
         debug!("Getting subdir repo status for path {:?}", file.path);
 
         if file.is_directory(){
-            return f::SubdirGitRepo::from_path(&file.path);
+            return f::SubdirGitRepo::from_path(&file.path, status);
         }
         f::SubdirGitRepo::default()
     }

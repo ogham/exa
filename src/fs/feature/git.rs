@@ -358,13 +358,16 @@ fn current_branch(repo: &git2::Repository) -> Option<String>{
 }
 
 impl f::SubdirGitRepo{
-    pub fn from_path(dir : &Path) -> Self{
+    pub fn from_path(dir : &Path, status : bool) -> Self{
 
         let path = &reorient(&dir);
         let g = git2::Repository::open(path);
         if let Ok(repo) = g{
 
             let branch = current_branch(&repo);
+            if !status{
+                return Self{status : f::SubdirGitRepoStatus::GitUnknown, branch};
+            }
             match repo.statuses(None) {
                 Ok(es) => {
                     if es.iter().filter(|s| s.status() != git2::Status::IGNORED).any(|_| true){
