@@ -63,10 +63,17 @@ pub struct File<'dir> {
     /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
+
+    /// Whether to dereference symbolic links when querying for information.
+    ///
+    /// For instance, when querying the size of a symbolic link, if
+    /// dereferencing is enabled, the size of the target will be displayed
+    /// instead.
+    pub deref_links: bool,
 }
 
 impl<'dir> File<'dir> {
-    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN) -> io::Result<File<'dir>>
+    pub fn from_args<PD, FN>(path: PathBuf, parent_dir: PD, filename: FN, deref_links: bool) -> io::Result<File<'dir>>
     where PD: Into<Option<&'dir Dir>>,
           FN: Into<Option<String>>
     {
@@ -78,7 +85,7 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all, deref_links })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -90,7 +97,7 @@ impl<'dir> File<'dir> {
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all, deref_links: false })
     }
 
     pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -101,7 +108,7 @@ impl<'dir> File<'dir> {
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all, deref_links: false })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -253,7 +260,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false, deref_links: self.deref_links};
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
@@ -261,6 +268,28 @@ impl<'dir> File<'dir> {
                 FileTarget::Broken(path)
             }
         }
+    }
+
+    /// Assuming this file is a symlink, follows that link and any further
+    /// links recursively, returning the result from following the trail.
+    ///
+    /// For a working symlink that the user is allowed to follow,
+    /// this will be the `File` object at the other end, which can then have
+    /// its name, colour, and other details read.
+    ///
+    /// For a broken symlink, returns where the file *would* be, if it
+    /// existed. If this file cannot be read at all, returns the error that
+    /// we got when we tried to read it.
+    pub fn link_target_recurse(&self) -> FileTarget<'dir> {
+        let target = self.link_target();
+        if let FileTarget::Ok(f) = target {
+            if f.is_link() {
+                return f.link_target_recurse();
+            } else {
+                return FileTarget::Ok(f);
+            }
+        } 
+        target
     }
 
     /// This file’s number of hard links.
@@ -296,14 +325,27 @@ impl<'dir> File<'dir> {
         }
     }
 
-    /// The ID of the user that own this file.
-    pub fn user(&self) -> f::User {
-        f::User(self.metadata.uid())
+    /// The ID of the user that own this file. If dereferencing links, the links
+    /// may be broken, in which case `None` will be returned.
+    pub fn user(&self) -> Option<f::User> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+               FileTarget::Ok(f) => return f.user(),
+               _ => return None,
+            }
+        }
+        Some(f::User(self.metadata.uid()))
     }
 
     /// The ID of the group that owns this file.
-    pub fn group(&self) -> f::Group {
-        f::Group(self.metadata.gid())
+    pub fn group(&self) -> Option<f::Group> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+               FileTarget::Ok(f) => return f.group(),
+               _ => return None,
+            }
+        }
+        Some(f::Group(self.metadata.gid()))
     }
 
     /// This file’s size, if it’s a regular file.
@@ -314,6 +356,10 @@ impl<'dir> File<'dir> {
     ///
     /// Block and character devices return their device IDs, because they
     /// usually just have a file size of zero.
+    ///
+    /// Links will return the size of their target (recursively through other
+    /// links) if dereferencing is enabled, otherwise the size of the link
+    /// itself.
     pub fn size(&self) -> f::Size {
         if self.is_directory() {
             f::Size::None
@@ -330,18 +376,37 @@ impl<'dir> File<'dir> {
                 minor: device_ids[7],
             })
         }
-        else {
+        else if self.is_link() && self.deref_links {
+            match self.link_target() {
+                FileTarget::Ok(f) => f.size(),
+                _ => f::Size::None
+            }
+        } else {
             f::Size::Some(self.metadata.len())
         }
     }
 
     /// This file’s last modified timestamp, if available on this platform.
     pub fn modified_time(&self) -> Option<SystemTime> {
-        self.metadata.modified().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.modified().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.modified().ok()
+        }
     }
 
     /// This file’s last changed timestamp, if available on this platform.
     pub fn changed_time(&self) -> Option<SystemTime> {
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => return f.changed_time(),
+                _ => return None,
+            }
+        }
+        
         let (mut sec, mut nanosec) = (self.metadata.ctime(), self.metadata.ctime_nsec());
 
         if sec < 0 {
@@ -361,12 +426,26 @@ impl<'dir> File<'dir> {
 
     /// This file’s last accessed timestamp, if available on this platform.
     pub fn accessed_time(&self) -> Option<SystemTime> {
-        self.metadata.accessed().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.accessed().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.accessed().ok()
+        }
     }
 
     /// This file’s created timestamp, if available on this platform.
     pub fn created_time(&self) -> Option<SystemTime> {
-        self.metadata.created().ok()
+        if self.is_link() && self.deref_links {
+            match self.link_target_recurse() {
+                FileTarget::Ok(f) => f.metadata.created().ok(),
+                _ => None, 
+            }
+        } else {
+            self.metadata.created().ok()
+        }
     }
 
     /// This file’s ‘type’.
@@ -402,11 +481,21 @@ impl<'dir> File<'dir> {
     }
 
     /// This file’s permissions, with flags for each bit.
-    pub fn permissions(&self) -> f::Permissions {
+    pub fn permissions(&self) -> Option<f::Permissions> {
+        if self.is_link() && self.deref_links {
+            // If the chain of links is broken, we instead fall through and
+            // return the permissions of the original link, as would have been
+            // done if we were not dereferencing.
+            match self.link_target_recurse() {
+                FileTarget::Ok(f)   => return f.permissions(),
+                _                   => return None,
+            }
+        }
+
         let bits = self.metadata.mode();
         let has_bit = |bit| bits & bit == bit;
 
-        f::Permissions {
+        Some(f::Permissions {
             user_read:      has_bit(modes::USER_READ),
             user_write:     has_bit(modes::USER_WRITE),
             user_execute:   has_bit(modes::USER_EXECUTE),
@@ -422,7 +511,7 @@ impl<'dir> File<'dir> {
             sticky:         has_bit(modes::STICKY),
             setgid:         has_bit(modes::SETGID),
             setuid:         has_bit(modes::SETUID),
-        }
+        })
     }
 
     /// Whether this file’s extension is any of the strings that get passed in.
