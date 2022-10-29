@@ -62,6 +62,7 @@ lazy_static! {
         m.insert(".vimrc", '\u{e62b}'); // 
         m.insert(".vscode", '\u{e70c}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
+        m.insert(".emacs", '\u{e632}'); // 
         m.insert("Cargo.lock", '\u{e7a8}'); // 
         m.insert("bin", '\u{e5fc}'); // 
         m.insert("config", '\u{e5fc}'); // 
