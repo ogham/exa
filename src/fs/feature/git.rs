@@ -166,7 +166,16 @@ impl GitRepo {
             Ok(r) => r,
             Err(e) => {
                 error!("Error discovering Git repositories: {:?}", e);
-                return Err(path);
+                match git2::Repository::open_from_env() {
+                    Ok(r) => r,
+                    Err(e) => {
+                        // anything other than NotFound implies GIT_DIR was set and we got actual error
+                        if e.code() != git2::ErrorCode::NotFound {
+                            error!("Error opening Git repo from env using GIT_DIR: {:?}", e);
+                        }
+                        return Err(path);
+                    }
+                }
             }
         };
 
