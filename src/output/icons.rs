@@ -81,6 +81,8 @@ lazy_static! {
         m.insert("hidden", '\u{f023}'); // 
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
+        m.insert("LICENCE", '\u{e60a}'); // 
+        m.insert("LICENSE", '\u{e60a}'); // 
         m.insert("localized", '\u{f179}'); // 
         m.insert("Makefile", '\u{f489}'); // 
         m.insert("node_modules", '\u{e718}'); // 
