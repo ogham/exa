@@ -255,6 +255,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "mkv"           => '\u{f03d}', // 
             "mobi"          => '\u{e28b}', // 
             "mov"           => '\u{f03d}', // 
+            "mp2"           => '\u{f001}', // 
             "mp3"           => '\u{f001}', // 
             "mp4"           => '\u{f03d}', // 
             "msi"           => '\u{e70f}', // 

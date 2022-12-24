@@ -52,7 +52,7 @@ impl FileExtensions {
 
     fn is_music(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "aac", "m4a", "mp3", "ogg", "wma", "mka", "opus",
+            "aac", "m4a", "mp2", "mp3", "ogg", "wma", "mka", "opus",
         ])
     }
 
