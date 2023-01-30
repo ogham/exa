@@ -76,6 +76,7 @@ impl UiStyles {
             symlink_path:         Cyan.normal(),
             control_char:         Red.normal(),
             broken_symlink:       Red.normal(),
+            multiple_hard_links:  Red.on(Black),
             broken_path_overlay:  Style::default().underline(),
         }
     }

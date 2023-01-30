@@ -300,10 +300,12 @@ impl FileNameColours for Theme {
     fn control_char(&self)        -> Style { self.ui.control_char }
     fn symlink_path(&self)        -> Style { self.ui.symlink_path }
     fn executable_file(&self)     -> Style { self.ui.filekinds.executable }
+    fn multiple_hard_links_file(&self) -> Style { self.ui.multiple_hard_links }
 
     fn colour_file(&self, file: &File<'_>) -> Style {
         self.exts.colour_file(file).unwrap_or(self.ui.filekinds.normal)
     }
+
 }
 
 
@@ -412,6 +414,7 @@ mod customs_test {
     test!(ls_cd:   ls "cd=35", exa ""  =>  colours c -> { c.filekinds.char_device  = Purple.normal(); });
     test!(ls_ln:   ls "ln=34", exa ""  =>  colours c -> { c.filekinds.symlink      = Blue.normal();   });
     test!(ls_or:   ls "or=33", exa ""  =>  colours c -> { c.broken_symlink         = Yellow.normal(); });
+    test!(ls_mh:   ls "mh=32", exa ""  =>  colours c -> { c.multiple_hard_links    = Green.normal();  });
 
     // EXA_COLORS can affect all those colours too:
     test!(exa_di:  ls "", exa "di=32"  =>  colours c -> { c.filekinds.directory    = Green.normal();  });
@@ -423,6 +426,7 @@ mod customs_test {
     test!(exa_cd:  ls "", exa "cd=34"  =>  colours c -> { c.filekinds.char_device  = Blue.normal();   });
     test!(exa_ln:  ls "", exa "ln=33"  =>  colours c -> { c.filekinds.symlink      = Yellow.normal(); });
     test!(exa_or:  ls "", exa "or=32"  =>  colours c -> { c.broken_symlink         = Green.normal();  });
+    test!(exa_mh:  ls "", exa "mh=31"  =>  colours c -> { c.multiple_hard_links    = Red.normal();    });
 
     // EXA_COLORS will even override options from LS_COLORS:
     test!(ls_exa_di: ls "di=31", exa "di=32"  =>  colours c -> { c.filekinds.directory  = Green.normal();  });

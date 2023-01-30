@@ -279,6 +279,11 @@ impl<'dir> File<'dir> {
         }
     }
 
+    /// Whether there are multiple hard links to this file.
+    pub fn has_multiple_hard_links(&self) -> bool {
+        self.links().multiple
+    }
+
     /// This file’s inode.
     pub fn inode(&self) -> f::Inode {
         f::Inode(self.metadata.ino())

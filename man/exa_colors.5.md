@@ -76,6 +76,9 @@ LIST OF CODES
 `or`
 : symlinks with no target
 
+`mh`
+: files containing multiple hard links
+
 
 `EXA_COLORS` can use many more:
 

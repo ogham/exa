@@ -300,14 +300,15 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
 
         match self.file {
-            f if f.is_directory()        => self.colours.directory(),
-            f if f.is_executable_file()  => self.colours.executable_file(),
-            f if f.is_link()             => self.colours.symlink(),
-            f if f.is_pipe()             => self.colours.pipe(),
-            f if f.is_block_device()     => self.colours.block_device(),
-            f if f.is_char_device()      => self.colours.char_device(),
-            f if f.is_socket()           => self.colours.socket(),
-            f if ! f.is_file()           => self.colours.special(),
+            f if f.is_directory()            => self.colours.directory(),
+            f if f.is_executable_file()      => self.colours.executable_file(),
+            f if f.is_link()                 => self.colours.symlink(),
+            f if f.is_pipe()                 => self.colours.pipe(),
+            f if f.is_block_device()         => self.colours.block_device(),
+            f if f.is_char_device()          => self.colours.char_device(),
+            f if f.is_socket()               => self.colours.socket(),
+            f if f.has_multiple_hard_links() => self.colours.multiple_hard_links_file(),
+            f if ! f.is_file()               => self.colours.special(),
             _                            => self.colours.colour_file(self.file),
         }
     }
@@ -341,6 +342,9 @@ pub trait Colours: FiletypeColours {
 
     /// The style to paint a file that has its executable bit set.
     fn executable_file(&self) -> Style;
+
+    /// The style to paint a file that has multiple hard links.
+    fn multiple_hard_links_file(&self) -> Style;
 
     fn colour_file(&self, file: &File<'_>) -> Style;
 }

@@ -24,6 +24,7 @@ pub struct UiStyles {
     pub symlink_path:         Style,
     pub control_char:         Style,
     pub broken_symlink:       Style,
+    pub multiple_hard_links:  Style,
     pub broken_path_overlay:  Style,
 }
 
@@ -127,10 +128,11 @@ impl UiStyles {
             "cd" => self.filekinds.char_device  = pair.to_style(),  // CHR
             "ln" => self.filekinds.symlink      = pair.to_style(),  // LINK
             "or" => self.broken_symlink         = pair.to_style(),  // ORPHAN
+            "mh" => self.multiple_hard_links    = pair.to_style(),  // MULTIHARDLINK
              _   => return false,
              // Codes we don’t do anything with:
-             // MULTIHARDLINK, DOOR, SETUID, SETGID, CAPABILITY,
-             // STICKY_OTHER_WRITABLE, OTHER_WRITABLE, STICKY, MISSING
+             // DOOR, SETUID, SETGID, CAPABILITY, STICKY_OTHER_WRITABLE,
+             // OTHER_WRITABLE, STICKY, MISSING
         }
         true
     }
