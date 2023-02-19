@@ -245,6 +245,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "lzma"          => '\u{f410}', // 
             "lzo"           => '\u{f410}', // 
             "m"             => '\u{e61e}', // 
+            "ml"            => '\u{1d77a}',// 𝝺
             "mm"            => '\u{e61d}', // 
             "m4a"           => '\u{f001}', // 
             "markdown"      => '\u{f48a}', // 
