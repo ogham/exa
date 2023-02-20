@@ -226,7 +226,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         let coconut = parent.components().count();
 
         if coconut == 1 && parent.has_root() {
-            bits.push(self.colours.symlink_path().paint("/"));
+            bits.push(self.colours.symlink_path().paint(std::path::MAIN_SEPARATOR.to_string()));
         }
         else if coconut >= 1 {
             escape(
@@ -235,12 +235,13 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                 self.colours.symlink_path(),
                 self.colours.control_char(),
             );
-            bits.push(self.colours.symlink_path().paint("/"));
+            bits.push(self.colours.symlink_path().paint(std::path::MAIN_SEPARATOR.to_string()));
         }
     }
 
     /// The character to be displayed after a file when classifying is on, if
     /// the file’s type has one associated with it.
+    #[cfg(unix)]
     fn classify_char(&self, file: &File<'_>) -> Option<&'static str> {
         if file.is_executable_file() {
             Some("*")
@@ -256,6 +257,19 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
         else if file.is_socket() {
             Some("=")
+        }
+        else {
+            None
+        }
+    }
+
+    #[cfg(windows)]
+    fn classify_char(&self, file: &File<'_>) -> Option<&'static str> {
+        if file.is_directory() {
+            Some("/")
+        }
+        else if file.is_link() {
+            Some("@")
         }
         else {
             None
@@ -301,11 +315,16 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
 
         match self.file {
             f if f.is_directory()        => self.colours.directory(),
+            #[cfg(unix)]
             f if f.is_executable_file()  => self.colours.executable_file(),
             f if f.is_link()             => self.colours.symlink(),
+            #[cfg(unix)]
             f if f.is_pipe()             => self.colours.pipe(),
+            #[cfg(unix)]
             f if f.is_block_device()     => self.colours.block_device(),
+            #[cfg(unix)]
             f if f.is_char_device()      => self.colours.char_device(),
+            #[cfg(unix)]
             f if f.is_socket()           => self.colours.socket(),
             f if ! f.is_file()           => self.colours.special(),
             _                            => self.colours.colour_file(self.file),

@@ -7,7 +7,9 @@ pub use self::filetype::Colours as FiletypeColours;
 mod git;
 pub use self::git::Colours as GitColours;
 
+#[cfg(unix)]
 mod groups;
+#[cfg(unix)]
 pub use self::groups::Colours as GroupColours;
 
 mod inode;
@@ -26,7 +28,9 @@ mod times;
 pub use self::times::Render as TimeRender;
 // times does too
 
+#[cfg(unix)]
 mod users;
+#[cfg(unix)]
 pub use self::users::Colours as UserColours;
 
 mod octal;
