@@ -22,10 +22,9 @@ impl FileExtensions {
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn is_immediate(&self, file: &File<'_>) -> bool {
         file.name.to_lowercase().starts_with("readme") ||
-        file.name.to_lowercase().starts_with("makefile") ||
         file.name.ends_with(".ninja") ||
         file.name_is_one_of( &[
-            "GNUmakefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
+            "GNUmakefile", "Makefile", "makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
