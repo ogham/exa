@@ -168,6 +168,9 @@ These options are available when running with `--long` (`-l`):
 `--no-permissions`
 : Suppress the permissions field.
 
+`-o`, `--octal-permissions`
+: List each file's permissions in octal format.
+
 `--no-filesize`
 : Suppress the file size field.
 
