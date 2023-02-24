@@ -2,15 +2,16 @@ use crate::options::{flags, OptionsError, NumberSource};
 use crate::options::parser::MatchedFlags;
 use crate::options::vars::{self, Vars};
 
-use crate::output::file_name::{Options, Classify, ShowIcons};
+use crate::output::file_name::{Options, Classify, ShowIcons, QuoteStyle};
 
 
 impl Options {
     pub fn deduce<V: Vars>(matches: &MatchedFlags<'_>, vars: &V) -> Result<Self, OptionsError> {
         let classify = Classify::deduce(matches)?;
         let show_icons = ShowIcons::deduce(matches, vars)?;
+        let quote_style = QuoteStyle::deduce(matches)?;
 
-        Ok(Self { classify, show_icons })
+        Ok(Self { classify, show_icons, quote_style })
     }
 }
 
@@ -41,6 +42,17 @@ impl ShowIcons {
         }
         else {
             Ok(Self::On(1))
+        }
+    }
+}
+
+impl QuoteStyle {
+    pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
+        if matches.has(&flags::NO_QUOTES)? {
+            Ok(Self::NoQuotes)
+        }
+        else {
+            Ok(Self::QuoteSpaces)
         }
     }
 }

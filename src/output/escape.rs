@@ -1,7 +1,7 @@
 use ansi_term::{ANSIString, Style};
 
 
-pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
+pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style, no_quotes: bool) {
     let needs_quotes = string.contains(' ') || string.contains('\'');
     let quote_bit = good.paint(if string.contains('\'') { "\"" } else { "\'" });
 
@@ -24,7 +24,7 @@ pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: 
         }
     }
 
-    if needs_quotes {
+    if !no_quotes && needs_quotes {
         bits.insert(0, quote_bit.clone());
         bits.push(quote_bit);
     }

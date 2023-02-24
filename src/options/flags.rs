@@ -13,6 +13,7 @@ pub static ACROSS:   Arg = Arg { short: Some(b'x'), long: "across",   takes_valu
 pub static RECURSE:  Arg = Arg { short: Some(b'R'), long: "recurse",  takes_value: TakesValue::Forbidden };
 pub static TREE:     Arg = Arg { short: Some(b'T'), long: "tree",     takes_value: TakesValue::Forbidden };
 pub static CLASSIFY: Arg = Arg { short: Some(b'F'), long: "classify", takes_value: TakesValue::Forbidden };
+pub static NO_QUOTES:Arg = Arg { short: None,       long: "no-quotes",takes_value: TakesValue::Forbidden };
 
 pub static COLOR:  Arg = Arg { short: None, long: "color",  takes_value: TakesValue::Necessary(Some(COLOURS)) };
 pub static COLOUR: Arg = Arg { short: None, long: "colour", takes_value: TakesValue::Necessary(Some(COLOURS)) };
@@ -70,7 +71,7 @@ pub static OCTAL:     Arg = Arg { short: None,       long: "octal-permissions", 
 pub static ALL_ARGS: Args = Args(&[
     &VERSION, &HELP,
 
-    &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY,
+    &ONE_LINE, &LONG, &GRID, &ACROSS, &RECURSE, &TREE, &CLASSIFY, &NO_QUOTES,
     &COLOR, &COLOUR, &COLOR_SCALE, &COLOUR_SCALE,
 
     &ALL, &LIST_DIRS, &LEVEL, &REVERSE, &SORT, &DIRS_FIRST,
