@@ -262,11 +262,11 @@ impl render::SizeColours for Theme {
         use number_prefix::Prefix::*;
 
         match prefix {
-            None                    => self.ui.size.number_byte,
             Some(Kilo | Kibi) => self.ui.size.number_kilo,
             Some(Mega | Mebi) => self.ui.size.number_mega,
             Some(Giga | Gibi) => self.ui.size.number_giga,
-            Some(_)                 => self.ui.size.number_huge,
+            Some(_)           => self.ui.size.number_huge,
+            None              => self.ui.size.number_byte,
         }
     }
 
@@ -274,11 +274,11 @@ impl render::SizeColours for Theme {
         use number_prefix::Prefix::*;
 
         match prefix {
-            None                    => self.ui.size.unit_byte,
             Some(Kilo | Kibi) => self.ui.size.unit_kilo,
             Some(Mega | Mebi) => self.ui.size.unit_mega,
             Some(Giga | Gibi) => self.ui.size.unit_giga,
-            Some(_)                 => self.ui.size.unit_huge,
+            Some(_)           => self.ui.size.unit_huge,
+            None              => self.ui.size.unit_byte,
         }
     }
 

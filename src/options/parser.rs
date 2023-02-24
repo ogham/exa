@@ -91,7 +91,7 @@ pub enum Strictness {
 
 /// Whether a flag takes a value. This is applicable to both long and short
 /// arguments.
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TakesValue {
 
     /// This flag has to be followed by a value.
