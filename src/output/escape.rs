@@ -2,6 +2,11 @@ use ansi_term::{ANSIString, Style};
 
 
 pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
+    if string.contains(' ') {
+        bits.push(good.paint(["'", &string, "'"].concat()));
+        return;
+    }
+
     if string.chars().all(|c| c >= 0x20 as char && c != 0x7f as char) {
         bits.push(good.paint(string));
         return;
