@@ -23,14 +23,42 @@ impl FileExtensions {
     fn is_immediate(&self, file: &File<'_>) -> bool {
         file.name.to_lowercase().starts_with("readme") ||
         file.name.ends_with(".ninja") ||
-        file.name_is_one_of( &[
-            "GNUmakefile", "Makefile", "makefile", "Cargo.toml", "SConstruct", "CMakeLists.txt",
-            "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
-            "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
-            "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
-            "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
-            "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
-        ])
+        [
+            "BUILD",
+            "BUILD.bazel",
+            "Brewfile",
+            "CMakeLists.txt",
+            "Cargo.toml",
+            "Containerfile",
+            "Dockerfile",
+            "GNUmakefile",
+            "Gemfile",
+            "Gruntfile.coffee",
+            "Gruntfile.js",
+            "Justfile",
+            "Makefile",
+            "PKGBUILD",
+            "Pipfile",
+            "Podfile",
+            "Procfile",
+            "Rakefile",
+            "RoboFile.php",
+            "SConstruct",
+            "Vagrantfile",
+            "WORKSPACE",
+            "bsconfig.json",
+            "build.gradle",
+            "build.sbt",
+            "build.xml",
+            "composer.json",
+            "makefile",
+            "meson.build",
+            "mix.exs",
+            "package.json",
+            "pom.xml",
+            "tsconfig.json",
+            "webpack.config.js",
+        ].binary_search(&file.name.as_str()).is_ok()
     }
 
     fn is_image(&self, file: &File<'_>) -> bool {
