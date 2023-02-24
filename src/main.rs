@@ -226,7 +226,7 @@ impl<'args> Exa<'args> {
 
             if ! is_only_dir {
                 let mut bits = Vec::new();
-                escape(dir.path.display().to_string(), &mut bits, Style::default(), Style::default(), quote_style == output::file_name::QuoteStyle::NoQuotes);
+                escape(dir.path.display().to_string(), &mut bits, Style::default(), Style::default(), quote_style);
                 writeln!(&mut self.writer, "{}:", ANSIStrings(&bits))?;
             }
 

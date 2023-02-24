@@ -220,7 +220,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                         &mut bits,
                         self.colours.broken_filename(),
                         self.colours.broken_control_char(),
-                        false
+                        self.options.quote_style
                     );
                 }
 
@@ -252,7 +252,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                 bits,
                 self.colours.symlink_path(),
                 self.colours.control_char(),
-                self.options.quote_style == QuoteStyle::NoQuotes
+                self.options.quote_style
             );
             bits.push(self.colours.symlink_path().paint(std::path::MAIN_SEPARATOR.to_string()));
         }
@@ -314,7 +314,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             &mut bits,
             file_style,
             self.colours.control_char(),
-            self.options.quote_style == QuoteStyle::NoQuotes
+            self.options.quote_style
         );
 
         bits

@@ -1,7 +1,9 @@
 use ansi_term::{ANSIString, Style};
 
+use super::file_name::QuoteStyle;
 
-pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style, no_quotes: bool) {
+
+pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style, quote_style: QuoteStyle) {
     let needs_quotes = string.contains(' ') || string.contains('\'');
     let quote_bit = good.paint(if string.contains('\'') { "\"" } else { "\'" });
 
@@ -24,7 +26,7 @@ pub fn escape(string: String, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: 
         }
     }
 
-    if !no_quotes && needs_quotes {
+    if quote_style != QuoteStyle::NoQuotes && needs_quotes {
         bits.insert(0, quote_bit.clone());
         bits.push(quote_bit);
     }
