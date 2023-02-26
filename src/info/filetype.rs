@@ -21,44 +21,45 @@ impl FileExtensions {
     /// in directories full of source code.
     #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn is_immediate(&self, file: &File<'_>) -> bool {
-        file.name.to_lowercase().starts_with("readme") ||
-        file.name.ends_with(".ninja") ||
-        [
-            "BUILD",
-            "BUILD.bazel",
-            "Brewfile",
-            "CMakeLists.txt",
-            "Cargo.toml",
-            "Containerfile",
-            "Dockerfile",
-            "GNUmakefile",
-            "Gemfile",
-            "Gruntfile.coffee",
-            "Gruntfile.js",
-            "Justfile",
-            "Makefile",
-            "PKGBUILD",
-            "Pipfile",
-            "Podfile",
-            "Procfile",
-            "Rakefile",
-            "RoboFile.php",
-            "SConstruct",
-            "Vagrantfile",
-            "WORKSPACE",
-            "bsconfig.json",
-            "build.gradle",
-            "build.sbt",
-            "build.xml",
-            "composer.json",
-            "makefile",
-            "meson.build",
-            "mix.exs",
-            "package.json",
-            "pom.xml",
-            "tsconfig.json",
-            "webpack.config.js",
-        ].binary_search(&file.name.as_str()).is_ok()
+	file.name.to_lowercase().starts_with("readme")
+            || file.name.ends_with(".ninja")
+            || matches!(
+                file.name.as_str(),
+                "BUILD"
+                    | "BUILD.bazel"
+                    | "Brewfile"
+                    | "CMakeLists.txt"
+                    | "Cargo.toml"
+                    | "Containerfile"
+                    | "Dockerfile"
+                    | "GNUmakefile"
+                    | "Gemfile"
+                    | "Gruntfile.coffee"
+                    | "Gruntfile.js"
+                    | "Justfile"
+                    | "Makefile"
+                    | "PKGBUILD"
+                    | "Pipfile"
+                    | "Podfile"
+                    | "Procfile"
+                    | "Rakefile"
+                    | "RoboFile.php"
+                    | "SConstruct"
+                    | "Vagrantfile"
+                    | "WORKSPACE"
+                    | "bsconfig.json"
+                    | "build.gradle"
+                    | "build.sbt"
+                    | "build.xml"
+                    | "composer.json"
+                    | "makefile"
+                    | "meson.build"
+                    | "mix.exs"
+                    | "package.json"
+                    | "pom.xml"
+                    | "tsconfig.json"
+                    | "webpack.config.js"
+            )
     }
 
     fn is_image(&self, file: &File<'_>) -> bool {
