@@ -210,7 +210,7 @@ pub struct Time {
 /// A file’s status in a Git repository. Whether a file is in a repository or
 /// not is handled by the Git module, rather than having a “null” variant in
 /// this enum.
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum GitStatus {
 
     /// This file hasn’t changed since the last commit.

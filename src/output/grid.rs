@@ -8,7 +8,7 @@ use crate::output::file_name::Options as FileStyle;
 use crate::theme::Theme;
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Options {
     pub across: bool,
 }
