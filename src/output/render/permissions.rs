@@ -88,6 +88,7 @@ impl f::Permissions {
     }
 }
 
+#[cfg(windows)]
 impl f::Attributes {
     pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> Vec<ANSIString<'static>> {
         let bit = |bit, chr: &'static str, style: Style| {
