@@ -59,7 +59,7 @@ lazy_static! {
         m.insert(".gitignore", '\u{f1d3}'); // 
         m.insert(".gitmodules", '\u{f1d3}'); // 
         m.insert(".rvm", '\u{e21e}'); // 
-        m.insert(".vimrc", '\u{e62b}'); // 
+        m.insert(".vimrc", '\u{e7c5}'); // 
         m.insert(".vscode", '\u{e70c}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
         m.insert("Cargo.lock", '\u{e7a8}'); // 
@@ -343,7 +343,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tz"            => '\u{f410}', // 
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 
-            "vim"           => '\u{e62b}', // 
+            "vim"           => '\u{e7c5}', // 
             "vue"           => '\u{fd42}', // ﵂
             "war"           => '\u{e256}', // 
             "wav"           => '\u{f001}', // 
