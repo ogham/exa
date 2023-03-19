@@ -70,6 +70,7 @@ These options are available when running with `--long` (`-l`):
 - **-H**, **--links**: list each file’s number of hard links
 - **-i**, **--inode**: list each file’s inode number
 - **-m**, **--modified**: use the modified timestamp field
+- **-o**, **--octal-permissions**: list each file's permission in octal format
 - **-S**, **--blocks**: list each file’s number of file system blocks
 - **-t**, **--time=(field)**: which timestamp field to use
 - **-u**, **--accessed**: use the accessed timestamp field
@@ -79,7 +80,6 @@ These options are available when running with `--long` (`-l`):
 - **--git**: list each file’s Git status, if tracked or ignored
 - **--time-style**: how to format timestamps
 - **--no-permissions**: suppress the permissions field
-- **--octal-permissions**: list each file's permission in octal format
 - **--no-filesize**: suppress the filesize field
 - **--no-user**: suppress the user field
 - **--no-time**: suppress the time field

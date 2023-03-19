@@ -64,7 +64,7 @@ pub static NO_ICONS: Arg = Arg { short: None, long: "no-icons", takes_value: Tak
 // optional feature options
 pub static GIT:       Arg = Arg { short: None,       long: "git",               takes_value: TakesValue::Forbidden };
 pub static EXTENDED:  Arg = Arg { short: Some(b'@'), long: "extended",          takes_value: TakesValue::Forbidden };
-pub static OCTAL:     Arg = Arg { short: None,       long: "octal-permissions", takes_value: TakesValue::Forbidden };
+pub static OCTAL:     Arg = Arg { short: Some(b'o'), long: "octal-permissions", takes_value: TakesValue::Forbidden };
 
 
 pub static ALL_ARGS: Args = Args(&[
