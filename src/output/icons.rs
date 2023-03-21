@@ -52,7 +52,10 @@ lazy_static! {
         m.insert(".atom", '\u{e764}'); // 
         m.insert(".bashprofile", '\u{e615}'); // 
         m.insert(".bashrc", '\u{f489}'); // 
+        m.insert(".config", "\u{e5fc}"); // 
         m.insert(".clang-format", '\u{e615}'); // 
+        m.insert(".doom.d", "\u{e779}"); // 
+        m.insert(".emacs.d", "\u{e779}"); // 
         m.insert(".git", '\u{e5fb}'); // 
         m.insert(".gitattributes", '\u{f1d3}'); // 
         m.insert(".gitconfig", '\u{f1d3}'); // 
@@ -104,6 +107,7 @@ lazy_static! {
         m.insert("Desktop", '\u{f108}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
         m.insert("Dockerfile", '\u{f308}'); // 
+        m.insert("Documents", "\u{f02d}"); // 
         m.insert("Downloads", '\u{f498}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("environment", '\u{e615}'); // 
@@ -142,12 +146,14 @@ lazy_static! {
         m.insert("Makefile", '\u{e615}'); // 
         m.insert("Makefile.ac", '\u{e615}'); // 
         m.insert("muttrc", '\u{e615}'); // 
+        m.insert("music", "\u{f025}"); // 
         m.insert("node_modules", '\u{e5fa}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
         m.insert("package.json", '\u{e718}'); // 
         m.insert("package-lock.json", '\u{e718}'); // 
         m.insert("packages.el", '\u{e779}'); // 
         m.insert("passwd", '\u{f023}'); // 
+        m.insert("Pictures", "\u{f03e}"); // 
         m.insert("PKGBUILD", '\u{f303}'); // 
         m.insert("profile", '\u{e615}'); // 
         m.insert("rc.lua", '\u{e615}'); // 
