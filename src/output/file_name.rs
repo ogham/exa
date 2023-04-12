@@ -19,6 +19,9 @@ pub struct Options {
 
     /// Whether to prepend icon characters before file names.
     pub show_icons: ShowIcons,
+    
+    /// Whether to make file names hyperlinks.
+    pub embed_hyperlinks: EmbedHyperlinks,
 }
 
 impl Options {
@@ -84,6 +87,13 @@ pub enum ShowIcons {
     On(u32),
 }
 
+/// Whether to embed hyperlinks.
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum EmbedHyperlinks{
+    
+    Off,
+    On,
+}
 
 /// A **file name** holds all the information necessary to display the name
 /// of the given file. This is used in all of the views.
@@ -171,6 +181,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                         let target_options = Options {
                             classify: Classify::JustFilenames,
                             show_icons: ShowIcons::Off,
+                            embed_hyperlinks: EmbedHyperlinks::Off,
                         };
 
                         let target_name = FileName {
@@ -276,6 +287,39 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
     }
 
+    pub fn escape(&self, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
+        let string = self.file.name.to_owned();
+
+        if string.chars().all(|c| c >= 0x20 as char && c != 0x7f as char) {
+            let painted = good.paint(string);
+
+            let adjusted_filename = if let EmbedHyperlinks::On = self.options.embed_hyperlinks {
+                ANSIString::from(format!("\x1B]8;;{}\x1B\x5C{}\x1B]8;;\x1B\x5C", self.file.path.display(), painted))
+            } else {
+                painted
+            };
+            bits.push(adjusted_filename);
+            return;
+        }
+
+        for c in string.chars() {
+            // The `escape_default` method on `char` is *almost* what we want here, but
+            // it still escapes non-ASCII UTF-8 characters, which are still printable.
+
+            if c >= 0x20 as char && c != 0x7f as char {
+                // TODO: This allocates way too much,
+                // hence the `all` check above.
+                let mut s = String::new();
+                s.push(c);
+                bits.push(good.paint(s));
+            }
+            else {
+                let s = c.escape_default().collect::<String>();
+                bits.push(bad.paint(s));
+            }
+        }
+    }
+
     /// Returns at least one ANSI-highlighted string representing this file’s
     /// name using the given set of colours.
     ///
@@ -290,8 +334,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         let file_style = self.style();
         let mut bits = Vec::new();
 
-        escape(
-            self.file.name.clone(),
+        self.escape(
             &mut bits,
             file_style,
             self.colours.control_char(),
