@@ -75,6 +75,9 @@ Valid settings are ‘`always`’, ‘`automatic`’, and ‘`never`’.
 `--no-icons`
 : Don't display icons. (Always overrides --icons)
 
+`--hyperlink`
+: Display entries as hyperlinks
+
 
 FILTERING AND SORTING OPTIONS
 =============================

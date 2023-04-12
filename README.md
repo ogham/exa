@@ -44,6 +44,7 @@ exa’s options are almost, but not quite, entirely unlike `ls`’s.
 - **--colo[u]r-scale**: highlight levels of file sizes distinctly
 - **--icons**: display icons
 - **--no-icons**: don't display icons (always overrides --icons)
+- **--hyperlink**: display entries as hyperlinks
 
 ### Filtering options
 

@@ -24,6 +24,7 @@ DISPLAY OPTIONS
   --colo[u]r-scale   highlight levels of file sizes distinctly
   --icons            display icons
   --no-icons         don't display icons (always overrides --icons)
+  --hyperlink        display entries as hyperlinks
 
 FILTERING AND SORTING OPTIONS
   -a, --all                  show hidden and 'dot' files
