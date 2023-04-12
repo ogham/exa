@@ -161,7 +161,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         	// indicate this fact. But when showing targets, we can just
         	// colour the path instead (see below), and leave the broken
         	// link’s filename as the link colour.
-            for bit in self.coloured_file_name() {
+            for bit in self.escaped_file_name() {
                 bits.push(bit);
             }
         }
@@ -192,7 +192,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                             options: target_options,
                         };
 
-                        for bit in target_name.coloured_file_name() {
+                        for bit in target_name.escaped_file_name() {
                             bits.push(bit);
                         }
 
@@ -287,7 +287,36 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
     }
 
-    pub fn escape(&self, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
+    /// Returns at least one ANSI-highlighted string representing this file’s
+    /// name using the given set of colours.
+    ///
+    /// If --hyperlink flag is provided, it will escape the filename accordingly.
+    ///
+    /// Ordinarily, this will be just one string: the file’s complete name,
+    /// coloured according to its file type. If the name contains control
+    /// characters such as newlines or escapes, though, we can’t just print them
+    /// to the screen directly, because then there’ll be newlines in weird places.
+    ///
+    /// So in that situation, those characters will be escaped and highlighted in
+    /// a different colour.
+    fn escaped_file_name<'unused>(&self) -> Vec<ANSIString<'unused>> {
+        let file_style = self.style();
+        let mut bits = Vec::new();
+
+        self.escape_color_and_hyperlinks(
+            &mut bits,
+            file_style,
+            self.colours.control_char(),
+        );
+
+        bits
+    }
+
+    // An adapted version of escape::escape.
+    // afaik of all the calls to escape::escape, only for colored_file_name the call to escape needs to checked for hyper links
+    // and if that's the case then I think it's best to not try and generalize escape::escape to this case,
+    // as this adaptation would incur some unneeded operations there
+    pub fn escape_color_and_hyperlinks(&self, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
         let string = self.file.name.to_owned();
 
         if string.chars().all(|c| c >= 0x20 as char && c != 0x7f as char) {
@@ -302,45 +331,31 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             return;
         }
 
+        // again adapted from escape::escape
+        // still a slow route, but slightly improved to at least not reallocate buff + have a predetermined buff size
+        //
+        // also note that buff would never need more than len,
+        // even tho 'in total' it will be lenghier than len (as we expand with escape_default),
+        // because we clear it after an irregularity
+        let mut buff = String::with_capacity(string.len());
         for c in string.chars() {
             // The `escape_default` method on `char` is *almost* what we want here, but
             // it still escapes non-ASCII UTF-8 characters, which are still printable.
 
             if c >= 0x20 as char && c != 0x7f as char {
-                // TODO: This allocates way too much,
-                // hence the `all` check above.
-                let mut s = String::new();
-                s.push(c);
-                bits.push(good.paint(s));
+                buff.push(c);
             }
             else {
-                let s = c.escape_default().collect::<String>();
-                bits.push(bad.paint(s));
+                if ! buff.is_empty() {
+                    bits.push(good.paint(std::mem::take(&mut buff)));
+                }
+                // biased towards regular characters, so we still collect on first sight of bad char
+                for e in c.escape_default() {
+                    buff.push(e);
+                }
+                bits.push(bad.paint(std::mem::take(&mut buff)));
             }
         }
-    }
-
-    /// Returns at least one ANSI-highlighted string representing this file’s
-    /// name using the given set of colours.
-    ///
-    /// Ordinarily, this will be just one string: the file’s complete name,
-    /// coloured according to its file type. If the name contains control
-    /// characters such as newlines or escapes, though, we can’t just print them
-    /// to the screen directly, because then there’ll be newlines in weird places.
-    ///
-    /// So in that situation, those characters will be escaped and highlighted in
-    /// a different colour.
-    fn coloured_file_name<'unused>(&self) -> Vec<ANSIString<'unused>> {
-        let file_style = self.style();
-        let mut bits = Vec::new();
-
-        self.escape(
-            &mut bits,
-            file_style,
-            self.colours.control_char(),
-        );
-
-        bits
     }
 
     /// Figures out which colour to paint the filename part of the output,
