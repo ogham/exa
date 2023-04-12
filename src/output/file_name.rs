@@ -313,7 +313,7 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
     }
 
     // An adapted version of escape::escape.
-    // afaik of all the calls to escape::escape, only for colored_file_name the call to escape needs to checked for hyper links
+    // afaik of all the calls to escape::escape, only for escaped_file_name, the call to escape needs to be checked for hyper links
     // and if that's the case then I think it's best to not try and generalize escape::escape to this case,
     // as this adaptation would incur some unneeded operations there
     pub fn escape_color_and_hyperlinks(&self, bits: &mut Vec<ANSIString<'_>>, good: Style, bad: Style) {
