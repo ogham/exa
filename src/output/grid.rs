@@ -41,11 +41,14 @@ impl<'a> Render<'a> {
 
         self.filter.sort_files(&mut self.files);
         for file in &self.files {
-            let filename = self.file_style.for_file(file, self.theme).paint();
+            let filename = self.file_style.for_file(file, self.theme);
+            let contents = filename.paint();
 
             grid.add(tg::Cell {
-                contents:  filename.strings().to_string(),
-                width:     *filename.width(),
+                contents:  contents.strings().to_string(),
+                // with hyperlink escape sequences,
+                // the actual *contents.width() is larger than actually needed, so we take only the filename
+                width:     filename.bare_width(),
                 alignment: tg::Alignment::Left,
             });
         }

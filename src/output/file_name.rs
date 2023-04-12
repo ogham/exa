@@ -388,6 +388,11 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             _                            => self.colours.colour_file(self.file),
         }
     }
+
+    /// For grid's use, to cover the case of hyperlink escape sequences
+    pub fn bare_width(&self) -> usize {
+        self.file.name.len()
+    }
 }
 
 
