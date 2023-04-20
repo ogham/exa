@@ -29,6 +29,7 @@ impl<'a> File<'a> {
                 "lof" |                                          // TeX list of figures
                 "log" |                                          // TeX log file
                 "lot" |                                          // TeX list of tables
+                "out" |                                          // hyperref list of bookmarks
                 "toc" => vec![self.path.with_extension("tex")],  // TeX table of contents
 
                 _ => vec![],  // No source files if none of the above
