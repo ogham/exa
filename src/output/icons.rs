@@ -365,6 +365,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "zsh-theme"     => '\u{f489}', // 
             "zshrc"         => '\u{f489}', // 
             "zst"           => '\u{f410}', // 
+            "svelte"        => '\u{e697}', // 
             _               => '\u{f15b}'  // 
         }
     }
