@@ -344,7 +344,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 
             "vim"           => '\u{e62b}', // 
-            "vue"           => '\u{fd42}', // ﵂
+            "vue"           => '\u{e6a0}', // 
             "war"           => '\u{e256}', // 
             "wav"           => '\u{f001}', // 
             "webm"          => '\u{f03d}', // 
