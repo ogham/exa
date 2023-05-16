@@ -164,6 +164,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "ebuild"        => '\u{f30d}', // 
             "editorconfig"  => '\u{e615}', // 
             "ejs"           => '\u{e618}', // 
+            "el"            => '\u{e632}', // 
             "elm"           => '\u{e62c}', // 
             "env"           => '\u{f462}', // 
             "eot"           => '\u{f031}', // 
@@ -267,6 +268,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "odt"           => '\u{f1c2}', // 
             "ogg"           => '\u{f001}', // 
             "ogv"           => '\u{f03d}', // 
+            "org"           => '\u{e633}', // 
             "otf"           => '\u{f031}', // 
             "part"          => '\u{f43a}', // 
             "patch"         => '\u{f440}', // 
