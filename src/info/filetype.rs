@@ -28,25 +28,24 @@ impl FileExtensions {
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
-            "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
-            "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
+            "Justfile", "justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile",
+            "Brewfile", "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
         ])
     }
 
     fn is_image(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "png", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg", "gif", "bmp",
-            "tiff", "tif", "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf", "cbz", "xpm",
-            "ico", "cr2", "orf", "nef", "heif", "avif", "jxl", "j2k", "jp2",
-            "j2c", "jpx",
+            "png", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg", "gif", "bmp", "tiff",
+            "tif", "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw", "svg", "stl", "eps",
+            "dvi", "ps", "cbr", "jpf", "cbz", "xpm", "ico", "cr2", "orf", "nef",
+            "heif", "avif", "jxl", "j2k", "jp2", "j2c", "jpx", "pxm",
         ])
     }
 
     fn is_video(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
             "avi", "flv", "m2v", "m4v", "mkv", "mov", "mp4", "mpeg",
-            "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts", "heic",
+            "mpg", "ogm", "ogv", "vob", "wmv", "webm", "m2ts", "heic", "video",
         ])
     }
 
@@ -79,9 +78,10 @@ impl FileExtensions {
 
     fn is_compressed(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "zip", "tar", "Z", "z", "gz", "bz2", "a", "ar", "7z",
-            "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
-            "lz", "tlz", "lzma", "deb", "rpm", "zst", "lz4", "cpio",
+            "zip", "tar", "taz", "Z", "z", "gz", "bz", "bz2", "a", "ar",
+            "7z", "iso", "dmg", "tc", "rar", "par", "tgz", "xz", "txz",
+            "lz", "tlz", "lzma", "deb", "rpm", "zst", "lz4", "cpio", "lzh",
+            "lzo", "tbz", "tbz2", "tz", "tzo"
         ])
     }
 
@@ -136,6 +136,9 @@ impl FileIcon for FileExtensions {
         }
         else if self.is_video(file) {
             Some(Icons::Video.value())
+        }
+        else if self.is_compressed(file) {
+            Some(Icons::Compressed.value())
         }
         else {
             None
