@@ -205,6 +205,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "html"          => '\u{f13b}', // 
             "hxx"           => '\u{f0fd}', // 
             "ico"           => '\u{f1c5}', // 
+            "ino"           => '\u{e61d}', // 
             "image"         => '\u{f1c5}', // 
             "img"           => '\u{e271}', // 
             "iml"           => '\u{e7b5}', // 
@@ -298,6 +299,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "readme"        => '\u{f48a}', // 
             "rlib"          => '\u{e7a8}', // 
             "rmd"           => '\u{f48a}', // 
+            "rmeta"         => '\u{e7a8}', // 
             "rpm"           => '\u{e7bb}', // 
             "rs"            => '\u{e7a8}', // 
             "rspec"         => '\u{e21e}', // 
