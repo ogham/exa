@@ -154,6 +154,12 @@ If you're using [MacPorts](https://www.macports.org/) on macOS, install the [`ex
 On nixOS, install the [`exa`](https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/misc/exa/default.nix) package.
 
     nix-env -i exa
+    
+Using nix profile
+
+```bash
+nix profile install nixpkgs#exa
+```
 
 ### openSUSE
 
