@@ -2,6 +2,7 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use chrono_humanize::HumanTime;
 use datetime::{LocalDateTime, TimeZone, DatePiece, TimePiece};
 use datetime::fmt::DateFormat;
 
@@ -24,7 +25,7 @@ use unicode_width::UnicodeWidthStr;
 /// prints month names as numbers.
 ///
 /// Currently exa does not support *custom* styles, where the user enters a
-/// format string in an environment variable or something. Just these four.
+/// format string in an environment variable or something. Just these five.
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TimeFormat {
 
@@ -46,6 +47,10 @@ pub enum TimeFormat {
     /// millisecond and includes its offset down to the minute. This too uses
     /// only numbers so doesn’t require any special consideration.
     FullISO,
+
+    /// The **Human format** converts the time form into a more human readable form, 
+    /// such as one month ago, three weeks ago
+    Human,
 }
 
 // There are two different formatting functions because local and zoned
@@ -58,6 +63,7 @@ impl TimeFormat {
             Self::ISOFormat      => iso_local(time),
             Self::LongISO        => long_local(time),
             Self::FullISO        => full_local(time),
+            Self::Human          => hu_local(time),
         }
     }
 
@@ -67,6 +73,7 @@ impl TimeFormat {
             Self::ISOFormat      => iso_zoned(time, zone),
             Self::LongISO        => long_zoned(time, zone),
             Self::FullISO        => full_zoned(time, zone),
+            Self::Human          => hu_zoned(time, zone),
         }
     }
 }
@@ -95,6 +102,19 @@ fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
         (false, 5)  => &FIVE_WIDE_DATE_YEAR,
         (false, _)  => &OTHER_WIDE_DATE_YEAR,
     }
+}
+
+#[allow(trivial_numeric_casts)]
+fn hu_local(time: SystemTime) -> String {
+    format!("{}", HumanTime::from(time))
+}
+
+#[allow(trivial_numeric_casts)]
+fn hu_zoned(time: SystemTime, _: &TimeZone) -> String {
+
+    let dt: chrono::DateTime<chrono::Utc> = time.clone().into();
+    let tt: chrono::DateTime<chrono::Local> = dt.with_timezone(&chrono::Local);
+    format!("{}", HumanTime::from(tt))
 }
 
 #[allow(trivial_numeric_casts)]

@@ -266,6 +266,9 @@ impl TimeFormat {
         else if &word == "full-iso" {
             Ok(Self::FullISO)
         }
+        else if &word == "hu" {
+            Ok(Self::Human)
+        }
         else {
             Err(OptionsError::BadArgument(&flags::TIME_STYLE, word))
         }

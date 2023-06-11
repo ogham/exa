@@ -32,6 +32,8 @@ term_grid = "0.2.0"
 terminal_size = "0.1.16"
 unicode-width = "0.1"
 zoneinfo_compiled = "0.5.1"
+chrono = "0.4.26"
+chrono-humanize = "0.2.2"
 
 [target.'cfg(unix)'.dependencies]
 users = "0.11"
