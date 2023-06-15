@@ -378,7 +378,7 @@ mod test {
 
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => err $result:expr) => {
             /// Special macro for testing Err results.
-            /// This is needed because sometimes the Ok type doesn’t implement PartialEq.
+            /// This is needed because sometimes the Ok type doesn’t implement `PartialEq`.
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {
@@ -389,7 +389,7 @@ mod test {
 
         ($name:ident: $type:ident <- $inputs:expr; $stricts:expr => like $pat:pat) => {
             /// More general macro for testing against a pattern.
-            /// Instead of using PartialEq, this just tests if it matches a pat.
+            /// Instead of using `PartialEq`, this just tests if it matches a pat.
             #[test]
             fn $name() {
                 for result in parse_for_test($inputs.as_ref(), TEST_ARGS, $stricts, |mf| $type::deduce(mf)) {

@@ -57,7 +57,7 @@ enum LinkStyle {
 
 
 /// Whether to append file class characters to the file names.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Classify {
 
     /// Just display the file names, without any characters.
@@ -76,7 +76,7 @@ impl Default for Classify {
 
 
 /// Whether and how to show icons.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum ShowIcons {
 
     /// Don’t show icons at all.
