@@ -361,24 +361,38 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 
 #[cfg(windows)]
 fn determine_time_zone() -> TZResult<TimeZone> {
-    use chrono::offset::{Offset, TimeZone};
-    use chrono::Local;
+    use core::mem::MaybeUninit;
     use datetime::zone::{FixedTimespan, TimeZoneSource};
     use datetime::zone::runtime::{OwnedTimeZone, OwnedFixedTimespanSet};
     use std::borrow::Cow;
     use std::sync::Arc;
+    use windows_sys::Win32::System::Time::{GetTimeZoneInformation, TIME_ZONE_INFORMATION};
+    use windows_sys::Win32::System::SystemServices::TIME_ZONE_ID_DAYLIGHT;
     use zoneinfo_compiled::TZData;
 
-    let offset_in_sec = Local::now().offset().local_minus_utc() as i64;
+    let mut init = MaybeUninit::<TIME_ZONE_INFORMATION>::uninit();
+    let tz_id = unsafe { GetTimeZoneInformation(init.as_mut_ptr()) };
+    let tz_info = unsafe { init.assume_init() };
+    let transitions = match tz_id {
+        TIME_ZONE_ID_DAYLIGHT => {
+            let timespan = FixedTimespan {
+                offset: (tz_info.Bias + tz_info.DaylightBias) as i64 * -60,
+                is_dst: false,
+                name: Cow::Borrowed("ZONE_B"),
+            };
+            vec![(0 as i64, timespan)]
+        },
+        _ => Vec::new(),
+    };
     let time_zone = OwnedTimeZone {
         name: None,
         fixed_timespans: OwnedFixedTimespanSet {
             first: FixedTimespan {
-                offset: offset_in_sec,
+                offset: (tz_info.Bias + tz_info.StandardBias) as i64 * -60,
                 is_dst: false,
-                name: Cow::Borrowed("ZONE"),
+                name: Cow::Borrowed("ZONE_A"),
             },
-            rest: Vec::new(),
+            rest: transitions,
         },
     };
     let arc = Arc::new(time_zone);
