@@ -361,27 +361,30 @@ fn determine_time_zone() -> TZResult<TimeZone> {
 
 #[cfg(windows)]
 fn determine_time_zone() -> TZResult<TimeZone> {
-    use datetime::zone::{FixedTimespan, FixedTimespanSet, StaticTimeZone, TimeZoneSource};
+    use chrono::offset::{Offset, TimeZone};
+    use chrono::Local;
+    use datetime::zone::{FixedTimespan, TimeZoneSource};
+    use datetime::zone::runtime::{OwnedTimeZone, OwnedFixedTimespanSet};
     use std::borrow::Cow;
+    use std::sync::Arc;
+    use zoneinfo_compiled::TZData;
 
-    Ok(TimeZone(TimeZoneSource::Static(&StaticTimeZone {
-        name: "Unsupported",
-        fixed_timespans: FixedTimespanSet {
+    let offset_in_sec = Local::now().offset().local_minus_utc() as i64;
+    let time_zone = OwnedTimeZone {
+        name: None,
+        fixed_timespans: OwnedFixedTimespanSet {
             first: FixedTimespan {
-                offset: 0,
+                offset: offset_in_sec,
                 is_dst: false,
-                name: Cow::Borrowed("ZONE_A"),
+                name: Cow::Borrowed("ZONE"),
             },
-            rest: &[(
-                1206838800,
-                FixedTimespan {
-                    offset: 3600,
-                    is_dst: false,
-                    name: Cow::Borrowed("ZONE_B"),
-                },
-            )],
+            rest: Vec::new(),
         },
-    })))
+    };
+    let arc = Arc::new(time_zone);
+    let tz = TimeZone(TimeZoneSource::Runtime(arc));
+
+    Ok(tz)
 }
 
 lazy_static! {
