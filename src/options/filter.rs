@@ -155,7 +155,7 @@ impl DotFilter {
     /// special case where `--tree --all --all` won’t work: listing the
     /// parent directory in tree mode would loop onto itself!
     pub fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let count = matches.count(&flags::ALL);
+        let count = matches.count(&flags::ALL) + matches.count(&flags::ALL_A);
 
         if count == 0 {
             Ok(Self::JustFiles)
