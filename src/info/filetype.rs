@@ -11,7 +11,7 @@ use crate::output::icons::FileIcon;
 use crate::theme::FileColours;
 
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct FileExtensions;
 
 impl FileExtensions {

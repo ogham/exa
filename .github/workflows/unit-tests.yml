@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rust: [1.56.1, stable, beta, nightly]
+        rust: [1.63.0, stable, beta, nightly]
 
     steps:
       - name: Checkout repository

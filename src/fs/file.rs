@@ -221,13 +221,13 @@ impl<'dir> File<'dir> {
             path.to_path_buf()
         }
         else if let Some(dir) = self.parent_dir {
-            dir.join(&*path)
+            dir.join(path)
         }
         else if let Some(parent) = self.path.parent() {
-            parent.join(&*path)
+            parent.join(path)
         }
         else {
-            self.path.join(&*path)
+            self.path.join(path)
         }
     }
 
@@ -375,7 +375,7 @@ impl<'dir> File<'dir> {
                 nanosec -= 1_000_000_000;
             }
 
-            let duration = Duration::new(sec.abs() as u64, nanosec.abs() as u32);
+            let duration = Duration::new(sec.unsigned_abs(), nanosec.unsigned_abs() as u32);
             Some(UNIX_EPOCH - duration)
         }
         else {

@@ -8,7 +8,7 @@ use crate::options::flags;
 use crate::options::parser::MatchedFlags;
 
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct VersionString;
 // There were options here once, but there aren’t anymore!
 

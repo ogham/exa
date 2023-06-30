@@ -19,7 +19,7 @@
 /// into them and print out their contents. The recurse mode does this by
 /// having extra output blocks at the end, while the tree mode will show
 /// directories inline, with their contents immediately underneath.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum DirAction {
 
     /// This directory should be listed along with the regular files, instead
@@ -58,7 +58,7 @@ impl DirAction {
 
 
 /// The options that determine how to recurse into a directory.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct RecurseOptions {
 
     /// Whether recursion should be done as a tree or as multiple individual

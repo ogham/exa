@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
     let path = &out.join("version_string.txt");
 
     // Bland version text
-    let mut f = File::create(path).expect(&path.to_string_lossy());
+    let mut f = File::create(path).unwrap_or_else(|_| { panic!("{}", path.to_string_lossy().to_string()) });
     writeln!(f, "{}", strip_codes(&ver))?;
 
     Ok(())

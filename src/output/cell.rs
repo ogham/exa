@@ -77,11 +77,9 @@ impl TextCell {
     ///
     /// This method allocates a `String` to hold the spaces.
     pub fn add_spaces(&mut self, count: usize) {
-        use std::iter::repeat;
-
         (*self.width) += count;
 
-        let spaces: String = repeat(' ').take(count).collect();
+        let spaces: String = " ".repeat(count);
         self.contents.0.push(Style::default().paint(spaces));
     }
 
@@ -193,7 +191,7 @@ impl TextCellContents {
 ///
 /// It has `From` impls that convert an input string or fixed with to values
 /// of this type, and will `Deref` to the contained `usize` value.
-#[derive(PartialEq, Debug, Clone, Copy, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Default)]
 pub struct DisplayWidth(usize);
 
 impl<'a> From<&'a str> for DisplayWidth {

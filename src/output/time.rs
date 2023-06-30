@@ -25,7 +25,7 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// Currently exa does not support *custom* styles, where the user enters a
 /// format string in an environment variable or something. Just these four.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TimeFormat {
 
     /// The **default format** uses the user’s locale to print month names,
@@ -87,7 +87,7 @@ fn default_zoned(time: SystemTime, zone: &TimeZone) -> String {
 }
 
 fn get_dateformat(date: &LocalDateTime) -> &'static DateFormat<'static> {
-    match (is_recent(&date), *MAXIMUM_MONTH_WIDTH) {
+    match (is_recent(date), *MAXIMUM_MONTH_WIDTH) {
         (true, 4)   => &FOUR_WIDE_DATE_TIME,
         (true, 5)   => &FIVE_WIDE_DATE_TIME,
         (true, _)   => &OTHER_WIDE_DATE_TIME,
