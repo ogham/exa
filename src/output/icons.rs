@@ -58,19 +58,20 @@ lazy_static! {
         m.insert(".github", '\u{f408}'); // 
         m.insert(".gitignore", '\u{f1d3}'); // 
         m.insert(".gitmodules", '\u{f1d3}'); // 
-        m.insert(".rvm", '\u{e21e}'); // 
+        m.insert(".hidden", '\u{f023}'); // 
+        m.insert(".rvm", '\u{e791}'); // 
         m.insert(".vimrc", '\u{e62b}'); // 
         m.insert(".vscode", '\u{e70c}'); // 
         m.insert(".zshrc", '\u{f489}'); // 
-        m.insert("Cargo.lock", '\u{e7a8}'); // 
         m.insert("bin", '\u{e5fc}'); // 
+        m.insert("composer.json", '\u{e73d}'); // 
         m.insert("config", '\u{e5fc}'); // 
         m.insert("docker-compose.yml", '\u{f308}'); // 
         m.insert("Dockerfile", '\u{f308}'); // 
         m.insert("ds_store", '\u{f179}'); // 
         m.insert("gitignore_global", '\u{f1d3}'); // 
-        m.insert("go.mod", '\u{e626}'); // 
-        m.insert("go.sum", '\u{e626}'); // 
+        m.insert("go.mod", '\u{e627}'); // 
+        m.insert("go.sum", '\u{e627}'); // 
         m.insert("gradle", '\u{e256}'); // 
         m.insert("gruntfile.coffee", '\u{e611}'); // 
         m.insert("gruntfile.js", '\u{e611}'); // 
@@ -78,16 +79,16 @@ lazy_static! {
         m.insert("gulpfile.coffee", '\u{e610}'); // 
         m.insert("gulpfile.js", '\u{e610}'); // 
         m.insert("gulpfile.ls", '\u{e610}'); // 
-        m.insert("hidden", '\u{f023}'); // 
         m.insert("include", '\u{e5fc}'); // 
         m.insert("lib", '\u{f121}'); // 
         m.insert("localized", '\u{f179}'); // 
         m.insert("Makefile", '\u{f489}'); // 
-        m.insert("node_modules", '\u{e718}'); // 
+        m.insert("node_modules", '\u{e719}'); // 
         m.insert("npmignore", '\u{e71e}'); // 
+        m.insert("package.json", '\u{e71e}'); // 
         m.insert("PKGBUILD", '\u{f303}'); // 
+        m.insert("Procfile", '\u{e607}'); // 
         m.insert("rubydoc", '\u{e73b}'); // 
-        m.insert("yarn.lock", '\u{e718}'); // 
 
         m
     };
@@ -181,21 +182,21 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "fsi"           => '\u{e7a7}', // 
             "fsx"           => '\u{e7a7}', // 
             "gdoc"          => '\u{f1c2}', // 
-            "gem"           => '\u{e21e}', // 
-            "gemfile"       => '\u{e21e}', // 
-            "gemspec"       => '\u{e21e}', // 
+            "gem"           => '\u{e791}', // 
+            "gemfile"       => '\u{e791}', // 
+            "gemspec"       => '\u{e791}', // 
             "gform"         => '\u{f298}', // 
             "gif"           => '\u{f1c5}', // 
             "git"           => '\u{f1d3}', // 
             "gitattributes" => '\u{f1d3}', // 
             "gitignore"     => '\u{f1d3}', // 
             "gitmodules"    => '\u{f1d3}', // 
-            "go"            => '\u{e626}', // 
+            "go"            => '\u{e627}', // 
             "gradle"        => '\u{e256}', // 
             "groovy"        => '\u{e775}', // 
             "gsheet"        => '\u{f1c3}', // 
             "gslides"       => '\u{f1c4}', // 
-            "guardfile"     => '\u{e21e}', // 
+            "guardfile"     => '\u{e791}', // 
             "gz"            => '\u{f410}', // 
             "h"             => '\u{f0fd}', // 
             "hbs"           => '\u{e60f}', // 
@@ -231,6 +232,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jsx"           => '\u{e7ba}', // 
             "jxl"           => '\u{f1c5}', // 
             "ksh"           => '\u{f489}', // 
+            "kt"            => '\u{e634}', // 
             "latex"         => '\u{f034}', // 
             "less"          => '\u{e758}', // 
             "lhs"           => '\u{e777}', // 
@@ -271,7 +273,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "part"          => '\u{f43a}', // 
             "patch"         => '\u{f440}', // 
             "pdf"           => '\u{f1c1}', // 
-            "php"           => '\u{e73d}', // 
+            "php"           => '\u{e608}', // 
             "pl"            => '\u{e769}', // 
             "plx"           => '\u{e769}', // 
             "pm"            => '\u{e769}', // 
@@ -279,7 +281,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "pod"           => '\u{e769}', // 
             "ppt"           => '\u{f1c4}', // 
             "pptx"          => '\u{f1c4}', // 
-            "procfile"      => '\u{e21e}', // 
+            "pro"           => '\u{e7a1}', // 
+            "procfile"      => '\u{e607}', // 
             "properties"    => '\u{e60b}', // 
             "ps1"           => '\u{f489}', // 
             "psd"           => '\u{e7b8}', // 
@@ -287,10 +290,10 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "py"            => '\u{e606}', // 
             "pyc"           => '\u{e606}', // 
             "r"             => '\u{f25d}', // 
-            "rakefile"      => '\u{e21e}', // 
+            "rakefile"      => '\u{e791}', // 
             "rar"           => '\u{f410}', // 
             "razor"         => '\u{f1fa}', // 
-            "rb"            => '\u{e21e}', // 
+            "rb"            => '\u{e791}', // 
             "rdata"         => '\u{f25d}', // 
             "rdb"           => '\u{e76d}', // 
             "rdoc"          => '\u{f48a}', // 
@@ -300,16 +303,16 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "rmd"           => '\u{f48a}', // 
             "rpm"           => '\u{e7bb}', // 
             "rs"            => '\u{e7a8}', // 
-            "rspec"         => '\u{e21e}', // 
-            "rspec_parallel"=> '\u{e21e}', // 
-            "rspec_status"  => '\u{e21e}', // 
+            "rspec"         => '\u{e791}', // 
+            "rspec_parallel"=> '\u{e791}', // 
+            "rspec_status"  => '\u{e791}', // 
             "rss"           => '\u{f09e}', // 
             "rtf"           => '\u{f718}', // 
-            "ru"            => '\u{e21e}', // 
+            "ru"            => '\u{e791}', // 
             "rubydoc"       => '\u{e73b}', // 
             "sass"          => '\u{e603}', // 
             "scala"         => '\u{e737}', // 
-            "scss"          => '\u{e749}', // 
+            "scss"          => '\u{e603}', // 
             "sh"            => '\u{f489}', // 
             "shell"         => '\u{f489}', // 
             "slim"          => '\u{e73b}', // 
@@ -320,6 +323,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "sty"           => '\u{f034}', // 
             "styl"          => '\u{e600}', // 
             "stylus"        => '\u{e600}', // 
+            "svelte"        => '\u{e697}', // 
             "svg"           => '\u{f1c5}', // 
             "swift"         => '\u{e755}', // 
             "t"             => '\u{e769}', // 
@@ -344,7 +348,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 
             "vim"           => '\u{e62b}', // 
-            "vue"           => '\u{fd42}', // ﵂
+            "vue"           => '\u{e6a0}', // 
             "war"           => '\u{e256}', // 
             "wav"           => '\u{f001}', // 
             "webm"          => '\u{f03d}', // 
