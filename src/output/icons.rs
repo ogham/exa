@@ -130,6 +130,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "cab"           => '\u{e70f}', // 
             "cc"            => '\u{e61d}', // 
             "cfg"           => '\u{e615}', // 
+            "cjs"           => '\u{e74e}', // 
             "class"         => '\u{e256}', // 
             "clj"           => '\u{e768}', // 
             "cljs"          => '\u{e76a}', // 
@@ -147,6 +148,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "css"           => '\u{e749}', // 
             "csv"           => '\u{f1c3}', // 
             "csx"           => '\u{f81a}', // 
+            "cts"           => '\u{e628}', // 
             "cxx"           => '\u{e61d}', // 
             "d"             => '\u{e7af}', // 
             "dart"          => '\u{e798}', // 
@@ -258,6 +260,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "mp3"           => '\u{f001}', // 
             "mp4"           => '\u{f03d}', // 
             "msi"           => '\u{e70f}', // 
+            "mts"           => '\u{e628}', // 
             "mustache"      => '\u{e60f}', // 
             "nix"           => '\u{f313}', // 
             "node"          => '\u{f898}', // 

@@ -18,6 +18,8 @@ impl<'a> File<'a> {
             match &ext[..] {
                 "css"   => vec![self.path.with_extension("sass"), self.path.with_extension("scss"),  // SASS, SCSS
                                 self.path.with_extension("styl"), self.path.with_extension("less")],  // Stylus, Less
+                "mjs"   => vec![self.path.with_extension("mts")],  // JavaScript ES Modules source
+                "cjs"   => vec![self.path.with_extension("cts")],  // JavaScript Commonjs Modules source
                 "js"    => vec![self.path.with_extension("coffee"), self.path.with_extension("ts")],  // CoffeeScript, TypeScript
 
                 "aux" |                                          // TeX: auxiliary file
