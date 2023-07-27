@@ -157,7 +157,7 @@ These options are available when running with `--long` (`-l`):
 `--time-style=STYLE`
 : How to format timestamps.
 
-: Valid timestamp styles are ‘`default`’, ‘`iso`’, ‘`long-iso`’, and ‘`full-iso`’.
+: Valid timestamp styles are ‘`default`’, ‘`iso`’, ‘`long-iso`’, ‘`full-iso`’, and ‘`relative`’.
 
 `-u`, `--accessed`
 : Use the accessed timestamp field.
