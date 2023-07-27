@@ -266,7 +266,7 @@ impl TimeFormat {
         else if &word == "full-iso" {
             Ok(Self::FullISO)
         }
-        else if &word == "hu" {
+        else if &word == "relative" {
             Ok(Self::Human)
         }
         else {

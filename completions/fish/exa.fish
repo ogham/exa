@@ -79,7 +79,7 @@ complete -c exa        -l 'time-style'    -d "How to format timestamps" -x -a "
     iso\t'Display brief ISO timestamps'
     long-iso\t'Display longer ISO timestaps, up to the minute'
     full-iso\t'Display full ISO timestamps, up to the nanosecond'
-    hu\t'Display more readable date forms for humans'
+    relative\t'Display more readable date forms for humans'
 "
 complete -c exa        -l 'no-permissions' -d "Suppress the permissions field"
 complete -c exa        -l 'octal-permissions' -d "List each file's permission in octal format"
