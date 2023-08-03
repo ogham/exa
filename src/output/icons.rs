@@ -140,13 +140,13 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "cp"            => '\u{e61d}', // 
             "cpio"          => '\u{f410}', // 
             "cpp"           => '\u{e61d}', // 
-            "cs"            => '\u{f81a}', // 
+            "cs"            => '\u{f031b}', // 󰌛
             "csh"           => '\u{f489}', // 
             "cshtml"        => '\u{f1fa}', // 
-            "csproj"        => '\u{f81a}', // 
+            "csproj"        => '\u{f031b}', // 󰌛
             "css"           => '\u{e749}', // 
             "csv"           => '\u{f1c3}', // 
-            "csx"           => '\u{f81a}', // 
+            "csx"           => '\u{f031b}', // 󰌛
             "cxx"           => '\u{e61d}', // 
             "d"             => '\u{e7af}', // 
             "dart"          => '\u{e798}', // 
@@ -234,7 +234,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "latex"         => '\u{f034}', // 
             "less"          => '\u{e758}', // 
             "lhs"           => '\u{e777}', // 
-            "license"       => '\u{f718}', // 
+            "license"       => '\u{f0219}', // 󰈙
             "localized"     => '\u{f179}', // 
             "lock"          => '\u{f023}', // 
             "log"           => '\u{f18d}', // 
@@ -260,7 +260,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "msi"           => '\u{e70f}', // 
             "mustache"      => '\u{e60f}', // 
             "nix"           => '\u{f313}', // 
-            "node"          => '\u{f898}', // 
+            "node"          => '\u{f0399}', // 󰎙
             "npmignore"     => '\u{e71e}', // 
             "odp"           => '\u{f1c4}', // 
             "ods"           => '\u{f1c3}', // 
@@ -304,7 +304,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "rspec_parallel"=> '\u{e21e}', // 
             "rspec_status"  => '\u{e21e}', // 
             "rss"           => '\u{f09e}', // 
-            "rtf"           => '\u{f718}', // 
+            "rtf"           => '\u{f0219}', // 󰈙
             "ru"            => '\u{e21e}', // 
             "rubydoc"       => '\u{e73b}', // 
             "sass"          => '\u{e603}', // 
@@ -344,7 +344,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tzo"           => '\u{f410}', // 
             "video"         => '\u{f03d}', // 
             "vim"           => '\u{e62b}', // 
-            "vue"           => '\u{fd42}', // ﵂
+            "vue"           => '\u{f0844}', // 󰡄
             "war"           => '\u{e256}', // 
             "wav"           => '\u{f001}', // 
             "webm"          => '\u{f03d}', // 
@@ -355,8 +355,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "xhtml"         => '\u{f13b}', // 
             "xls"           => '\u{f1c3}', // 
             "xlsx"          => '\u{f1c3}', // 
-            "xml"           => '\u{f121}', // 
-            "xul"           => '\u{f121}', // 
+            "xml"           => '\u{f05c0}', // 󰗀
+            "xul"           => '\u{f05c0}', // 󰗀
             "xz"            => '\u{f410}', // 
             "yaml"          => '\u{f481}', // 
             "yml"           => '\u{f481}', // 
