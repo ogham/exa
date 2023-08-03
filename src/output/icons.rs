@@ -209,7 +209,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "img"           => '\u{e271}', // 
             "iml"           => '\u{e7b5}', // 
             "ini"           => '\u{f17a}', // 
-            "ipynb"         => '\u{e606}', // 
+            "ipynb"         => '\u{e678}', // 
             "iso"           => '\u{e271}', // 
             "j2c"           => '\u{f1c5}', // 
             "j2k"           => '\u{f1c5}', // 
