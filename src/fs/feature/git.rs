@@ -162,7 +162,9 @@ impl GitRepo {
     /// Returns the original buffer if none is found.
     fn discover(path: PathBuf) -> Result<Self, PathBuf> {
         info!("Searching for Git repository above {:?}", path);
-        let repo = match git2::Repository::discover(&path) {
+        let flags = git2::RepositoryOpenFlags::FROM_ENV;
+        let unused: [&OsStr; 0] = [];
+        let repo = match git2::Repository::open_ext(&path, flags, &unused) {
             Ok(r) => r,
             Err(e) => {
                 error!("Error discovering Git repositories: {:?}", e);
