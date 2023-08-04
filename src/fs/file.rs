@@ -485,22 +485,6 @@ impl<'dir> File<'dir> {
             reparse_point:  has_bit(0x400),
         }
     }
-
-    /// Whether this file’s extension is any of the strings that get passed in.
-    ///
-    /// This will always return `false` if the file has no extension.
-    pub fn extension_is_one_of(&self, choices: &[&str]) -> bool {
-        match &self.ext {
-            Some(ext)  => choices.contains(&&ext[..]),
-            None       => false,
-        }
-    }
-
-    /// Whether this file’s name, including extension, is any of the strings
-    /// that get passed in.
-    pub fn name_is_one_of(&self, choices: &[&str]) -> bool {
-        choices.contains(&&self.name[..])
-    }
 }
 
 

@@ -46,8 +46,16 @@ version = "0.13"
 optional = true
 default-features = false
 
+[dependencies.phf]
+version = "0.11"
+default-features = false
+
 [build-dependencies.datetime]
 version = "0.5.2"
+default-features = false
+
+[build-dependencies.phf_codegen]
+version = "0.11"
 default-features = false
 
 [features]
