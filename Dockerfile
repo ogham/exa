@@ -8,6 +8,9 @@ RUN cargo install -q --git https://github.com/ogham/specsheet
 FROM rust:1.71.1 AS cargo-hack
 RUN cargo install -q cargo-hack
 
+FROM rust:1.71.1 AS cargo-kcov
+RUN cargo install -q cargo-kcov
+
 FROM rust:1.71.1 AS exa
 WORKDIR /app
 # Copy the source code into the image
@@ -25,6 +28,17 @@ RUN apt-get update -qq
 RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
     git gcc curl attr libgit2-dev zip \
     fish zsh bash bash-completion
+
+# Install kcov for test coverage
+# This doesn’t run coverage over the xtests so it’s less useful for now
+COPY --from=cargo-kcov /usr/local/cargo/bin/cargo-kcov /usr/bin/cargo-kcov
+
+RUN apt-get install -y \
+    cmake g++ pkg-config \
+    libcurl4-openssl-dev libdw-dev binutils-dev libiberty-dev
+
+RUN ln -s $(which python3) /usr/bin/python
+RUN cargo kcov --print-install-kcov-sh | sh
 
 # TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
 # RUN timedatectl set-timezone UTC
@@ -80,17 +94,6 @@ RUN ln -s /vagrant/completions/zsh/_exa /usr/share/zsh/vendor-completions/_exa
 # fish
 RUN ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fish
 
-# Install kcov for test coverage
-# This doesn’t run coverage over the xtests so it’s less useful for now
-
-RUN cargo install cargo-kcov
-
-RUN apt-get install -y \
-    cmake g++ pkg-config \
-    libcurl4-openssl-dev libdw-dev binutils-dev libiberty-dev
-
-RUN ln -s $(which python3) /usr/bin/python
-RUN cargo kcov --print-install-kcov-sh | sh
 
 # Copy the source code into the image
 COPY --chmod=+x . /vagrant/
