@@ -1,11 +1,17 @@
-FROM rust:1.71.1 AS specsheet
-RUN git clone https://github.com/ogham/specsheet --depth 1
-WORKDIR /specsheet
-RUN cargo build --release --target-dir /usr/bin 
+# FROM rust:1.71.1 AS specsheet
+# RUN git clone https://github.com/ogham/specsheet --depth 1
+# WORKDIR /specsheet
+# RUN cargo build --release --target-dir /usr/bin 
+
+FROM rust:1.71.1 AS just
+# Install Just, the command runner.
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
+
 
 # We use Ubuntu instead of Debian because the image comes with two-way
 # shared folder support by default.
-FROM ubuntu:22.04 AS base
+# This image is based from Ubuntu
+FROM rust:1.71.1 AS base
 
 # Install the dependencies needed for exa to build
 RUN apt-get update -qq
@@ -13,28 +19,12 @@ RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
     git gcc curl attr libgit2-dev zip \
     fish zsh bash bash-completion
 
-# Install Rust (cargo + rustup) and the Rust tools we need.
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --component rustc,rust-std,cargo,clippy -y
-
-# Add Rust binaries to path
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 RUN cargo install -q cargo-hack
 RUN cargo install -q --git https://github.com/ogham/specsheet
 
-# Install Just, the command runner.
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
 # RUN timedatectl set-timezone UTC
-
-ARG DEVELOPER_HOME=/root
-# Use a different ‘target’ directory on the VM than on the host.
-# By default it just uses the one in /vagrant/target, which can
-# cause problems if it has different permissions than the other
-# directories, or contains object files compiled for the host.
-RUN echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${DEVELOPER_HOME}/.cargo/bin"' > /etc/environment
-RUN echo 'CARGO_TARGET_DIR="${DEVELOPER_HOME}/target"' >> /etc/environment
 
 # Create a variety of misc scripts.
 
@@ -68,7 +58,7 @@ ADD --chmod=+x devtools/dev-help.sh /vagrant/devtools/dev-help.sh
 RUN bash /vagrant/devtools/dev-help.sh > /etc/motd
 
 # Tell bash to execute a bunch of stuff when a session starts
-RUN echo "source /vagrant/devtools/dev-bash.sh" > ${DEVELOPER_HOME}/.bash_profile
+RUN echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
 
 # Disable last login date in sshd
 # RUN sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
@@ -102,6 +92,7 @@ RUN apt-get install -y \
 RUN ln -s $(which python3) /usr/bin/python
 RUN cargo kcov --print-install-kcov-sh | sh
 
+# Copy the source code into the image
 COPY --chmod=+x . /vagrant/
 
 # Make sudo dummy replacement, so we don't weaken docker security
@@ -115,10 +106,11 @@ WORKDIR /vagrant
 RUN cargo build
 RUN bash /usr/bin/build-exa
 
-# TODO: remove this and do it the other way around: create a link from /vagrant to /root
-RUN ln -s /vagrant/* /root
+# TODO: remove this once tests don't depend on it
+RUN ln -s /vagrant/* ${HOME}
 
-COPY --from=specsheet /usr/bin/release/specsheet /usr/bin/specsheet
+COPY --from=just /usr/bin/just /usr/bin/just
+# COPY --from=specsheet /usr/bin/release/specsheet /usr/bin/specsheet
 
 
 FROM base AS test
