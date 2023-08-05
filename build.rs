@@ -742,6 +742,8 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("hidden",             "'\u{f023}'") // 
                  .entry("include",            "'\u{e5fc}'") // 
                  .entry("lib",                "'\u{f121}'") // 
+                 .entry("LICENSE",            "'\u{e60a}'") // 
+                 .entry("LICENCE",            "'\u{e60a}'") // 
                  .entry("Makefile",           "'\u{e673}'") // 
                  .entry("makefile",           "'\u{e673}'") // 
                  .entry("node_modules",       "'\u{e718}'") // 
