@@ -9,7 +9,10 @@ RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
     fish zsh bash bash-completion
 
 # Install Rust (cargo + rustup) and the Rust tools we need.
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- --profile minimal --component rustc,rust-std,cargo,clippy -y > /dev/null
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --component rustc,rust-std,cargo,clippy -y
+
+# Add Rust binaries to path
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo install -q cargo-hack
 RUN cargo install -q --git https://github.com/ogham/specsheet
