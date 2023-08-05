@@ -671,6 +671,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("sqlite3",         "'\u{e7c4}'")  // 
                  .entry("styl",            "'\u{e600}'")  // 
                  .entry("stylus",          "'\u{e600}'")  // 
+                 .entry("svelte",          "'\u{e697}'")  // 
                  .entry("svg",             "'\u{f0559}'") // 󰕙
                  .entry("swift",           "'\u{e755}'")  // 
                  .entry("torrent",         "'\u{e275}'")  // 
