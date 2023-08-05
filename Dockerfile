@@ -108,7 +108,7 @@ RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
 
 WORKDIR /vagrant
 RUN cargo build
-RUN ./xtests/run
+RUN bash /usr/bin/build-exa
 
 FROM base AS test
-CMD []
+CMD ["/vagrant/xtests/run.sh"]
