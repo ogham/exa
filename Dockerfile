@@ -71,22 +71,18 @@ RUN echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
 # Link the completion files so they’re “installed”:
 
 # bash
-RUN test -h /etc/bash_completion.d/exa \
-    || ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
+RUN ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
 
 # zsh
-RUN test -h /usr/share/zsh/vendor-completions/_exa \
-    || ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
+RUN ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
 
 # fish
-RUN test -h /usr/share/fish/completions/exa.fish \
-    || ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
+RUN ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
 
 # Install kcov for test coverage
 # This doesn’t run coverage over the xtests so it’s less useful for now
 
-RUN test -e ~/.cargo/bin/cargo-kcov \
-    || cargo install cargo-kcov
+RUN cargo install cargo-kcov
 
 RUN apt-get install -y \
     cmake g++ pkg-config \
@@ -107,7 +103,6 @@ RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
 
 WORKDIR /vagrant
 COPY --from=exa /app/target /vagrant/target
-RUN bash /usr/bin/build-exa
 
 # TODO: remove this once tests don't depend on it
 RUN ln -s /vagrant/* ${HOME}
