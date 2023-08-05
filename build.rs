@@ -348,6 +348,7 @@ fn generate_filename_type_map(file: &mut File) -> io::Result<()> {
                  .entry("tsconfig.json",     "FileType::Immediate")
                  .entry("Vagrantfile",       "FileType::Immediate")
                  .entry("webpack.config.js", "FileType::Immediate")
+                 .entry("webpack.config.cjs","FileType::Immediate")
                  .entry("WORKSPACE",         "FileType::Immediate")
                  .build()
     )
@@ -529,6 +530,9 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("jar",             "Icons::JAVA_LANG") // 
                  .entry("java",            "Icons::JAVA_LANG") // 
                  .entry("war",             "Icons::JAVA_LANG") // 
+                 .entry("cjs",             "Icons::JAVASCRIPT_LANG") // 
+                 .entry("js",              "Icons::JAVASCRIPT_LANG") // 
+                 .entry("mjs",             "Icons::JAVASCRIPT_LANG") // 
                  .entry("pl",              "Icons::PERL_LANG") // 
                  .entry("plx",             "Icons::PERL_LANG") // 
                  .entry("pm",              "Icons::PERL_LANG") // 
@@ -562,6 +566,9 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("latex",           "Icons::TEX_LANG") // 
                  .entry("sty",             "Icons::TEX_LANG") // 
                  .entry("tex",             "Icons::TEX_LANG") // 
+                 .entry("cts",             "Icons::TYPESCRIPT_LANG")  // 
+                 .entry("mts",             "Icons::TYPESCRIPT_LANG")  // 
+                 .entry("ts",              "Icons::TYPESCRIPT_LANG")  // 
                  .entry("apple",           "Icons::APPLE") // 
                  .entry("_ds_store",       "Icons::APPLE") // 
                  .entry("ds_store",        "Icons::APPLE") // 
@@ -630,7 +637,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("iml",             "'\u{e7b5}'")  // 
                  .entry("ipynb",           "'\u{e678}'")  // 
                  .entry("jl",              "'\u{e624}'")  // 
-                 .entry("js",              "'\u{e74e}'")  // 
                  .entry("jsx",             "'\u{e7ba}'")  // 
                  .entry("less",            "'\u{e758}'")  // 
                  .entry("lhs",             "'\u{e777}'")  // 
@@ -638,7 +644,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("lock",            "'\u{f023}'")  // 
                  .entry("log",             "'\u{f18d}'")  // 
                  .entry("lua",             "'\u{e620}'")  // 
-                 .entry("mjs",             "'\u{e74e}'")  // 
                  .entry("mobi",            "'\u{e28b}'")  // 
                  .entry("mustache",        "'\u{e60f}'")  // 
                  .entry("nix",             "'\u{f313}'")  // 
@@ -666,7 +671,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("svg",             "'\u{f0559}'") // 󰕙
                  .entry("swift",           "'\u{e755}'")  // 
                  .entry("torrent",         "'\u{e275}'")  // 
-                 .entry("ts",              "'\u{e628}'")  // 
                  .entry("tsx",             "'\u{e7ba}'")  // 
                  .entry("twig",            "'\u{e61c}'")  // 
                  .entry("txt",             "'\u{f15c}'")  // 

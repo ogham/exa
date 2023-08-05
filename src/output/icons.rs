@@ -7,37 +7,39 @@ use crate::fs::File;
 struct Icons;
 
 impl Icons {
-    const AUDIO: char          = '\u{f001}';  // 
-    const IMAGE: char          = '\u{f1c5}';  // 
-    const VIDEO: char          = '\u{f03d}';  // 
-    const COMPRESSED: char     = '\u{f410}';  // 
-    const SHELL: char          = '\u{f489}';  // 
-    const GIT: char            = '\u{f1d3}';  // 
-    const MARKDOWN: char       = '\u{f48a}';  // 
-    const DISK_IMAGE: char     = '\u{e271}';  // 
-    const CONFIG: char         = '\u{e615}';  // 
-    const JSON: char           = '\u{e60b}';  // 
-    const C_LANG: char         = '\u{e61e}';  // 
-    const CPP_LANG: char       = '\u{e61d}';  // 
-    const CSHARP_LANG: char    = '\u{f031b}'; // 󰌛
-    const FSHARP_LANG: char    = '\u{e7a7}';  // 
-    const GO_LANG: char        = '\u{e626}';  // 
-    const JAVA_LANG: char      = '\u{e256}';  // 
-    const PERL_LANG: char      = '\u{e769}';  // 
-    const PYTHON_LANG: char    = '\u{e606}';  // 
-    const R_LANG: char         = '\u{f25d}';  // 
-    const RUBY_LANG: char      = '\u{e21e}';  // 
-    const RUBYRAILS_LANG: char = '\u{e73b}';  // 
-    const RUST_LANG: char      = '\u{e7a8}';  // 
-    const TEX_LANG: char       = '\u{f034}';  // 
-    const APPLE: char          = '\u{f179}';  // 
-    const WINDOWS: char        = '\u{e70f}';  // 
-    const HTML5: char          = '\u{f13b}';  // 
-    const FONT: char           = '\u{f031}';  // 
-    const DATABASE: char       = '\u{f1c0}';  // 
-    const DOCUMENT: char       = '\u{f1c2}';  // 
-    const SHEET: char          = '\u{f1c3}';  // 
-    const SLIDE: char          = '\u{f1c4}';  // 
+    const AUDIO: char           = '\u{f001}';  // 
+    const IMAGE: char           = '\u{f1c5}';  // 
+    const VIDEO: char           = '\u{f03d}';  // 
+    const COMPRESSED: char      = '\u{f410}';  // 
+    const SHELL: char           = '\u{f489}';  // 
+    const GIT: char             = '\u{f1d3}';  // 
+    const MARKDOWN: char        = '\u{f48a}';  // 
+    const DISK_IMAGE: char      = '\u{e271}';  // 
+    const CONFIG: char          = '\u{e615}';  // 
+    const JSON: char            = '\u{e60b}';  // 
+    const C_LANG: char          = '\u{e61e}';  // 
+    const CPP_LANG: char        = '\u{e61d}';  // 
+    const CSHARP_LANG: char     = '\u{f031b}'; // 󰌛
+    const FSHARP_LANG: char     = '\u{e7a7}';  // 
+    const GO_LANG: char         = '\u{e626}';  // 
+    const JAVA_LANG: char       = '\u{e256}';  // 
+    const JAVASCRIPT_LANG: char = '\u{e74e}';  // 
+    const PERL_LANG: char       = '\u{e769}';  // 
+    const PYTHON_LANG: char     = '\u{e606}';  // 
+    const R_LANG: char          = '\u{f25d}';  // 
+    const RUBY_LANG: char       = '\u{e21e}';  // 
+    const RUBYRAILS_LANG: char  = '\u{e73b}';  // 
+    const RUST_LANG: char       = '\u{e7a8}';  // 
+    const TEX_LANG: char        = '\u{f034}';  // 
+    const TYPESCRIPT_LANG: char = '\u{e628}';  // 
+    const APPLE: char           = '\u{f179}';  // 
+    const WINDOWS: char         = '\u{e70f}';  // 
+    const HTML5: char           = '\u{f13b}';  // 
+    const FONT: char            = '\u{f031}';  // 
+    const DATABASE: char        = '\u{f1c0}';  // 
+    const DOCUMENT: char        = '\u{f1c2}';  // 
+    const SHEET: char           = '\u{f1c3}';  // 
+    const SLIDE: char           = '\u{f1c4}';  // 
 }
 
 // See build.rs for FILENAME_ICONS and EXTENSION_ICONS
