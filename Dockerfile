@@ -97,7 +97,11 @@ RUN apt-get install -y \
 RUN ln -s $(which python3) /usr/bin/python
 RUN cargo kcov --print-install-kcov-sh | sh
 
-ADD --chmod=+x devtools/* /vagrant/devtools/
+COPY --chmod=+x . /vagrant/
+
+# Make sudo dummy replacement, so we don't weaken docker security
+RUN echo -e "#!/bin/bash\n\$@" > /usr/bin/sudo
+RUN chmod +x /usr/bin/sudo
 
 RUN bash /vagrant/devtools/dev-set-up-environment.sh
 RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
