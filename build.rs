@@ -623,6 +623,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("ebook",           "'\u{e28b}'")  // 
                  .entry("ebuild",          "'\u{f30d}'")  // 
                  .entry("ejs",             "'\u{e618}'")  // 
+                 .entry("el",              "'\u{e632}'")  // 
                  .entry("elm",             "'\u{e62c}'")  // 
                  .entry("env",             "'\u{f462}'")  // 
                  .entry("eps",             "'\u{f0559}'") // 󰕙
@@ -651,6 +652,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("node",            "'\u{f0399}'") // 󰎙
                  .entry("npmignore",       "'\u{e71e}'")  // 
                  .entry("npmrc",           "'\u{e71e}'")  // 
+                 .entry("org",             "'\u{e633}'")  // 
                  .entry("part",            "'\u{f43a}'")  // 
                  .entry("patch",           "'\u{f440}'")  // 
                  .entry("pdf",             "'\u{f1c1}'")  // 
