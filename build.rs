@@ -217,6 +217,7 @@ fn generate_extension_type_map(file: &mut File) -> io::Result<()> {
                  .entry("aac",       "FileType::Music")
                  .entry("m4a",       "FileType::Music")
                  .entry("mka",       "FileType::Music")
+                 .entry("mp2",       "FileType::Music")
                  .entry("mp3",       "FileType::Music")
                  .entry("ogg",       "FileType::Music")
                  .entry("opus",      "FileType::Music")
@@ -366,6 +367,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("flac",            "Icons::AUDIO") // 
                  .entry("m4a",             "Icons::AUDIO") // 
                  .entry("mka",             "Icons::AUDIO") // 
+                 .entry("mp2",             "Icons::AUDIO") // 
                  .entry("mp3",             "Icons::AUDIO") // 
                  .entry("ogg",             "Icons::AUDIO") // 
                  .entry("opus",            "Icons::AUDIO") // 
