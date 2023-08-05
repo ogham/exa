@@ -18,12 +18,10 @@ RUN cargo install -q cargo-hack
 RUN cargo install -q --git https://github.com/ogham/specsheet
 
 # Install Just, the command runner.
-RUN wget -q "https://github.com/casey/just/releases/download/v0.8.3/just-v0.8.3-x86_64-unknown-linux-musl.tar.gz"
-RUN tar -xf "just-v0.8.3-x86_64-unknown-linux-musl.tar.gz"
-RUN cp just /usr/local/bin
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
-# Guarantee that the timezone is UTC — some of the tests depend on this (for now).
-RUN timedatectl set-timezone UTC
+# TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
+# RUN timedatectl set-timezone UTC
 
 ARG DEVELOPER=root
 # Use a different ‘target’ directory on the VM than on the host.
@@ -50,16 +48,18 @@ RUN ln -sf /usr/bin/run-xtests /usr/bin/x
 RUN echo -e "#!/bin/sh\nbuild-exa && test-exa && run-xtests" > /usr/bin/compile-exa
 RUN ln -sf /usr/bin/compile-exa /usr/bin/c
 
+ADD --chmod=+x devtools/dev-package-for-linux.sh /vagrant/devtools/dev-package-for-linux.sh
 RUN echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh \\$@" > /usr/bin/package-exa
 RUN echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
 
-RUN chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
+# RUN chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
 
 
 # Configure the welcoming text that gets shown:
 
 # Capture the help text so it gets displayed first
 RUN rm -f /etc/update-motd.d/*
+ADD --chmod=+x devtools/dev-help.sh /vagrant/devtools/dev-help.sh
 RUN bash /vagrant/devtools/dev-help.sh > /etc/motd
 
 # Tell bash to execute a bunch of stuff when a session starts
