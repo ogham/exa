@@ -1,3 +1,8 @@
+FROM rust:1.71.1 AS specsheet
+RUN git clone https://github.com/ogham/specsheet --depth 1
+WORKDIR /specsheet
+RUN cargo build --release --target-dir /usr/bin 
+
 # We use Ubuntu instead of Debian because the image comes with two-way
 # shared folder support by default.
 FROM ubuntu:22.04 AS base
@@ -113,8 +118,8 @@ RUN bash /usr/bin/build-exa
 # TODO: remove this and do it the other way around: create a link from /vagrant to /root
 RUN ln -s /vagrant/* /root
 
-RUN git clone https://github.com/ogham/specsheet --depth 1
-RUN cd specsheet && cargo build --release --target-dir /usr/bin
+COPY --from=specsheet /usr/bin/release/specsheet /usr/bin/specsheet
+
 
 FROM base AS test
 CMD ["/vagrant/xtests/run.sh"]
