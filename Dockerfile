@@ -23,13 +23,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash 
 # TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
 # RUN timedatectl set-timezone UTC
 
-ARG DEVELOPER=root
+ARG DEVELOPER_HOME=/root
 # Use a different ‘target’ directory on the VM than on the host.
 # By default it just uses the one in /vagrant/target, which can
 # cause problems if it has different permissions than the other
 # directories, or contains object files compiled for the host.
-RUN echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/${DEVELOPER}/.cargo/bin"' > /etc/environment
-RUN echo 'CARGO_TARGET_DIR="/home/${DEVELOPER}/target"' >> /etc/environment
+RUN echo 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${DEVELOPER_HOME}/.cargo/bin"' > /etc/environment
+RUN echo 'CARGO_TARGET_DIR="${DEVELOPER_HOME}/target"' >> /etc/environment
 
 # Create a variety of misc scripts.
 
@@ -63,12 +63,11 @@ ADD --chmod=+x devtools/dev-help.sh /vagrant/devtools/dev-help.sh
 RUN bash /vagrant/devtools/dev-help.sh > /etc/motd
 
 # Tell bash to execute a bunch of stuff when a session starts
-RUN echo "source /vagrant/devtools/dev-bash.sh" > /home/#{developer}/.bash_profile
-RUN chown #{developer} /home/#{developer}/.bash_profile
+RUN echo "source /vagrant/devtools/dev-bash.sh" > ${DEVELOPER_HOME}/.bash_profile
 
 # Disable last login date in sshd
-RUN sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
-RUN systemctl restart sshd
+# RUN sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
+# RUN systemctl restart sshd
 
 
 # Link the completion files so they’re “installed”:
@@ -91,17 +90,17 @@ RUN test -h /usr/share/fish/completions/exa.fish \
 RUN test -e ~/.cargo/bin/cargo-kcov \
     || cargo install cargo-kcov
 
-RUN sudo apt-get install -qq -o=Dpkg::Use-Pty=0 -y \
+RUN apt-get install -y \
     cmake g++ pkg-config \
     libcurl4-openssl-dev libdw-dev binutils-dev libiberty-dev
 
-RUN cargo kcov --print-install-kcov-sh | sudo sh
+RUN ln -s $(which python3) /usr/bin/python
+RUN cargo kcov --print-install-kcov-sh | sh
 
-ADD --chmod=+x devtools/dev-set-up-environment.sh /vagrant/devtools/dev-set-up-environment.sh
-ADD --chmod=+x devtools/dev-create-test-filesystem.sh /vagrant/devtools/dev-create-test-filesystem.sh
+ADD --chmod=+x devtools/* /vagrant/devtools/
 
-RUN sh /vagrant/devtools/dev-set-up-environment.sh
-RUN sh /vagrant/devtools/dev-create-test-filesystem.sh
+RUN bash /vagrant/devtools/dev-set-up-environment.sh
+RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
 
 WORKDIR /vagrant
 RUN cargo build
