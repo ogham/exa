@@ -110,5 +110,11 @@ WORKDIR /vagrant
 RUN cargo build
 RUN bash /usr/bin/build-exa
 
+# TODO: remove this and do it the other way around: create a link from /vagrant to /root
+RUN ln -s /vagrant/* /root
+
+RUN git clone https://github.com/ogham/specsheet --depth 1
+RUN cd specsheet && cargo build --release --target-dir /usr/bin
+
 FROM base AS test
 CMD ["/vagrant/xtests/run.sh"]
