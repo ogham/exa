@@ -634,6 +634,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("ex",              "'\u{e62d}'")  // 
                  .entry("exs",             "'\u{e62d}'")  // 
                  .entry("gform",           "'\u{f298}'")  // 
+                 .entry("gpg",             "'\u{f023}'")  // 
                  .entry("groovy",          "'\u{e775}'")  // 
                  .entry("hbs",             "'\u{e60f}'")  // 
                  .entry("hs",              "'\u{e777}'")  // 
