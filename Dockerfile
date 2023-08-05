@@ -8,6 +8,13 @@ RUN cargo install -q --git https://github.com/ogham/specsheet
 FROM rust:1.71.1 AS cargo-hack
 RUN cargo install -q cargo-hack
 
+FROM rust:1.71.1 AS exa
+WORKDIR /app
+# Copy the source code into the image
+COPY . .
+# Build exa
+RUN cargo build
+
 # We use Ubuntu instead of Debian because the image comes with two-way
 # shared folder support by default.
 # This image is based from Ubuntu
@@ -99,7 +106,7 @@ RUN bash /vagrant/devtools/dev-set-up-environment.sh
 RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
 
 WORKDIR /vagrant
-RUN cargo build
+COPY --from=exa /app/target /vagrant/target
 RUN bash /usr/bin/build-exa
 
 # TODO: remove this once tests don't depend on it
