@@ -561,6 +561,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("rubydoc",         "Icons::RUBYRAILS_LANG") // 
                  .entry("slim",            "Icons::RUBYRAILS_LANG") // 
                  .entry("rlib",            "Icons::RUST_LANG") // 
+                 .entry("rmeta",           "Icons::RUST_LANG") // 
                  .entry("rs",              "Icons::RUST_LANG") // 
                  .entry("cls",             "Icons::TEX_LANG") // 
                  .entry("latex",           "Icons::TEX_LANG") // 
