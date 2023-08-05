@@ -1,12 +1,12 @@
-# FROM rust:1.71.1 AS specsheet
-# RUN git clone https://github.com/ogham/specsheet --depth 1
-# WORKDIR /specsheet
-# RUN cargo build --release --target-dir /usr/bin 
-
 FROM rust:1.71.1 AS just
 # Install Just, the command runner.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
 
+FROM rust:1.71.1 AS specsheet
+RUN cargo install -q --git https://github.com/ogham/specsheet
+
+FROM rust:1.71.1 AS cargo-hack
+RUN cargo install -q cargo-hack
 
 # We use Ubuntu instead of Debian because the image comes with two-way
 # shared folder support by default.
@@ -18,10 +18,6 @@ RUN apt-get update -qq
 RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
     git gcc curl attr libgit2-dev zip \
     fish zsh bash bash-completion
-
-RUN cargo install -q cargo-hack
-RUN cargo install -q --git https://github.com/ogham/specsheet
-
 
 # TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
 # RUN timedatectl set-timezone UTC
@@ -109,9 +105,9 @@ RUN bash /usr/bin/build-exa
 # TODO: remove this once tests don't depend on it
 RUN ln -s /vagrant/* ${HOME}
 
+COPY --from=specsheet /usr/local/cargo/bin/specsheet /usr/bin/specsheet
+COPY --from=cargo-hack /usr/local/cargo/bin/cargo-hack /usr/bin/cargo-hack
 COPY --from=just /usr/bin/just /usr/bin/just
-# COPY --from=specsheet /usr/bin/release/specsheet /usr/bin/specsheet
-
 
 FROM base AS test
 CMD ["/vagrant/xtests/run.sh"]
