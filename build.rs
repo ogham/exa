@@ -646,6 +646,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("lock",            "'\u{f023}'")  // 
                  .entry("log",             "'\u{f18d}'")  // 
                  .entry("lua",             "'\u{e620}'")  // 
+                 .entry("ml",              "'\u{e67a}'")  // 
                  .entry("mobi",            "'\u{e28b}'")  // 
                  .entry("mustache",        "'\u{e60f}'")  // 
                  .entry("nix",             "'\u{f313}'")  // 
