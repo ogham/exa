@@ -31,7 +31,7 @@ RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
 
 # Create a variety of misc scripts.
 
-RUN ln -sf /vagrant/devtools/dev-run-debug.sh   /usr/bin/exa
+RUN ln -sf /vagrant/devtools/dev-run-debug.sh /usr/bin/exa
 RUN ln -sf /vagrant/devtools/dev-run-release.sh /usr/bin/rexa
 
 RUN echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml \\$@" > /usr/bin/build-exa
@@ -71,13 +71,14 @@ RUN echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
 # Link the completion files so they’re “installed”:
 
 # bash
-RUN ln -s /vagrant/contrib/completions.bash /etc/bash_completion.d/exa
+RUN ln -s /vagrant/completions/bash/exa /etc/bash_completion.d/exa
+RUN ln -s /vagrant/completions/bash/exa /usr/share/bash-completion/completions/exa
 
 # zsh
-RUN ln -s /vagrant/contrib/completions.zsh /usr/share/zsh/vendor-completions/_exa
+RUN ln -s /vagrant/completions/zsh/_exa /usr/share/zsh/vendor-completions/_exa
 
 # fish
-RUN ln -s /vagrant/contrib/completions.fish /usr/share/fish/completions/exa.fish
+RUN ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fish
 
 # Install kcov for test coverage
 # This doesn’t run coverage over the xtests so it’s less useful for now
