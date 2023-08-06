@@ -40,6 +40,8 @@ impl Icons {
     const DOCUMENT: char        = '\u{f1c2}';  // 
     const SHEET: char           = '\u{f1c3}';  // 
     const SLIDE: char           = '\u{f1c4}';  // 
+    const VIM: char             = '\u{e62b}';  // 
+    const EMACS: char           = '\u{e632}';  // 
 }
 
 // See build.rs for FILENAME_ICONS and EXTENSION_ICONS

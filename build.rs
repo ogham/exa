@@ -455,39 +455,17 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("zst",             "Icons::COMPRESSED") // 
                  .entry("awk",             "Icons::SHELL") // 
                  .entry("bash",            "Icons::SHELL") // 
-                 .entry("bash_history",    "Icons::SHELL") // 
-                 .entry("bash_login",      "Icons::SHELL") // 
-                 .entry("bash_logout",     "Icons::SHELL") // 
-                 .entry("bash_profile",    "Icons::SHELL") // 
-                 .entry("bashrc",          "Icons::SHELL") // 
                  .entry("bats",            "Icons::SHELL") // 
                  .entry("csh",             "Icons::SHELL") // 
-                 .entry("cshrc",           "Icons::SHELL") // 
                  .entry("fish",            "Icons::SHELL") // 
                  .entry("ksh",             "Icons::SHELL") // 
-                 .entry("kshrc",           "Icons::SHELL") // 
-                 .entry("login",           "Icons::SHELL") // 
-                 .entry("logout",          "Icons::SHELL") // 
                  .entry("mk",              "Icons::SHELL") // 
-                 .entry("profile",         "Icons::SHELL") // 
                  .entry("ps1",             "Icons::SHELL") // 
                  .entry("sh",              "Icons::SHELL") // 
                  .entry("shell",           "Icons::SHELL") // 
-                 .entry("tshrc",           "Icons::SHELL") // 
-                 .entry("zlogin",          "Icons::SHELL") // 
-                 .entry("zlogout",         "Icons::SHELL") // 
-                 .entry("zprofile",        "Icons::SHELL") // 
                  .entry("zsh",             "Icons::SHELL") // 
                  .entry("zsh-theme",       "Icons::SHELL") // 
-                 .entry("zshenv",          "Icons::SHELL") // 
-                 .entry("zshrc",           "Icons::SHELL") // 
-                 .entry("zsh_sessions",    "Icons::SHELL") // 
                  .entry("git",             "Icons::GIT") // 
-                 .entry("gitattributes",   "Icons::GIT") // 
-                 .entry("gitconfig",       "Icons::GIT") // 
-                 .entry("gitignore",       "Icons::GIT") // 
-                 .entry("gitignore_global","Icons::GIT") // 
-                 .entry("gitmodules",      "Icons::GIT") // 
                  .entry("jmd",             "Icons::MARKDOWN") // 
                  .entry("markdown",        "Icons::MARKDOWN") // 
                  .entry("md",              "Icons::MARKDOWN") // 
@@ -553,7 +531,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("gemspec",         "Icons::RUBY_LANG") // 
                  .entry("guardfile",       "Icons::RUBY_LANG") // 
                  .entry("procfile",        "Icons::RUBY_LANG") // 
-                 .entry("rakefile",        "Icons::RUBY_LANG") // 
                  .entry("rb",              "Icons::RUBY_LANG") // 
                  .entry("rspec",           "Icons::RUBY_LANG") // 
                  .entry("rspec_parallel",  "Icons::RUBY_LANG") // 
@@ -609,6 +586,8 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("odp",             "Icons::SLIDE") // 
                  .entry("ppt",             "Icons::SLIDE") // 
                  .entry("pptx",            "Icons::SLIDE") // 
+                 .entry("vim",             "Icons::VIM")  // 
+                 .entry("el",              "Icons::EMACS")  // 
                  .entry("ai",              "'\u{e7b4}'")  // 
                  .entry("android",         "'\u{e70e}'")  // 
                  .entry("apk",             "'\u{e70e}'")  // 
@@ -625,7 +604,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("ebook",           "'\u{e28b}'")  // 
                  .entry("ebuild",          "'\u{f30d}'")  // 
                  .entry("ejs",             "'\u{e618}'")  // 
-                 .entry("el",              "'\u{e632}'")  // 
                  .entry("elm",             "'\u{e62c}'")  // 
                  .entry("env",             "'\u{f462}'")  // 
                  .entry("eps",             "'\u{f0559}'") // 󰕙
@@ -638,7 +616,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("groovy",          "'\u{e775}'")  // 
                  .entry("hbs",             "'\u{e60f}'")  // 
                  .entry("hs",              "'\u{e777}'")  // 
-                 .entry("ideavimrc",       "'\u{e62b}'")  // 
                  .entry("iml",             "'\u{e7b5}'")  // 
                  .entry("ipynb",           "'\u{e678}'")  // 
                  .entry("jl",              "'\u{e624}'")  // 
@@ -654,8 +631,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("mustache",        "'\u{e60f}'")  // 
                  .entry("nix",             "'\u{f313}'")  // 
                  .entry("node",            "'\u{f0399}'") // 󰎙
-                 .entry("npmignore",       "'\u{e71e}'")  // 
-                 .entry("npmrc",           "'\u{e71e}'")  // 
                  .entry("org",             "'\u{e633}'")  // 
                  .entry("part",            "'\u{f43a}'")  // 
                  .entry("patch",           "'\u{f440}'")  // 
@@ -682,7 +657,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("tsx",             "'\u{e7ba}'")  // 
                  .entry("twig",            "'\u{e61c}'")  // 
                  .entry("txt",             "'\u{f15c}'")  // 
-                 .entry("vimrc",           "'\u{e62b}'")  // 
                  .entry("vue",             "'\u{f0844}'") // 󰡄
                  .entry("xml",             "'\u{f05c0}'") // 󰗀
                  .entry("xul",             "'\u{f05c0}'") // 󰗀
@@ -698,6 +672,23 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
 fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
     writeln!(file, "static FILENAME_ICONS: phf::Map<&'static str, char> = {};\n",
              phf_codegen::Map::new()
+                 .entry(".bash_history",      "Icons::SHELL") // 
+                 .entry(".bash_logout",       "Icons::SHELL") // 
+                 .entry(".bash_profile",      "Icons::SHELL") // 
+                 .entry(".bashrc",            "Icons::SHELL") // 
+                 .entry(".cshrc",             "Icons::SHELL") // 
+                 .entry(".kshrc",             "Icons::SHELL") // 
+                 .entry(".login",             "Icons::SHELL") // 
+                 .entry(".logout",            "Icons::SHELL") // 
+                 .entry(".profile",           "Icons::SHELL") // 
+                 .entry(".tcshrc",            "Icons::SHELL") // 
+                 .entry(".zlogin",            "Icons::SHELL") // 
+                 .entry(".zlogout",           "Icons::SHELL") // 
+                 .entry(".zprofile",          "Icons::SHELL") // 
+                 .entry(".zsh_history",       "Icons::SHELL") // 
+                 .entry(".zsh_sessions",      "Icons::SHELL") // 
+                 .entry(".zshenv",            "Icons::SHELL") // 
+                 .entry(".zshrc",             "Icons::SHELL") // 
                  .entry("csh.cshrc",          "Icons::SHELL") // 
                  .entry("csh.login",          "Icons::SHELL") // 
                  .entry("csh.logout",         "Icons::SHELL") // 
@@ -708,6 +699,11 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("zshenv",             "Icons::SHELL") // 
                  .entry("zshrc",              "Icons::SHELL") // 
                  .entry(".git",               "Icons::GIT") // 
+                 .entry(".gitattributes",     "Icons::GIT") // 
+                 .entry(".gitconfig",         "Icons::GIT") // 
+                 .entry(".gitignore",         "Icons::GIT") // 
+                 .entry(".gitignore_global",  "Icons::GIT") // 
+                 .entry(".gitmodules",        "Icons::GIT") // 
                  .entry("go.mod",             "Icons::GO_LANG") // 
                  .entry("go.sum",             "Icons::GO_LANG") // 
                  .entry("gradle",             "Icons::JAVA_LANG") // 
@@ -715,18 +711,24 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("MANIFEST.in",        "Icons::PYTHON_LANG") // 
                  .entry("pyproject.toml",     "Icons::PYTHON_LANG") // 
                  .entry(".rvm",               "Icons::RUBY_LANG") // 
+                 .entry("Rakefile",           "Icons::RUBY_LANG") // 
                  .entry("rubydoc",            "Icons::RUBYRAILS_LANG") // 
                  .entry(".cargo",             "Icons::RUST_LANG") // 
                  .entry(".rustup",            "Icons::RUST_LANG") // 
                  .entry("Cargo.toml",         "Icons::RUST_LANG") // 
                  .entry("Cargo.lock",         "Icons::RUST_LANG") // 
                  .entry("localized",          "Icons::APPLE") // 
+                 .entry(".ideavimrc",         "Icons::VIM") // 
+                 .entry(".vim",               "Icons::VIM") // 
+                 .entry(".viminfo",           "Icons::VIM") // 
+                 .entry(".vimrc",             "Icons::VIM") // 
+                 .entry(".emacs",             "Icons::EMACS") // 
                  .entry(".atom",              "'\u{e764}'") // 
-                 .entry(".emacs",             "'\u{e632}'") // 
                  .entry(".github",            "'\u{f408}'") // 
                  .entry(".idea",              "'\u{e7b5}'") // 
+                 .entry(".npmignore",         "'\u{e71e}'")  // 
+                 .entry(".npmrc",             "'\u{e71e}'")  // 
                  .entry(".Trash",             "'\u{f1f8}'") // 
-                 .entry(".vim",               "'\u{e62b}'") // 
                  .entry(".vscode",            "'\u{e70c}'") // 
                  .entry(".vscode-cli",        "'\u{e70c}'") // 
                  .entry("bin",                "'\u{e5fc}'") // 
@@ -743,14 +745,15 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("hidden",             "'\u{f023}'") // 
                  .entry("include",            "'\u{e5fc}'") // 
                  .entry("lib",                "'\u{f121}'") // 
-                 .entry("LICENSE",            "'\u{e60a}'") // 
                  .entry("LICENCE",            "'\u{e60a}'") // 
+                 .entry("LICENSE",            "'\u{e60a}'") // 
                  .entry("Makefile",           "'\u{e673}'") // 
                  .entry("makefile",           "'\u{e673}'") // 
-                 .entry("node_modules",       "'\u{e718}'") // 
-                 .entry("npmignore",          "'\u{e71e}'") // 
+                 .entry("node_modules",       "'\u{f0399}'")// 󰎙
+                 .entry("package.json",       "'\u{f0399}'")// 󰎙
+                 .entry("npmrc",              "'\u{e71e}'") // 
                  .entry("PKGBUILD",           "'\u{f303}'") // 
-                 .entry("yarn.lock",          "'\u{e718}'") // 
+                 .entry("yarn.lock",          "'\u{e6a7}'") // 
                  .build()
     )
 }
