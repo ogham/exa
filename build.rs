@@ -722,6 +722,7 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("Cargo.lock",         "Icons::RUST_LANG") // 
                  .entry("localized",          "Icons::APPLE") // 
                  .entry(".atom",              "'\u{e764}'") // 
+                 .entry(".emacs",             "'\u{e632}'") // 
                  .entry(".github",            "'\u{f408}'") // 
                  .entry(".idea",              "'\u{e7b5}'") // 
                  .entry(".Trash",             "'\u{f1f8}'") // 
