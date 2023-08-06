@@ -641,6 +641,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("rdb",             "'\u{e76d}'")  // 
                  .entry("rpm",             "'\u{e7bb}'")  // 
                  .entry("rss",             "'\u{f09e}'")  // 
+                 .entry("rst",             "'\u{f15c}'")  // 
                  .entry("rtf",             "'\u{f0219}'") // 󰈙
                  .entry("sass",            "'\u{e603}'")  // 
                  .entry("scala",           "'\u{e737}'")  // 
