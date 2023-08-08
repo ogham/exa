@@ -87,7 +87,7 @@ RUN ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fis
 # Copy the source code into the image
 COPY --chmod=+x . /vagrant/
 
-# Make sudo dummy replacement, so we don't weaken docker security
+# Make sudo dummy replacement
 # This is needed for some tests that use sudo
 RUN echo -e '#!/bin/sh\n"$@"' > /usr/bin/sudo
 RUN chmod +x /usr/bin/sudo
