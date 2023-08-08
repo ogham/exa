@@ -40,9 +40,6 @@ RUN apt-get install -y \
 RUN ln -s $(which python3) /usr/bin/python
 RUN cargo kcov --print-install-kcov-sh | sh
 
-# TODO: Guarantee that the timezone is UTC — some of the tests depend on this (for now).
-# RUN timedatectl set-timezone UTC
-
 # Create a variety of misc scripts.
 
 RUN ln -sf /vagrant/devtools/dev-run-debug.sh /usr/bin/exa
@@ -64,9 +61,6 @@ ADD --chmod=+x devtools/dev-package-for-linux.sh /vagrant/devtools/dev-package-f
 RUN echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh \\$@" > /usr/bin/package-exa
 RUN echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
 
-# RUN chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
-
-
 # Configure the welcoming text that gets shown:
 
 # Capture the help text so it gets displayed first
@@ -76,11 +70,6 @@ RUN bash /vagrant/devtools/dev-help.sh > /etc/motd
 
 # Tell bash to execute a bunch of stuff when a session starts
 RUN echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
-
-# Disable last login date in sshd
-# RUN sed -i '/PrintLastLog yes/c\PrintLastLog no' /etc/ssh/sshd_config
-# RUN systemctl restart sshd
-
 
 # Link the completion files so they’re “installed”:
 
