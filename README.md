@@ -234,7 +234,7 @@ For more information, see the [Building from Source page](https://the.exa.websit
 
 ### End to end testing
 
-## Testing with containers
+#### Testing with containers
 
 You can use [Docker](https://www.docker.com/) to run exa in a container, and test it against a known state.
 
@@ -251,7 +251,7 @@ docker run -it exa-test fish
 
 > Note: You should be able to run this with any container runtime you'd like. You are welcome to add a PR documenting how to do this with other runtimes.
 
-## Testing with Vagrant
+#### Testing with Vagrant
 
 exa uses [Vagrant][] to configure virtual machines for testing.
 
