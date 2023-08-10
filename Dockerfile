@@ -106,14 +106,14 @@ RUN bash /vagrant/devtools/dev-set-up-environment.sh
 RUN bash /vagrant/devtools/dev-create-test-filesystem.sh
 
 WORKDIR /vagrant
-COPY --from=exa /app/target /vagrant/target
+COPY --link --from=exa /app/target /vagrant/target
 
 # TODO: remove this once tests don't depend on it
 RUN ln -s /vagrant/* ${HOME}
 
-COPY --from=specsheet /usr/local/cargo/bin/specsheet /usr/bin/specsheet
-COPY --from=cargo-hack /usr/local/cargo/bin/cargo-hack /usr/bin/cargo-hack
-COPY --from=just /usr/bin/just /usr/bin/just
+COPY --link --from=specsheet /usr/local/cargo/bin/specsheet /usr/bin/specsheet
+COPY --link --from=cargo-hack /usr/local/cargo/bin/cargo-hack /usr/bin/cargo-hack
+COPY --link --from=just /usr/bin/just /usr/bin/just
 
 FROM base AS test
 CMD ["/vagrant/xtests/run.sh"]
