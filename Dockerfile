@@ -34,8 +34,8 @@ RUN cargo build
 FROM ${BASE_RUST} AS base
 
 # Install the dependencies needed for exa to build
-RUN apt-get update -qq
-RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
+RUN --mount=type=cache,target=/var/cache/apt apt-get update -qq
+RUN --mount=type=cache,target=/var/cache/apt apt-get install -qq -o=Dpkg::Use-Pty=0 \
     git gcc curl attr libgit2-dev zip \
     fish zsh bash bash-completion
 
@@ -43,7 +43,7 @@ RUN apt-get install -qq -o=Dpkg::Use-Pty=0 \
 # This doesn’t run coverage over the xtests so it’s less useful for now
 COPY --from=cargo-kcov /usr/local/cargo/bin/cargo-kcov /usr/bin/cargo-kcov
 
-RUN apt-get install -y \
+RUN --mount=type=cache,target=/var/cache/apt apt-get install -y \
     cmake g++ pkg-config \
     libcurl4-openssl-dev libdw-dev binutils-dev libiberty-dev
 
