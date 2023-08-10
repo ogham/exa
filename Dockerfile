@@ -1,17 +1,19 @@
-FROM rust:1.71.1 AS just
+ARG base-rust=rust:1.71.1
+
+FROM base-rust AS just
 # Install Just, the command runner.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/bin
 
-FROM rust:1.71.1 AS specsheet
+FROM base-rust AS specsheet
 RUN cargo install -q --git https://github.com/ogham/specsheet
 
-FROM rust:1.71.1 AS cargo-hack
+FROM base-rust AS cargo-hack
 RUN cargo install -q cargo-hack
 
-FROM rust:1.71.1 AS cargo-kcov
+FROM base-rust AS cargo-kcov
 RUN cargo install -q cargo-kcov
 
-FROM rust:1.71.1 AS exa
+FROM base-rust AS exa
 WORKDIR /app
 # Copy the source code into the image
 COPY . .
@@ -21,7 +23,7 @@ RUN cargo build
 # We use Ubuntu instead of Debian because the image comes with two-way
 # shared folder support by default.
 # This image is based from Ubuntu
-FROM rust:1.71.1 AS base
+FROM base-rust AS base
 
 # Install the dependencies needed for exa to build
 RUN apt-get update -qq
