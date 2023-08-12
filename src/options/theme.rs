@@ -130,18 +130,18 @@ mod terminal_test {
 
     impl MockVars {
         fn empty() -> MockVars {
-            return MockVars {
+            MockVars {
                 ls: "",
                 exa: "",
                 no_color: "",
-            };
+            }
         }
         fn with_no_color() -> MockVars {
-            return MockVars {
+            MockVars {
                 ls: "",
                 exa: "",
                 no_color: "true",
-            };
+            }
         }
     }
 

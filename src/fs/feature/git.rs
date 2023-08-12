@@ -296,6 +296,7 @@ impl Git {
 /// Paths need to be absolute for them to be compared properly, otherwise
 /// you’d ask a repo about “./README.md” but it only knows about
 /// “/vagrant/README.md”, prefixed by the workdir.
+#[cfg(unix)]
 fn reorient(path: &Path) -> PathBuf {
     use std::env::current_dir;
 
@@ -306,6 +307,14 @@ fn reorient(path: &Path) -> PathBuf {
     };
 
     path.canonicalize().unwrap_or(path)
+}
+
+#[cfg(windows)]
+fn reorient(path: &Path) -> PathBuf {
+    let unc_path = path.canonicalize().unwrap();
+    // On Windows UNC path is returned. We need to strip the prefix for it to work.
+    let normal_path = unc_path.as_os_str().to_str().unwrap().trim_left_matches("\\\\?\\");
+    return PathBuf::from(normal_path);
 }
 
 /// The character to display if the file has been modified, but not staged.

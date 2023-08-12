@@ -6,6 +6,7 @@ use crate::output::render::FiletypeColours;
 
 
 impl f::PermissionsPlus {
+    #[cfg(unix)]
     pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> TextCell {
         let mut chars = vec![ self.file_type.render(colours) ];
         chars.extend(self.permissions.render(colours, self.file_type.is_regular_file()));
@@ -17,6 +18,17 @@ impl f::PermissionsPlus {
         // As these are all ASCII characters, we can guarantee that they’re
         // all going to be one character wide, and don’t need to compute the
         // cell’s display width.
+        TextCell {
+            width:    DisplayWidth::from(chars.len()),
+            contents: chars.into(),
+        }
+    }
+
+    #[cfg(windows)]
+    pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> TextCell {
+        let mut chars = vec![ self.attributes.render_type(colours) ];
+        chars.extend(self.attributes.render(colours));
+
         TextCell {
             width:    DisplayWidth::from(chars.len()),
             contents: chars.into(),
@@ -76,6 +88,33 @@ impl f::Permissions {
     }
 }
 
+impl f::Attributes {
+    pub fn render<C: Colours+FiletypeColours>(&self, colours: &C) -> Vec<ANSIString<'static>> {
+        let bit = |bit, chr: &'static str, style: Style| {
+            if bit { style.paint(chr) }
+              else { colours.dash().paint("-") }
+        };
+
+        vec![
+            bit(self.archive,   "a", colours.normal()),
+            bit(self.readonly,  "r", colours.user_read()),
+            bit(self.hidden,    "h", colours.special_user_file()),
+            bit(self.system,    "s", colours.special_other()),
+        ]
+    }
+
+    pub fn render_type<C: Colours+FiletypeColours>(&self, colours: &C) -> ANSIString<'static> {
+        if self.reparse_point {
+            return colours.pipe().paint("l")
+        }
+        else if self.directory {
+            return colours.directory().paint("d")
+        }
+        else {
+            return colours.dash().paint("-")
+        }
+    }
+}
 
 pub trait Colours {
     fn dash(&self) -> Style;

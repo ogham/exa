@@ -69,7 +69,7 @@ static EXTENDED_HELP:   &str = "  -@, --extended       list each file's extended
 /// All the information needed to display the help text, which depends
 /// on which features are enabled and whether the user only wants to
 /// see one section’s help.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct HelpString;
 
 impl HelpString {

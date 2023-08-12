@@ -18,7 +18,7 @@ use crate::output::tree::{TreeParams, TreeDepth};
 use crate::theme::Theme;
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Options {
     pub grid: GridOptions,
     pub details: DetailsOptions,
@@ -39,7 +39,7 @@ impl Options {
 /// small directory of four files in four columns, the files just look spaced
 /// out and it’s harder to see what’s going on. So it can be enabled just for
 /// larger directory listings.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum RowThreshold {
 
     /// Only use grid-details view if it would result in at least this many
@@ -202,7 +202,7 @@ impl<'a> Render<'a> {
             (None,    _)        => {/* Keep Git how it is */},
         }
 
-        let mut table = Table::new(options, self.git, &self.theme);
+        let mut table = Table::new(options, self.git, self.theme);
         let mut rows = Vec::new();
 
         if self.details.header {

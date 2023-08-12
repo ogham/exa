@@ -2,6 +2,7 @@
 
 use std::cmp::Ordering;
 use std::iter::FromIterator;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 
 use crate::fs::DotFilter;
@@ -22,7 +23,7 @@ use crate::fs::File;
 /// The filter also governs sorting the list. After being filtered, pairs of
 /// files are compared and sorted based on the result, with the sort field
 /// performing the comparison.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct FileFilter {
 
     /// Whether directories should be listed first, and other types of file
@@ -88,7 +89,7 @@ impl FileFilter {
     }
 
     /// Sort the files in the given vector based on the sort field option.
-    pub fn sort_files<'a, F>(&self, files: &mut Vec<F>)
+    pub fn sort_files<'a, F>(&self, files: &mut [F])
     where F: AsRef<File<'a>>
     {
         files.sort_by(|a, b| {
@@ -112,7 +113,7 @@ impl FileFilter {
 
 
 /// User-supplied field to sort by.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum SortField {
 
     /// Don’t apply any sorting. This is usually used as an optimisation in
@@ -130,6 +131,7 @@ pub enum SortField {
 
     /// The file’s inode, which usually corresponds to the order in which
     /// files were created on the filesystem, more or less.
+    #[cfg(unix)]
     FileInode,
 
     /// The time the file was modified (the “mtime”).
@@ -192,7 +194,7 @@ pub enum SortField {
 /// lowercase letters because it takes the difference between the two cases
 /// into account? I gave up and just named these two variants after the
 /// effects they have.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum SortCase {
 
     /// Sort files case-sensitively with uppercase first, with ‘A’ coming
@@ -223,6 +225,7 @@ impl SortField {
             Self::Name(AaBbCc)  => natord::compare_ignore_case(&a.name, &b.name),
 
             Self::Size          => a.metadata.len().cmp(&b.metadata.len()),
+            #[cfg(unix)]
             Self::FileInode     => a.metadata.ino().cmp(&b.metadata.ino()),
             Self::ModifiedDate  => a.modified_time().cmp(&b.modified_time()),
             Self::AccessedDate  => a.accessed_time().cmp(&b.accessed_time()),
@@ -268,7 +271,7 @@ impl SortField {
 /// The **ignore patterns** are a list of globs that are tested against
 /// each filename, and if any of them match, that file isn’t displayed.
 /// This lets a user hide, say, text files by ignoring `*.txt`.
-#[derive(PartialEq, Default, Debug, Clone)]
+#[derive(PartialEq, Eq, Default, Debug, Clone)]
 pub struct IgnorePatterns {
     patterns: Vec<glob::Pattern>,
 }
@@ -324,7 +327,7 @@ impl IgnorePatterns {
 
 
 /// Whether to ignore or display files that Git would ignore.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum GitIgnore {
 
     /// Ignore files that Git would ignore.
@@ -343,31 +346,31 @@ mod test_ignores {
     #[test]
     fn empty_matches_nothing() {
         let pats = IgnorePatterns::empty();
-        assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert!(!pats.is_ignored("nothing"));
+        assert!(!pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_a_glob() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "*.mp3" ]);
         assert!(fails.is_empty());
-        assert_eq!(false, pats.is_ignored("nothing"));
-        assert_eq!(true,  pats.is_ignored("test.mp3"));
+        assert!(!pats.is_ignored("nothing"));
+        assert!(pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_an_exact_filename() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing" ]);
         assert!(fails.is_empty());
-        assert_eq!(true,  pats.is_ignored("nothing"));
-        assert_eq!(false, pats.is_ignored("test.mp3"));
+        assert!(pats.is_ignored("nothing"));
+        assert!(!pats.is_ignored("test.mp3"));
     }
 
     #[test]
     fn ignores_both() {
         let (pats, fails) = IgnorePatterns::parse_from_iter(vec![ "nothing", "*.mp3" ]);
         assert!(fails.is_empty());
-        assert_eq!(true, pats.is_ignored("nothing"));
-        assert_eq!(true, pats.is_ignored("test.mp3"));
+        assert!(pats.is_ignored("nothing"));
+        assert!(pats.is_ignored("test.mp3"));
     }
 }

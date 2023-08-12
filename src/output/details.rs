@@ -91,7 +91,7 @@ use crate::theme::Theme;
 ///
 /// Almost all the heavy lifting is done in a Table object, which handles the
 /// columns for each row.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Options {
 
     /// Options specific to drawing a table.
@@ -161,7 +161,7 @@ impl<'a> Render<'a> {
                 (None,    _)        => {/* Keep Git how it is */},
             }
 
-            let mut table = Table::new(table, self.git, &self.theme);
+            let mut table = Table::new(table, self.git, self.theme);
 
             if self.opts.header {
                 let header = table.header_row();

@@ -52,7 +52,7 @@ pub type Values = &'static [&'static str];
 
 /// A **flag** is either of the two argument types, because they have to
 /// be in the same array together.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Flag {
     Short(ShortArg),
     Long(LongArg),
@@ -77,7 +77,7 @@ impl fmt::Display for Flag {
 }
 
 /// Whether redundant arguments should be considered a problem.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum Strictness {
 
     /// Throw an error when an argument doesn’t do anything, either because
@@ -91,7 +91,7 @@ pub enum Strictness {
 
 /// Whether a flag takes a value. This is applicable to both long and short
 /// arguments.
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum TakesValue {
 
     /// This flag has to be followed by a value.
@@ -108,7 +108,7 @@ pub enum TakesValue {
 
 
 /// An **argument** can be matched by one of the user’s input strings.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Arg {
 
     /// The short argument that matches it, if any.
@@ -136,7 +136,7 @@ impl fmt::Display for Arg {
 
 
 /// Literally just several args.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Args(pub &'static [&'static Arg]);
 
 impl Args {
@@ -146,8 +146,6 @@ impl Args {
     pub fn parse<'args, I>(&self, inputs: I, strictness: Strictness) -> Result<Matches<'args>, ParseError>
     where I: IntoIterator<Item = &'args OsStr>
     {
-        use std::os::unix::ffi::OsStrExt;
-
         let mut parsing = true;
 
         // The results that get built up.
@@ -159,7 +157,7 @@ impl Args {
         // doesn’t have one in its string so it needs the next one.
         let mut inputs = inputs.into_iter();
         while let Some(arg) = inputs.next() {
-            let bytes = arg.as_bytes();
+            let bytes = os_str_to_bytes(arg);
 
             // Stop parsing if one of the arguments is the literal string “--”.
             // This allows a file named “--arg” to be specified by passing in
@@ -174,7 +172,7 @@ impl Args {
 
             // If the string starts with *two* dashes then it’s a long argument.
             else if bytes.starts_with(b"--") {
-                let long_arg_name = OsStr::from_bytes(&bytes[2..]);
+                let long_arg_name = bytes_to_os_str(&bytes[2..]);
 
                 // If there’s an equals in it, then the string before the
                 // equals will be the flag’s name, and the string after it
@@ -221,7 +219,7 @@ impl Args {
             // If the string starts with *one* dash then it’s one or more
             // short arguments.
             else if bytes.starts_with(b"-") && arg != "-" {
-                let short_arg = OsStr::from_bytes(&bytes[1..]);
+                let short_arg = bytes_to_os_str(&bytes[1..]);
 
                 // If there’s an equals in it, then the argument immediately
                 // before the equals was the one that has the value, with the
@@ -236,7 +234,7 @@ impl Args {
                 // it’s an error if any of the first set of arguments actually
                 // takes a value.
                 if let Some((before, after)) = split_on_equals(short_arg) {
-                    let (arg_with_value, other_args) = before.as_bytes().split_last().unwrap();
+                    let (arg_with_value, other_args) = os_str_to_bytes(before).split_last().unwrap();
 
                     // Process the characters immediately following the dash...
                     for byte in other_args {
@@ -291,7 +289,7 @@ impl Args {
                             TakesValue::Optional(values) => {
                                 if index < bytes.len() - 1 {
                                     let remnants = &bytes[index+1 ..];
-                                    result_flags.push((flag, Some(OsStr::from_bytes(remnants))));
+                                    result_flags.push((flag, Some(bytes_to_os_str(remnants))));
                                     break;
                                 }
                                 else if let Some(next_arg) = inputs.next() {
@@ -342,7 +340,7 @@ impl Args {
 
 
 /// The **matches** are the result of parsing the user’s command-line strings.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Matches<'args> {
 
     /// The flags that were parsed from the user’s input.
@@ -353,7 +351,7 @@ pub struct Matches<'args> {
     pub frees: Vec<&'args OsStr>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct MatchedFlags<'args> {
 
     /// The individual flags from the user’s input, in the order they were
@@ -464,7 +462,7 @@ impl<'a> MatchedFlags<'a> {
 
 /// A problem with the user’s input that meant it couldn’t be parsed into a
 /// coherent list of arguments.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum ParseError {
 
     /// A flag that has to take a value was not given one.
@@ -495,19 +493,42 @@ impl fmt::Display for ParseError {
     }
 }
 
+#[cfg(unix)]
+fn os_str_to_bytes<'b>(s: &'b OsStr) ->  &'b [u8]{
+    use std::os::unix::ffi::OsStrExt;
+
+    return s.as_bytes()
+}
+
+#[cfg(unix)]
+fn bytes_to_os_str<'b>(b:  &'b [u8]) ->  &'b OsStr{
+    use std::os::unix::ffi::OsStrExt;
+
+    return OsStr::from_bytes(b);
+}
+
+#[cfg(windows)]
+fn os_str_to_bytes<'b>(s: &'b OsStr) ->  &'b [u8]{
+    return s.to_str().unwrap().as_bytes()
+}
+
+#[cfg(windows)]
+fn bytes_to_os_str<'b>(b:  &'b [u8]) ->  &'b OsStr{
+    use std::str;
+
+    return OsStr::new(str::from_utf8(b).unwrap());
+}
 
 /// Splits a string on its `=` character, returning the two substrings on
 /// either side. Returns `None` if there’s no equals or a string is missing.
 fn split_on_equals(input: &OsStr) -> Option<(&OsStr, &OsStr)> {
-    use std::os::unix::ffi::OsStrExt;
-
-    if let Some(index) = input.as_bytes().iter().position(|elem| *elem == b'=') {
-        let (before, after) = input.as_bytes().split_at(index);
+    if let Some(index) = os_str_to_bytes(input).iter().position(|elem| *elem == b'=') {
+        let (before, after) = os_str_to_bytes(input).split_at(index);
 
         // The after string contains the = that we need to remove.
         if ! before.is_empty() && after.len() >= 2 {
-            return Some((OsStr::from_bytes(before),
-                         OsStr::from_bytes(&after[1..])))
+            return Some((bytes_to_os_str(before),
+                         bytes_to_os_str(&after[1..])))
         }
     }
 
@@ -722,6 +743,6 @@ mod matches_test {
     fn no_count() {
         let flags = MatchedFlags { flags: Vec::new(), strictness: Strictness::UseLastArguments };
 
-        assert_eq!(flags.has(&COUNT).unwrap(), false);
+        assert!(!flags.has(&COUNT).unwrap());
     }
 }

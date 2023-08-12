@@ -7,7 +7,7 @@ use crate::options::parser::{Arg, Flag, ParseError};
 
 
 /// Something wrong with the combination of options the user has picked.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum OptionsError {
 
     /// There was an error (from `getopts`) parsing the arguments.
@@ -44,7 +44,7 @@ pub enum OptionsError {
 }
 
 /// The source of a string that failed to be parsed as a number.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum NumberSource {
 
     /// It came... from a command-line argument!
@@ -119,7 +119,7 @@ impl OptionsError {
 
 
 /// A list of legal choices for an argument-taking option.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Choices(pub &'static [&'static str]);
 
 impl fmt::Display for Choices {

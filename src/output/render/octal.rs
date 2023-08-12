@@ -6,7 +6,7 @@ use crate::output::cell::TextCell;
 
 impl f::OctalPermissions {
     fn bits_to_octal(r: bool, w: bool, x: bool) -> u8 {
-        (r as u8) * 4 + (w as u8) * 2 + (x as u8)
+        u8::from(r) * 4 + u8::from(w) * 2 + u8::from(x)
     }
 
     pub fn render(&self, style: Style) -> TextCell {
@@ -40,7 +40,7 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "0755");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
     }
 
     #[test]
@@ -54,7 +54,7 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "0644");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
     }
 
     #[test]
@@ -68,7 +68,7 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "0600");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
     }
 
     #[test]
@@ -82,7 +82,7 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "4777");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
 
     }
 
@@ -97,7 +97,7 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "2777");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
     }
 
     #[test]
@@ -111,6 +111,6 @@ pub mod test {
         let octal = f::OctalPermissions{ permissions: bits };
 
         let expected = TextCell::paint_str(Purple.bold(), "1777");
-        assert_eq!(expected, octal.render(Purple.bold()).into());
+        assert_eq!(expected, octal.render(Purple.bold()));
     }
 }

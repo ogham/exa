@@ -111,6 +111,13 @@ impl<'dir, 'ig> Files<'dir, 'ig> {
                     continue;
                 }
 
+                // Also hide _prefix files on Windows because it's used by old applications
+                // as an alternative to dot-prefix files.
+                #[cfg(windows)]
+                if ! self.dotfiles && filename.starts_with('_') {
+                    continue;
+                }
+
                 if self.git_ignoring {
                     let git_status = self.git.map(|g| g.get(path, false)).unwrap_or_default();
                     if git_status.unstaged == GitStatus::Ignored {
@@ -169,7 +176,7 @@ impl<'dir, 'ig> Iterator for Files<'dir, 'ig> {
 /// Usually files in Unix use a leading dot to be hidden or visible, but two
 /// entries in particular are “extra-hidden”: `.` and `..`, which only become
 /// visible after an extra `-a` option.
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum DotFilter {
 
     /// Shows files, dotfiles, and `.` and `..`.

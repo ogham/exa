@@ -3,8 +3,8 @@ name = "exa"
 description = "A modern replacement for ls"
 authors = ["Benjamin Sago <ogham@bsago.me>"]
 categories = ["command-line-utilities"]
-edition = "2018"
-rust-version = "1.56.1"
+edition = "2021"
+rust-version = "1.66.1"
 exclude = ["/devtools/*", "/Justfile", "/Vagrantfile", "/screenshots.png"]
 readme = "README.md"
 homepage = "https://the.exa.website/"
@@ -31,8 +31,10 @@ scoped_threadpool = "0.1"
 term_grid = "0.2.0"
 terminal_size = "0.1.16"
 unicode-width = "0.1"
-users = "0.11"
 zoneinfo_compiled = "0.5.1"
+
+[target.'cfg(unix)'.dependencies]
+users = "0.11"
 
 [dependencies.datetime]
 version = "0.5.2"

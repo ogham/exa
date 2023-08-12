@@ -88,6 +88,7 @@ impl SortField {
             "cr" | "created" => {
                 Self::CreatedDate
             }
+            #[cfg(unix)]
             "inode" => {
                 Self::FileInode
             }
@@ -294,7 +295,6 @@ mod test {
     mod ignore_patterns {
         use super::*;
         use std::iter::FromIterator;
-        use glob;
 
         fn pat(string: &'static str) -> glob::Pattern {
             glob::Pattern::new(string).unwrap()

@@ -196,8 +196,8 @@ To build without Git support, run `cargo install --no-default-features exa` is a
 <a id="development">
 <h1>Development
 
-<a href="https://blog.rust-lang.org/2021/11/01/Rust-1.56.1.html">
-    <img src="https://img.shields.io/badge/rustc-1.56.1+-lightgray.svg" alt="Rust 1.56.1+" />
+<a href="https://blog.rust-lang.org/2023/01/10/Rust-1.66.1.html">
+    <img src="https://img.shields.io/badge/rustc-1.66.1+-lightgray.svg" alt="Rust 1.66.1+" />
 </a>
 
 <a href="https://github.com/ogham/exa/blob/master/LICENCE">
@@ -206,7 +206,7 @@ To build without Git support, run `cargo install --no-default-features exa` is a
 </h1></a>
 
 exa is written in [Rust](https://www.rust-lang.org/).
-You will need rustc version 1.56.1 or higher.
+You will need rustc version 1.66.1 or higher.
 The recommended way to install Rust for development is from the [official download page](https://www.rust-lang.org/tools/install), using rustup.
 
 Once Rust is installed, you can compile exa with Cargo:
