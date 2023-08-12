@@ -311,8 +311,10 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "pptx"          => '\u{f1c4}', // 
             "procfile"      => '\u{e21e}', // 
             "properties"    => '\u{e60b}', // 
-            "ps1"           => '\u{f489}', // 
+            "ps1"           => '\u{ebc7}', //  
             "psd"           => '\u{e7b8}', // 
+            "psd1"          => '\u{ebc7}', //  
+            "psm1"          => '\u{ebc7}', //  
             "pxm"           => '\u{f1c5}', // 
             "py"            => '\u{e606}', // 
             "pyc"           => '\u{e606}', // 
