@@ -124,7 +124,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "bash_history"  => '\u{f489}', // 
             "bash_profile"  => '\u{f489}', // 
             "bashrc"        => '\u{f489}', // 
-            "bat"           => '\u{f17a}', // 
+            "bat"           => '\u{ebc4}', //  
             "bats"          => '\u{f489}', // 
             "bib"           => '\u{e69b}', // 
             "bin"           => '\u{eae8}', // 
