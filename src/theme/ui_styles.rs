@@ -183,7 +183,7 @@ impl UiStyles {
             "gd" => self.git.deleted              = pair.to_style(),
             "gv" => self.git.renamed              = pair.to_style(),
             "gt" => self.git.typechange           = pair.to_style(),
-
+            "gi" => self.git.ignored              = pair.to_style(),
             "xx" => self.punctuation              = pair.to_style(),
             "da" => self.date                     = pair.to_style(),
             "in" => self.inode                    = pair.to_style(),
