@@ -328,6 +328,8 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "tbz"           => '\u{f410}', // 
             "tbz2"          => '\u{f410}', // 
             "tex"           => '\u{f034}', // 
+            "tf"            => '\u{f1062}', // 󱁢
+            "tfstate"       => '\u{f1062}', // 󱁢
             "tgz"           => '\u{f410}', // 
             "tiff"          => '\u{f1c5}', // 
             "tlz"           => '\u{f410}', // 
