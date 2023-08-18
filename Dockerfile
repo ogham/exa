@@ -71,7 +71,7 @@ RUN <<EOF
   echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
   
   chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
-EOF  
+EOF
 
 # Configure the welcoming text that gets shown:
 RUN <<EOF
