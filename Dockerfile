@@ -51,25 +51,27 @@ RUN ln -s $(which python3) /usr/bin/python
 RUN cargo kcov --print-install-kcov-sh | sh
 
 # Create a variety of misc scripts.
+RUN <<EOF
+  ln -sf /vagrant/devtools/dev-run-debug.sh /usr/bin/exa
+  ln -sf /vagrant/devtools/dev-run-release.sh /usr/bin/rexa
 
-RUN ln -sf /vagrant/devtools/dev-run-debug.sh /usr/bin/exa
-RUN ln -sf /vagrant/devtools/dev-run-release.sh /usr/bin/rexa
+  echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml \\$@" > /usr/bin/build-exa
+  ln -sf /usr/bin/build-exa /usr/bin/b
 
-RUN echo -e "#!/bin/sh\ncargo build --manifest-path /vagrant/Cargo.toml \\$@" > /usr/bin/build-exa
-RUN ln -sf /usr/bin/build-exa /usr/bin/b
+  echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml \\$@ -- --quiet" > /usr/bin/test-exa
+  ln -sf /usr/bin/test-exa /usr/bin/t
 
-RUN echo -e "#!/bin/sh\ncargo test --manifest-path /vagrant/Cargo.toml \\$@ -- --quiet" > /usr/bin/test-exa
-RUN ln -sf /usr/bin/test-exa /usr/bin/t
+  echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/run-xtests
+  ln -sf /usr/bin/run-xtests /usr/bin/x
 
-RUN echo -e "#!/bin/sh\n/vagrant/xtests/run.sh" > /usr/bin/run-xtests
-RUN ln -sf /usr/bin/run-xtests /usr/bin/x
+  echo -e "#!/bin/sh\nbuild-exa && test-exa && run-xtests" > /usr/bin/compile-exa
+  ln -sf /usr/bin/compile-exa /usr/bin/c
 
-RUN echo -e "#!/bin/sh\nbuild-exa && test-exa && run-xtests" > /usr/bin/compile-exa
-RUN ln -sf /usr/bin/compile-exa /usr/bin/c
-
-ADD --chmod=+x devtools/dev-package-for-linux.sh /vagrant/devtools/dev-package-for-linux.sh
-RUN echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh \\$@" > /usr/bin/package-exa
-RUN echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
+  echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh \\$@" > /usr/bin/package-exa
+  echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
+  
+  chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
+EOF  
 
 # Configure the welcoming text that gets shown:
 
