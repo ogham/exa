@@ -74,26 +74,26 @@ RUN <<EOF
 EOF  
 
 # Configure the welcoming text that gets shown:
+RUN <<EOF
+  # Capture the help text so it gets displayed first
+  rm -f /etc/update-motd.d/*
+  bash /vagrant/devtools/dev-help.sh > /etc/motd
 
-# Capture the help text so it gets displayed first
-RUN rm -f /etc/update-motd.d/*
-ADD --chmod=+x devtools/dev-help.sh /vagrant/devtools/dev-help.sh
-RUN bash /vagrant/devtools/dev-help.sh > /etc/motd
+  # Tell bash to execute a bunch of stuff when a session starts
+  echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
 
-# Tell bash to execute a bunch of stuff when a session starts
-RUN echo "source /vagrant/devtools/dev-bash.sh" > ${HOME}/.bash_profile
+  # Link the completion files so they’re “installed”:
 
-# Link the completion files so they’re “installed”:
+  # bash
+  ln -s /vagrant/completions/bash/exa /etc/bash_completion.d/exa
+  ln -s /vagrant/completions/bash/exa /usr/share/bash-completion/completions/exa
 
-# bash
-RUN ln -s /vagrant/completions/bash/exa /etc/bash_completion.d/exa
-RUN ln -s /vagrant/completions/bash/exa /usr/share/bash-completion/completions/exa
+  # zsh
+  ln -s /vagrant/completions/zsh/_exa /usr/share/zsh/vendor-completions/_exa
 
-# zsh
-RUN ln -s /vagrant/completions/zsh/_exa /usr/share/zsh/vendor-completions/_exa
-
-# fish
-RUN ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fish
+  # fish
+  ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fish
+EOF
 
 
 # Copy the source code into the image
