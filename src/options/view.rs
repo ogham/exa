@@ -199,7 +199,7 @@ impl TableOptions {
 impl Columns {
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
         let time_types = TimeTypes::deduce(matches)?;
-        let git = matches.has(&flags::GIT)?;
+        let git = matches.has(&flags::GIT)? && !matches.has(&flags::NO_GIT)?;
 
         let blocks = matches.has(&flags::BLOCKS)?;
         let group  = matches.has(&flags::GROUP)?;
@@ -357,8 +357,8 @@ mod test {
 
     static TEST_ARGS: &[&Arg] = &[ &flags::BINARY, &flags::BYTES,    &flags::TIME_STYLE,
                                    &flags::TIME,   &flags::MODIFIED, &flags::CHANGED,
-                                   &flags::CREATED, &flags::ACCESSED,
-                                   &flags::HEADER, &flags::GROUP,  &flags::INODE, &flags::GIT,
+                                   &flags::CREATED, &flags::ACCESSED, &flags::HEADER,
+                                   &flags::GROUP,  &flags::INODE, &flags::GIT, &flags::NO_GIT,
                                    &flags::LINKS,  &flags::BLOCKS, &flags::LONG,  &flags::LEVEL,
                                    &flags::GRID,   &flags::ACROSS, &flags::ONE_LINE, &flags::TREE,
                                    &flags::NUMERIC ];

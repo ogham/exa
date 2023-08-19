@@ -61,9 +61,10 @@ LONG VIEW OPTIONS
   --no-user            suppress the user field
   --no-time            suppress the time field";
 
-static GIT_FILTER_HELP: &str = "  --git-ignore               ignore files mentioned in '.gitignore'";
-static GIT_VIEW_HELP:   &str = "  --git                list each file's Git status, if tracked or ignored";
-static EXTENDED_HELP:   &str = "  -@, --extended       list each file's extended attributes and sizes";
+static GIT_FILTER_HELP:  &str = "  --git-ignore               ignore files mentioned in '.gitignore'";
+static GIT_VIEW_HELP:    &str = "  --git                list each file's Git status, if tracked or ignored";
+static NO_GIT_VIEW_HELP: &str = "  --no-git             don't list Git status (always overrides --git)";
+static EXTENDED_HELP:    &str = "  -@, --extended       list each file's extended attributes and sizes";
 
 
 /// All the information needed to display the help text, which depends
@@ -106,6 +107,7 @@ impl fmt::Display for HelpString {
 
         if cfg!(feature = "git") {
             write!(f, "\n{}", GIT_VIEW_HELP)?;
+            write!(f, "\n{}", NO_GIT_VIEW_HELP)?;
         }
 
         if xattr::ENABLED {

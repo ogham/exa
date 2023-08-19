@@ -187,6 +187,9 @@ This adds a two-character column indicating the staged and unstaged statuses res
 
 Directories will be shown to have the status of their contents, which is how ‘deleted’ is possible: if a directory contains a file that has a certain status, it will be shown to have that status.
 
+`--no-git`  [if exa was built with git support]
+: Don't list Git status. (Always overrides --git)
+
 
 ENVIRONMENT VARIABLES
 =====================
