@@ -72,7 +72,7 @@ RUN <<EOF
 
   chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
 
-  exit 0
+  exit 0 # for some weird reason, the chmod fails if it's the last command
 EOF
 
 # Configure the welcoming text that gets shown:
