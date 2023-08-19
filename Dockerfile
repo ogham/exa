@@ -50,6 +50,9 @@ RUN --mount=type=cache,target=/var/cache/apt apt-get install -y \
 RUN ln -s $(which python3) /usr/bin/python
 RUN cargo kcov --print-install-kcov-sh | sh
 
+# Copy the source code into the image
+COPY --chmod=+x . /vagrant/
+
 # Create a variety of misc scripts.
 RUN <<EOF
   ln -sf /vagrant/devtools/dev-run-debug.sh /usr/bin/exa
@@ -96,10 +99,6 @@ RUN <<EOF
   # fish
   ln -s /vagrant/completions/fish/exa.fish /usr/share/fish/completions/exa.fish
 EOF
-
-
-# Copy the source code into the image
-COPY --chmod=+x . /vagrant/
 
 # Make sudo dummy replacement
 # This is needed for some tests that use sudo
