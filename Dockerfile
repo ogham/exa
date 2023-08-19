@@ -69,8 +69,10 @@ RUN <<EOF
 
   echo -e "#!/bin/sh\nbash /vagrant/devtools/dev-package-for-linux.sh \\$@" > /usr/bin/package-exa
   echo -e "#!/bin/sh\ncat /etc/motd" > /usr/bin/halp
-  
+
   chmod +x /usr/bin/{exa,rexa,b,t,x,c,build-exa,test-exa,run-xtests,compile-exa,package-exa,halp}
+
+  exit 0
 EOF
 
 # Configure the welcoming text that gets shown:
