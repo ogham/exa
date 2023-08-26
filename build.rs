@@ -701,6 +701,9 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("svelte",          "'\u{e697}'")              // 
                  .entry("svg",             "'\u{f0559}'")             // 󰕙
                  .entry("swift",           "'\u{e755}'")              // 
+                 .entry("tf",              "'\u{f1062}'")             // 󱁢
+                 .entry("tfstate",         "'\u{f1062}'")             // 󱁢
+                 .entry("tfvars",          "'\u{f1062}'")             // 󱁢
                  .entry("torrent",         "'\u{e275}'")              // 
                  .entry("tsx",             "'\u{e7ba}'")              // 
                  .entry("twig",            "'\u{e61c}'")              // 
