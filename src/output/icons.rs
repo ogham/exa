@@ -7,44 +7,57 @@ use crate::fs::File;
 struct Icons;
 
 impl Icons {
-    const AUDIO: char           = '\u{f001}';  // 
-    const IMAGE: char           = '\u{f1c5}';  // 
-    const VIDEO: char           = '\u{f03d}';  // 
-    const COMPRESSED: char      = '\u{f410}';  // 
-    const SHELL: char           = '\u{f489}';  // 
-    const GIT: char             = '\u{f1d3}';  // 
-    const MARKDOWN: char        = '\u{f48a}';  // 
-    const DISK_IMAGE: char      = '\u{e271}';  // 
-    const CONFIG: char          = '\u{e615}';  // 
-    const JSON: char            = '\u{e60b}';  // 
-    const C_LANG: char          = '\u{e61e}';  // 
-    const CPP_LANG: char        = '\u{e61d}';  // 
-    const CSHARP_LANG: char     = '\u{f031b}'; // 󰌛
-    const FSHARP_LANG: char     = '\u{e7a7}';  // 
-    const GO_LANG: char         = '\u{e626}';  // 
-    const JAVA_LANG: char       = '\u{e256}';  // 
-    const JAVASCRIPT_LANG: char = '\u{e74e}';  // 
-    const PERL_LANG: char       = '\u{e769}';  // 
-    const PYTHON_LANG: char     = '\u{e606}';  // 
-    const R_LANG: char          = '\u{f25d}';  // 
-    const RUBY_LANG: char       = '\u{e21e}';  // 
-    const RUBYRAILS_LANG: char  = '\u{e73b}';  // 
-    const RUST_LANG: char       = '\u{e7a8}';  // 
-    const TEX_LANG: char        = '\u{f034}';  // 
-    const TYPESCRIPT_LANG: char = '\u{e628}';  // 
     const APPLE: char           = '\u{f179}';  // 
-    const WINDOWS: char         = '\u{e70f}';  // 
-    const HTML5: char           = '\u{f13b}';  // 
-    const FONT: char            = '\u{f031}';  // 
+    const AUDIO: char           = '\u{f075a}'; // 󰝚
+    const COMPRESSED: char      = '\u{f410}';  // 
+    const CONFIG: char          = '\u{e615}';  // 
+    const CONFIG_FOLDER: char   = '\u{e5fc}';  // 
     const DATABASE: char        = '\u{f1c0}';  // 
+    const DISK_IMAGE: char      = '\u{e271}';  // 
     const DOCUMENT: char        = '\u{f1c2}';  // 
-    const SHEET: char           = '\u{f1c3}';  // 
-    const SLIDE: char           = '\u{f1c4}';  // 
-    const VIM: char             = '\u{e62b}';  // 
     const EMACS: char           = '\u{e632}';  // 
+    const FONT: char            = '\u{f031}';  // 
+    const GIT: char             = '\u{f1d3}';  // 
+    const GRADLE: char          = '\u{e660}';  // 
+    const GRUNT: char           = '\u{e611}';  // 
+    const GULP: char            = '\u{e610}';  // 
+    const HTML5: char           = '\u{f13b}';  // 
+    const IMAGE: char           = '\u{f1c5}';  // 
+    const JSON: char            = '\u{e60b}';  // 
+    const LANG_C: char          = '\u{e61e}';  // 
+    const LANG_CPP: char        = '\u{e61d}';  // 
+    const LANG_CSHARP: char     = '\u{f031b}'; // 󰌛
+    const LANG_FSHARP: char     = '\u{e7a7}';  // 
+    const LANG_GO: char         = '\u{e627}';  // 
+    const LANG_JAVA: char       = '\u{e256}';  // 
+    const LANG_JAVASCRIPT: char = '\u{e74e}';  // 
+    const LANG_PERL: char       = '\u{e769}';  // 
+    const LANG_PHP: char        = '\u{f031f}'; // 󰌟
+    const LANG_PYTHON: char     = '\u{e606}';  // 
+    const LANG_R: char          = '\u{f25d}';  // 
+    const LANG_RUBY: char       = '\u{e21e}';  // 
+    const LANG_RUBYRAILS: char  = '\u{e73b}';  // 
+    const LANG_RUST: char       = '\u{e7a8}';  // 
+    const LANG_TEX: char        = '\u{f034}';  // 
+    const LANG_TYPESCRIPT: char = '\u{e628}';  // 
+    const LOCK: char            = '\u{f023}';  // 
+    const LICENSE: char         = '\u{e60a}';  // 
+    const MAKE: char            = '\u{e673}';  // 
+    const MARKDOWN: char        = '\u{f48a}';  // 
+    const NPM: char             = '\u{e71e}';  // 
+    const NPM_FOLDER: char      = '\u{e5fa}';  // 
+    const PLAYLIST: char        = '\u{f0cb9}'; // 󰲹
+    const PRIVATE_KEY: char     = '\u{f0306}'; // 󰌆
+    const PUBLIC_KEY: char      = '\u{f0dd6}'; // 󰷖
+    const SHEET: char           = '\u{f1c3}';  // 
+    const SHELL: char           = '\u{f489}';  // 
+    const SLIDE: char           = '\u{f1c4}';  // 
+    const VIDEO: char           = '\u{f008}';  // 
+    const VIM: char             = '\u{e62b}';  // 
+    const WINDOWS: char         = '\u{f17a}';  // 
 }
 
-// See build.rs for FILENAME_ICONS and EXTENSION_ICONS
+// See build.rs for FILENAME_ICONS, EXTENSION_ICONS, and DIRECTORY_ICONS
 include!(concat!(env!("OUT_DIR"), "/icon_maps.rs"));
 
 /// Converts the style used to paint a file name into the style that should be
@@ -62,15 +75,12 @@ pub fn iconify_style(style: Style) -> Style {
 }
 
 pub fn icon_for_file(file: &File<'_>) -> char {
-    if let Some(icon) = FILENAME_ICONS.get(file.name.as_str()) {
+    if file.points_to_directory() {
+        *DIRECTORY_ICONS.get(file.name.as_str()).unwrap_or(&'\u{e5ff}') // 
+    } else if let Some(icon) = FILENAME_ICONS.get(file.name.as_str()) {
         *icon
-    } else if file.points_to_directory() {
-        '\u{f115}' // 
     } else if let Some(ext) = file.ext.as_ref() {
-        match EXTENSION_ICONS.get(ext.as_str()) {
-            Some(icon) => *icon,
-            None              => '\u{f15b}' // 
-        }
+        *EXTENSION_ICONS.get(ext.as_str()).unwrap_or(&'\u{f15b}') // 
     } else {
         '\u{f016}' // 
     }
