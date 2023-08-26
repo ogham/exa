@@ -666,6 +666,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("diff",            "'\u{f440}'")              // 
                  .entry("djvu",            "'\u{f02d}'")              // 
                  .entry("download",        "'\u{f01da}'")             // 󰇚
+                 .entry("dot",             "'\u{f1049}'")             // 󱁉
                  .entry("drawio",          "'\u{ebba}'")              // 
                  .entry("ebook",           "'\u{e28b}'")              // 
                  .entry("ebuild",          "'\u{f30d}'")              // 
