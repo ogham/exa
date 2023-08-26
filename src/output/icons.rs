@@ -7,8 +7,8 @@ use crate::fs::File;
 struct Icons;
 
 impl Icons {
-    const APPLE: char           = '\u{f179}';  // 
     const AUDIO: char           = '\u{f075a}'; // 󰝚
+    const CALENDAR: char        = '\u{eab0}';  // 
     const COMPRESSED: char      = '\u{f410}';  // 
     const CONFIG: char          = '\u{e615}';  // 
     const CONFIG_FOLDER: char   = '\u{e5fc}';  // 
@@ -31,6 +31,7 @@ impl Icons {
     const LANG_GO: char         = '\u{e627}';  // 
     const LANG_JAVA: char       = '\u{e256}';  // 
     const LANG_JAVASCRIPT: char = '\u{e74e}';  // 
+    const LANG_OCAML: char      = '\u{e67a}';  // 
     const LANG_PERL: char       = '\u{e769}';  // 
     const LANG_PHP: char        = '\u{f031f}'; // 󰌟
     const LANG_PYTHON: char     = '\u{e606}';  // 
@@ -38,7 +39,7 @@ impl Icons {
     const LANG_RUBY: char       = '\u{e21e}';  // 
     const LANG_RUBYRAILS: char  = '\u{e73b}';  // 
     const LANG_RUST: char       = '\u{e7a8}';  // 
-    const LANG_TEX: char        = '\u{f034}';  // 
+    const LANG_TEX: char        = '\u{e69b}';  // 
     const LANG_TYPESCRIPT: char = '\u{e628}';  // 
     const LOCK: char            = '\u{f023}';  // 
     const LICENSE: char         = '\u{e60a}';  // 
@@ -46,15 +47,19 @@ impl Icons {
     const MARKDOWN: char        = '\u{f48a}';  // 
     const NPM: char             = '\u{e71e}';  // 
     const NPM_FOLDER: char      = '\u{e5fa}';  // 
+    const OS_APPLE: char        = '\u{f179}';  // 
+    const OS_LINUX: char        = '\u{f17c}';  // 
+    const OS_WINDOWS: char      = '\u{f17a}';  // 
+    const OS_WINDOWS_CMD: char  = '\u{ebc4}';  // 
     const PLAYLIST: char        = '\u{f0cb9}'; // 󰲹
     const PRIVATE_KEY: char     = '\u{f0306}'; // 󰌆
     const PUBLIC_KEY: char      = '\u{f0dd6}'; // 󰷖
     const SHEET: char           = '\u{f1c3}';  // 
     const SHELL: char           = '\u{f489}';  // 
     const SLIDE: char           = '\u{f1c4}';  // 
+    const TERRAFORM: char       = '\u{f1062}'; // 󱁢
     const VIDEO: char           = '\u{f008}';  // 
     const VIM: char             = '\u{e62b}';  // 
-    const WINDOWS: char         = '\u{f17a}';  // 
 }
 
 // See build.rs for FILENAME_ICONS, EXTENSION_ICONS, and DIRECTORY_ICONS

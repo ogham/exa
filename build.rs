@@ -370,12 +370,6 @@ fn generate_filename_type_map(file: &mut File) -> io::Result<()> {
 fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
     writeln!(file, "static EXTENSION_ICONS: phf::Map<&'static str, char> = {};\n",
              phf_codegen::Map::new()
-                 .entry("_ds_store",       "Icons::APPLE")            // 
-                 .entry("apple",           "Icons::APPLE")            // 
-                 .entry("ds_store",        "Icons::APPLE")            // 
-                 .entry("dyld",            "Icons::APPLE")            // 
-                 .entry("localized",       "Icons::APPLE")            // 
-                 .entry("plist",           "Icons::APPLE")            // 
                  .entry("aac",             "Icons::AUDIO")            // 󰝚
                  .entry("alac",            "Icons::AUDIO")            // 󰝚
                  .entry("ape",             "Icons::AUDIO")            // 󰝚
@@ -388,6 +382,10 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("opus",            "Icons::AUDIO")            // 󰝚
                  .entry("wav",             "Icons::AUDIO")            // 󰝚
                  .entry("wma",             "Icons::AUDIO")            // 󰝚
+                 .entry("ical",            "Icons::CALENDAR")         // 
+                 .entry("icalendar",       "Icons::CALENDAR")         // 
+                 .entry("ics",             "Icons::CALENDAR")         // 
+                 .entry("ifb",             "Icons::CALENDAR")         // 
                  .entry("7z",              "Icons::COMPRESSED")       // 
                  .entry("a",               "Icons::COMPRESSED")       // 
                  .entry("ar",              "Icons::COMPRESSED")       // 
@@ -431,6 +429,9 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("qcow",            "Icons::DISK_IMAGE")       // 
                  .entry("qcow2",           "Icons::DISK_IMAGE")       // 
                  .entry("tc",              "Icons::DISK_IMAGE")       // 
+                 .entry("vdi",             "Icons::DISK_IMAGE")       // 
+                 .entry("vhd",             "Icons::DISK_IMAGE")       // 
+                 .entry("vmdk",            "Icons::DISK_IMAGE")       // 
                  .entry("doc",             "Icons::DOCUMENT")         // 
                  .entry("docx",            "Icons::DOCUMENT")         // 
                  .entry("gdoc",            "Icons::DOCUMENT")         // 
@@ -517,6 +518,10 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("cjs",             "Icons::LANG_JAVASCRIPT")  // 
                  .entry("js",              "Icons::LANG_JAVASCRIPT")  // 
                  .entry("mjs",             "Icons::LANG_JAVASCRIPT")  // 
+                 .entry("ml",              "Icons::LANG_OCAML")       // 
+                 .entry("mli",             "Icons::LANG_OCAML")       // 
+                 .entry("mll",             "Icons::LANG_OCAML")       // 
+                 .entry("mly",             "Icons::LANG_OCAML")       // 
                  .entry("pl",              "Icons::LANG_PERL")        // 
                  .entry("plx",             "Icons::LANG_PERL")        // 
                  .entry("pm",              "Icons::LANG_PERL")        // 
@@ -549,10 +554,12 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("rlib",            "Icons::LANG_RUST")        // 
                  .entry("rmeta",           "Icons::LANG_RUST")        // 
                  .entry("rs",              "Icons::LANG_RUST")        // 
-                 .entry("cls",             "Icons::LANG_TEX")         // 
-                 .entry("latex",           "Icons::LANG_TEX")         // 
-                 .entry("sty",             "Icons::LANG_TEX")         // 
-                 .entry("tex",             "Icons::LANG_TEX")         // 
+                 .entry("bib",             "Icons::LANG_TEX")         // 
+                 .entry("bst",             "Icons::LANG_TEX")         // 
+                 .entry("cls",             "Icons::LANG_TEX")         // 
+                 .entry("latex",           "Icons::LANG_TEX")         // 
+                 .entry("sty",             "Icons::LANG_TEX")         // 
+                 .entry("tex",             "Icons::LANG_TEX")         // 
                  .entry("cts",             "Icons::LANG_TYPESCRIPT")  // 
                  .entry("mts",             "Icons::LANG_TYPESCRIPT")  // 
                  .entry("ts",              "Icons::LANG_TYPESCRIPT")  // 
@@ -570,6 +577,23 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("rdoc",            "Icons::MARKDOWN")         // 
                  .entry("readme",          "Icons::MARKDOWN")         // 
                  .entry("rmd",             "Icons::MARKDOWN")         // 
+                 .entry("rst",             "Icons::MARKDOWN")         // 
+                 .entry("_ds_store",       "Icons::OS_APPLE")         // 
+                 .entry("apple",           "Icons::OS_APPLE")         // 
+                 .entry("ds_store",        "Icons::OS_APPLE")         // 
+                 .entry("dyld",            "Icons::OS_APPLE")         // 
+                 .entry("localized",       "Icons::OS_APPLE")         // 
+                 .entry("plist",           "Icons::OS_APPLE")         // 
+                 .entry("ko",              "Icons::OS_LINUX")         // 
+                 .entry("so",              "Icons::OS_LINUX")         // 
+                 .entry("cab",             "Icons::OS_WINDOWS")       // 
+                 .entry("cmd",             "Icons::OS_WINDOWS")       // 
+                 .entry("dll",             "Icons::OS_WINDOWS")       // 
+                 .entry("msi",             "Icons::OS_WINDOWS")       // 
+                 .entry("windows",         "Icons::OS_WINDOWS")       // 
+                 .entry("bat",             "Icons::OS_WINDOWS_CMD")   // 
+                 .entry("com",             "Icons::OS_WINDOWS_CMD")   // 
+                 .entry("exe",             "Icons::OS_WINDOWS_CMD")   // 
                  .entry("cue",             "Icons::PLAYLIST")         // 󰲹
                  .entry("m3u",             "Icons::PLAYLIST")         // 󰲹
                  .entry("m3u8",            "Icons::PLAYLIST")         // 󰲹
@@ -579,6 +603,7 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("ods",             "Icons::SHEET")            // 
                  .entry("tsv",             "Icons::SHEET")            // 
                  .entry("xls",             "Icons::SHEET")            // 
+                 .entry("xlsm",            "Icons::SHEET")            // 
                  .entry("xlsx",            "Icons::SHEET")            // 
                  .entry("awk",             "Icons::SHELL")            // 
                  .entry("bash",            "Icons::SHELL")            // 
@@ -587,7 +612,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("fish",            "Icons::SHELL")            // 
                  .entry("ksh",             "Icons::SHELL")            // 
                  .entry("mk",              "Icons::SHELL")            // 
-                 .entry("ps1",             "Icons::SHELL")            // 
                  .entry("sh",              "Icons::SHELL")            // 
                  .entry("shell",           "Icons::SHELL")            // 
                  .entry("zsh",             "Icons::SHELL")            // 
@@ -596,6 +620,9 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("odp",             "Icons::SLIDE")            // 
                  .entry("ppt",             "Icons::SLIDE")            // 
                  .entry("pptx",            "Icons::SLIDE")            // 
+                 .entry("tf",              "Icons::TERRAFORM")        // 󱁢
+                 .entry("tfstate",         "Icons::TERRAFORM")        // 󱁢
+                 .entry("tfvars",          "Icons::TERRAFORM")        // 󱁢
                  .entry("avi",             "Icons::VIDEO")            // 
                  .entry("flv",             "Icons::VIDEO")            // 
                  .entry("heic",            "Icons::VIDEO")            // 
@@ -614,25 +641,21 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("webm",            "Icons::VIDEO")            // 
                  .entry("wmv",             "Icons::VIDEO")            // 
                  .entry("vim",             "Icons::VIM")              // 
-                 .entry("bat",             "Icons::WINDOWS")          // 
-                 .entry("cab",             "Icons::WINDOWS")          // 
-                 .entry("cmd",             "Icons::WINDOWS")          // 
-                 .entry("com",             "Icons::WINDOWS")          // 
-                 .entry("dll",             "Icons::WINDOWS")          // 
-                 .entry("exe",             "Icons::WINDOWS")          // 
-                 .entry("msi",             "Icons::WINDOWS")          // 
-                 .entry("windows",         "Icons::WINDOWS")          // 
                  .entry("ai",              "'\u{e7b4}'")              // 
+                 .entry("acf",             "'\u{f1b6}'")              // 
                  .entry("android",         "'\u{e70e}'")              // 
                  .entry("apk",             "'\u{e70e}'")              // 
                  .entry("asm",             "'\u{e6ab}'")              // 
                  .entry("asp",             "'\u{f121}'")              // 
-                 .entry("bin",             "'\u{f489}'")              // 
+                 .entry("bin",             "'\u{eae8}'")              // 
                  .entry("clj",             "'\u{e768}'")              // 
                  .entry("cljs",            "'\u{e76a}'")              // 
                  .entry("coffee",          "'\u{f0f4}'")              // 
+                 .entry("cert",            "'\u{eafa}'")              // 
+                 .entry("crt",             "'\u{eafa}'")              // 
                  .entry("cshtml",          "'\u{f1fa}'")              // 
                  .entry("css",             "'\u{e749}'")              // 
+                 .entry("cu",              "'\u{e64b}'")              // 
                  .entry("d",               "'\u{e7af}'")              // 
                  .entry("dart",            "'\u{e798}'")              // 
                  .entry("deb",             "'\u{e77d}'")              // 
@@ -640,10 +663,12 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("diff",            "'\u{f440}'")              // 
                  .entry("djvu",            "'\u{f02d}'")              // 
                  .entry("download",        "'\u{f01da}'")             // 󰇚
+                 .entry("drawio",          "'\u{ebba}'")              // 
                  .entry("ebook",           "'\u{e28b}'")              // 
                  .entry("ebuild",          "'\u{f30d}'")              // 
                  .entry("ejs",             "'\u{e618}'")              // 
                  .entry("elm",             "'\u{e62c}'")              // 
+                 .entry("eml",             "'\u{f003}'")              // 
                  .entry("env",             "'\u{f462}'")              // 
                  .entry("eps",             "'\u{f0559}'")             // 󰕙
                  .entry("epub",            "'\u{e28a}'")              // 
@@ -658,6 +683,8 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("ipynb",           "'\u{e678}'")              // 
                  .entry("jl",              "'\u{e624}'")              // 
                  .entry("jsx",             "'\u{e7ba}'")              // 
+                 .entry("kdb",             "'\u{f23e}'")              // 
+                 .entry("kdbx",            "'\u{f23e}'")              // 
                  .entry("key",             "'\u{eb11}'")              // 
                  .entry("kt",              "'\u{e634}'")              // 
                  .entry("kts",             "'\u{e634}'")              // 
@@ -668,29 +695,33 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("log",             "'\u{f18d}'")              // 
                  .entry("lua",             "'\u{e620}'")              // 
                  .entry("magnet",          "'\u{f076}'")              // 
-                 .entry("ml",              "'\u{e67a}'")              // 
                  .entry("mobi",            "'\u{e28b}'")              // 
                  .entry("mustache",        "'\u{e60f}'")              // 
                  .entry("nix",             "'\u{f313}'")              // 
                  .entry("node",            "'\u{f0399}'")             // 󰎙
+                 .entry("o",               "'\u{eae8}'")              // 
                  .entry("org",             "'\u{e633}'")              // 
                  .entry("part",            "'\u{f43a}'")              // 
                  .entry("patch",           "'\u{f440}'")              // 
+                 .entry("pem",             "'\u{eb11}'")              // 
                  .entry("pdf",             "'\u{f1c1}'")              // 
                  .entry("pkg",             "'\u{eb29}'")              // 
+                 .entry("ps1",             "'\u{ebc7}'")              // 
                  .entry("psd",             "'\u{e7b8}'")              // 
+                 .entry("psd1",            "'\u{ebc7}'")              // 
+                 .entry("psm1",            "'\u{ebc7}'")              // 
                  .entry("razor",           "'\u{f1fa}'")              // 
                  .entry("rdb",             "'\u{e76d}'")              // 
                  .entry("rpm",             "'\u{e7bb}'")              // 
                  .entry("rss",             "'\u{f09e}'")              // 
-                 .entry("rst",             "'\u{f15c}'")              // 
                  .entry("rtf",             "'\u{f0219}'")             // 󰈙
+                 .entry("s",               "'\u{e637}'")              // 
                  .entry("sass",            "'\u{e603}'")              // 
                  .entry("scala",           "'\u{e737}'")              // 
                  .entry("scss",            "'\u{e603}'")              // 
+                 .entry("service",         "'\u{eba2}'")              // 
                  .entry("sig",             "'\u{e60a}'")              // 
                  .entry("sln",             "'\u{e70c}'")              // 
-                 .entry("so",              "'\u{f17c}'")              // 
                  .entry("sqlite3",         "'\u{e7c4}'")              // 
                  .entry("srt",             "'\u{f0a16}'")             // 󰨖
                  .entry("styl",            "'\u{e600}'")              // 
@@ -701,13 +732,12 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("svelte",          "'\u{e697}'")              // 
                  .entry("svg",             "'\u{f0559}'")             // 󰕙
                  .entry("swift",           "'\u{e755}'")              // 
-                 .entry("tf",              "'\u{f1062}'")             // 󱁢
-                 .entry("tfstate",         "'\u{f1062}'")             // 󱁢
-                 .entry("tfvars",          "'\u{f1062}'")             // 󱁢
                  .entry("torrent",         "'\u{e275}'")              // 
                  .entry("tsx",             "'\u{e7ba}'")              // 
                  .entry("twig",            "'\u{e61c}'")              // 
                  .entry("txt",             "'\u{f15c}'")              // 
+                 .entry("unity",           "'\u{e721}'")              // 
+                 .entry("unity3d",         "'\u{e721}'")              // 
                  .entry("vue",             "'\u{f0844}'")             // 󰡄
                  .entry("xbps",            "'\u{f187}'")              // 
                  .entry("xml",             "'\u{f05c0}'")             // 󰗀
@@ -724,7 +754,6 @@ fn generate_extension_icon_map(file: &mut File) -> io::Result<()> {
 fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
     writeln!(file, "static FILENAME_ICONS: phf::Map<&'static str, char> = {};\n",
              phf_codegen::Map::new()
-                 .entry(".localized",         "Icons::APPLE")         // 
                  .entry(".Xauthority",        "Icons::CONFIG")        // 
                  .entry(".Xresources",        "Icons::CONFIG")        // 
                  .entry(".clang-format",      "Icons::CONFIG")        // 
@@ -798,6 +827,7 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("npmrc",              "Icons::NPM")           // 
                  .entry("package-lock.json",  "Icons::NPM")           // 
                  .entry("package.json",       "Icons::NPM")           // 
+                 .entry(".localized",         "Icons::OS_APPLE")      // 
                  .entry("id_dsa",             "Icons::PRIVATE_KEY")   // 󰌆
                  .entry("id_ecdsa",           "Icons::PRIVATE_KEY")   // 󰌆
                  .entry("id_ecdsa_sk",        "Icons::PRIVATE_KEY")   // 󰌆
@@ -855,7 +885,6 @@ fn generate_filename_icon_map(file: &mut File) -> io::Result<()> {
 fn generate_directory_icon_map(file: &mut File) -> io::Result<()> {
     writeln!(file, "static DIRECTORY_ICONS: phf::Map<&'static str, char> = {};\n",
              phf_codegen::Map::new()
-                 .entry(".localized",         "Icons::APPLE")         // 
                  .entry(".config",            "Icons::CONFIG_FOLDER") // 
                  .entry("bin",                "Icons::CONFIG_FOLDER") // 
                  .entry("config",             "Icons::CONFIG_FOLDER") // 
@@ -878,6 +907,7 @@ fn generate_directory_icon_map(file: &mut File) -> io::Result<()> {
                  .entry("hidden",             "Icons::LOCK")          // 
                  .entry(".npm",               "Icons::NPM_FOLDER")    // 
                  .entry("node_modules",       "Icons::NPM_FOLDER")    // 
+                 .entry(".localized",         "Icons::OS_APPLE")      // 
                  .entry(".zsh_sessions",      "Icons::SHELL")         // 
                  .entry(".vim",               "Icons::VIM")           // 
                  .entry(".Trash",             "'\u{f1f8}'")           // 
