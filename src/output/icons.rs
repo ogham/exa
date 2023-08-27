@@ -42,7 +42,7 @@ impl Icons {
     const LANG_TEX: char        = '\u{e69b}';  // 
     const LANG_TYPESCRIPT: char = '\u{e628}';  // 
     const LOCK: char            = '\u{f023}';  // 
-    const LICENSE: char         = '\u{e60a}';  // 
+    const LICENSE: char         = '\u{f02d}';  // 
     const MAKE: char            = '\u{e673}';  // 
     const MARKDOWN: char        = '\u{f48a}';  // 
     const NPM: char             = '\u{e71e}';  // 
@@ -52,14 +52,15 @@ impl Icons {
     const OS_WINDOWS: char      = '\u{f17a}';  // 
     const OS_WINDOWS_CMD: char  = '\u{ebc4}';  // 
     const PLAYLIST: char        = '\u{f0cb9}'; // 󰲹
+    const POWERSHELL: char      = '\u{ebc7}';  // 
     const PRIVATE_KEY: char     = '\u{f0306}'; // 󰌆
     const PUBLIC_KEY: char      = '\u{f0dd6}'; // 󰷖
     const SHEET: char           = '\u{f1c3}';  // 
     const SHELL: char           = '\u{f489}';  // 
     const SLIDE: char           = '\u{f1c4}';  // 
     const TERRAFORM: char       = '\u{f1062}'; // 󱁢
-    const VIDEO: char           = '\u{f008}';  // 
-    const VIM: char             = '\u{e62b}';  // 
+    const VIDEO: char           = '\u{f03d}';  // 
+    const VIM: char             = '\u{e7c5}';  // 
 }
 
 // See build.rs for FILENAME_ICONS, EXTENSION_ICONS, and DIRECTORY_ICONS
@@ -81,7 +82,7 @@ pub fn iconify_style(style: Style) -> Style {
 
 pub fn icon_for_file(file: &File<'_>) -> char {
     if file.points_to_directory() {
-        *DIRECTORY_ICONS.get(file.name.as_str()).unwrap_or(&'\u{e5ff}') // 
+        *DIRECTORY_ICONS.get(file.name.as_str()).unwrap_or(&'\u{f07b}') // 
     } else if let Some(icon) = FILENAME_ICONS.get(file.name.as_str()) {
         *icon
     } else if let Some(ext) = file.ext.as_ref() {
