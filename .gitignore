@@ -1,5 +1,6 @@
 # Rust stuff
 target
+Cargo.lock
 
 # Vagrant stuff
 .vagrant
