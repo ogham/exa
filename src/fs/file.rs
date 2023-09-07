@@ -8,6 +8,7 @@ use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use libc::{major, minor};
 use log::*;
 
 use crate::fs::dir::Dir;
@@ -333,15 +334,13 @@ impl<'dir> File<'dir> {
             f::Size::None
         }
         else if self.is_char_device() || self.is_block_device() {
-            let device_ids = self.metadata.rdev().to_be_bytes();
+            let device_ids = self.metadata.rdev();
 
-            // In C-land, getting the major and minor device IDs is done with
-            // preprocessor macros called `major` and `minor` that depend on
-            // the size of `dev_t`, but we just take the second-to-last and
-            // last bytes.
+            // SAFETY: `major()` and `minor()` can return an unsigned integer
+            // of at most 32bits, so an `i64` is going to accomodate them well
             f::Size::DeviceIDs(f::DeviceIDs {
-                major: device_ids[6],
-                minor: device_ids[7],
+                major: unsafe { major(device_ids) as i64 },
+                minor: unsafe { minor(device_ids) as i64 },
             })
         }
         else {
