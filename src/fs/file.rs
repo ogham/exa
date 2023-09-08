@@ -165,7 +165,10 @@ impl<'dir> File<'dir> {
     /// Returns an IO error upon failure, but this shouldn’t be used to check
     /// if a `File` is a directory or not! For that, just use `is_directory()`.
     pub fn to_dir(&self) -> io::Result<Dir> {
-        Dir::read_dir(self.path.clone())
+        match self.path.canonicalize() {
+            Ok(path) => Dir::read_dir(path),
+            Err(_) => Dir::read_dir(self.path.clone()),
+        }
     }
 
     /// Whether this file is a regular file on the filesystem — that is, not a
