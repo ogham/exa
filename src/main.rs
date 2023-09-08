@@ -75,7 +75,7 @@ fn main() {
             let writer = io::stdout();
 
             let console_width = options.view.width.actual_terminal_width();
-            let theme = options.theme.to_theme(console_width.is_some());
+            let theme = options.theme.to_theme(terminal_size::terminal_size().is_some());
             let exa = Exa { options, writer, input_paths, theme, console_width, git };
 
             match exa.run() {
