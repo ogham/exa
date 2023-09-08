@@ -288,6 +288,7 @@ impl<'a> Render<'a> {
 
             let file_name = self.file_style.for_file(egg.file, self.theme)
                                 .with_link_paths()
+                                .with_mount_details()
                                 .paint()
                                 .promote();
 
