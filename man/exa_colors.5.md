@@ -279,4 +279,5 @@ exa is maintained by Benjamin ‘ogham’ Sago and many other contributors.
 SEE ALSO
 ========
 
-- `exa(1)`
+- [exa.1.md](exa.1.md)
+- [exa-colors-explanation.md](exa-colors-explanation.md)
