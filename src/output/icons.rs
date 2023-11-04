@@ -148,6 +148,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "csv"           => '\u{f1c3}', // 
             "csx"           => '\u{f031b}', // 󰌛
             "cxx"           => '\u{e61d}', // 
+            "cypher"        => '\u{f1c0}', // 
             "d"             => '\u{e7af}', // 
             "dart"          => '\u{e798}', // 
             "db"            => '\u{f1c0}', // 
@@ -231,6 +232,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "jsx"           => '\u{e7ba}', // 
             "jxl"           => '\u{f1c5}', // 
             "ksh"           => '\u{f489}', // 
+            "kusto"         => '\u{f1c0}', // 
             "latex"         => '\u{f034}', // 
             "less"          => '\u{e758}', // 
             "lhs"           => '\u{e777}', // 
@@ -247,6 +249,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "m"             => '\u{e61e}', // 
             "mm"            => '\u{e61d}', // 
             "m4a"           => '\u{f001}', // 
+            "malloy"        => '\u{f1c0}', // 
             "markdown"      => '\u{f48a}', // 
             "md"            => '\u{f48a}', // 
             "mjs"           => '\u{e74e}', // 
@@ -299,6 +302,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "rlib"          => '\u{e7a8}', // 
             "rmd"           => '\u{f48a}', // 
             "rpm"           => '\u{e7bb}', // 
+            "rq"            => '\u{f1c0}', // 
             "rs"            => '\u{e7a8}', // 
             "rspec"         => '\u{e21e}', // 
             "rspec_parallel"=> '\u{e21e}', // 
