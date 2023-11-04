@@ -65,8 +65,8 @@ impl FileExtensions {
 
     fn is_crypto(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "asc", "cer", "crt", "enc", "gpg", "pgp", "pem", "sig",
-            "signature", "pfx", "p12",
+            "asc", "cer", "crt", "csr", "enc", "gpg", "pgp", "pem",
+            "sig", "signature", "pfx", "p12",
         ])
     }
 
