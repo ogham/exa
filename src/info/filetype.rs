@@ -37,9 +37,9 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "png", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg", "gif", "bmp",
             "tiff", "tif", "ppm", "pgm", "pbm", "pnm", "webp", "raw", "arw",
-            "svg", "stl", "eps", "dvi", "ps", "cbr", "jpf", "cbz", "xpm",
-            "ico", "cr2", "orf", "nef", "heif", "avif", "jxl", "j2k", "jp2",
-            "j2c", "jpx",
+            "svg", "stl", "eps", "dvi", "ps", "psd", "cbr", "jpf", "cbz",
+            "xpm", "ico", "cr2", "orf", "nef", "heif", "avif", "jxl", "j2k",
+            "jp2", "j2c", "jpx", "qoi", "xcf",
         ])
     }
 
@@ -65,7 +65,8 @@ impl FileExtensions {
 
     fn is_crypto(&self, file: &File<'_>) -> bool {
         file.extension_is_one_of( &[
-            "asc", "enc", "gpg", "pgp", "sig", "signature", "pfx", "p12",
+            "asc", "cer", "crt", "csr", "enc", "gpg", "pgp", "pem",
+            "sig", "signature", "pfx", "p12",
         ])
     }
 
@@ -73,7 +74,7 @@ impl FileExtensions {
         file.extension_is_one_of( &[
             "djvu", "doc", "docx", "dvi", "eml", "eps", "fotd", "key",
             "keynote", "numbers", "odp", "odt", "pages", "pdf", "ppt",
-            "pptx", "rtf", "xls", "xlsx",
+            "pptx", "rtf", "xls", "xlsx", "xps", "oxps"
         ])
     }
 
