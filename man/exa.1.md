@@ -234,7 +234,7 @@ See `https://no-color.org/` for details.
 
 Specifies the colour scheme used to highlight files based on their name and kind, as well as highlighting metadata and parts of the UI.
 
-For more information on the format of these environment variables, see the `exa_colors(5)` manual page.
+For more information on the format of these environment variables, see the [exa_colors.5.md](exa_colors.5.md) manual page.
 
 
 EXIT STATUSES
@@ -263,4 +263,5 @@ exa is maintained by Benjamin ‘ogham’ Sago and many other contributors.
 SEE ALSO
 ========
 
-- `exa_colors(5)`
+- [exa_colors.5.md](exa_colors.5.md)
+- [exa-colors-explanation.md](exa-colors-explanation.md)
