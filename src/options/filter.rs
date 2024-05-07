@@ -30,9 +30,15 @@ impl SortField {
     /// Returns the default sort field if none is given, or `Err` if the
     /// value doesn’t correspond to a sort field we know about.
     fn deduce(matches: &MatchedFlags<'_>) -> Result<Self, OptionsError> {
-        let word = match matches.get(&flags::SORT)? {
-            Some(w)  => w,
-            None     => return Ok(Self::default()),
+        let word = if let Some(w) = matches.get(&flags::SORT)? {
+            w
+        } else {
+            // If `-t` was specified without any parameters, make it behave as it would for `ls`.
+            if matches.has(&flags::TIME)? && matches.get(&flags::TIME)? == None {
+                return Ok(Self::ModifiedDate);
+            };
+
+            return Ok(Self::default());
         };
 
         // Get String because we can’t match an OsStr
