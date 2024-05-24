@@ -115,9 +115,9 @@ On Alpine Linux, [enable community repository](https://wiki.alpinelinux.org/wiki
 
 ### Arch Linux
 
-On Arch, install the [`exa`](https://www.archlinux.org/packages/community/x86_64/exa/) package.
+On Arch, install the [`exa`](https://archlinux.org/packages/extra/x86_64/eza/) package.
 
-    pacman -S exa
+    pacman -S eza
 
 ### Android / Termux
 
