@@ -28,7 +28,7 @@ impl FileExtensions {
             "build.gradle", "pom.xml", "Rakefile", "package.json", "Gruntfile.js",
             "Gruntfile.coffee", "BUILD", "BUILD.bazel", "WORKSPACE", "build.xml", "Podfile",
             "webpack.config.js", "meson.build", "composer.json", "RoboFile.php", "PKGBUILD",
-            "Justfile", "Procfile", "Dockerfile", "Containerfile", "Vagrantfile", "Brewfile",
+            "Justfile", "Procfile", "Dockerfile", "Earthfile", "Containerfile", "Vagrantfile", "Brewfile",
             "Gemfile", "Pipfile", "build.sbt", "mix.exs", "bsconfig.json", "tsconfig.json",
         ])
     }
