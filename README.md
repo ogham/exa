@@ -13,7 +13,6 @@
 **README Sections:** [Options](#options) — [Installation](#installation) — [Development](#development)
 
 [![Unit tests](https://github.com/ogham/exa/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/ogham/exa/actions/workflows/unit-tests.yml)
-[![Say thanks!](https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg)]()
 </div>
 
 ![Screenshots of exa](screenshots.png)
