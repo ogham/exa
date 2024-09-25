@@ -360,6 +360,7 @@ pub fn icon_for_file(file: &File<'_>) -> char {
             "xz"            => '\u{f410}', // 
             "yaml"          => '\u{f481}', // 
             "yml"           => '\u{f481}', // 
+            "zig"           => '\u{21af}', // ↯
             "zip"           => '\u{f410}', // 
             "zsh"           => '\u{f489}', // 
             "zsh-theme"     => '\u{f489}', // 
