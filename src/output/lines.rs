@@ -32,6 +32,7 @@ impl<'a> Render<'a> {
         self.file_style
             .for_file(file, self.theme)
             .with_link_paths()
+            .with_mount_details()
             .paint()
     }
 }

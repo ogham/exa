@@ -3,7 +3,7 @@ use std::path::Path;
 
 use ansi_term::{ANSIString, Style};
 
-use crate::fs::{File, FileTarget};
+use crate::fs::{File, FileTarget, MountedFs};
 use crate::output::cell::TextCellContents;
 use crate::output::escape;
 use crate::output::icons::{icon_for_file, iconify_style};
@@ -32,7 +32,9 @@ impl Options {
             link_style: LinkStyle::JustFilenames,
             options:    self,
             target:     if file.is_link() { Some(file.link_target()) }
-                                     else { None }
+                                     else { None },
+            mount_style: MountStyle::JustDirectoryNames,
+            mounted_fs: file.mount_point_info(),
         }
     }
 }
@@ -50,6 +52,19 @@ enum LinkStyle {
     /// arrow pointing to their path, colouring the path differently if it’s
     /// a broken link, and doing nothing if it can’t be followed.
     FullLinkPaths,
+}
+
+/// When displaying a directory name, there needs to be some way to handle
+/// mount details, depending on how long the resulting Cell can be.
+#[derive(PartialEq, Debug, Copy, Clone)]
+enum MountStyle {
+
+    /// Just display the directory names.
+    JustDirectoryNames,
+
+    /// Display mount points as directories and include information about
+    /// the filesystem that's mounted there.
+    MountInfo,
 }
 
 
@@ -102,6 +117,12 @@ pub struct FileName<'a, 'dir, C> {
     link_style: LinkStyle,
 
     options: Options,
+
+    /// The filesystem details for a mounted filesystem.
+    mounted_fs: Option<&'a MountedFs>,
+
+    /// How to handle displaying a mounted filesystem.
+    mount_style: MountStyle,
 }
 
 impl<'a, 'dir, C> FileName<'a, 'dir, C> {
@@ -110,6 +131,13 @@ impl<'a, 'dir, C> FileName<'a, 'dir, C> {
     /// arrow followed by their path.
     pub fn with_link_paths(mut self) -> Self {
         self.link_style = LinkStyle::FullLinkPaths;
+        self
+    }
+
+    /// Sets the flag on this file name to display mounted filesystem
+    ///details.
+    pub fn with_mount_details(mut self) -> Self {
+        self.mount_style = MountStyle::MountInfo;
         self
     }
 }
@@ -179,6 +207,8 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
                             target: None,
                             link_style: LinkStyle::FullLinkPaths,
                             options: target_options,
+                            mounted_fs: None,
+                            mount_style: MountStyle::JustDirectoryNames,
                         };
 
                         for bit in target_name.coloured_file_name() {
@@ -215,6 +245,19 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
             if let Some(class) = self.classify_char(self.file) {
                 bits.push(Style::default().paint(class));
             }
+        }
+        else if let (MountStyle::MountInfo, Some(mount_details)) = (self.mount_style, self.mounted_fs.as_ref()) {
+            // This is a filesystem mounted on the directory, output its details
+            bits.push(Style::default().paint(" {"));
+            bits.push(Style::default().paint(mount_details.source.clone()));
+            bits.push(Style::default().paint(" ("));
+            bits.push(Style::default().paint(mount_details.fstype.clone()));
+            if mount_details.fstype.eq("btrfs") && mount_details.subvolume.is_some() {
+                bits.push(Style::default().paint(" @["));
+                bits.push(Style::default().paint(mount_details.subvolume.clone().unwrap()));
+                bits.push(Style::default().paint("]"));
+            }
+            bits.push(Style::default().paint(")}"));
         }
 
         bits.into()
@@ -314,6 +357,9 @@ impl<'a, 'dir, C: Colours> FileName<'a, 'dir, C> {
         }
 
         match self.file {
+            f if f.is_mount_point()      => self.colours.mount_point(),
+            #[cfg(unix)]
+            f if f.is_btrfs_subvolume()  => self.colours.btrfs_subvolume(),
             f if f.is_directory()        => self.colours.directory(),
             #[cfg(unix)]
             f if f.is_executable_file()  => self.colours.executable_file(),
@@ -360,6 +406,12 @@ pub trait Colours: FiletypeColours {
 
     /// The style to paint a file that has its executable bit set.
     fn executable_file(&self) -> Style;
+
+    /// The style to paint a directory that has a filesystem mounted on it.
+    fn mount_point(&self) -> Style;
+
+    /// The style to paint a directory that is the root of a btrfs subvolume.
+    fn btrfs_subvolume(&self) -> Style;
 
     fn colour_file(&self, file: &File<'_>) -> Style;
 }

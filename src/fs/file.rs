@@ -10,6 +10,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use log::*;
 
+use crate::ALL_MOUNTS;
 use crate::fs::dir::Dir;
 use crate::fs::fields as f;
 
@@ -66,6 +67,9 @@ pub struct File<'dir> {
     /// directory’s children, and are in fact added specifically by exa; this
     /// means that they should be skipped when recursing.
     pub is_all_all: bool,
+
+    /// The absolute value of this path, used to look up mount points.
+    pub absolute_path: PathBuf,
 }
 
 impl<'dir> File<'dir> {
@@ -80,8 +84,9 @@ impl<'dir> File<'dir> {
         debug!("Statting file {:?}", &path);
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = false;
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { name, ext, path, metadata, parent_dir, is_all_all })
+        Ok(File { name, ext, path, metadata, parent_dir, is_all_all, absolute_path })
     }
 
     pub fn new_aa_current(parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -92,8 +97,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: ".".into(), is_all_all, absolute_path })
     }
 
     pub fn new_aa_parent(path: PathBuf, parent_dir: &'dir Dir) -> io::Result<File<'dir>> {
@@ -103,8 +109,9 @@ impl<'dir> File<'dir> {
         let metadata   = std::fs::symlink_metadata(&path)?;
         let is_all_all = true;
         let parent_dir = Some(parent_dir);
+        let absolute_path = std::fs::canonicalize(&path)?;
 
-        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all })
+        Ok(File { path, parent_dir, metadata, ext, name: "..".into(), is_all_all, absolute_path })
     }
 
     /// A file’s name is derived from its string. This needs to handle directories
@@ -212,6 +219,50 @@ impl<'dir> File<'dir> {
         self.metadata.file_type().is_socket()
     }
 
+    /// Whether this file is a mount point
+    pub fn is_mount_point(&self) -> bool {
+        if cfg!(unix) {
+            if self.is_directory() {
+                return ALL_MOUNTS.contains_key(&self.absolute_path);
+            }
+        }
+        return false;
+    }
+
+    /// The filesystem device and type for a mount point
+    pub fn mount_point_info(&self) -> Option<&MountedFs> {
+        if cfg!(unix) {
+            return ALL_MOUNTS.get(&self.absolute_path);
+        }
+        None
+    }
+
+    /// Whether this file (directory) is a `btrfs` subvolume
+    #[cfg(unix)]
+    pub fn is_btrfs_subvolume(&self) -> bool {
+        if cfg!(unix) {
+            if self.is_directory() &&
+                (self.metadata.ino() == 2 || self.metadata.ino() == 256) {
+                //This directory matches the characteristics of a btrfs
+                //subvolume root. Check it's actually on a btrfs fs.
+                let mut ancestors: Vec<PathBuf> = Vec::new();
+                for ancestor in self.absolute_path.ancestors() {
+                    ancestors.push(ancestor.to_path_buf());
+                }
+                ancestors.reverse();
+                let mut is_on_btrfs = false;
+                // Start at / and work downwards
+                for ancestor in ancestors {
+                    is_on_btrfs = match ALL_MOUNTS.get(&ancestor) {
+                        None => is_on_btrfs,
+                        Some(mount) => mount.fstype.eq("btrfs"),
+                    };
+                }
+                return is_on_btrfs;
+            }
+        }
+        return false;
+    }
 
     /// Re-prefixes the path pointed to by this file, if it’s a symlink, to
     /// make it an absolute path that can be accessed from whichever
@@ -261,7 +312,7 @@ impl<'dir> File<'dir> {
             Ok(metadata) => {
                 let ext  = File::ext(&path);
                 let name = File::filename(&path);
-                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false };
+                let file = File { parent_dir: None, path, ext, metadata, name, is_all_all: false, absolute_path };
                 FileTarget::Ok(Box::new(file))
             }
             Err(e) => {
@@ -538,6 +589,14 @@ impl<'dir> FileTarget<'dir> {
     pub fn is_broken(&self) -> bool {
         matches!(self, Self::Broken(_) | Self::Err(_))
     }
+}
+
+/// Details of a mounted filesystem.
+pub struct MountedFs {
+    pub dest: String,
+    pub fstype: String,
+    pub source: String,
+    pub subvolume: Option<String>,
 }
 
 
