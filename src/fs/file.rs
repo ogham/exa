@@ -132,9 +132,30 @@ impl<'dir> File<'dir> {
     fn ext(path: &Path) -> Option<String> {
         let name = path.file_name().map(|f| f.to_string_lossy().to_string())?;
 
-        name.rfind('.')
+        match name.rfind('.')
             .map(|p| name[p + 1 ..]
             .to_ascii_lowercase())
+        {
+            Some(ext) => {
+                if ext.chars().all(char::is_numeric) {
+                    for word in name.split('.').rev().skip(1) {
+                        if !word.chars().all(char::is_numeric) {
+                            if word == "so" {
+                                return Some("so".into());
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                    }
+                    Some(ext)
+                }
+                else {
+                    Some(ext)
+                }
+            },
+            _ => None, 
+        }
     }
 
     /// Whether this file is a directory on the filesystem.
