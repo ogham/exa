@@ -50,7 +50,7 @@ pub enum NumberSource {
     /// It came... from a command-line argument!
     Arg(&'static Arg),
 
-    /// It came... from the enviroment!
+    /// It came... from the environment!
     Env(&'static str),
 }
 
