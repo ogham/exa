@@ -1,5 +1,5 @@
 use ansi_term::Style;
-use users::Users;
+use uzers::Users;
 
 use crate::fs::fields as f;
 use crate::output::cell::TextCell;
@@ -35,8 +35,8 @@ pub mod test {
     use crate::output::cell::TextCell;
     use crate::output::table::UserFormat;
 
-    use users::User;
-    use users::mock::MockUsers;
+    use uzers::User;
+    use uzers::mock::MockUsers;
     use ansi_term::Colour::*;
     use ansi_term::Style;
 

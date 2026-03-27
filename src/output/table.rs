@@ -10,7 +10,7 @@ use zoneinfo_compiled::{CompiledData, Result as TZResult};
 use lazy_static::lazy_static;
 use log::*;
 #[cfg(unix)]
-use users::UsersCache;
+use uzers::UsersCache;
 
 use crate::fs::{File, fields as f};
 use crate::fs::feature::git::GitCache;

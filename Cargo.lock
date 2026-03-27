@@ -76,7 +76,7 @@ dependencies = [
  "term_grid",
  "terminal_size",
  "unicode-width",
- "users",
+ "uzers",
  "zoneinfo_compiled",
 ]
 
@@ -348,10 +348,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "users"
-version = "0.11.0"
+name = "uzers"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24cc0f6d6f267b73e5a2cadf007ba8f9bc39c6a6f9666f8cf25ea809a153b032"
+checksum = "0b8275fb1afee25b4111d2dc8b5c505dbbc4afd0b990cb96deb2d88bff8be18d"
 dependencies = [
  "libc",
  "log",
